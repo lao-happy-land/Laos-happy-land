@@ -52,3 +52,12 @@ export class Property extends AbstractEntity {
     Object.assign(this, property);
   }
 }
+
+
+// list Image 
+
+// add provider
+
+// remove area and bedroom bathrooms 
+
+// add json filed
