@@ -3,9 +3,9 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 
-async function bootstrap(){
+async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors()
+  app.enableCors();
 
   app.setGlobalPrefix('api');
   const config = new DocumentBuilder()
@@ -14,8 +14,14 @@ async function bootstrap(){
     .setVersion('1.0')
     .addBearerAuth()
     .build();
-  const doc = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, doc);
+
+  const document = SwaggerModule.createDocument(app, config);
+
+  SwaggerModule.setup('api/docs', app, document);
+
+  app.getHttpAdapter().get('/api/docs-json', (req, res) => {
+    res.json(document);
+  });
 
   await app.listen(process.env.PORT || 3000);
 }
