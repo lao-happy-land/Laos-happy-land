@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthModal } from '@/hooks/useAuthModal';
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const { isAuthenticated, isLoading } = useAuth();
-  const { openLogin, AuthModalComponent } = useAuthModal();
+  const { openRegister, AuthModalComponent } = useAuthModal();
   const router = useRouter();
 
   useEffect(() => {
@@ -16,11 +16,11 @@ export default function LoginPage() {
         // Nếu đã đăng nhập, chuyển hướng về trang chính
         router.push('/');
       } else {
-        // Nếu chưa đăng nhập, mở modal login
-        openLogin();
+        // Nếu chưa đăng nhập, mở modal register
+        openRegister();
       }
     }
-  }, [isAuthenticated, isLoading, router, openLogin]);
+  }, [isAuthenticated, isLoading, router, openRegister]);
 
   if (isLoading) {
     return (
@@ -37,24 +37,24 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <div className="text-center">
         <h1 className="mb-4 text-2xl font-bold text-gray-800">
-          Chào mừng đến với Laos Happy Land
+          Tham gia Laos Happy Land
         </h1>
         <p className="mb-6 text-gray-600">
-          Vui lòng đăng nhập để tiếp tục
+          Đăng ký tài khoản để khám phá các cơ hội bất động sản tại Lào
         </p>
         <button
-          onClick={openLogin}
+          onClick={openRegister}
           className="rounded bg-red-500 px-6 py-2 font-medium text-white transition hover:bg-red-600"
         >
-          Đăng nhập
+          Đăng ký ngay
         </button>
         <p className="mt-4 text-sm text-gray-500">
-          Chưa có tài khoản?{" "}
+          Đã có tài khoản?{" "}
           <button
-            onClick={() => router.push('/register')}
+            onClick={() => router.push('/login')}
             className="font-medium text-red-500 hover:underline"
           >
-            Đăng ký tại đây
+            Đăng nhập tại đây
           </button>
         </p>
       </div>

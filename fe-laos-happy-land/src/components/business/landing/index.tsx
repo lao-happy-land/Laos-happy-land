@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 const LandingPage = () => {
@@ -8,12 +8,27 @@ const LandingPage = () => {
   const [propertyType, setPropertyType] = useState("all");
   const [location, setLocation] = useState("");
   const [priceRange, setPriceRange] = useState("");
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Background gradients for carousel as fallback
+  const backgroundGradients = [
+    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", // Blue to purple
+    "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)", // Pink to red  
+    "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)", // Blue to cyan
+    "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)"  // Green to teal
+  ];
+  // Auto-slide carousel
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % 4); // 4 gradients
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   const searchTabs = [
     { id: "mua", label: "Nhà đất bán", icon: "🏠" },
     { id: "thue", label: "Nhà đất cho thuê", icon: "🔑" },
     { id: "du-an", label: "Dự án", icon: "🏗️" },
-    { id: "tin-tuc", label: "Tin tức", icon: "📰" },
   ];
 
   const propertyTypes = [
@@ -29,15 +44,6 @@ const LandingPage = () => {
     { id: "condotel", label: "Condotel" },
     { id: "kho-nha-xuong", label: "Kho, nhà xưởng" },
     { id: "loai-khac", label: "Loại khác" },
-  ];
-
-  const locations = [
-    "Vientiane",
-    "Luang Prabang", 
-    "Pakse",
-    "Savannakhet",
-    "Thakhek",
-    "Xam Neua",
   ];
 
   const priceRanges = [
@@ -133,32 +139,51 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Hero Section with Search - Batdongsan.com.vn style */}
-      <section className="relative bg-gradient-to-r from-orange-400 via-red-500 to-red-600 py-12">
-        <div className="container mx-auto px-4">
-          {/* Hero Content */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Mua bán, cho thuê bất động sản hàng đầu tại Lào
-            </h1>
-            <p className="text-lg text-orange-100">
-              Kênh thông tin Bất Động Sản số 1 Lào
-            </p>
-          </div>
+      {/* Hero Section with Carousel Background */}
+      <section className="relative h-96 overflow-hidden">
+        {/* Carousel Background */}
+        <div className="absolute inset-0">
+          {backgroundGradients.map((gradient, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 transition-opacity duration-1000 ${
+                index === currentSlide ? "opacity-100" : "opacity-0"
+              }`}
+              style={{
+                background: gradient,
+              }}
+            />
+          ))}
+          {/* Dark overlay */}
+        </div>
 
-          {/* Search Form Container */}
+        {/* Carousel Navigation Dots */}
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
+          {backgroundGradients.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              className={`w-3 h-3 rounded-full transition-all ${
+                index === currentSlide ? "bg-white" : "bg-white/50"
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* Search Form Container - Positioned over carousel */}
+        <div className="relative z-10 container mx-auto px-4 pt-12">
           <div className="max-w-5xl mx-auto">
             {/* Search Tabs */}
-            <div className="bg-white rounded-t-lg p-1 flex flex-wrap">
-              {searchTabs.map((tab) => (
+            <div className="flex mb-6">
+              {searchTabs.map((tab, index) => (
                 <button
                   key={tab.id}
                   onClick={() => setSearchType(tab.id)}
-                  className={`flex-1 min-w-[120px] px-4 py-3 text-sm font-medium rounded-md transition-all ${
+                  className={`px-6 py-3 text-sm font-medium transition-all ${
                     searchType === tab.id
-                      ? "bg-red-500 text-white"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
+                      ? "bg-white text-black"
+                      : "bg-gray-800 text-white hover:bg-gray-700"
+                  } ${index === 0 ? "rounded-l-lg" : ""} ${index === searchTabs.length - 1 ? "rounded-r-lg" : ""}`}
                 >
                   {tab.label}
                 </button>
@@ -166,75 +191,76 @@ const LandingPage = () => {
             </div>
 
             {/* Search Form */}
-            <div className="bg-white rounded-b-lg shadow-xl p-6">
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                {/* Property Type */}
-                <div className="md:col-span-2">
-                  <select
-                    value={propertyType}
-                    onChange={(e) => setPropertyType(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-red-500 focus:border-red-500"
-                  >
-                    {propertyTypes.map((type) => (
-                      <option key={type.id} value={type.id}>
-                        {type.label}
-                      </option>
-                    ))}
-                  </select>
+            <div className="bg-white rounded-lg shadow-xl p-6">
+              {/* Search Input Row */}
+              <div className="flex gap-4 mb-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Trên toàn quốc"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-red-500 focus:border-red-500 pl-10"
+                    />
+                    <svg
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                  </div>
                 </div>
-
-                {/* Location */}
-                <div>
-                  <select
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="">Toàn quốc</option>
-                    {locations.map((loc) => (
-                      <option key={loc} value={loc}>
-                        {loc}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Price Range */}
-                <div>
-                  <select
-                    value={priceRange}
-                    onChange={(e) => setPriceRange(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-red-500 focus:border-red-500"
-                  >
-                    {priceRanges.map((range) => (
-                      <option key={range.id} value={range.id}>
-                        {range.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Search Button */}
-                <div>
-                  <button className="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded text-sm transition-colors">
-                    Tìm kiếm
-                  </button>
-                </div>
+                
+                <button className="bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-8 rounded-lg text-sm transition-colors whitespace-nowrap">
+                  Tìm kiếm
+                </button>
               </div>
 
-              {/* Search Keywords */}
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="flex flex-wrap items-center gap-2 text-sm">
-                  <span className="text-gray-600">Từ khóa:</span>
-                  {["chung cư", "nhà riêng", "biệt thự", "đất nền", "shophouse"].map((keyword) => (
-                    <button
-                      key={keyword}
-                      className="px-2 py-1 bg-gray-100 hover:bg-red-100 text-gray-700 rounded transition-colors"
-                    >
-                      {keyword}
-                    </button>
+              {/* Dropdown Row */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <select
+                  value={propertyType}
+                  onChange={(e) => setPropertyType(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-red-500 focus:border-red-500 appearance-none bg-white"
+                >
+                  <option value="">Loại hình dự án</option>
+                  {propertyTypes.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.label}
+                    </option>
                   ))}
-                </div>
+                </select>
+
+                <select
+                  value={priceRange}
+                  onChange={(e) => setPriceRange(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-red-500 focus:border-red-500 appearance-none bg-white"
+                >
+                  <option value="">Mức giá</option>
+                  {priceRanges.map((range) => (
+                    <option key={range.id} value={range.id}>
+                      {range.label}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-red-500 focus:border-red-500 appearance-none bg-white"
+                >
+                  <option value="">Trạng thái</option>
+                  <option value="sap-mo-ban">Sắp mở bán</option>
+                  <option value="dang-mo-ban">Đang mở bán</option>
+                  <option value="sap-ban-giao">Sắp bàn giao</option>
+                  <option value="da-ban-giao">Đã bàn giao</option>
+                </select>
               </div>
             </div>
           </div>
@@ -362,7 +388,7 @@ const LandingPage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[1, 2, 3].map((project) => (
-              <div key={project} className="bg-white border rounded shadow hover:shadow-md transition-shadow">
+              <div key={project} className="bg-white rounded shadow hover:shadow-md transition-shadow">
                 <div className="h-48 bg-gradient-to-r from-green-400 to-blue-500 rounded-t"></div>
                 <div className="p-4">
                   <h3 className="font-bold text-gray-900 mb-2">

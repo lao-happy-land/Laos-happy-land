@@ -4,9 +4,9 @@ import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 
 export const metadata: Metadata = {
-  title: "Laos Happy Land - Khám phá vẻ đẹp Lào",
-  description: "Trải nghiệm những chuyến du lịch tuyệt vời tại Lào với Laos Happy Land. Khám phá văn hóa, thiên nhiên và ẩm thực độc đáo của đất nước triệu voi.",
-  keywords: "du lịch Lào, tour Lào, văn hóa Lào, thiên nhiên Lào, Laos travel, Vientiane, Luang Prabang",
+  title: "Laos Happy Land - Bất động sản Lào",
+  description: "Website bất động sản Lào - Tìm nhà đất, căn hộ, dự án bất động sản tại Lào",
+  keywords: "bất động sản Lào, nhà đất Lào, căn hộ Lào, dự án Lào, đầu tư Lào, Laos real estate",
   authors: [{ name: "Laos Happy Land Team" }],
   creator: "Laos Happy Land",
   publisher: "Laos Happy Land",
@@ -16,8 +16,8 @@ export const metadata: Metadata = {
     locale: "vi_VN",
     url: "https://laoshappyland.com",
     siteName: "Laos Happy Land",
-    title: "Laos Happy Land - Khám phá vẻ đẹp Lào",
-    description: "Trải nghiệm những chuyến du lịch tuyệt vời tại Lào với Laos Happy Land.",
+    title: "Laos Happy Land - Bất động sản Lào",
+    description: "Website bất động sản Lào - Tìm nhà đất, căn hộ, dự án bất động sản tại Lào",
     images: [
       {
         url: "/images/og-image.jpg",
@@ -29,8 +29,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Laos Happy Land - Khám phá vẻ đẹp Lào",
-    description: "Trải nghiệm những chuyến du lịch tuyệt vời tại Lào với Laos Happy Land.",
+    title: "Laos Happy Land - Bất động sản Lào",
+    description: "Website bất động sản Lào - Tìm nhà đất, căn hộ, dự án bất động sản tại Lào",
     images: ["/images/twitter-image.jpg"],
     creator: "@laoshappyland",
   },
@@ -39,11 +39,6 @@ export const metadata: Metadata = {
     { rel: "apple-touch-icon", url: "/apple-touch-icon.png" },
   ],
   manifest: "/manifest.json",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-  },
 };
 
 const geist = Geist({
