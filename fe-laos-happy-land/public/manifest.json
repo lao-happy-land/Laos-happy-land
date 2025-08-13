@@ -1,0 +1,16 @@
+{
+  "name": "Laos Happy Land",
+  "short_name": "Laos BDS",
+  "description": "Website bất động sản Lào - Tìm nhà đất, căn hộ, dự án bất động sản tại Lào",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#E03C31",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
+}

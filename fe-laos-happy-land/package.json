@@ -12,11 +12,14 @@
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "preview": "next build && next start",
+    "gen-api-types": "swagger-typescript-api-es",
     "start": "next start",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@t3-oss/env-nextjs": "^0.12.0",
+    "axios": "^1.11.0",
+    "lucide-react": "^0.539.0",
     "next": "^15.2.3",
     "next-auth": "5.0.0-beta.25",
     "pnpm": "^10.14.0",
@@ -35,6 +38,7 @@
     "postcss": "^8.5.3",
     "prettier": "^3.5.3",
     "prettier-plugin-tailwindcss": "^0.6.11",
+    "swagger-typescript-api-es": "^0.0.13",
     "tailwindcss": "^4.0.15",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.27.0"

@@ -196,24 +196,6 @@ const Footer = () => {
                 </li>
               </ul>
             </div>
-            <div>
-              <h4 className="font-semibold mb-3">Ứng dụng di động</h4>
-              <p className="text-gray-300 text-sm mb-3">
-                Tải ứng dụng để trải nghiệm tốt hơn
-              </p>
-              <div className="space-y-2">
-                <a href="#" className="inline-block">
-                  <div className="bg-black text-white px-4 py-2 rounded h-10 flex items-center text-sm">
-                    📱 App Store
-                  </div>
-                </a>
-                <a href="#" className="inline-block">
-                  <div className="bg-green-600 text-white px-4 py-2 rounded h-10 flex items-center text-sm">
-                    🤖 Google Play
-                  </div>
-                </a>
-              </div>
-            </div>
           </div>
         </div>
 
