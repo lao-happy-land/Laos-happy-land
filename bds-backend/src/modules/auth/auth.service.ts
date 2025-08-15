@@ -10,6 +10,7 @@ import { User } from '../../entities/user.entity';
 import * as crypto from 'crypto';
 import { RoleEnum } from 'src/common/enum/enum';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
+import { Profile } from 'passport-google-oauth20';
 
 @Injectable()
 export class AuthService {
@@ -96,5 +97,43 @@ export class AuthService {
       }
       throw error;
     }
+  }
+
+  async validateUserFromGoogle(
+    profile: Profile,
+  ): Promise<{ access_token: string }> {
+    const { emails, displayName } = profile;
+    const salt = crypto.randomBytes(16).toString('hex');
+    const email = emails[0].value;
+    const passwordClean = '123456789'.trim();
+    const hashedPassword = this.hashPassword(passwordClean, salt);
+
+    let user = await this.userRepository.findOneBy({ email });
+
+    if (!user) {
+      user = this.userRepository.create({
+        email,
+        fullName: displayName,
+        avatarUrl:
+          'https://res.cloudinary.com/ds7udoemg/image/upload/v1732779178/lufyvfdbb24zhtloali7.png',
+        password: hashedPassword,
+        role: RoleEnum.USER,
+      });
+
+      user = await this.userRepository.save(user);
+    }
+
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role,
+    };
+
+    const access_token = await this.jwtService.signAsync(payload);
+
+    return {
+      access_token,
+    };
   }
 }

@@ -11,6 +11,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PageOptionsDto } from 'src/common/dtos/pageOption';
+import { TransactionEnum } from 'src/common/enum/enum';
 
 export class GetPropertiesFilterDto extends PageOptionsDto {
   @ApiPropertyOptional({
@@ -76,6 +77,19 @@ export class GetPropertiesFilterDto extends PageOptionsDto {
   @IsInt()
   @Min(0)
   bathrooms?: number;
+
+  @ApiPropertyOptional({ description: 'Vị trí' })
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @ApiPropertyOptional({
+    description: 'Trạng thái bán/cho thuê',
+    enum: TransactionEnum,
+  })
+  @IsOptional()
+  @IsIn(Object.values(TransactionEnum))
+  transaction?: string;
 
   @ApiPropertyOptional({
     description: 'Trạng thái xác minh',

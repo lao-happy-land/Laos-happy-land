@@ -7,20 +7,25 @@ import {
   IsInt,
   Min,
   MaxLength,
+  IsUUID,
+  IsEnum,
 } from 'class-validator';
+import { TransactionEnum } from 'src/common/enum/enum';
+import { Multer } from 'multer';
 
 export class CreatePropertyDto {
   @ApiProperty({
-    description: 'Loại bất động sản',
-    example: 'apartment',
+    description: 'ID loại bất động sản (PropertyType)',
+    example: 'f2f6f4f0-6b6b-4b8c-9b87-5f6a6c6a6c6a',
   })
-  @IsString()
-  type: string;
+  @IsUUID()
+  typeId: string;
 
   @ApiProperty({
     example: '6933c706-3180-47a0-b56b-c98180d8afda',
     description: 'User ID associated with the order',
   })
+  @IsUUID()
   user_id: string;
 
   @ApiProperty({
@@ -33,7 +38,8 @@ export class CreatePropertyDto {
 
   @ApiPropertyOptional({
     description: 'Mô tả chi tiết bất động sản',
-    example: 'Căn hộ mới, nội thất đầy đủ, gần trung tâm thương mại, trường học...',
+    example:
+      'Căn hộ mới, nội thất đầy đủ, gần trung tâm thương mại, trường học...',
     required: false,
   })
   @IsOptional()
@@ -50,33 +56,15 @@ export class CreatePropertyDto {
   price?: number;
 
   @ApiPropertyOptional({
-    description: 'Diện tích (m2)',
-    example: 75.5,
-    required: false,
+    description: 'Chi tiết bổ sung (JSON)',
+    example: {
+      area: 75,
+      bedrooms: 3,
+      bathrooms: 2,
+    },
   })
   @IsOptional()
-  @IsNumber()
-  area?: number;
-
-  @ApiPropertyOptional({
-    description: 'Số phòng ngủ',
-    example: 2,
-    required: false,
-  })
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  bedrooms?: number;
-
-  @ApiPropertyOptional({
-    description: 'Số phòng tắm',
-    example: 2,
-    required: false,
-  })
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  bathrooms?: number;
+  details?: any;
 
   @ApiProperty({
     description: 'Trạng thái xác minh',
@@ -86,4 +74,46 @@ export class CreatePropertyDto {
   @IsOptional()
   @IsBoolean()
   isVerified?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Tình trạng pháp lý',
+    example: 'Sổ hồng đầy đủ',
+  })
+  @IsOptional()
+  @IsString()
+  legalStatus?: string;
+
+  @ApiPropertyOptional({
+    description: 'Vị trí bất động sản',
+    example: '123 Nguyễn Huệ, Quận 1, TP.HCM',
+  })
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @ApiProperty({
+    description: 'Hình thức giao dịch',
+    example: TransactionEnum.SALE,
+    enum: TransactionEnum,
+  })
+  @IsEnum(TransactionEnum)
+  transactionType: TransactionEnum;
+
+  @ApiPropertyOptional({
+    type: 'string',
+    format: 'binary',
+    description: 'Ảnh chính của bất động sản',
+  })
+  @IsOptional()
+  mainImage?: Multer.File;
+
+  @ApiPropertyOptional({
+    type: 'array',
+    items: { type: 'string', format: 'binary' },
+    description: 'Danh sách ảnh phụ của bất động sản',
+  })
+  @IsOptional()
+  images?: Multer.File[];
+
+  priceHistory?: any;
 }

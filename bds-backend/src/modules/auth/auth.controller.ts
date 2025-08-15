@@ -1,8 +1,9 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 import { log } from 'console';
+import { GoogleAuthGuard } from './guard/google.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -27,5 +28,19 @@ export class AuthController {
   @ApiBody({ type: LoginDto })
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
+  }
+
+  @Get('google/login')
+  @ApiOperation({ summary: 'Login via Google' })
+  @UseGuards(GoogleAuthGuard)
+  handleGoogleLogin() {
+    return { message: 'Redirecting to Google login...' };
+  }
+
+  @Get('google/redirect')
+  @ApiOperation({ summary: 'Google OAuth callback' })
+  @UseGuards(GoogleAuthGuard)
+  async googleAuthRedirect(@Req() req) {
+    return { access_token: req.user.access_token };
   }
 }
