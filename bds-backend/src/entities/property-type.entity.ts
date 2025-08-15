@@ -1,22 +1,20 @@
-// import {
-//   Entity,
-//   PrimaryGeneratedColumn,
-//   Column,
-//   OneToMany,
-// } from 'typeorm';
-// import { Property } from './property.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+} from 'typeorm';
+import { Property } from './property.entity';
+import { AbstractEntity } from 'src/common/entities';
 
-// @Entity('property_types')
-// export class PropertyType {
-//   @PrimaryGeneratedColumn()
-//   id: number;
+@Entity('property_types')
+export class PropertyType extends AbstractEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-//   @Column({ unique: true })
-//   code: string;
+  @Column()
+  name: string;
 
-//   @Column()
-//   name: string;
-
-//   @OneToMany(() => Property, (property) => property.type)
-//   properties: Property[];
-// }
+  @OneToMany(() => Property, (property) => property.type)
+  properties: Property[];
+}
