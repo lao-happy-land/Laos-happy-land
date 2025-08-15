@@ -26,7 +26,8 @@ export default function Header() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      const scrolled = window.scrollY > 20;
+      setIsScrolled(prev => prev !== scrolled ? scrolled : prev);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -56,10 +57,14 @@ export default function Header() {
 
   return (
     <>
-      <header
-        className={`sticky top-0 z-50 bg-white px-4 shadow-xl transition-all duration-300 ${isScrolled ? "py-1" : "py-4"}`}
-      >
-        <div className="mx-auto flex h-16 items-center justify-between">
+      {/* Container ngoài trong suốt với height cố định */}
+      <div className="sticky top-0 z-50 h-20">
+        <header
+          className={`flex items-center bg-white shadow-xl transition-all duration-200 px-4 ${
+            isScrolled ? "py-1 h-auto " : "py-4 h-full "
+          }`}
+        >
+          <div className="mx-auto flex h-16 items-center justify-between w-full">
           {/* Left side */}
           <div className="flex gap-6">
             {/* Logo */}
@@ -206,8 +211,9 @@ export default function Header() {
               </button>
             </div>
           </div>
-        </div>
-      </header>
+          </div>
+        </header>
+      </div>
 
       {/* Sidebar for mobile */}
       {showSidebar && (
