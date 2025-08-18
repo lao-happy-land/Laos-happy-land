@@ -2,8 +2,8 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
-import { useAuthModal } from '@/hooks/useAuthModal';
+import { useAuth } from '@/share/hook/useAuth';
+import { useAuthModal } from '@/share/hook/useAuthModal';
 
 export default function LoginPage() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -13,10 +13,8 @@ export default function LoginPage() {
   useEffect(() => {
     if (!isLoading) {
       if (isAuthenticated) {
-        // Nếu đã đăng nhập, chuyển hướng về trang chính
         router.push('/');
       } else {
-        // Nếu chưa đăng nhập, mở modal login
         openLogin();
       }
     }
