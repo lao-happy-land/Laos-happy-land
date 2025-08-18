@@ -149,7 +149,7 @@ export const authService = {
     }
   },
 
-  logout() {
+  logout(): void {
     // Clear localStorage or cookies
     if (typeof window !== 'undefined') {
       localStorage.removeItem('access_token');

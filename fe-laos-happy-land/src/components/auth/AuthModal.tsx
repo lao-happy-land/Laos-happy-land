@@ -40,7 +40,6 @@ export default function AuthModal({ isOpen, onClose, type, onSwitchType }: AuthM
       }}
     >
       <div className="relative flex w-full max-w-4xl overflow-hidden rounded-xl bg-white shadow-xl">
-        {/* Left side - Image */}
         <div className="flex w-1/2 flex-col items-center justify-center bg-[#FFEFEF] p-6">
           <Image
             src="/images/auth/login-bg.png"
@@ -55,7 +54,6 @@ export default function AuthModal({ isOpen, onClose, type, onSwitchType }: AuthM
           </p>
         </div>
 
-        {/* Right side - Form */}
         <div className="relative w-1/2 p-8 flex items-center justify-center">
           <button
             onClick={onClose}

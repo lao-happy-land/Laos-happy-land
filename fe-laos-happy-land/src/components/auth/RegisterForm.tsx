@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { authService } from "@/services/auth.service";
-import type { RegisterRequest } from "@/services/auth.service";
+import { authService } from "@/share/service/auth.service";
+import type { RegisterRequest } from "@/share/service/auth.service";
 
 interface RegisterFormProps {
   onSuccess?: () => void;
@@ -52,15 +52,12 @@ export default function RegisterForm({ onSuccess, onError, onSwitchToLogin, onRe
       const response = await authService.register(form);
       
       if (response.access_token && response.user) {
-        // Nếu có access_token (auto login sau khi register)
         authService.setAuthData(response.access_token, response.user);
         onSuccess?.();
         window.location.reload();
       } else if (response.user && response.message) {
-        // Nếu register thành công nhưng cần login
         setSuccessMessage(response.message);
         onRegisterSuccess?.(response.message);
-        // Auto switch to login after 2 seconds
         setTimeout(() => {
           onSwitchToLogin?.();
         }, 2000);
@@ -105,7 +102,6 @@ export default function RegisterForm({ onSuccess, onError, onSwitchToLogin, onRe
 
   const handleInputChange = (field: keyof RegisterRequest, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
-    // Clear messages when user starts typing
     if (error) setError("");
     if (successMessage) setSuccessMessage("");
   };
