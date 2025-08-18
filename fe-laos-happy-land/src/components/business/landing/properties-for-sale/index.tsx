@@ -450,24 +450,156 @@ const PropertiesForSale = () => {
       </div>
 
       {/* Main content */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex justify-center gap-6">
-          <div className="flex w-2/3 gap-8">
-            {/* Left Content - Property Listing */}
-            <div className="flex-1">
-              {/* Property Grid/List */}
-              <div className="space-y-6">
-                {currentProperties.map((property) => (
-                  <PropertyCard key={property.id} property={property} />
-                ))}
+      <div className="container mx-auto px-2 md:px-4 py-6">
+        <div className="flex flex-col lg:flex-row justify-center gap-6">
+          {/* Filters - Show first on mobile */}
+          <div className="w-full lg:w-72 lg:flex-shrink-0 order-1 lg:order-2">
+            <div className="lg:sticky lg:top-6 rounded-lg bg-white p-4 lg:p-6 shadow-sm">
+              <h3 className="mb-4 lg:mb-6 flex items-center text-base lg:text-lg font-semibold text-gray-900">
+                <Filter className="mr-2 h-4 lg:h-5 w-4 lg:w-5 text-red-500" />
+                Lọc kết quả
+              </h3>
+
+              {/* Location Filter */}
+              <div className="mb-4 lg:mb-6">
+                <h4 className="mb-2 lg:mb-3 text-xs lg:text-sm font-semibold text-gray-800">
+                  Khu vực
+                </h4>
+                <div className="space-y-1 lg:space-y-2">
+                  {locations.slice(1, 4).map((loc) => (
+                    <label key={loc.id} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300 text-red-500 focus:ring-red-500 h-3 w-3 lg:h-4 lg:w-4"
+                      />
+                      <span className="ml-2 text-xs lg:text-sm text-gray-700">
+                        {loc.label}
+                      </span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
-              {/* Show more */}
-              <div className="mt-8 text-center">
-                <button className="rounded-lg border border-gray-300 bg-white px-8 py-3 font-medium transition-colors hover:bg-gray-50">
-                  Xem thêm tin đăng
-                </button>
+              {/* Price Range */}
+              <div className="mb-4 lg:mb-6">
+                <h4 className="mb-2 lg:mb-3 text-xs lg:text-sm font-semibold text-gray-800">
+                  Mức giá
+                </h4>
+                <div className="mb-2 lg:mb-3 grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Từ"
+                    value={minPrice}
+                    onChange={(e) => setMinPrice(e.target.value)}
+                    className="rounded border border-gray-300 px-2 lg:px-3 py-1 lg:py-2 text-xs lg:text-sm focus:border-red-500 focus:ring-red-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Đến"
+                    value={maxPrice}
+                    onChange={(e) => setMaxPrice(e.target.value)}
+                    className="rounded border border-gray-300 px-2 lg:px-3 py-1 lg:py-2 text-xs lg:text-sm focus:border-red-500 focus:ring-red-500"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-1 lg:gap-2">
+                  {["< 1 tỷ", "1 - 3 tỷ", "3 - 5 tỷ", "> 5 tỷ"].map((price) => (
+                    <button
+                      key={price}
+                      className="rounded border border-gray-300 px-2 lg:px-3 py-1 lg:py-2 text-xs transition-colors hover:border-red-500 hover:bg-red-50 hover:text-red-500"
+                    >
+                      {price}
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              {/* Area - Hidden on mobile */}
+              <div className="mb-4 lg:mb-6 hidden lg:block">
+                <h4 className="mb-2 lg:mb-3 text-xs lg:text-sm font-semibold text-gray-800">
+                  Diện tích
+                </h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    "< 30m²",
+                    "30-50m²",
+                    "50-80m²",
+                    "80-100m²",
+                    "100-150m²",
+                    "> 150m²",
+                  ].map((area) => (
+                    <button
+                      key={area}
+                      className="rounded border border-gray-300 px-3 py-2 text-xs transition-colors hover:border-red-500 hover:bg-red-50 hover:text-red-500"
+                    >
+                      {area}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bedrooms - Hidden on mobile */}
+              <div className="mb-4 lg:mb-6 hidden lg:block">
+                <h4 className="mb-2 lg:mb-3 text-xs lg:text-sm font-semibold text-gray-800">
+                  Số phòng ngủ
+                </h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {["1 PN", "2 PN", "3 PN", "4+ PN"].map((bedroom) => (
+                    <button
+                      key={bedroom}
+                      className="rounded border border-gray-300 px-3 py-2 text-xs transition-colors hover:border-red-500 hover:bg-red-50 hover:text-red-500"
+                    >
+                      {bedroom}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Special Features - Hidden on mobile */}
+              <div className="mb-4 lg:mb-6 hidden lg:block">
+                <h4 className="mb-2 lg:mb-3 text-xs lg:text-sm font-semibold text-gray-800">
+                  Đặc điểm
+                </h4>
+                <div className="space-y-2">
+                  {[
+                    "Có hình ảnh",
+                    "Có video",
+                    "Chính chủ",
+                    "Căn góc",
+                    "Gần trường học",
+                    "Gần bệnh viện",
+                  ].map((feature) => (
+                    <label key={feature} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300 text-red-500 focus:ring-red-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">
+                        {feature}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <button className="w-full rounded-lg bg-red-500 py-2 lg:py-3 text-sm lg:text-base font-medium text-white transition-colors hover:bg-red-600">
+                Áp dụng lọc
+              </button>
+            </div>
+          </div>
+
+          {/* Left Content - Property Listing */}
+          <div className="w-full lg:w-2/3 order-2 lg:order-1">
+            <div className="space-y-6">
+              {currentProperties.map((property) => (
+                <PropertyCard key={property.id} property={property} />
+              ))}
+            </div>
+
+            {/* Show more */}
+            <div className="mt-8 text-center">
+              <button className="rounded-lg border border-gray-300 bg-white px-8 py-3 font-medium transition-colors hover:bg-gray-50">
+                Xem thêm tin đăng
+              </button>
             </div>
 
             {/* Pagination */}
@@ -534,141 +666,6 @@ const PropertiesForSale = () => {
                 </button>
               </div>
             )}
-          </div>
-
-          {/* Right Sidebar - Filters */}
-          <div className="hidden w-72 flex-shrink-0 lg:block">
-            <div className="sticky top-6 rounded-lg bg-white p-6 shadow-sm">
-              <h3 className="mb-6 flex items-center text-lg font-semibold text-gray-900">
-                <Filter className="mr-2 h-5 w-5 text-red-500" />
-                Lọc kết quả
-              </h3>
-
-              {/* Location Filter */}
-              <div className="mb-6">
-                <h4 className="mb-3 text-sm font-semibold text-gray-800">
-                  Khu vực
-                </h4>
-                <div className="space-y-2">
-                  {locations.slice(1, 6).map((loc) => (
-                    <label key={loc.id} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        className="rounded border-gray-300 text-red-500 focus:ring-red-500"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">
-                        {loc.label}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Price Range */}
-              <div className="mb-6">
-                <h4 className="mb-3 text-sm font-semibold text-gray-800">
-                  Mức giá
-                </h4>
-                <div className="mb-3 grid grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    placeholder="Từ"
-                    value={minPrice}
-                    onChange={(e) => setMinPrice(e.target.value)}
-                    className="rounded border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:ring-red-500"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Đến"
-                    value={maxPrice}
-                    onChange={(e) => setMaxPrice(e.target.value)}
-                    className="rounded border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:ring-red-500"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {["< 1 tỷ", "1 - 3 tỷ", "3 - 5 tỷ", "> 5 tỷ"].map((price) => (
-                    <button
-                      key={price}
-                      className="rounded border border-gray-300 px-3 py-2 text-xs transition-colors hover:border-red-500 hover:bg-red-50 hover:text-red-500"
-                    >
-                      {price}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Area */}
-              <div className="mb-6">
-                <h4 className="mb-3 text-sm font-semibold text-gray-800">
-                  Diện tích
-                </h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    "< 30m²",
-                    "30-50m²",
-                    "50-80m²",
-                    "80-100m²",
-                    "100-150m²",
-                    "> 150m²",
-                  ].map((area) => (
-                    <button
-                      key={area}
-                      className="rounded border border-gray-300 px-3 py-2 text-xs transition-colors hover:border-red-500 hover:bg-red-50 hover:text-red-500"
-                    >
-                      {area}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Bedrooms */}
-              <div className="mb-6">
-                <h4 className="mb-3 text-sm font-semibold text-gray-800">
-                  Số phòng ngủ
-                </h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {["1 PN", "2 PN", "3 PN", "4+ PN"].map((bedroom) => (
-                    <button
-                      key={bedroom}
-                      className="rounded border border-gray-300 px-3 py-2 text-xs transition-colors hover:border-red-500 hover:bg-red-50 hover:text-red-500"
-                    >
-                      {bedroom}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Special Features */}
-              <div className="mb-6">
-                <h4 className="mb-3 text-sm font-semibold text-gray-800">
-                  Đặc điểm
-                </h4>
-                <div className="space-y-2">
-                  {[
-                    "Có hình ảnh",
-                    "Có video",
-                    "Chính chủ",
-                    "Căn góc",
-                    "Gần trường học",
-                    "Gần bệnh viện",
-                  ].map((feature) => (
-                    <label key={feature} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        className="rounded border-gray-300 text-red-500 focus:ring-red-500"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">
-                        {feature}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <button className="w-full rounded-lg bg-red-500 py-3 font-medium text-white transition-colors hover:bg-red-600">
-                Áp dụng lọc
-              </button>
-            </div>
           </div>
         </div>
       </div>
