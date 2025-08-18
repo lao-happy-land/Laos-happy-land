@@ -49,7 +49,6 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Quick Links */}
           <div>
             <h3 className="mb-4 text-lg font-semibold">Liên kết nhanh</h3>
             <ul className="space-y-2">
@@ -81,7 +80,6 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Property Types */}
           <div>
             <h3 className="mb-4 text-lg font-semibold">Loại hình BDS</h3>
             <ul className="space-y-2">

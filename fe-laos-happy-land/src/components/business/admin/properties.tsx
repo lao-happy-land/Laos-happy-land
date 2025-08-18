@@ -172,7 +172,6 @@ const AdminProperties = () => {
             ))}
           </div>
 
-          {/* Search */}
           <div className="relative">
             <input
               type="text"
