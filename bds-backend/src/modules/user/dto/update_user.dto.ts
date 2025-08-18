@@ -26,12 +26,8 @@ export class UpdateUserDto {
   })
   password?: string;
 
-  @ApiPropertyOptional({
-    enum: RoleEnum,
-    example: RoleEnum.USER,
-    description: 'Role of the user',
-  })
-  role?: RoleEnum;
+  @ApiPropertyOptional({ example: 'f2f6f4f0-6b6b-4b8c-9b87-5f6a6c6a6c6a', description: 'Role ID of the user' })
+  roleId?: string;
 
   @ApiPropertyOptional({
     example: 'https://example.com/avatar.jpg',
