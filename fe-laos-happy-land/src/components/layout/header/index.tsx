@@ -7,13 +7,34 @@ import { useAuthModal } from "@/share/hook/useAuthModal";
 import type { User } from "@/share/service/auth.service";
 
 const NAV_ITEMS = [
-  "Nhà đất bán",
-  "Nhà đất cho thuê",
-  "Dự án",
-  "Tin tức",
-  "Wiki BĐS",
-  "Phân tích đánh giá",
-  "Danh bạ",
+  {
+    title: "Nhà đất bán",
+    href: "/properties-for-sale"
+  },
+  {
+    title: "Nhà đất cho thuê",
+    href: ""
+  },
+  {
+    title: "Dự án",
+    href: ""
+  },
+  {
+    title: "Tin tức",
+    href: ""
+  },
+  {
+    title: "Wiki BĐS",
+    href: ""
+  },
+  {
+    title: "Phân tích đánh giá",
+    href: ""
+  },
+  {
+    title: "Danh bạ",
+    href: ""
+  },
 ];
 
 export default function Header() {
@@ -109,10 +130,10 @@ export default function Header() {
               {NAV_ITEMS.map((item, idx) => (
                 <a
                   key={idx}
-                  href="#"
+                  href={item.href}
                   className="relative text-gray-900 before:absolute before:-bottom-[2px] before:left-0 before:h-[2px] before:w-0 before:bg-[#E03C31] before:transition-all before:duration-300 hover:text-[#E03C31] hover:before:w-full"
                 >
-                  {item}
+                  {item.title}
                 </a>
               ))}
             </nav>
@@ -292,10 +313,10 @@ export default function Header() {
                 {NAV_ITEMS.map((item, idx) => (
                   <a
                     key={idx}
-                    href="#"
+                    href={item.href}
                     className="block rounded-lg px-2 py-3 text-gray-900 transition-colors hover:bg-gray-50 hover:text-[#E03C31]"
                   >
-                    {item}
+                    {item.title }
                   </a>
                 ))}
               </nav>
