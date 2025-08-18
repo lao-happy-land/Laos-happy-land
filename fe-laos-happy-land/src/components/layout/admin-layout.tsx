@@ -105,7 +105,6 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Mobile menu overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity"
@@ -113,20 +112,17 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         />
       )}
 
-      {/* Sidebar */}
       <div
         className={`fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Logo */}
         <div className="flex items-center justify-center h-16 px-6 bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg">
           <Link href="/admin" className="text-xl font-bold tracking-wide">
             🏡 Laos Happy Land
           </Link>
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 px-4 py-6 overflow-y-auto">
           <div className="space-y-1">
             {menuItems.map((item) => (
@@ -201,12 +197,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         </div>
       </div>
 
-      {/* Main content */}
       <div className="">
-        {/* Top header */}
         <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
           <div className="flex items-center justify-between px-6 py-4">
-            {/* Mobile menu button */}
             <button
               onClick={() => setSidebarOpen(true)}
               className="lg:hidden p-2 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
@@ -227,9 +220,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               <span className="text-gray-900 font-medium">Dashboard</span>
             </div>
 
-            {/* Right side */}
             <div className="flex items-center gap-3">
-              {/* Search */}
               <div className="relative hidden md:block">
                 <input
                   type="text"
@@ -249,7 +240,6 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
               </button>
 
-              {/* Quick actions */}
               <Link
                 href="/admin/properties/create"
                 className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center gap-2"

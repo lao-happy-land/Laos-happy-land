@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useAuth } from "@/hooks/useAuth";
-import { useAuthModal } from "@/hooks/useAuthModal";
-import type { User } from "@/services/auth.service";
+import { useAuth } from "@/share/hook/useAuth";
+import { useAuthModal } from "@/share/hook/useAuthModal";
+import type { User } from "@/share/service/auth.service";
 
 const NAV_ITEMS = [
   "Nhà đất bán",
@@ -67,7 +67,6 @@ export default function Header() {
           <div className="mx-auto flex h-16 items-center justify-between w-full">
           {/* Left side */}
           <div className="flex gap-6">
-            {/* Logo */}
             <div className="flex items-center space-x-2">
               <Link href="/" className="flex items-center space-x-3">
                 <div
@@ -106,7 +105,6 @@ export default function Header() {
               </Link>
             </div>
 
-            {/* Navigation */}
             <nav className="hidden items-center space-x-6 text-sm lg:flex">
               {NAV_ITEMS.map((item, idx) => (
                 <a
@@ -120,9 +118,7 @@ export default function Header() {
             </nav>
           </div>
 
-          {/* Actions */}
           <div className="flex items-center space-x-2 text-sm">
-            {/* Hamburger menu button for mobile */}
             <button
               onClick={() => setShowSidebar(!showSidebar)}
               className="rounded-lg p-2 transition-colors hover:bg-gray-100 lg:hidden"
@@ -215,10 +211,8 @@ export default function Header() {
         </header>
       </div>
 
-      {/* Sidebar for mobile */}
       {showSidebar && (
         <>
-          {/* Backdrop - completely transparent but still clickable */}
           <div
             className="fixed inset-0 z-40 bg-black opacity-50 lg:hidden"
             onClick={() => setShowSidebar(false)}
@@ -227,7 +221,6 @@ export default function Header() {
           {/* Sidebar */}
           <div className="fixed top-0 right-0 z-50 h-full w-80 transform bg-white shadow-lg transition-transform duration-300 ease-in-out lg:hidden">
             <div className="p-4">
-              {/* Auth buttons at top */}
               <div className="mb-6">
                 {isAuthenticated && user ? (
                   <div className="space-y-3">
@@ -295,7 +288,6 @@ export default function Header() {
                 )}
               </div>
 
-              {/* Navigation items */}
               <nav className="mb-6">
                 {NAV_ITEMS.map((item, idx) => (
                   <a
@@ -312,7 +304,6 @@ export default function Header() {
         </>
       )}
 
-      {/* Modal */}
       <AuthModalComponent />
     </>
   );
