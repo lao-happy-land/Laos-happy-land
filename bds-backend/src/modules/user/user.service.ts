@@ -9,6 +9,7 @@ import { PageMetaDto } from 'src/common/dtos/pageMeta';
 import { ResponsePaginate } from 'src/common/dtos/reponsePaginate';
 import { UpdateUserDto } from './dto/update_user.dto';
 import e from 'express';
+import { UserRole } from 'src/entities/user-role.entity';
 
 @Injectable()
 export class UserService {
@@ -16,6 +17,8 @@ export class UserService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly entityManager: EntityManager,
+    @InjectRepository(UserRole)
+    private readonly userRoleRepository: Repository<UserRole>,
   ) {}
 
   hashPassword(password: string, salt: string): string {
@@ -34,9 +37,14 @@ export class UserService {
     if (await this.userRepository.findOneBy({ email: createUserDto.email })) {
       throw new BadRequestException('Email already exists');
     }
+    const role = await this.userRoleRepository.findOne({
+      where: { id: createUserDto.roleId },
+    });
+    if (!role) throw new BadRequestException('Role not found');
     const user = this.userRepository.create({
       ...createUserDto,
       password: hashedPassword,
+      role,
     });
     await this.entityManager.save(user);
     return { user, message: 'User created successfully' };
@@ -45,6 +53,7 @@ export class UserService {
   async getAll(params: GetUserDto) {
     const users = this.userRepository
       .createQueryBuilder('user')
+      .leftJoinAndSelect('user.role', 'role')
       .skip(params.skip)
       .take(params.take)
       .orderBy('user.createdAt', params.OrderSort);
@@ -71,6 +80,7 @@ export class UserService {
   async get(id: string) {
     const user = await this.userRepository
       .createQueryBuilder('user')
+      .leftJoinAndSelect('user.role', 'role')
       .where('user.id = :id', { id })
       .getOne();
     if (!user) {
@@ -85,42 +95,103 @@ export class UserService {
       throw new BadRequestException('User not found');
     }
     if (user) {
-        if (updateUserDto.email) {
-            if (
-                await this.userRepository.findOneBy({ email: updateUserDto.email })
-            ) {
-                throw new BadRequestException('Email already exists');
-            } else {
-                user.email = updateUserDto.email
-            }
+      if (updateUserDto.email) {
+        if (
+          await this.userRepository.findOneBy({ email: updateUserDto.email })
+        ) {
+          throw new BadRequestException('Email already exists');
+        } else {
+          user.email = updateUserDto.email;
         }
-        if (updateUserDto.fullName) {
-            user.fullName = updateUserDto.fullName
-        }
-        if (updateUserDto.phone) {
-            user.phone = updateUserDto.phone
-        }
-        if (updateUserDto.role) {
-            user.role = updateUserDto.role
-        }
-        if (updateUserDto.avatarUrl) {
-            user.avatarUrl = updateUserDto.avatarUrl
-        }
-        if (updateUserDto.password) {
-            const salt = crypto.randomBytes(16).toString('hex');
-            const hashedPassword = this.hashPassword(updateUserDto.password, salt);
-            user.password = hashedPassword
-        }
+      }
+      if (updateUserDto.fullName) {
+        user.fullName = updateUserDto.fullName;
+      }
+      if (updateUserDto.phone) {
+        user.phone = updateUserDto.phone;
+      }
+      if (updateUserDto.roleId) {
+        const role = await this.userRoleRepository.findOne({
+          where: { id: updateUserDto.roleId },
+        });
+        if (!role) throw new BadRequestException('Role not found');
+        user.role = role;
+      }
+      if (updateUserDto.avatarUrl) {
+        user.avatarUrl = updateUserDto.avatarUrl;
+      }
+      if (updateUserDto.password) {
+        const salt = crypto.randomBytes(16).toString('hex');
+        const hashedPassword = this.hashPassword(updateUserDto.password, salt);
+        user.password = hashedPassword;
+      }
     }
     return await this.entityManager.save(user);
   }
 
-  async remove(id:string) {
+  async remove(id: string) {
     const user = await this.userRepository.findOneBy({ id });
     if (!user) {
       throw new BadRequestException('User not found');
     }
     await this.userRepository.remove(user);
     return { message: 'User deleted successfully' };
+  }
+
+  async requestIsFromBank(id: string) {
+    const user = await this.userRepository.findOneBy({ id });
+    if (!user) throw new BadRequestException('User not found');
+
+    if (user.isFromBank) {
+      throw new BadRequestException('User is already marked as from bank');
+    }
+
+    user.isFromBankRequested = true;
+    await this.entityManager.save(user);
+
+    return { message: 'Request to be from bank submitted successfully', user };
+  }
+
+  async approveIsFromBank(id: string, approve: boolean) {
+    const user = await this.userRepository.findOneBy({ id });
+    if (!user) throw new BadRequestException('User not found');
+
+    if (!user.isFromBankRequested) {
+      throw new BadRequestException('No request pending for this user');
+    }
+
+    user.isFromBank = approve;
+    user.isFromBankRequested = false;
+    await this.entityManager.save(user);
+
+    return {
+      message: `User ${user.fullName} has been ${approve ? 'approved' : 'rejected'} as from bank`,
+      user,
+    };
+  }
+
+  async getBankRequests(params: GetUserDto) {
+    const query = this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.role', 'role')
+      .where('user.isFromBankRequested = :requested', { requested: true })
+      .skip(params.skip)
+      .take(params.take)
+      .orderBy('user.createdAt', params.OrderSort);
+
+    if (params.fullName) {
+      query.andWhere('user.fullName LIKE :fullName', {
+        fullName: `%${params.fullName}%`,
+      });
+    }
+
+    const [result, total] = await query.getManyAndCount();
+
+    const pageMetaDto = new PageMetaDto({
+      itemCount: total,
+      pageOptionsDto: params,
+    });
+
+    return new ResponsePaginate(result, pageMetaDto, 'Success');
   }
 }
