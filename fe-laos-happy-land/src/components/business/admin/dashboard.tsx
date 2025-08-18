@@ -172,9 +172,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Charts and Tables Row */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        {/* Quick Actions */}
         <div className="xl:col-span-1">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">

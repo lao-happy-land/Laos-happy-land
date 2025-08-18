@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { authService } from '@/services/auth.service';
-import type { User } from '@/services/auth.service';
+import { authService } from '@/share/service/auth.service';
+import type { User } from '@/share/service/auth.service';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
