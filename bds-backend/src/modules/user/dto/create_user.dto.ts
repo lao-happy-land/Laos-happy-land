@@ -1,4 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional } from 'class-validator';
+import { Multer } from 'multer';
+
 
 export class CreateUserDto {
   @ApiProperty({
@@ -25,12 +28,17 @@ export class CreateUserDto {
   })
   password: string;
 
-  @ApiProperty({ example: 'f2f6f4f0-6b6b-4b8c-9b87-5f6a6c6a6c6a', description: 'Role ID of the user' })
+  @ApiProperty({
+    example: 'f2f6f4f0-6b6b-4b8c-9b87-5f6a6c6a6c6a',
+    description: 'Role ID of the user',
+  })
   roleId: string;
 
   @ApiPropertyOptional({
-    example: 'https://example.com/avatar.jpg',
-    description: 'Avatar URL of the user',
+    type: 'string',
+    format: 'binary',
+    description: 'Avatar of the user',
   })
-  avatarUrl?: string;
+  @IsOptional()
+  image?: Multer.File;
 }
