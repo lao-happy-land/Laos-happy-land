@@ -8,24 +8,36 @@ import {
   Post,
   Query,
   Req,
+  UploadedFiles,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create_user.dto';
-import { ApiBody, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { GetUserDto } from './dto/get_user.dto';
 import { UpdateUserDto } from './dto/update_user.dto';
 import { AuthGuard, RoleGuard } from '../auth/guard/auth.guard';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { Multer } from 'multer';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
+  @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateUserDto })
   @ApiResponse({ status: 201, description: 'User created successfully' })
-  async create(@Body() createUserDto: CreateUserDto) {
-    return this.userService.create(createUserDto);
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'image', maxCount: 1 }]))
+  async create(
+    @Body() createUserDto: CreateUserDto,
+    @UploadedFiles()
+    files: {
+      image: Multer.File[];
+    },
+  ) {
+    return this.userService.create(createUserDto, files.image?.[0]);
   }
 
   @Get()
@@ -53,25 +65,51 @@ export class UserController {
   }
 
   @Patch(':id')
+  @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UpdateUserDto })
   @ApiResponse({ status: 200, description: 'User updated successfully' })
-  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    const result = await this.userService.update(id, updateUserDto);
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'image', maxCount: 1 }]))
+  async update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @UploadedFiles()
+    files: {
+      image: Multer.File[];
+    },
+  ) {
+    const result = await this.userService.update(
+      id,
+      updateUserDto,
+      files.image?.[0],
+    );
     return { result, message: 'User updated successfully' };
   }
 
   @Patch(':id/request')
-  // @UseGuards(AuthGuard)
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        note: { type: 'string', nullable: true },
+        image: { type: 'string', format: 'binary', nullable: true },
+      },
+    },
+  })
   @ApiResponse({
     status: 200,
     description: 'Request to be from bank submitted successfully',
   })
-  async requestIsFromBank(@Param('id') id: string) {
-    return this.userService.requestIsFromBank(id);
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'image', maxCount: 1 }]))
+  async requestIsFromBank(
+    @Param('id') id: string,
+    @Body('note') note?: string,
+    @UploadedFiles() files?: { image?: Multer.File[] },
+  ) {
+    return this.userService.requestIsFromBank(id, files?.image?.[0], note);
   }
 
   @Patch(':id/approve')
-  // @UseGuards(AuthGuard)
   @ApiBody({
     schema: { type: 'object', properties: { approve: { type: 'boolean' } } },
   })
