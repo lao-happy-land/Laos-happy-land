@@ -10,6 +10,8 @@ import { ResponsePaginate } from 'src/common/dtos/reponsePaginate';
 import { UpdateUserDto } from './dto/update_user.dto';
 import e from 'express';
 import { UserRole } from 'src/entities/user-role.entity';
+import { Multer } from 'multer';
+import { CloudinaryService } from 'src/service/cloudinary.service';
 
 @Injectable()
 export class UserService {
@@ -17,6 +19,7 @@ export class UserService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly entityManager: EntityManager,
+    private readonly cloudinaryService: CloudinaryService,
     @InjectRepository(UserRole)
     private readonly userRoleRepository: Repository<UserRole>,
   ) {}
@@ -31,21 +34,31 @@ export class UserService {
     return `${hash}.${salt}`;
   }
 
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto, image?: Multer.File) {
     const salt = crypto.randomBytes(16).toString('hex');
     const hashedPassword = this.hashPassword(createUserDto.password, salt);
+
     if (await this.userRepository.findOneBy({ email: createUserDto.email })) {
       throw new BadRequestException('Email already exists');
     }
+
     const role = await this.userRoleRepository.findOne({
       where: { id: createUserDto.roleId },
     });
     if (!role) throw new BadRequestException('Role not found');
+
+    let avatarUrl: string | null = null;
+    if (image) {
+      avatarUrl = await this.cloudinaryService.uploadAndReturnImageUrl(image);
+    }
+
     const user = this.userRepository.create({
       ...createUserDto,
       password: hashedPassword,
       role,
+      avatarUrl,
     });
+
     await this.entityManager.save(user);
     return { user, message: 'User created successfully' };
   }
@@ -65,7 +78,7 @@ export class UserService {
     }
 
     if (params.role) {
-      users.andWhere('user.role = :role', { role: params.role });
+      users.andWhere('role.name = :role', { role: params.role });
     }
 
     const [result, total] = await users.getManyAndCount();
@@ -89,7 +102,7 @@ export class UserService {
     return { user, message: 'Success' };
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
+  async update(id: string, updateUserDto: UpdateUserDto, image?: Multer.File) {
     const user = await this.userRepository.findOneBy({ id });
     if (!user) {
       throw new BadRequestException('User not found');
@@ -117,8 +130,9 @@ export class UserService {
         if (!role) throw new BadRequestException('Role not found');
         user.role = role;
       }
-      if (updateUserDto.avatarUrl) {
-        user.avatarUrl = updateUserDto.avatarUrl;
+      if (image) {
+        user.avatarUrl =
+          await this.cloudinaryService.uploadAndReturnImageUrl(image);
       }
       if (updateUserDto.password) {
         const salt = crypto.randomBytes(16).toString('hex');
@@ -138,15 +152,30 @@ export class UserService {
     return { message: 'User deleted successfully' };
   }
 
-  async requestIsFromBank(id: string) {
+  async requestIsFromBank(id: string, image?: Multer.File, note?: string) {
     const user = await this.userRepository.findOneBy({ id });
     if (!user) throw new BadRequestException('User not found');
 
-    if (user.isFromBank) {
+    const fromBank = user.fromBank || { isFromBank: false, requested: false };
+
+    if (fromBank.isFromBank) {
       throw new BadRequestException('User is already marked as from bank');
     }
+    if (fromBank.requested) {
+      throw new BadRequestException('User already has a pending request');
+    }
 
-    user.isFromBankRequested = true;
+    let imageUrl: string | null = null;
+    if (image) {
+      imageUrl = await this.cloudinaryService.uploadAndReturnImageUrl(image);
+    }
+
+    user.fromBank = {
+      ...fromBank,
+      requested: true,
+      imageUrl,
+      note,
+    };
     await this.entityManager.save(user);
 
     return { message: 'Request to be from bank submitted successfully', user };
@@ -156,12 +185,19 @@ export class UserService {
     const user = await this.userRepository.findOneBy({ id });
     if (!user) throw new BadRequestException('User not found');
 
-    if (!user.isFromBankRequested) {
+    const fromBank = user.fromBank || { isFromBank: false, requested: false };
+
+    if (!fromBank.requested) {
       throw new BadRequestException('No request pending for this user');
     }
 
-    user.isFromBank = approve;
-    user.isFromBankRequested = false;
+    user.fromBank = {
+      ...fromBank,
+      isFromBank: approve,
+      requested: false,
+      note: approve ? 'Approved by admin' : 'Rejected by admin',
+    };
+
     await this.entityManager.save(user);
 
     return {
@@ -174,7 +210,9 @@ export class UserService {
     const query = this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.role', 'role')
-      .where('user.isFromBankRequested = :requested', { requested: true })
+      .where(`"user"."fromBank"->>'requested' = :requested`, {
+        requested: 'true',
+      })
       .skip(params.skip)
       .take(params.take)
       .orderBy('user.createdAt', params.OrderSort);

@@ -28,18 +28,4 @@ export class UserRoleController {
     async get(@Param('id') id: string) {
         return this.userRoleService.get(id);
     }
-
-    @Patch(':id')
-    @ApiOperation({ summary: 'Update user role by id' })
-    @ApiResponse({ status: 200, description: 'Success' })
-    async update(@Param('id') id: string, @Body() updateUserRoleDto: CreateUserRoleDto) {
-        return this.userRoleService.update(id, updateUserRoleDto);
-    }
-
-    @Delete(':id')
-    @ApiOperation({ summary: 'Delete user role by id' })
-    @ApiResponse({ status: 200, description: 'Success' })
-    async remove(@Param('id') id: string) {
-        return this.userRoleService.remove(id);
-    }
 }

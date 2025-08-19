@@ -37,11 +37,13 @@ export class User extends AbstractEntity {
   @Column({ nullable: true })
   avatarUrl: string;
 
-  @Column({ default: false })
-  isFromBank: boolean;
-
-  @Column({ default: false })
-  isFromBankRequested: boolean;
+  @Column({ type: 'jsonb', nullable: true })
+  fromBank: {
+    isFromBank?: boolean;
+    imageUrl?: string;
+    requested?: boolean;
+    note?: string;
+  };
 
   @OneToMany(() => Property, (property) => property.owner)
   properties: Property[];
