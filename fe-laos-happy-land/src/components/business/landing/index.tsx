@@ -3,28 +3,33 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const LandingPage = () => {
+  const router = useRouter();
   const [searchType, setSearchType] = useState("mua");
-  const [propertyType, setPropertyType] = useState("all");
-  const [location, setLocation] = useState("");
-  const [priceRange, setPriceRange] = useState("");
   const [currentSlide, setCurrentSlide] = useState(0);
+  
+  // Property search states
+  const [keyword, setKeyword] = useState("");
+  const [propertyType, setPropertyType] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
 
-  // Background gradients for carousel as fallback
+  // Background images for carousel
   const backgroundImages = [
     "/images/landingpage/hero-slider/hero-banner-1.jpg",
     "/images/landingpage/hero-slider/hero-banner-2.jpg",
     "/images/landingpage/hero-slider/hero-banner-3.jpg",
     "/images/landingpage/hero-slider/hero-banner-4.jpg",
   ];
-  // Auto-slide carousel
+
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % 4); // 4 gradients
+      setCurrentSlide((prev) => (prev + 1) % backgroundImages.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [backgroundImages.length]);
 
   const searchTabs = [
     { id: "mua", label: "Nhà đất bán", icon: "🏠" },
@@ -33,35 +38,30 @@ const LandingPage = () => {
   ];
 
   const propertyTypes = [
-    { id: "all", label: "Tất cả nhà đất" },
-    { id: "can-ho-chung-cu", label: "Căn hộ chung cư" },
-    { id: "nha-rieng", label: "Nhà riêng" },
-    { id: "nha-biet-thu", label: "Nhà biệt thự, liền kề" },
-    { id: "nha-mat-pho", label: "Nhà mặt phố" },
-    { id: "shophouse", label: "Shophouse, nhà phố thương mại" },
-    { id: "dat-nen", label: "Đất nền dự án" },
-    { id: "ban-dat", label: "Bán đất" },
-    { id: "trang-trai", label: "Trang trại, khu nghỉ dưỡng" },
-    { id: "condotel", label: "Condotel" },
-    { id: "kho-nha-xuong", label: "Kho, nhà xưởng" },
-    { id: "loai-khac", label: "Loại khác" },
+    { id: "", label: "Tất cả loại BDS" },
+    { id: "apartment", label: "Căn hộ/Chung cư" },
+    { id: "house", label: "Nhà riêng" },
+    { id: "villa", label: "Biệt thự" },
+    { id: "townhouse", label: "Nhà phố" },
+    { id: "land", label: "Đất nền" },
+    { id: "office", label: "Văn phòng" },
+    { id: "shop", label: "Cửa hàng/Ki ốt" },
+    { id: "warehouse", label: "Nhà kho" },
+    { id: "other", label: "Loại khác" },
   ];
 
-  const priceRanges = [
-    { id: "", label: "Mức giá" },
-    { id: "under-500m", label: "Dưới 500 triệu" },
-    { id: "500m-800m", label: "500 - 800 triệu" },
-    { id: "800m-1b", label: "800 triệu - 1 tỷ" },
-    { id: "1b-2b", label: "1 - 2 tỷ" },
-    { id: "2b-3b", label: "2 - 3 tỷ" },
-    { id: "3b-5b", label: "3 - 5 tỷ" },
-    { id: "5b-7b", label: "5 - 7 tỷ" },
-    { id: "7b-10b", label: "7 - 10 tỷ" },
-    { id: "10b-20b", label: "10 - 20 tỷ" },
-    { id: "20b-30b", label: "20 - 30 tỷ" },
-    { id: "above-30b", label: "Trên 30 tỷ" },
-    { id: "deal", label: "Thỏa thuận" },
-  ];
+  // Handle search
+  const handleSearch = async () => {
+    const searchData = {
+      searchType,
+      keyword,
+      propertyType,
+      minPrice,
+      maxPrice,
+    };
+    console.log("Search data:", searchData);
+    router.push('/properties-for-sale');
+  };
 
   const featuredProperties = [
     {
@@ -171,9 +171,8 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Hero Section with Carousel Background */}
+      {/* Hero Section with Carousel and Search */}
       <section className="relative h-96 overflow-hidden">
-        {/* Carousel Background */}
         <div className="absolute inset-0">
           {backgroundImages.map((image, index) => (
             <div
@@ -186,10 +185,8 @@ const LandingPage = () => {
               }}
             />
           ))}
-          {/* Dark overlay */}
         </div>
 
-        {/* Carousel Navigation Dots */}
         <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 transform space-x-2">
           {backgroundImages.map((_, index) => (
             <button
@@ -202,10 +199,8 @@ const LandingPage = () => {
           ))}
         </div>
 
-        {/* Search Form Container - Positioned over carousel */}
         <div className="relative z-10 container mx-auto px-4 pt-12">
           <div className="mx-auto max-w-5xl">
-            {/* Search Tabs */}
             <div className="mb-6 flex">
               {searchTabs.map((tab, index) => (
                 <button
@@ -222,15 +217,15 @@ const LandingPage = () => {
               ))}
             </div>
 
-            {/* Search Form */}
             <div className="rounded-lg bg-white p-6 shadow-xl">
-              {/* Search Input Row */}
               <div className="mb-4 flex gap-4">
                 <div className="flex-1">
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder="Trên toàn quốc"
+                      placeholder="Tìm kiếm bất động sản..."
+                      value={keyword}
+                      onChange={(e) => setKeyword(e.target.value)}
                       className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500"
                     />
                     <svg
@@ -249,12 +244,14 @@ const LandingPage = () => {
                   </div>
                 </div>
 
-                <button className="rounded-lg bg-red-500 px-8 py-3 text-sm font-medium whitespace-nowrap text-white transition-colors hover:bg-red-600">
+                <button 
+                  onClick={handleSearch}
+                  className="rounded-lg bg-red-500 px-8 py-3 text-sm font-medium whitespace-nowrap text-white transition-colors hover:bg-red-600"
+                >
                   Tìm kiếm
                 </button>
               </div>
 
-              {/* Dropdown Row */}
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <select
                   value={propertyType}
@@ -269,37 +266,28 @@ const LandingPage = () => {
                   ))}
                 </select>
 
-                <select
-                  value={priceRange}
-                  onChange={(e) => setPriceRange(e.target.value)}
-                  className="w-full appearance-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500"
-                >
-                  <option value="">Mức giá</option>
-                  {priceRanges.map((range) => (
-                    <option key={range.id} value={range.id}>
-                      {range.label}
-                    </option>
-                  ))}
-                </select>
+                <input
+                  type="number"
+                  placeholder="Giá tối thiểu (LAK)"
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                />
 
-                <select
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="w-full appearance-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500"
-                >
-                  <option value="">Trạng thái</option>
-                  <option value="sap-mo-ban">Sắp mở bán</option>
-                  <option value="dang-mo-ban">Đang mở bán</option>
-                  <option value="sap-ban-giao">Sắp bàn giao</option>
-                  <option value="da-ban-giao">Đã bàn giao</option>
-                </select>
+                <input
+                  type="number"
+                  placeholder="Giá tối đa (LAK)"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                />
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Featured Properties */}
+      {/* Featured Properties Section */}
       <section className="bg-gray-50 py-8">
         <div className="container mx-auto px-4">
           <div className="mb-6">
@@ -311,7 +299,6 @@ const LandingPage = () => {
             </p>
           </div>
 
-          {/* Property Filter Tabs */}
           <div className="mb-6">
             <div className="flex flex-wrap gap-2">
               {[
@@ -469,7 +456,6 @@ const LandingPage = () => {
             ))}
           </div>
 
-          {/* Load More Button */}
           <div className="mt-6 text-center">
             <button className="rounded border border-red-500 px-6 py-2 text-red-500 transition-colors hover:bg-red-500 hover:text-white">
               Xem thêm
@@ -478,7 +464,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Project Section */}
       <section className="bg-white py-8">
         <div className="container mx-auto px-4">
           <div className="mb-6">
@@ -530,7 +515,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Statistics */}
       <section className="bg-orange-500 py-8 text-white">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 gap-4 text-center md:grid-cols-4">
@@ -556,7 +540,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* News Section */}
       <section className="bg-gray-50 py-8">
         <div className="container mx-auto px-4">
           <div className="mb-6">
@@ -628,7 +611,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Services */}
       <section className="bg-white py-8">
         <div className="container mx-auto px-4">
           <div className="mb-6 text-center">
@@ -710,7 +692,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
       <section className="bg-gradient-to-r from-red-500 to-orange-500 py-8 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="mb-3 text-2xl font-bold md:text-3xl">

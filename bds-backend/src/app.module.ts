@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './modules/auth/auth.module';
 import { PropertyModule } from './modules/property/property.module';
 import { PropertyTypeModule } from './modules/property-type/property-type.module';
+import { UserRoleModule } from './modules/user-role/user-role.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
@@ -15,6 +16,8 @@ import { PropertyTypeModule } from './modules/property-type/property-type.module
     UserModule,
     AuthModule,
     PropertyModule,
-    PropertyTypeModule],
+    PropertyTypeModule,
+    UserRoleModule
+  ],
 })
 export class AppModule {}

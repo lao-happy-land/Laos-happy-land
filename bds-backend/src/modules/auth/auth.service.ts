@@ -11,6 +11,7 @@ import * as crypto from 'crypto';
 import { RoleEnum } from 'src/common/enum/enum';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 import { Profile } from 'passport-google-oauth20';
+import { UserRole } from 'src/entities/user-role.entity';
 
 @Injectable()
 export class AuthService {
@@ -18,6 +19,8 @@ export class AuthService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private jwtService: JwtService,
+    @InjectRepository(UserRole)
+    private readonly userRoleRepository: Repository<UserRole>,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -31,16 +34,26 @@ export class AuthService {
       throw new BadRequestException('Email already exists');
     }
 
+    const defaultRole = await this.userRoleRepository.findOne({
+      where: { name: 'User' },
+    });
+    if (!defaultRole) {
+      throw new BadRequestException('Default role not found');
+    }
+
     const user = this.userRepository.create({
       ...registerDto,
       password: hashedPassword,
-      role: RoleEnum.USER,
+      role: defaultRole,
     });
     return this.userRepository.save(user);
   }
 
   async login(loginDto: LoginDto) {
-    const user = await this.userRepository.findOneBy({ email: loginDto.email });
+    const user = await this.userRepository.findOne({
+      where: { email: loginDto.email },
+      relations: ['role'],
+    });
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -58,7 +71,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       fullname: user.fullName,
-      role: user.role,
+      role: user.role.name,
     };
     return {
       access_token: await this.jwtService.signAsync(payload),
@@ -108,16 +121,23 @@ export class AuthService {
     const passwordClean = '123456789'.trim();
     const hashedPassword = this.hashPassword(passwordClean, salt);
 
-    let user = await this.userRepository.findOneBy({ email });
+    let user = await this.userRepository.findOne({
+      where: { email },
+      relations: ['role'],
+    });
 
     if (!user) {
+      const defaultRole = await this.userRoleRepository.findOne({
+        where: { name: 'User' },
+      });
+      if (!defaultRole) throw new BadRequestException('Default role not found');
       user = this.userRepository.create({
         email,
         fullName: displayName,
         avatarUrl:
           'https://res.cloudinary.com/ds7udoemg/image/upload/v1732779178/lufyvfdbb24zhtloali7.png',
         password: hashedPassword,
-        role: RoleEnum.USER,
+        role: defaultRole,
       });
 
       user = await this.userRepository.save(user);
@@ -127,7 +147,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       fullName: user.fullName,
-      role: user.role,
+      role: user.role.name
     };
 
     const access_token = await this.jwtService.signAsync(payload);

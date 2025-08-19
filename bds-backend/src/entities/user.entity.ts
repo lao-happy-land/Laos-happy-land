@@ -7,8 +7,11 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { Property } from './property.entity';
+import { UserRole } from './user-role.entity';
 
 @Entity({ name: 'users' })
 export class User extends AbstractEntity {
@@ -27,18 +30,24 @@ export class User extends AbstractEntity {
   @Column()
   password: string;
 
-  @Column({
-    type: 'enum',
-    enum: RoleEnum,
-    default: RoleEnum.USER,
-    nullable: false,
-  })
-  role: RoleEnum;
+  @ManyToOne(() => UserRole, (role) => role.users, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'role_id' })
+  role: UserRole;
 
   @Column({ nullable: true })
   avatarUrl: string;
 
+  @Column({ default: false })
+  isFromBank: boolean;
+
+  @Column({ default: false })
+  isFromBankRequested: boolean;
+
   @OneToMany(() => Property, (property) => property.owner)
   properties: Property[];
-}
 
+  constructor(user: Partial<User>) {
+    super();
+    Object.assign(this, user);
+  }
+}
