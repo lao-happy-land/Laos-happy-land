@@ -1,5 +1,5 @@
-import api from './api.service';
-import type { LoginDto, RegisterDto } from '@/apis/axios-gentype/api-axios';
+import api from "./api.service";
+import type { LoginDto, RegisterDto } from "@/@types/gentype-axios";
 
 export interface LoginRequest {
   email: string;
@@ -58,9 +58,9 @@ interface TokenPayload {
 export const authService = {
   async login(data: LoginRequest): Promise<AuthResponse> {
     try {
-      const response = await api.api.authControllerLogin(data as LoginDto);
+      const response = await api.authControllerLogin(data as LoginDto);
       const loginData = response.data as unknown as LoginResponse;
-      
+
       if (loginData.access_token) {
         // Decode JWT để lấy user info (hoặc call API khác để lấy user info)
         const userInfo = this.decodeTokenPayload(loginData.access_token);
@@ -69,15 +69,21 @@ export const authService = {
           user: userInfo ?? undefined,
         };
       }
-      
-      return { message: 'Đăng nhập thất bại' };
+
+      return { message: "Đăng nhập thất bại" };
     } catch (error: unknown) {
       // Re-throw the error with proper structure for LoginForm to catch
-      if (typeof error === 'object' && error !== null && 'response' in error) {
-        const axiosError = error as { response?: { data?: { message?: string; error?: string; statusCode?: number } } };
+      if (typeof error === "object" && error !== null && "response" in error) {
+        const axiosError = error as {
+          response?: {
+            data?: { message?: string; error?: string; statusCode?: number };
+          };
+        };
         if (axiosError.response?.data) {
           // Create a structured error that LoginForm can handle
-          const apiError = new Error(axiosError.response.data.message ?? 'Đăng nhập thất bại');
+          const apiError = new Error(
+            axiosError.response.data.message ?? "Đăng nhập thất bại",
+          );
           Object.assign(apiError, { response: axiosError.response });
           throw apiError;
         }
@@ -88,9 +94,9 @@ export const authService = {
 
   async register(data: RegisterRequest): Promise<AuthResponse> {
     try {
-      const response = await api.api.authControllerRegister(data as RegisterDto);
+      const response = await api.authControllerRegister(data as RegisterDto);
       const registerData = response.data as unknown as RegisterResponse;
-      
+
       if (registerData.id) {
         // Convert register response to user format
         const userInfo: User = {
@@ -99,23 +105,29 @@ export const authService = {
           fullName: registerData.fullName,
           role: registerData.role,
         };
-        
+
         // For register, we need to create a temporary token or ask user to login
         // Since API doesn't return access_token, we'll ask user to login
         return {
           user: userInfo,
-          message: 'Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.',
+          message: "Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.",
         };
       }
-      
-      return { message: 'Đăng ký thất bại' };
+
+      return { message: "Đăng ký thất bại" };
     } catch (error: unknown) {
       // Re-throw the error with proper structure for RegisterForm to catch
-      if (typeof error === 'object' && error !== null && 'response' in error) {
-        const axiosError = error as { response?: { data?: { message?: string; error?: string; statusCode?: number } } };
+      if (typeof error === "object" && error !== null && "response" in error) {
+        const axiosError = error as {
+          response?: {
+            data?: { message?: string; error?: string; statusCode?: number };
+          };
+        };
         if (axiosError.response?.data) {
           // Create a structured error that RegisterForm can handle
-          const apiError = new Error(axiosError.response.data.message ?? 'Đăng ký thất bại');
+          const apiError = new Error(
+            axiosError.response.data.message ?? "Đăng ký thất bại",
+          );
           Object.assign(apiError, { response: axiosError.response });
           throw apiError;
         }
@@ -126,48 +138,48 @@ export const authService = {
 
   decodeTokenPayload(token: string): User | null {
     try {
-      const parts = token.split('.');
+      const parts = token.split(".");
       if (parts.length !== 3 || !parts[1]) {
-        throw new Error('Invalid JWT format');
+        throw new Error("Invalid JWT format");
       }
-      
+
       const payload = JSON.parse(atob(parts[1])) as TokenPayload;
       return {
-        id: payload.sub ?? payload.id ?? '',
-        email: payload.email ?? '',
-        fullName: payload.fullName ?? payload.name ?? 'User',
-        role: payload.role ?? 'user',
+        id: payload.sub ?? payload.id ?? "",
+        email: payload.email ?? "",
+        fullName: payload.fullName ?? payload.name ?? "User",
+        role: payload.role ?? "user",
       };
     } catch (error) {
-      console.error('Error decoding token:', error);
+      console.error("Error decoding token:", error);
       return {
-        id: '',
-        email: '',
-        fullName: 'User',
-        role: 'user',
+        id: "",
+        email: "",
+        fullName: "User",
+        role: "user",
       };
     }
   },
 
   logout(): void {
     // Clear localStorage or cookies
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("user");
     }
   },
 
   setAuthData(token: string, user: User) {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('access_token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("access_token", token);
+      localStorage.setItem("user", JSON.stringify(user));
     }
   },
 
   getAuthData() {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('access_token');
-      const user = localStorage.getItem('user');
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("access_token");
+      const user = localStorage.getItem("user");
       return {
         token,
         user: user ? (JSON.parse(user) as User) : null,
