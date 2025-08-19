@@ -7,10 +7,11 @@ import { User } from 'src/entities/user.entity';
 import { jwtConstants } from 'src/common/constants/constant';
 import { GoogleStrategy } from './strategy/google.strategy';
 import { JwtStrategy } from './strategy/jwt.strategy';
+import { UserRole } from 'src/entities/user-role.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, UserRole]),
     JwtModule.register({
       global: true,
       secret: jwtConstants.secret,

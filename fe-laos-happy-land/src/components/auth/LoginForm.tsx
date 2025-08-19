@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { authService } from "@/services/auth.service";
-import type { LoginRequest } from "@/services/auth.service";
+import { authService } from "@/share/service/auth.service";
+import type { LoginRequest } from "@/share/service/auth.service";
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -88,7 +88,6 @@ export default function LoginForm({ onSuccess, onError, onSwitchToRegister }: Lo
 
   const handleInputChange = (field: keyof LoginRequest, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
     if (error) setError("");
   };
 
