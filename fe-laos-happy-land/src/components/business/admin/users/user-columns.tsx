@@ -1,3 +1,5 @@
+"use client";
+
 import { Avatar, Button, Popconfirm, Space, Tag, Typography } from "antd";
 import { Edit, Trash2, User } from "lucide-react";
 
@@ -19,9 +21,23 @@ interface User {
   updatedAt: string;
 }
 
+// Utility function to format date consistently
+const formatDate = (dateString: string) => {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("vi-VN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+  } catch (error) {
+    return "Invalid date";
+  }
+};
+
 export const getColumns = (
   handleEditUser: (user: User) => void,
-  handleDeleteUser: (id: string) => void,
+  handleDeleteUser: (id: string) => Promise<void>,
   deletingUser: boolean,
 ) => {
   return [
@@ -58,9 +74,7 @@ export const getColumns = (
     {
       title: "Ngày tạo",
       key: "createdAt",
-      render: (user: User) => (
-        <Text>{new Date(user.createdAt).toLocaleDateString("vi-VN")}</Text>
-      ),
+      render: (user: User) => <Text>{formatDate(user.createdAt)}</Text>,
     },
     {
       title: "Thao tác",

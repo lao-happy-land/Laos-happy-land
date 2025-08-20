@@ -1,17 +1,69 @@
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    --color-primary: #2563eb;
-    --color-secondary: #e5e7eb;
-    --color-tertiary: #f3f3f3;
-  }
+html {
+  visibility: visible;
+  opacity: 1;
 }
 
-:root {
-  --font-sans: "DM Sans", sans-serif;
-  --font-serif: "Murecho", serif;
-  --font-mono: "Open Sans", monospace;
+body {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 0.2s ease-in-out;
+}
+
+/* Tailwind CSS v4 Configuration */
+@theme {
+  --color-primary-50: #fef2f2;
+  --color-primary-100: #fee2e2;
+  --color-primary-200: #fecaca;
+  --color-primary-300: #fca5a5;
+  --color-primary-400: #f87171;
+  --color-primary-500: #ef4444;
+  --color-primary-600: #dc2626;
+  --color-primary-700: #b91c1c;
+  --color-primary-800: #991b1b;
+  --color-primary-900: #7f1d1d;
+  --color-primary-950: #450a0a;
+
+  --color-secondary-50: #f97316;
+  --color-secondary-100: #ea580c;
+  --color-secondary-200: #c2410c;
+  --color-secondary-300: #9a3412;
+  --color-secondary-400: #7c2d12;
+  --color-secondary-500: #f97316;
+  --color-secondary-600: #ea580c;
+  --color-secondary-700: #c2410c;
+  --color-secondary-800: #9a3412;
+  --color-secondary-900: #7c2d12;
+  --color-secondary-950: #431407;
+
+  --font-family-be-vietnam-pro: var(--font-be-vietnam-pro), sans-serif;
+  --font-family-sans:
+    var(--font-be-vietnam-pro), ui-sans-serif, system-ui, sans-serif;
+
+  --border-radius-xl: 12px;
+  --border-radius-2xl: 16px;
+  --border-radius-3xl: 24px;
+
+  --shadow-soft:
+    0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04);
+  --shadow-medium:
+    0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-large:
+    0 10px 40px -10px rgba(0, 0, 0, 0.15), 0 2px 10px -2px rgba(0, 0, 0, 0.04);
+}
+
+@layer base {
+  :root {
+    --color-primary: #ef4444;
+    --color-secondary: #e5e7eb;
+    --color-tertiary: #f3f3f3;
+    --color-primary-hover: #dc2626;
+    --color-primary-active: #b91c1c;
+    --font-sans: "DM Sans", sans-serif;
+    --font-serif: "Murecho", serif;
+    --font-mono: "Open Sans", monospace;
+  }
 }
 
 /* Global styles */
@@ -26,174 +78,163 @@ html {
 body {
   margin: 0;
   padding: 0;
-  font-family: var(--font-sans);
+  font-family: var(--font-be-vietnam-pro), var(--font-sans);
   line-height: 1.6;
   color: #333;
   background-color: #fff;
 }
 
-/* Container responsive */
-.container {
-  width: 100%;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
-}
-
-@media (min-width: 640px) {
-  .container {
-    max-width: 640px;
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-  }
-}
-
-@media (min-width: 768px) {
-  .container {
-    max-width: 768px;
-    padding-left: 2rem;
-    padding-right: 2rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .container {
-    max-width: 1024px;
-  }
-}
-
-@media (min-width: 1280px) {
-  .container {
-    max-width: 1280px;
-  }
-}
-
-@media (min-width: 1536px) {
-  .container {
-    max-width: 1536px;
-  }
-}
-
-/* Utility classes for responsive design */
-.section-padding {
-  padding-top: 3rem;
-  padding-bottom: 3rem;
-}
-
-@media (min-width: 768px) {
-  .section-padding {
-    padding-top: 4rem;
-    padding-bottom: 4rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .section-padding {
-    padding-top: 5rem;
-    padding-bottom: 5rem;
-  }
-}
-
-/* Button styles */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
+/* Ant Design overrides for consistent styling */
+.ant-btn {
   font-weight: 500;
-  text-decoration: none;
+  border-radius: 8px;
   transition: all 0.2s ease-in-out;
-  cursor: pointer;
+}
+
+.ant-btn-primary {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   border: none;
-  font-size: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);
 }
 
-.btn-primary {
-  background-color: #2563eb;
-  color: white;
-}
-
-.btn-primary:hover {
-  background-color: #1d4ed8;
-}
-
-.btn-secondary {
-  background-color: #e5e7eb;
+.ant-btn-default {
+  border-color: #e5e7eb;
   color: #374151;
 }
 
-.btn-secondary:hover {
-  background-color: #d1d5db;
+.ant-btn-default:hover {
+  border-color: #ef4444;
+  color: #ef4444;
 }
 
-.btn-outline {
-  border: 2px solid #2563eb;
-  color: #2563eb;
-  background-color: transparent;
+.ant-input {
+  border-radius: 8px;
+  border-color: #e5e7eb;
+  transition: all 0.2s ease-in-out;
 }
 
-.btn-outline:hover {
-  background-color: #2563eb;
-  color: white;
+.ant-input:hover {
+  border-color: #ef4444;
 }
 
-/* Card styles */
-.card {
-  background-color: white;
-  border-radius: 0.5rem;
+.ant-input:focus,
+.ant-input-focused {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+.ant-select {
+  border-radius: 8px;
+}
+
+.ant-select .ant-select-selector {
+  border-radius: 8px !important;
+  border-color: #e5e7eb !important;
+}
+
+.ant-select:hover .ant-select-selector {
+  border-color: #ef4444 !important;
+}
+
+.ant-select-focused .ant-select-selector {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+}
+
+.ant-card {
+  border-radius: 12px;
   box-shadow:
     0 1px 3px 0 rgba(0, 0, 0, 0.1),
     0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  transition: box-shadow 0.2s ease-in-out;
+  transition: all 0.2s ease-in-out;
 }
 
-.card:hover {
+.ant-card:hover {
   box-shadow:
     0 10px 15px -3px rgba(0, 0, 0, 0.1),
     0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-/* Typography responsive */
-.heading-1 {
-  font-size: 1.875rem;
-  font-weight: 700;
-  line-height: 2.25rem;
+.ant-tabs {
+  border-radius: 8px;
 }
 
-@media (min-width: 768px) {
-  .heading-1 {
-    font-size: 2.25rem;
-    line-height: 2.5rem;
-  }
+.ant-tabs-tab {
+  border-radius: 8px;
+  transition: all 0.2s ease-in-out;
+}
+.ant-tabs-nav {
+  margin-bottom: 0 !important;
 }
 
-@media (min-width: 1024px) {
-  .heading-1 {
-    font-size: 3rem;
-    line-height: 1;
-  }
+.ant-tabs-tab-active {
+  background-color: white;
+  color: #ef4444;
 }
 
-.heading-2 {
-  font-size: 1.5rem;
+.ant-tag {
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.ant-typography {
+  font-family: var(--font-be-vietnam-pro), var(--font-sans);
+}
+
+.ant-typography h1,
+.ant-typography h2,
+.ant-typography h3,
+.ant-typography h4,
+.ant-typography h5 {
   font-weight: 600;
-  line-height: 2rem;
+  color: #1f2937;
 }
 
-@media (min-width: 768px) {
-  .heading-2 {
-    font-size: 1.875rem;
-    line-height: 2.25rem;
-  }
+.ant-modal {
+  border-radius: 12px;
 }
 
-@media (min-width: 1024px) {
-  .heading-2 {
-    font-size: 2.25rem;
-    line-height: 2.5rem;
-  }
+.ant-modal-content {
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.ant-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ant-table-thead > tr > th {
+  background-color: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+}
+
+.ant-pagination {
+  border-radius: 8px;
+}
+
+.ant-pagination-item {
+  border-radius: 6px;
+}
+
+.ant-pagination-item-active {
+  background-color: #ef4444;
+  border-color: #ef4444;
+}
+
+.ant-form-item-label > label {
+  font-weight: 500;
+  color: #374151;
+}
+
+.ant-message {
+  border-radius: 8px;
+}
+
+.ant-message-notice-content {
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 /* Animations */
@@ -217,7 +258,7 @@ body {
   width: 40px;
   height: 40px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #2563eb;
+  border-top: 4px solid #ef4444;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -233,7 +274,7 @@ body {
 
 /* Focus styles for accessibility */
 .focus-visible:focus {
-  outline: 2px solid #2563eb;
+  outline: 2px solid #ef4444;
   outline-offset: 2px;
 }
 
@@ -253,4 +294,48 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #a1a1a1;
+}
+
+/* Line clamp utilities */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* Gradient backgrounds */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.bg-gradient-secondary {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+}
+
+/* Glass morphism effects */
+.glass {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-dark {
+  background: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
