@@ -13,11 +13,11 @@ const NAV_ITEMS = [
   },
   {
     title: "Nhà đất cho thuê",
-    href: ""
+    href: "/properties-for-sale"
   },
   {
     title: "Dự án",
-    href: ""
+    href: "/project"
   },
   {
     title: "Tin tức",
