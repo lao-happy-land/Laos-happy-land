@@ -1,6 +1,6 @@
 import api from "./api.service";
 import type { CreateUserDto, UpdateUserDto } from "@/@types/gentype-axios";
-import type { UserRole } from "@/@types/types";
+import type { APIResponse, User, UserRole } from "@/@types/types";
 
 export const userService = {
   createUser: async (data: CreateUserDto): Promise<CreateUserDto> => {
@@ -16,14 +16,14 @@ export const userService = {
     avatarUrl?: string;
     take?: number;
     skip?: number;
-  }) => {
+  }): Promise<APIResponse<User[]>> => {
     const response = await api.userControllerGetAll(params);
-    return response.data;
+    return response.data as unknown as APIResponse<User[]>;
   },
 
-  getUserById: async (id: string) => {
+  getUserById: async (id: string): Promise<APIResponse<User>> => {
     const response = await api.userControllerGet(id);
-    return response.data;
+    return response.data as unknown as APIResponse<User>;
   },
 
   updateUser: async (

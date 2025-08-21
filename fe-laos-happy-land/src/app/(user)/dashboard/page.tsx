@@ -1,4 +1,4 @@
-import Home from "@/components/business/home";
+import Home from "@/components/business/landing/home";
 
 export default async function UserHomePage() {
   return <Home />;
