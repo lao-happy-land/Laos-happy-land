@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { useClickAway, useEventListener } from "ahooks";
 import {
   Carousel,
@@ -119,7 +119,7 @@ const SearchBox = () => {
       setPriceRangeOpen(false);
       setAreaOpen(false);
     },
-    { target: document },
+    { target: typeof window !== "undefined" ? document : undefined },
   );
 
   // Background images for carousel
