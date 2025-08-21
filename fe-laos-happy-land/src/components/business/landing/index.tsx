@@ -171,7 +171,6 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Hero Section with Carousel and Search */}
       <section className="relative h-96 overflow-hidden">
         <div className="absolute inset-0">
           {backgroundImages.map((image, index) => (
