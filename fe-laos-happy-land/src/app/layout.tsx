@@ -2,6 +2,9 @@ import "@/share/styles/globals.css";
 
 import { type Metadata } from "next";
 import { Be_Vietnam_Pro } from "next/font/google";
+import AntdConfigProvider from "@/share/config/antd.config";
+import { AntdRegistry } from "@ant-design/nextjs-registry";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Laos Happy Land - Bất động sản Lào",
@@ -13,6 +16,9 @@ export const metadata: Metadata = {
   creator: "Laos Happy Land",
   publisher: "Laos Happy Land",
   robots: "index, follow",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000",
+  ),
   openGraph: {
     type: "website",
     locale: "vi_VN",
@@ -23,7 +29,7 @@ export const metadata: Metadata = {
       "Website bất động sản Lào - Tìm nhà đất, căn hộ, dự án bất động sản tại Lào",
     images: [
       {
-        url: "/images/og-image.jpg",
+        url: "/images/landingpage/hero-slider/hero-banner-1.jpg",
         width: 1200,
         height: 630,
         alt: "Laos Happy Land",
@@ -35,7 +41,7 @@ export const metadata: Metadata = {
     title: "Laos Happy Land - Bất động sản Lào",
     description:
       "Website bất động sản Lào - Tìm nhà đất, căn hộ, dự án bất động sản tại Lào",
-    images: ["/images/twitter-image.jpg"],
+    images: ["/images/landingpage/hero-slider/hero-banner-1.jpg"],
     creator: "@laoshappyland",
   },
   icons: [
@@ -57,17 +63,15 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="vi" className={`${beVietnamPro.variable}`}>
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="theme-color" content="#2563eb" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-      </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <Suspense
+          fallback={<div className="min-h-screen bg-white">Loading...</div>}
+        >
+          <AntdRegistry>
+            <AntdConfigProvider>{children}</AntdConfigProvider>
+          </AntdRegistry>
+        </Suspense>
+      </body>
     </html>
   );
 }
