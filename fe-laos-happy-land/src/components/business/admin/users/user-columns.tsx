@@ -46,7 +46,11 @@ export const getColumns = (
       key: "user",
       render: (user: User) => (
         <Space>
-          <Avatar src={user.avatar} icon={<User size={16} />} size={40} />
+          <Avatar
+            src={user.avatar ?? undefined}
+            icon={<User size={16} />}
+            size={40}
+          />
           <div>
             <div style={{ fontWeight: 500 }}>{user.fullName}</div>
             <Text type="secondary">ID: {user.id.slice(0, 8)}...</Text>
