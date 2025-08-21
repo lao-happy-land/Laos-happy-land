@@ -1,13 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useClickAway, useEventListener } from "ahooks";
-import Image from "next/image";
 import {
   Filter,
   MapPin,
-  Bed,
-  Bath,
   Heart,
   ChevronLeft,
   ChevronRight,
@@ -18,63 +15,46 @@ import {
   Building2,
   ArrowRight,
   CheckCircle,
-  Grid,
-  List,
-  DollarSign,
 } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { numberToString } from "@/share/helper/number-to-string";
 import {
   Button,
   Input,
-  Select,
   Checkbox,
   Typography,
   message,
   Slider,
   Radio,
   Switch,
+  Spin,
+  Empty,
 } from "antd";
 import { PRICE_RANGE_OPTIONS } from "@/share/constant/home-search";
-
-interface Property {
-  id: number;
-  title: string;
-  location: string;
-  price: string;
-  area: string;
-  bedrooms: number;
-  bathrooms: number;
-  floor: string;
-  image: string;
-  type: string;
-  featured: boolean;
-  direction: string;
-  posted: string;
-  contact: string;
-}
+import propertyService from "@/share/service/property.service";
+import { useRequest } from "ahooks";
+import type { Property } from "@/@types/types";
+import PropertyCard from "./property-card";
 
 const PropertiesForSale = () => {
   const searchParams = useSearchParams();
-  const [minPrice, setMinPrice] = useState(searchParams.get("minPrice") ?? "");
-  const [maxPrice, setMaxPrice] = useState(searchParams.get("maxPrice") ?? "");
-  const [minArea, setMinArea] = useState(searchParams.get("minArea") ?? "");
-  const [maxArea, setMaxArea] = useState(searchParams.get("maxArea") ?? "");
+  const router = useRouter();
+  const pathname = usePathname();
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [minArea, setMinArea] = useState("");
+  const [maxArea, setMaxArea] = useState("");
   const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<string[]>(
-    searchParams.get("selectedPropertyTypes")?.split(",") ?? [],
+    [],
   );
-  const [selectedLocation, setSelectedLocation] = useState(
-    searchParams.get("selectedLocation") ?? "",
-  );
-  const [keyword, setKeyword] = useState(searchParams.get("keyword") ?? "");
+  const [selectedLocation, setSelectedLocation] = useState("");
+  const [keyword, setKeyword] = useState("");
+  const [debouncedKeyword, setDebouncedKeyword] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
 
-  // Price range slider state
   const [priceRange, setPriceRange] = useState<[number, number]>([
-    parseInt(minPrice) || 0,
-    parseInt(maxPrice) || 100000000000,
+    0, 100000000000,
   ]);
   const [selectedPriceRange, setSelectedPriceRange] = useState<string>("all");
 
@@ -84,14 +64,138 @@ const PropertiesForSale = () => {
   const [brokerOpen, setBrokerOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Refs for modals
   const searchModalRef = useRef<HTMLDivElement>(null);
   const locationModalRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLDivElement>(null);
   const locationButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Click away to close modals
+  const updateSearchParams = useCallback(
+    (params: Record<string, string | string[]>) => {
+      const newSearchParams = new URLSearchParams(searchParams.toString());
+
+      Object.entries(params).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          if (value.length > 0) {
+            newSearchParams.set(key, value.join(","));
+          } else {
+            newSearchParams.delete(key);
+          }
+        } else {
+          const shouldRemove =
+            value === "" ||
+            value === "0" ||
+            value === "100000000000" ||
+            value === "false" ||
+            value === "all" ||
+            !value ||
+            value.trim() === "";
+
+          if (shouldRemove) {
+            newSearchParams.delete(key);
+          } else {
+            newSearchParams.set(key, value);
+          }
+        }
+      });
+
+      const newUrl = `${pathname}?${newSearchParams.toString()}`;
+      router.push(newUrl);
+    },
+    [searchParams, pathname, router],
+  );
+
+  const {
+    data: properties,
+    loading: propertiesLoading,
+    run: fetchProperties,
+  } = useRequest(
+    async (params?: Record<string, string | number | string[] | boolean>) => {
+      const apiParams: Record<string, string | number | string[] | boolean> = {
+        transaction: "sale",
+        ...params,
+      };
+
+      if (debouncedKeyword?.trim()) {
+        apiParams.keyword = debouncedKeyword;
+      }
+
+      if (minPrice && minPrice !== "0") {
+        apiParams.minPrice = parseInt(minPrice);
+      }
+
+      if (maxPrice && maxPrice !== "100000000000") {
+        apiParams.maxPrice = parseInt(maxPrice);
+      }
+
+      if (minArea && minArea !== "0") {
+        apiParams.minArea = parseInt(minArea);
+      }
+
+      if (maxArea && maxArea !== "100000000000") {
+        apiParams.maxArea = parseInt(maxArea);
+      }
+
+      if (selectedLocation?.trim()) {
+        apiParams.location = selectedLocation;
+      }
+
+      if (selectedPropertyTypes.length > 0) {
+        apiParams.propertyTypes = selectedPropertyTypes;
+      }
+
+      if (verifiedOpen) {
+        apiParams.isVerified = true;
+      }
+
+      if (brokerOpen) {
+        apiParams.isBroker = true;
+      }
+
+      const response = await propertyService.getProperties(apiParams);
+      return response as unknown as {
+        data: Property[];
+        meta: {
+          itemCount: number;
+          pageCount: number;
+          hasPreviousPage: boolean;
+          hasNextPage: boolean;
+        };
+      };
+    },
+    {
+      manual: true,
+      cacheKey: "properties-search",
+    },
+  );
+
+  useEffect(() => {
+    if (isInitialLoad) return;
+
+    const timer = setTimeout(() => {
+      fetchProperties();
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [
+    selectedPropertyTypes,
+    debouncedKeyword,
+    minPrice,
+    maxPrice,
+    minArea,
+    maxArea,
+    selectedLocation,
+    fetchProperties,
+    isInitialLoad,
+  ]);
+
+  useEffect(() => {
+    if (isInitialLoad) return;
+
+    fetchProperties();
+  }, [verifiedOpen, brokerOpen, fetchProperties, isInitialLoad]);
+
   useClickAway(() => {
     setSearchModalOpen(false);
   }, [searchModalRef, searchInputRef]);
@@ -100,7 +204,6 @@ const PropertiesForSale = () => {
     setLocationModalOpen(false);
   }, [locationModalRef, locationButtonRef]);
 
-  // Click away to close all modals when clicking outside
   useClickAway(() => {
     setSearchModalOpen(false);
     setLocationModalOpen(false);
@@ -108,21 +211,20 @@ const PropertiesForSale = () => {
     setPropertyTypeOpen(false);
   }, [searchModalRef, locationModalRef, searchInputRef, locationButtonRef]);
 
-  // Scroll outside to close modals
   useEventListener(
     "scroll",
     () => {
-      // Close all modals when scrolling anywhere
       setSearchModalOpen(false);
       setLocationModalOpen(false);
       setPriceRangeOpen(false);
       setPropertyTypeOpen(false);
     },
-    { target: document },
+    { target: typeof document !== "undefined" ? document : undefined },
   );
 
-  // Legacy useEffect for filter dropdowns (keeping for compatibility)
   useEffect(() => {
+    if (typeof document === "undefined") return;
+
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
 
@@ -153,7 +255,6 @@ const PropertiesForSale = () => {
     { id: "xam-nua", label: "Xam Nua" },
   ];
 
-  // Districts data for Tây Ninh
   const districts = [
     { id: "tay-ninh-city", name: "Thành phố Tây Ninh", searchCount: 1847 },
     { id: "ben-cau", name: "Huyện Bến Cầu", searchCount: 523 },
@@ -166,7 +267,6 @@ const PropertiesForSale = () => {
     { id: "trang-bang", name: "Huyện Trảng Bàng", searchCount: 4083 },
   ];
 
-  // Popular cities for location modal
   const popularCities = [
     {
       id: "hanoi",
@@ -195,7 +295,6 @@ const PropertiesForSale = () => {
     },
   ];
 
-  // All provinces/cities
   const allProvinces = [
     "An Giang",
     "Cao Bằng",
@@ -280,144 +379,28 @@ const PropertiesForSale = () => {
     { id: "land", name: "Đất nền", icon: <Square className="h-4 w-4" /> },
   ];
 
-  // Mock data cho properties
-  const mockProperties: Property[] = [
-    {
-      id: 1,
-      title:
-        "Tháng 8 trực tiếp CĐT quỹ căn VIP view hồ The Nelson Ba Định full nội thất nhận nhà ngay giá tốt",
-      location: "Ba Đình, Hà Nội",
-      price: "11,7 tỷ",
-      area: "87,4 m²",
-      bedrooms: 2,
-      bathrooms: 2,
-      floor: "Tầng 15",
-      image: "/images/landingpage/apartment/apart-1.jpg",
-      type: "Căn hộ",
-      featured: true,
-      direction: "Đông Nam",
-      posted: "Đăng hôm nay",
-      contact: "Chính chủ",
-    },
-    {
-      id: 2,
-      title:
-        "Bán căn hộ The Matrix One 3PN 2WC view đẹp tầng cao full nội thất cao cấp",
-      location: "Mỹ Đình, Nam Từ Liêm, Hà Nội",
-      price: "4.2 tỷ",
-      area: "98 m²",
-      bedrooms: 3,
-      bathrooms: 2,
-      floor: "Tầng 18",
-      image: "/images/landingpage/apartment/apart-2.jpg",
-      type: "Căn hộ",
-      featured: true,
-      direction: "Nam",
-      posted: "Đăng hôm nay",
-      contact: "Chính chủ",
-    },
-    {
-      id: 3,
-      title:
-        "Shophouse mặt tiền đường lớn khu vực kinh doanh sầm uất giá đầu tư",
-      location: "Quận 7, TP Hồ Chí Minh",
-      price: "12.8 tỷ",
-      area: "150 m²",
-      bedrooms: 4,
-      bathrooms: 3,
-      floor: "4 tầng",
-      image: "/images/landingpage/apartment/apart-3.jpg",
-      type: "Shophouse",
-      featured: false,
-      direction: "Đông",
-      posted: "Đăng hôm nay",
-      contact: "Môi giới",
-    },
-    {
-      id: 4,
-      title:
-        "Villa biệt thự song lập view công viên hồ điều hòa thiết kế hiện đại sang trọng",
-      location: "Ecopark, Văn Giang, Hưng Yên",
-      price: "8.5 tỷ",
-      area: "280 m²",
-      bedrooms: 5,
-      bathrooms: 4,
-      floor: "3 tầng + tum",
-      image: "/images/landingpage/apartment/apart-4.jpg",
-      type: "Villa",
-      featured: true,
-      direction: "Tây Nam",
-      posted: "Đăng hôm nay",
-      contact: "Chính chủ",
-    },
-    {
-      id: 5,
-      title:
-        "Căn hộ Goldmark City 2PN 2WC đầy đủ nội thất cao cấp sổ đỏ chính chủ",
-      location: "Goldmark City, Cầu Giấy, Hà Nội",
-      price: "3.1 tỷ",
-      area: "68 m²",
-      bedrooms: 2,
-      bathrooms: 2,
-      floor: "Tầng 20",
-      image: "/images/landingpage/apartment/apart-1.jpg",
-      type: "Căn hộ",
-      featured: false,
-      direction: "Tây Nam",
-      posted: "Đăng hôm nay",
-      contact: "Chính chủ",
-    },
-    {
-      id: 6,
-      title: "Nhà phố mặt tiền Hoàng Quốc Việt 4 tầng 1 tum kinh doanh đắc địa",
-      location: "Hoàng Quốc Việt, Cầu Giấy, Hà Nội",
-      price: "16.5 tỷ",
-      area: "75 m²",
-      bedrooms: 4,
-      bathrooms: 5,
-      floor: "4 tầng + tum",
-      image: "/images/landingpage/apartment/apart-2.jpg",
-      type: "Nhà phố",
-      featured: true,
-      direction: "Đông Bắc",
-      posted: "Đăng hôm nay",
-      contact: "Chính chủ",
-    },
-  ];
-
-  // Tính toán pagination
-  const totalItems = mockProperties.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentProperties = mockProperties.slice(startIndex, endIndex);
-
-  // Function to handle search
   const handleSearch = () => {
-    const searchParams = new URLSearchParams();
+    const params: Record<string, string | string[]> = {};
 
-    if (minPrice) searchParams.set("minPrice", minPrice);
-    if (maxPrice) searchParams.set("maxPrice", maxPrice);
-    if (minArea) searchParams.set("minArea", minArea);
-    if (maxArea) searchParams.set("maxArea", maxArea);
+    if (minPrice) params.minPrice = minPrice;
+    if (maxPrice) params.maxPrice = maxPrice;
+    if (minArea) params.minArea = minArea;
+    if (maxArea) params.maxArea = maxArea;
     if (selectedPropertyTypes.length > 0) {
-      searchParams.set(
-        "selectedPropertyTypes",
-        selectedPropertyTypes.join(","),
-      );
+      params.selectedPropertyTypes = selectedPropertyTypes;
     }
-    if (selectedLocation)
-      searchParams.set("selectedLocation", selectedLocation);
-    if (keyword) searchParams.set("keyword", keyword);
+    if (selectedLocation) params.selectedLocation = selectedLocation;
+    if (keyword) params.keyword = keyword;
+    if (verifiedOpen) params.isVerified = "true";
+    if (brokerOpen) params.isBroker = "true";
 
-    // Update URL with search parameters
-    // const newUrl = `/properties-for-sale?${searchParams.toString()}`;
-    // window.history.pushState({}, "", newUrl);
+    updateSearchParams(params);
     message.success("Đang tìm kiếm...");
   };
 
-  // Function to handle property type selection
   const handleSelectedPropertyType = (type: string) => {
+    let newSelectedTypes: string[];
+
     if (type === "all") {
       const allTypeIds = propertyTypeOptions
         .filter((option) => option.id !== "all")
@@ -427,17 +410,21 @@ const PropertiesForSale = () => {
       );
 
       if (isAllSelected) {
-        setSelectedPropertyTypes([]);
+        newSelectedTypes = [];
       } else {
-        setSelectedPropertyTypes(allTypeIds);
+        newSelectedTypes = allTypeIds;
       }
     } else {
-      setSelectedPropertyTypes((prev) =>
-        prev.includes(type)
-          ? prev.filter((id) => id !== type)
-          : [...prev, type],
-      );
+      newSelectedTypes = selectedPropertyTypes.includes(type)
+        ? selectedPropertyTypes.filter((id) => id !== type)
+        : [...selectedPropertyTypes, type];
     }
+
+    setSelectedPropertyTypes(newSelectedTypes);
+
+    updateSearchParams({
+      selectedPropertyTypes: newSelectedTypes,
+    });
   };
 
   const handlePriceRangeSelection = (rangeValue: string) => {
@@ -485,6 +472,20 @@ const PropertiesForSale = () => {
     setPriceRange([minValue, maxValue]);
     setMinPrice(minValue.toString());
     setMaxPrice(maxValue.toString());
+
+    const params: Record<string, string> = {};
+    if (minValue !== 0) {
+      params.minPrice = minValue.toString();
+    } else {
+      params.minPrice = "";
+    }
+    if (maxValue !== 100000000000) {
+      params.maxPrice = maxValue.toString();
+    } else {
+      params.maxPrice = "";
+    }
+
+    updateSearchParams(params);
   };
 
   const handlePriceRangeChange = (value: [number, number]) => {
@@ -492,6 +493,20 @@ const PropertiesForSale = () => {
     setSelectedPriceRange("");
     setMinPrice(value[0].toString());
     setMaxPrice(value[1].toString());
+
+    const params: Record<string, string> = {};
+    if (value[0] !== 0) {
+      params.minPrice = value[0].toString();
+    } else {
+      params.minPrice = "";
+    }
+    if (value[1] !== 100000000000) {
+      params.maxPrice = value[1].toString();
+    } else {
+      params.maxPrice = "";
+    }
+
+    updateSearchParams(params);
   };
 
   const handleMinPriceInputChange = (value: number) => {
@@ -499,6 +514,15 @@ const PropertiesForSale = () => {
     setPriceRange([numValue, priceRange[1]]);
     setSelectedPriceRange("");
     setMinPrice(numValue.toString());
+
+    const params: Record<string, string> = {};
+    if (numValue !== 0) {
+      params.minPrice = numValue.toString();
+    } else {
+      params.minPrice = "";
+    }
+
+    updateSearchParams(params);
   };
 
   const handleMaxPriceInputChange = (value: number) => {
@@ -506,6 +530,15 @@ const PropertiesForSale = () => {
     setPriceRange([priceRange[0], numValue]);
     setSelectedPriceRange("");
     setMaxPrice(numValue.toString());
+
+    const params: Record<string, string> = {};
+    if (numValue !== 100000000000) {
+      params.maxPrice = numValue.toString();
+    } else {
+      params.maxPrice = "";
+    }
+
+    updateSearchParams(params);
   };
 
   const togglePropertyTypeModal = () => {
@@ -519,11 +552,31 @@ const PropertiesForSale = () => {
   };
 
   const toggleVerifiedModal = () => {
-    setVerifiedOpen(!verifiedOpen);
+    const newVerifiedOpen = !verifiedOpen;
+    setVerifiedOpen(newVerifiedOpen);
+
+    const params: Record<string, string> = {};
+    if (newVerifiedOpen) {
+      params.isVerified = "true";
+    } else {
+      params.isVerified = "";
+    }
+
+    updateSearchParams(params);
   };
 
   const toggleBrokerModal = () => {
-    setBrokerOpen(!brokerOpen);
+    const newBrokerOpen = !brokerOpen;
+    setBrokerOpen(newBrokerOpen);
+
+    const params: Record<string, string> = {};
+    if (newBrokerOpen) {
+      params.isBroker = "true";
+    } else {
+      params.isBroker = "";
+    }
+
+    updateSearchParams(params);
   };
 
   const handleSearchInputClick = () => {
@@ -543,12 +596,104 @@ const PropertiesForSale = () => {
   const handleDistrictSelect = (districtName: string) => {
     setKeyword(districtName);
     setSearchModalOpen(false);
+
+    updateSearchParams({
+      keyword: districtName || "",
+    });
   };
 
   const handleProvinceSelect = (provinceName: string) => {
     setSelectedLocation(provinceName);
     setLocationModalOpen(false);
+
+    updateSearchParams({
+      selectedLocation: provinceName || "",
+    });
   };
+
+  const clearAllFilters = () => {
+    setMinPrice("");
+    setMaxPrice("");
+    setMinArea("");
+    setMaxArea("");
+    setSelectedPropertyTypes([]);
+    setSelectedLocation("");
+    setKeyword("");
+    setVerifiedOpen(false);
+    setBrokerOpen(false);
+    setPriceRange([0, 100000000000]);
+    setSelectedPriceRange("all");
+
+    router.push(pathname);
+  };
+
+  useEffect(() => {
+    const urlMinPrice = searchParams.get("minPrice");
+    const urlMaxPrice = searchParams.get("maxPrice");
+    const urlMinArea = searchParams.get("minArea");
+    const urlMaxArea = searchParams.get("maxArea");
+    const urlSelectedPropertyTypes =
+      searchParams.get("selectedPropertyTypes")?.split(",").filter(Boolean) ??
+      [];
+    const urlSelectedLocation = searchParams.get("selectedLocation") ?? "";
+    const urlKeyword = searchParams.get("keyword") ?? "";
+    const urlIsVerified = searchParams.get("isVerified") === "true";
+    const urlIsBroker = searchParams.get("isBroker") === "true";
+
+    // Update state
+    setMinPrice(urlMinPrice ?? "");
+    setMaxPrice(urlMaxPrice ?? "");
+    setMinArea(urlMinArea ?? "");
+    setMaxArea(urlMaxArea ?? "");
+    setSelectedPropertyTypes(urlSelectedPropertyTypes);
+    setSelectedLocation(urlSelectedLocation);
+    setKeyword(urlKeyword);
+    setDebouncedKeyword(urlKeyword);
+    setVerifiedOpen(urlIsVerified);
+    setBrokerOpen(urlIsBroker);
+
+    // Update price range
+    const newMinPrice = parseInt(urlMinPrice ?? "0");
+    const newMaxPrice = parseInt(urlMaxPrice ?? "100000000000");
+    setPriceRange([newMinPrice, newMaxPrice]);
+
+    // Update selected price range
+    let newSelectedPriceRange = "all";
+    if (newMinPrice === 0 && newMaxPrice === 500000000) {
+      newSelectedPriceRange = "under-500";
+    } else if (newMinPrice === 500000000 && newMaxPrice === 800000000) {
+      newSelectedPriceRange = "500-800";
+    } else if (newMinPrice === 800000000 && newMaxPrice === 1000000000) {
+      newSelectedPriceRange = "800-1000";
+    } else if (newMinPrice === 1000000000 && newMaxPrice === 2000000000) {
+      newSelectedPriceRange = "1000-2000";
+    } else if (newMinPrice === 2000000000 && newMaxPrice === 5000000000) {
+      newSelectedPriceRange = "2000-5000";
+    } else if (newMinPrice === 5000000000 && newMaxPrice === 10000000000) {
+      newSelectedPriceRange = "5000-10000";
+    } else if (newMinPrice === 10000000000 && newMaxPrice === 100000000000) {
+      newSelectedPriceRange = "over-10000";
+    } else if (newMinPrice !== 0 || newMaxPrice !== 100000000000) {
+      newSelectedPriceRange = "";
+    }
+    setSelectedPriceRange(newSelectedPriceRange);
+
+    setIsInitialLoad(false);
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (isInitialLoad) return;
+
+    const timer = setTimeout(() => {
+      if (keyword !== debouncedKeyword) {
+        setDebouncedKeyword(keyword);
+        updateSearchParams({
+          keyword: keyword || "",
+        });
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [keyword, debouncedKeyword, updateSearchParams, isInitialLoad]);
 
   const getFilterDisplayText = () => {
     const filters = [];
@@ -586,148 +731,6 @@ const PropertiesForSale = () => {
 
     return filters.length > 0 ? filters.join(" • ") : "";
   };
-
-  const PropertyCard = ({ property }: { property: Property }) => (
-    <div className="group cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:border-red-200 hover:shadow-xl">
-      <div className="flex flex-col">
-        {/* Images Section */}
-        <div className="flex w-full">
-          {/* Main Image - 7/10 width */}
-          <div className="relative h-[280px] w-[70%] flex-shrink-0">
-            <Image
-              src={property.image}
-              alt={property.title}
-              fill
-              className="object-cover"
-            />
-
-            {/* VIP Kim Cương Badge */}
-            {property.featured && (
-              <div className="absolute top-3 left-3">
-                <span className="rounded bg-red-500 px-3 py-1 text-xs font-bold text-white shadow-lg">
-                  VIP KIM CƯƠNG
-                </span>
-              </div>
-            )}
-
-            {/* Image count */}
-            <div className="absolute right-3 bottom-3 flex items-center gap-1 rounded bg-black/70 px-2 py-1 text-xs text-white">
-              <span>📷</span>
-              <span>20</span>
-            </div>
-          </div>
-
-          {/* Right Side Images - 3/10 width */}
-          <div className="flex h-[280px] w-[30%] flex-col">
-            {/* Top Image - Full Width */}
-            <div className="relative h-[140px]">
-              <Image
-                src="/images/landingpage/apartment/apart-2.jpg"
-                alt="Property image 2"
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 30vw"
-              />
-            </div>
-
-            {/* Bottom Images - Split Width */}
-            <div className="flex h-[140px]">
-              <div className="relative w-[50%]">
-                <Image
-                  src="/images/landingpage/apartment/apart-3.jpg"
-                  alt="Property image 3"
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 50vw, 15vw"
-                />
-              </div>
-              <div className="relative w-[50%]">
-                <Image
-                  src="/images/landingpage/apartment/apart-4.jpg"
-                  alt="Property image 4"
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 50vw, 15vw"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Content Area */}
-        <div className="px-6 pb-6">
-          {/* Title */}
-          <h3 className="mb-4 cursor-pointer text-base leading-6 font-medium text-gray-900 transition-colors group-hover:text-red-500">
-            {property.title.toUpperCase()}
-          </h3>
-
-          {/* Price and Details Row */}
-          <div className="mb-4 flex items-center gap-6">
-            <span className="text-xl font-bold text-red-600">
-              {property.price}
-            </span>
-            <span className="text-xl font-bold text-red-600">
-              {property.area}
-            </span>
-            <span className="text-gray-600">133,87 tr/m²</span>
-            <div className="flex items-center gap-4 text-gray-600">
-              {property.bedrooms > 0 && (
-                <div className="flex items-center gap-1">
-                  <Bed className="h-4 w-4" />
-                  <span>{property.bedrooms}</span>
-                </div>
-              )}
-              {property.bathrooms > 0 && (
-                <div className="flex items-center gap-1">
-                  <Bath className="h-4 w-4" />
-                  <span>{property.bathrooms}</span>
-                </div>
-              )}
-              <span>{property.direction}</span>
-            </div>
-          </div>
-
-          {/* Description */}
-          <p className="mb-4 text-sm leading-relaxed text-gray-700">
-            * Tháng 8 phòng kinh doanh chủ đầu tư mở bán trực tiếp quỹ căn ngoại
-            giao, quỹ căn view hồ đẹp nhất dự án The Nelson 29 Láng Hạ, Ba Đình.
-            * Hotline: 0985 009 *** (Phòng kinh doanh - Phan Tuấn).- Quỹ căn
-            tầng đẹp chỉ còn lại duy nhất trong tháng 8. * Địa...
-          </p>
-
-          {/* Location */}
-          <div className="mb-6 flex items-start text-sm text-gray-600">
-            <MapPin className="mt-0.5 mr-2 h-4 w-4 flex-shrink-0" />
-            <span>{property.location}</span>
-          </div>
-
-          {/* Footer */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500">
-                <span className="text-sm font-bold text-white">T</span>
-              </div>
-              <div>
-                <div className="text-sm font-medium text-gray-900">
-                  Phòng Kinh Doanh CĐT: Phan Tuấn
-                </div>
-                <div className="text-xs text-gray-500">Đăng hôm nay</div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button className="flex items-center gap-2 rounded bg-teal-500 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-600">
-                📞 0985 009 *** - Hiển số
-              </button>
-              <button className="flex h-10 w-10 items-center justify-center rounded border border-gray-300 transition-colors hover:bg-gray-50">
-                <Heart className="h-5 w-5 text-gray-600" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="min-h-screen">
@@ -1084,7 +1087,12 @@ const PropertiesForSale = () => {
                   <div className="flex justify-between border-t border-gray-100 p-3">
                     <Button
                       type="text"
-                      onClick={() => setSelectedPropertyTypes([])}
+                      onClick={() => {
+                        setSelectedPropertyTypes([]);
+                        updateSearchParams({
+                          selectedPropertyTypes: [],
+                        });
+                      }}
                       className="text-sm text-gray-500 hover:text-red-500"
                     >
                       Đặt lại
@@ -1241,20 +1249,26 @@ const PropertiesForSale = () => {
             </div>
 
             {/* Verified Filter */}
-            <Button type="default" onClick={toggleVerifiedModal}>
+            <div
+              className="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 transition-all duration-200 hover:border-gray-300"
+              onClick={toggleVerifiedModal}
+            >
               <CheckCircle className="h-5 w-5 text-green-500" />
               <span className="text-sm text-gray-600">Tin xác thực</span>
               <Switch checked={verifiedOpen} />
-            </Button>
+            </div>
 
             {/* Broker Filter */}
-            <Button type="default" onClick={toggleBrokerModal}>
+            <div
+              className="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 transition-all duration-200 hover:border-gray-300"
+              onClick={toggleBrokerModal}
+            >
               <CheckCircle className="h-5 w-5 text-green-500" />
               <span className="text-sm text-gray-600">
                 Môi giới chuyên nghiệp
               </span>
               <Switch checked={brokerOpen} />
-            </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -1286,39 +1300,63 @@ const PropertiesForSale = () => {
               </div>
             </div>
 
-            {/* Enhanced Results Header */}
-            <div className="mb-4 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-3">
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    Mua bán nhà đất Lào
-                  </h1>
-                </div>
+            <div className="mb-2">
+              <h1 className="text-2xl font-bold text-gray-900">
+                Mua bán nhà đất Lào
+              </h1>
+            </div>
 
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <span>Hiện có</span>
-                    <span className="text-lg font-bold text-red-500">
-                      {totalItems.toString()}
-                    </span>
-                    <span>bất động sản</span>
-                  </div>
-                  {getFilterDisplayText() && (
-                    <div className="flex items-center gap-2">
-                      <span>cho</span>
-                      <span className="rounded bg-gray-100 px-2 py-1 font-medium text-gray-900">
-                        &quot;{getFilterDisplayText()}&quot;
-                      </span>
-                    </div>
-                  )}
+            {isInitialLoad ? (
+              <div className="flex h-[500px] items-center justify-center">
+                <div className="text-center">
+                  <Spin size="large" />
+                  <p className="mt-4 text-gray-600">Đang tải dữ liệu...</p>
                 </div>
               </div>
-            </div>
-            <div className="space-y-6">
-              {currentProperties.map((property) => (
-                <PropertyCard key={property.id} property={property} />
-              ))}
-            </div>
+            ) : (
+              <>
+                {/* Enhanced Results Header */}
+                <div className="mb-4 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-3"></div>
+
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <span>Hiện có</span>
+                        <span className="text-lg font-bold text-red-500">
+                          {properties?.meta.itemCount.toString()}
+                        </span>
+                        <span>bất động sản</span>
+                        {propertiesLoading && (
+                          <Spin size="small" className="ml-2" />
+                        )}
+                      </div>
+                      {getFilterDisplayText() && (
+                        <div className="flex items-center gap-2">
+                          <span>cho</span>
+                          <span className="rounded bg-gray-100 px-2 py-1 font-medium text-gray-900">
+                            &quot;{getFilterDisplayText()}&quot;
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Property List */}
+                {properties?.data.length === 0 ? (
+                  <div className="flex h-[500px] items-center justify-center">
+                    <Empty description="Không tìm thấy bất động sản phù hợp" />
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {properties?.data.map((property) => (
+                      <PropertyCard key={property.id} property={property} />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
 
             {/* Enhanced Show More Section */}
             <div className="mt-12 text-center">
@@ -1353,96 +1391,110 @@ const PropertiesForSale = () => {
             </div>
 
             {/* Enhanced Pagination */}
-            {totalPages > 1 && (
-              <div className="mt-12">
-                <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-                  {/* Page Info */}
-                  <div className="text-sm text-gray-600">
-                    Hiển thị{" "}
-                    <span className="font-medium text-gray-900">
-                      {startIndex + 1}
-                    </span>{" "}
-                    -{" "}
-                    <span className="font-medium text-gray-900">
-                      {Math.min(endIndex, totalItems)}
-                    </span>{" "}
-                    trong tổng số{" "}
-                    <span className="font-medium text-gray-900">
-                      {totalItems}
-                    </span>{" "}
-                    kết quả
-                  </div>
-
-                  {/* Pagination Controls */}
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={() =>
-                        setCurrentPage((prev) => Math.max(prev - 1, 1))
-                      }
-                      disabled={currentPage === 1}
-                      icon={<ChevronLeft className="h-4 w-4" />}
-                      className="border-gray-300 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      <span className="hidden sm:inline">Trước</span>
-                    </Button>
-
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: totalPages }, (_, index) => {
-                        const page = index + 1;
-                        if (
-                          page === 1 ||
-                          page === totalPages ||
-                          (page >= currentPage - 2 && page <= currentPage + 2)
-                        ) {
-                          return (
-                            <Button
-                              key={page}
-                              onClick={() => setCurrentPage(page)}
-                              className={`h-10 w-10 p-0 transition-all duration-200 ${
-                                page === currentPage
-                                  ? "border-red-500 bg-red-500 text-white shadow-lg hover:bg-red-600"
-                                  : "border-gray-300 hover:border-red-300 hover:bg-gray-50"
-                              }`}
-                            >
-                              {page}
-                            </Button>
-                          );
-                        } else if (
-                          page === currentPage - 3 ||
-                          page === currentPage + 3
-                        ) {
-                          return (
-                            <span
-                              key={page}
-                              className="flex h-10 w-10 items-center justify-center text-gray-500"
-                            >
-                              ...
-                            </span>
-                          );
-                        }
-                        return null;
-                      })}
+            {properties?.meta.pageCount &&
+              properties?.meta.pageCount > 1 &&
+              properties?.meta.itemCount &&
+              properties?.meta.itemCount > 0 && (
+                <div className="mt-12">
+                  <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+                    {/* Page Info */}
+                    <div className="text-sm text-gray-600">
+                      Hiển thị{" "}
+                      <span className="font-medium text-gray-900">
+                        {(properties?.meta.itemCount ?? 0) + 1}
+                      </span>{" "}
+                      -{" "}
+                      <span className="font-medium text-gray-900">
+                        {Math.min(
+                          (properties?.meta.itemCount ?? 0) + 1,
+                          properties?.meta.itemCount ?? 0,
+                        )}
+                      </span>{" "}
+                      trong tổng số{" "}
+                      <span className="font-medium text-gray-900">
+                        {properties?.meta.itemCount}
+                      </span>{" "}
+                      kết quả
                     </div>
 
-                    <Button
-                      onClick={() =>
-                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                      }
-                      disabled={currentPage === totalPages}
-                      icon={<ChevronRight className="h-4 w-4" />}
-                      className="border-gray-300 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      <span className="hidden sm:inline">Sau</span>
-                    </Button>
+                    {/* Pagination Controls */}
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() =>
+                          setCurrentPage((prev) => Math.max(prev - 1, 1))
+                        }
+                        disabled={currentPage === 1}
+                        icon={<ChevronLeft className="h-4 w-4" />}
+                        className="border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        <span className="hidden sm:inline">Trước</span>
+                      </Button>
+
+                      <div className="flex items-center gap-1">
+                        {Array.from(
+                          { length: properties?.meta.pageCount ?? 0 },
+                          (_, index) => {
+                            const page = index + 1;
+                            if (
+                              page === 1 ||
+                              page === properties?.meta.pageCount ||
+                              (page >= currentPage - 2 &&
+                                page <= currentPage + 2)
+                            ) {
+                              return (
+                                <Button
+                                  key={page}
+                                  onClick={() => setCurrentPage(page)}
+                                  className={`h-10 w-10 p-0 transition-all duration-200 ${
+                                    page === currentPage
+                                      ? "border-red-500 bg-red-500 text-white shadow-lg hover:bg-red-600"
+                                      : "border-gray-300 hover:border-red-300 hover:bg-gray-50"
+                                  }`}
+                                >
+                                  {page}
+                                </Button>
+                              );
+                            } else if (
+                              page === currentPage - 3 ||
+                              page === currentPage + 3
+                            ) {
+                              return (
+                                <span
+                                  key={page}
+                                  className="flex h-10 w-10 items-center justify-center text-gray-500"
+                                >
+                                  ...
+                                </span>
+                              );
+                            }
+                            return null;
+                          },
+                        )}
+                      </div>
+
+                      <Button
+                        onClick={() =>
+                          setCurrentPage((prev) =>
+                            Math.min(prev + 1, properties?.meta.pageCount ?? 0),
+                          )
+                        }
+                        disabled={
+                          currentPage === (properties?.meta.pageCount ?? 0)
+                        }
+                        icon={<ChevronRight className="h-4 w-4" />}
+                        className="border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        <span className="hidden sm:inline">Sau</span>
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
           </div>
 
           {/* Enhanced Filters Sidebar */}
           <div className="w-full lg:w-80 lg:flex-shrink-0">
-            <div className="rounded-xl bg-white p-6 shadow-lg lg:sticky lg:top-6">
+            <div className="rounded-xl bg-white p-6 shadow-lg lg:sticky lg:top-20">
               <div className="mb-6 flex items-center justify-between">
                 <h3 className="flex items-center text-lg font-bold text-gray-900">
                   <Filter className="mr-3 h-5 w-5 text-red-500" />
@@ -1451,6 +1503,7 @@ const PropertiesForSale = () => {
                 <Button
                   type="text"
                   size="small"
+                  onClick={clearAllFilters}
                   className="text-gray-500 hover:text-red-500"
                 >
                   Đặt lại
