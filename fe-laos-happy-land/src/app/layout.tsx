@@ -4,7 +4,12 @@ import { type Metadata } from "next";
 import { Be_Vietnam_Pro } from "next/font/google";
 import AntdConfigProvider from "@/share/config/antd.config";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
+import AppInitializer from "@/components/layout/app-initializer";
+import { App } from "antd";
 import { Suspense } from "react";
+import LoadingScreen, {
+  LoadingPresets,
+} from "@/components/common/loading-screen";
 
 export const metadata: Metadata = {
   title: "Laos Happy Land - Bất động sản Lào",
@@ -64,13 +69,27 @@ export default function RootLayout({
   return (
     <html lang="vi" className={`${beVietnamPro.variable}`}>
       <body className="antialiased">
-        <Suspense
-          fallback={<div className="min-h-screen bg-white">Loading...</div>}
-        >
-          <AntdRegistry>
-            <AntdConfigProvider>{children}</AntdConfigProvider>
-          </AntdRegistry>
-        </Suspense>
+        <AntdRegistry>
+          <AntdConfigProvider>
+            <App>
+              <AppInitializer>
+                <Suspense
+                  fallback={
+                    <LoadingScreen
+                      variant="primary"
+                      message="Đang tải trang..."
+                      size="lg"
+                      showProgress
+                      duration={3}
+                    />
+                  }
+                >
+                  {children}
+                </Suspense>
+              </AppInitializer>
+            </App>
+          </AntdConfigProvider>
+        </AntdRegistry>
       </body>
     </html>
   );

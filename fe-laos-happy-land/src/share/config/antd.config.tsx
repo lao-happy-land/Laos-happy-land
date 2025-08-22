@@ -12,9 +12,9 @@ const AntdConfigProvider = ({ children }: AntdConfigProviderProps) => {
         algorithm: theme.defaultAlgorithm,
         token: {
           // Color palette
-          colorPrimary: "#ef4444", // Red-500
-          colorPrimaryHover: "#dc2626", // Red-600
-          colorPrimaryActive: "#b91c1c", // Red-700
+          colorPrimary: "#fc746f", // Coral primary
+          colorPrimaryHover: "#ff8a80", // Coral hover
+          colorPrimaryActive: "#e57373", // Coral active
           colorSuccess: "#10b981", // Green-500
           colorWarning: "#f59e0b", // Amber-500
           colorError: "#ef4444", // Red-500

@@ -2,48 +2,98 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useAuth } from "@/share/hook/useAuth";
-import { useAuthModal } from "@/share/hook/useAuthModal";
+import { usePathname } from "next/navigation";
+import {
+  Menu,
+  Dropdown,
+  Button,
+  Avatar,
+  Space,
+  Drawer,
+  Typography,
+  Tooltip,
+} from "antd";
+import {
+  Menu as MenuIcon,
+  User as UserIcon,
+  LayoutDashboard,
+  LogOut,
+  Home,
+  Building2,
+  FileText,
+  BookOpen,
+  BarChart3,
+  Users,
+  LogIn,
+  UserPlus,
+  Plus,
+  ChevronDown,
+  MoreHorizontal,
+} from "lucide-react";
 import type { User } from "@/share/service/auth.service";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/share/store/auth.store";
+
+const { Text } = Typography;
 
 const NAV_ITEMS = [
   {
+    key: "properties-for-sale",
     title: "Nhà đất bán",
     href: "/properties-for-sale",
+    icon: <Building2 className="h-4 w-4" />,
   },
   {
+    key: "properties-for-rent",
     title: "Nhà đất cho thuê",
-    href: "",
+    href: "/properties-for-rent",
+    icon: <Home className="h-4 w-4" />,
   },
   {
+    key: "projects",
     title: "Dự án",
-    href: "",
+    href: "/projects",
+    icon: <Building2 className="h-4 w-4" />,
   },
   {
+    key: "news",
     title: "Tin tức",
-    href: "",
+    href: "/news",
+    icon: <FileText className="h-4 w-4" />,
   },
   {
+    key: "wiki",
     title: "Wiki BĐS",
-    href: "",
+    href: "/wiki",
+    icon: <BookOpen className="h-4 w-4" />,
   },
   {
+    key: "analysis",
     title: "Phân tích đánh giá",
-    href: "",
+    href: "/analysis",
+    icon: <BarChart3 className="h-4 w-4" />,
   },
   {
+    key: "directory",
     title: "Danh bạ",
-    href: "",
+    href: "/directory",
+    icon: <Users className="h-4 w-4" />,
   },
 ];
 
 export default function Header() {
-  const { user, isAuthenticated, logout } = useAuth();
-  const { openLogin, openRegister, AuthModalComponent } = useAuthModal();
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(false);
-
+  const { user, isAuthenticated, logout } = useAuthStore();
+  const [drawerVisible, setDrawerVisible] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const getSelectedKeys = () => {
+    if (pathname === "/") return [];
+
+    const activeItem = NAV_ITEMS.find((item) => pathname.startsWith(item.href));
+    return activeItem ? [activeItem.key] : [];
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -53,16 +103,14 @@ export default function Header() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-  // Helper function to get display name
+
   const getDisplayName = (user: User | null): string => {
     if (!user) return "User";
 
-    // If fullName exists and is not "User", use it
     if (user.fullName?.trim() && user.fullName !== "User") {
       return user.fullName;
     }
 
-    // Otherwise, use full email
     if (user.email) {
       return user.email;
     }
@@ -70,262 +118,339 @@ export default function Header() {
     return "User";
   };
 
-  const buttonClass = `rounded-lg text-gray-900 transition-colors hover:bg-gray-100 ${
-    isScrolled ? "px-2 py-2" : "px-4 py-3"
-  }`;
-
   const displayName = getDisplayName(user);
+
+  const userMenuItems = [
+    {
+      key: "dashboard",
+      icon: <LayoutDashboard className="h-4 w-4" />,
+      label: <Link href="/dashboard">Dashboard</Link>,
+    },
+    {
+      key: "profile",
+      icon: <UserIcon className="h-4 w-4" />,
+      label: <Link href="/profile">Thông tin cá nhân</Link>,
+    },
+    {
+      type: "divider" as const,
+    },
+    {
+      key: "logout",
+      icon: <LogOut className="h-4 w-4" />,
+      label: "Đăng xuất",
+      onClick: logout,
+      danger: true,
+    },
+  ];
+
+  const mobileMenuItems = NAV_ITEMS.map((item) => ({
+    key: item.key,
+    icon: item.icon,
+    label: item.href ? <Link href={item.href}>{item.title}</Link> : item.title,
+  }));
 
   return (
     <>
-      {/* Container ngoài trong suốt với height cố định */}
-      <div className="sticky top-0 z-50 h-20 w-full">
+      <div className="sticky top-0 z-50 w-full">
         <header
-          className={`flex items-center bg-white px-4 shadow-xl transition-all duration-200 ${
-            isScrolled ? "h-auto py-1" : "h-full py-4"
+          className={`bg-white shadow-lg transition-all duration-200 ${
+            isScrolled ? "h-[60px]" : "h-[80px]"
           }`}
         >
-          <div className="mx-auto flex h-16 w-full items-center justify-between">
-            {/* Left side */}
-            <div className="flex gap-6">
-              <div className="flex items-center space-x-2">
-                <Link href="/" className="flex items-center space-x-3">
+          <div className="mx-auto flex h-full items-center justify-between px-4 lg:px-6">
+            <div className="flex items-center">
+              <Link
+                href="/"
+                className="group flex items-center space-x-3 transition-transform duration-200 hover:scale-105"
+              >
+                <div
+                  className={`flex items-center justify-center rounded-xl bg-gradient-to-br from-[#fc746f] to-[#ff8a80] shadow-lg transition-all duration-300 group-hover:shadow-xl ${
+                    isScrolled ? "h-8 w-8" : "h-10 w-10"
+                  }`}
+                >
+                  <Building2
+                    className={`text-white transition-all duration-300 ${
+                      isScrolled ? "h-4 w-4" : "h-5 w-5"
+                    }`}
+                  />
+                </div>
+                <div className="hidden sm:block">
                   <div
-                    className={`flex items-center justify-center rounded-lg bg-blue-600 transition-all duration-300 ${isScrolled ? "h-10 w-10" : "h-12 w-12"}`}
+                    className={`font-bold text-[#fc746f] transition-all duration-300 group-hover:text-[#ff8a80] ${
+                      isScrolled ? "text-lg" : "text-xl"
+                    }`}
                   >
-                    <svg
-                      className="h-8 w-8 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M8 21l4-4 4 4"
-                      />
-                    </svg>
+                    Lào BDS
                   </div>
-                  <div>
-                    <div
-                      className={`${isScrolled ? "text-xl" : "text-2xl"} font-bold text-blue-600 transition-all duration-300`}
-                    >
-                      Lào BDS
-                    </div>
-                    <div className="-mt-1 text-xs text-gray-500">
-                      Bất động sản Lào
-                    </div>
-                  </div>
-                </Link>
-              </div>
+                  <Text className="text-xs text-gray-500 transition-colors group-hover:text-gray-600">
+                    Bất động sản Lào
+                  </Text>
+                </div>
+              </Link>
+            </div>
 
-              <nav className="hidden items-center space-x-6 text-sm lg:flex">
-                {NAV_ITEMS.map((item, idx) => (
-                  <a
-                    key={idx}
-                    href={item.href}
-                    className="relative text-gray-900 before:absolute before:-bottom-[2px] before:left-0 before:h-[2px] before:w-0 before:bg-[#E03C31] before:transition-all before:duration-300 hover:text-[#E03C31] hover:before:w-full"
-                  >
-                    {item.title}
-                  </a>
+            <div className="hidden lg:flex lg:flex-1 lg:justify-center">
+              <nav className="flex items-center space-x-1">
+                {/* First 3 navigation items */}
+                {NAV_ITEMS.slice(0, 3).map((item) => (
+                  <div key={item.key}>
+                    {item.href ? (
+                      <Link
+                        href={item.href}
+                        className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 hover:bg-orange-50 hover:text-[#fc746f] ${
+                          getSelectedKeys().includes(item.key)
+                            ? "bg-orange-50 text-[#fc746f]"
+                            : "text-gray-500"
+                        }`}
+                      >
+                        <span
+                          className={
+                            getSelectedKeys().includes(item.key)
+                              ? "text-[#fc746f]"
+                              : "text-gray-500"
+                          }
+                        >
+                          {item.icon}
+                        </span>
+                        <span
+                          className={`whitespace-nowrap ${
+                            getSelectedKeys().includes(item.key)
+                              ? "text-[#fc746f]"
+                              : "text-gray-600"
+                          }`}
+                        >
+                          {item.title}
+                        </span>
+                      </Link>
+                    ) : (
+                      <span className="flex cursor-not-allowed items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-500 opacity-60">
+                        <span className="text-gray-400">{item.icon}</span>
+                        <span className="whitespace-nowrap">{item.title}</span>
+                      </span>
+                    )}
+                  </div>
                 ))}
+
+                {/* More menu for remaining items */}
+                {NAV_ITEMS.length > 3 && (
+                  <Dropdown
+                    menu={{
+                      items: NAV_ITEMS.slice(3).map((item) => ({
+                        key: item.key,
+                        icon: item.icon,
+                        label: item.href ? (
+                          <Link href={item.href}>{item.title}</Link>
+                        ) : (
+                          <span className="cursor-not-allowed text-gray-400">
+                            {item.title}
+                          </span>
+                        ),
+                        disabled: !item.href,
+                      })),
+                    }}
+                    trigger={["click"]}
+                    placement="bottomCenter"
+                  >
+                    <Tooltip placement="right" title="Thêm">
+                      <Button type="text">
+                        <MoreHorizontal className="h-4 w-4 text-gray-500" />
+                      </Button>
+                    </Tooltip>
+                  </Dropdown>
+                )}
               </nav>
             </div>
 
-            <div className="flex items-center space-x-2 text-sm">
-              <button
-                onClick={() => setShowSidebar(!showSidebar)}
-                className="rounded-lg p-2 transition-colors hover:bg-gray-100 lg:hidden"
-              >
-                <svg
-                  className="h-6 w-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
-              </button>
+            <div className="flex items-center space-x-4">
+              <div className="lg:hidden">
+                <Button
+                  type="text"
+                  icon={<MenuIcon className="h-5 w-5" />}
+                  onClick={() => setDrawerVisible(true)}
+                />
+              </div>
 
-              {/* Desktop actions */}
-              <div className="hidden items-center space-x-2 lg:flex">
+              <div className="hidden items-center space-x-3 lg:flex">
                 {isAuthenticated && user ? (
-                  <div className="relative z-20">
-                    <button
-                      onClick={() => setShowUserMenu(!showUserMenu)}
-                      className="flex items-center space-x-2 rounded-lg px-4 py-2 transition-colors hover:bg-gray-100"
+                  <Dropdown
+                    menu={{ items: userMenuItems }}
+                    trigger={["click"]}
+                    placement="bottomRight"
+                  >
+                    <Button
+                      type="text"
+                      className="flex items-center gap-2 px-3"
                     >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-sm font-medium text-white">
-                        {displayName.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="hidden md:block">{displayName}</span>
-                      <svg
-                        className="h-4 w-4"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
+                      <Avatar
+                        size="small"
+                        className="bg-[#fc746f]"
+                        icon={<UserIcon className="h-4 w-4" />}
                       >
-                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                      </svg>
-                    </button>
-
-                    {showUserMenu && (
-                      <div className="ring-opacity-5 absolute right-0 mt-2 w-48 rounded-md bg-white py-1 shadow-lg ring-1 ring-black">
-                        <Link
-                          href="/user/dashboard"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setShowUserMenu(false)}
-                        >
-                          Dashboard
-                        </Link>
-                        <Link
-                          href="/user/profile"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setShowUserMenu(false)}
-                        >
-                          Thông tin cá nhân
-                        </Link>
-                        <div className="border-t border-gray-100"></div>
-                        <button
-                          onClick={() => {
-                            setShowUserMenu(false);
-                            logout();
-                          }}
-                          className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-                        >
-                          Đăng xuất
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                        {displayName.charAt(0).toUpperCase()}
+                      </Avatar>
+                      <span className="hidden max-w-32 truncate md:inline">
+                        {displayName}
+                      </span>
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </Dropdown>
                 ) : (
-                  <>
-                    <button onClick={openLogin} className={buttonClass}>
+                  <Space>
+                    <Button
+                      type="text"
+                      icon={<LogIn className="h-4 w-4" />}
+                      onClick={() => {
+                        router.push("/login");
+                      }}
+                      className="flex items-center gap-1"
+                    >
                       Đăng nhập
-                    </button>
-                    <span className="h-5 w-px bg-gray-300"></span>
-                    <button onClick={openRegister} className={buttonClass}>
+                    </Button>
+                    <Button
+                      type="primary"
+                      icon={<UserPlus className="h-4 w-4" />}
+                      onClick={() => {
+                        router.push("/register");
+                      }}
+                      className="flex items-center gap-1"
+                    >
                       Đăng ký
-                    </button>
-                  </>
+                    </Button>
+                  </Space>
                 )}
 
-                <button
-                  className={`all rounded-lg border border-gray-300 transition-all duration-300 hover:bg-gray-100 ${isScrolled ? "px-2 py-2" : "px-4 py-3"}`}
+                <Button
+                  type="default"
+                  icon={<Plus className="h-4 w-4" />}
+                  className="flex items-center gap-1"
                 >
                   Đăng tin
-                </button>
+                </Button>
               </div>
             </div>
           </div>
         </header>
       </div>
 
-      {showSidebar && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-black opacity-50 lg:hidden"
-            onClick={() => setShowSidebar(false)}
-          />
-
-          {/* Sidebar */}
-          <div className="fixed top-0 right-0 z-50 h-full w-80 transform bg-white shadow-lg transition-transform duration-300 ease-in-out lg:hidden">
-            <div className="p-4">
-              <div className="mb-6">
-                {isAuthenticated && user ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-3 rounded-lg bg-gray-50 p-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-sm font-medium text-white">
-                        {displayName.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="font-medium">{displayName}</span>
-                    </div>
-                    <Link
-                      href="/user/dashboard"
-                      className="block w-full rounded-lg bg-blue-600 px-4 py-3 text-center text-white transition-colors hover:bg-blue-700"
-                      onClick={() => setShowSidebar(false)}
-                    >
-                      Dashboard
-                    </Link>
-                    <Link
-                      href="/user/profile"
-                      className="block w-full rounded-lg border border-gray-300 px-4 py-3 text-center transition-colors hover:bg-gray-50"
-                      onClick={() => setShowSidebar(false)}
-                    >
-                      Thông tin cá nhân
-                    </Link>
-                    <button
-                      onClick={() => {
-                        setShowSidebar(false);
-                        logout();
-                      }}
-                      className="block w-full rounded-lg border border-red-200 px-4 py-3 text-center text-red-600 transition-colors hover:bg-red-50"
-                    >
-                      Đăng xuất
-                    </button>
+      <Drawer
+        title={
+          <div className="flex items-center space-x-3">
+            <Building2 className="h-6 w-6 text-[#fc746f]" />
+            <span className="text-lg font-bold text-[#fc746f]">Lào BDS</span>
+          </div>
+        }
+        placement="right"
+        onClose={() => setDrawerVisible(false)}
+        open={drawerVisible}
+        width={320}
+      >
+        <div className="flex flex-col space-y-6">
+          {isAuthenticated && user ? (
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3 rounded-lg bg-orange-50 p-4">
+                <Avatar
+                  size="large"
+                  className="bg-[#fc746f]"
+                  icon={<UserIcon className="h-5 w-5" />}
+                >
+                  {displayName.charAt(0).toUpperCase()}
+                </Avatar>
+                <div>
+                  <div className="max-w-48 truncate font-medium">
+                    {displayName}
                   </div>
-                ) : (
-                  <div className="space-y-3">
-                    {/* Đăng nhập và Đăng ký nằm ngang */}
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => {
-                          setShowSidebar(false);
-                          openLogin();
-                        }}
-                        className="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-center transition-colors hover:bg-gray-50"
-                      >
-                        Đăng nhập
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowSidebar(false);
-                          openRegister();
-                        }}
-                        className="flex-1 rounded-lg bg-[#E03C31] px-4 py-3 text-center text-white transition-colors hover:bg-[#c32f25]"
-                      >
-                        Đăng ký
-                      </button>
-                    </div>
-                    {/* Đăng tin */}
-                    <button
-                      onClick={() => setShowSidebar(false)}
-                      className="block w-full rounded-lg border border-gray-300 px-4 py-3 text-center transition-colors hover:bg-gray-50"
-                    >
-                      Đăng tin
-                    </button>
-                  </div>
-                )}
+                  <Text className="text-sm text-gray-500">
+                    {user.role || "User"}
+                  </Text>
+                </div>
               </div>
 
-              <nav className="mb-6">
-                {NAV_ITEMS.map((item, idx) => (
-                  <a
-                    key={idx}
-                    href={item.href}
-                    className="block rounded-lg px-2 py-3 text-gray-900 transition-colors hover:bg-gray-50 hover:text-[#E03C31]"
-                  >
-                    {item.title}
-                  </a>
-                ))}
-              </nav>
+              <div className="space-y-2">
+                <Button
+                  type="primary"
+                  icon={<LayoutDashboard className="h-4 w-4" />}
+                  block
+                  onClick={() => {
+                    setDrawerVisible(false);
+                    router.push("/dashboard");
+                  }}
+                >
+                  Dashboard
+                </Button>
+                <Button
+                  type="default"
+                  icon={<UserIcon className="h-4 w-4" />}
+                  block
+                  onClick={() => {
+                    setDrawerVisible(false);
+                    router.push("/profile");
+                  }}
+                >
+                  Thông tin cá nhân
+                </Button>
+                <Button
+                  type="text"
+                  danger
+                  icon={<LogOut className="h-4 w-4" />}
+                  block
+                  onClick={() => {
+                    setDrawerVisible(false);
+                    logout();
+                  }}
+                >
+                  Đăng xuất
+                </Button>
+              </div>
             </div>
-          </div>
-        </>
-      )}
+          ) : (
+            <div className="space-y-3">
+              <Button
+                type="default"
+                icon={<LogIn className="h-4 w-4" />}
+                block
+                onClick={() => {
+                  router.push("/login");
+                }}
+              >
+                Đăng nhập
+              </Button>
+              <Button
+                type="primary"
+                icon={<UserPlus className="h-4 w-4" />}
+                block
+                onClick={() => {
+                  router.push("/register");
+                }}
+              >
+                Đăng ký
+              </Button>
+              <Button
+                type="default"
+                icon={<Plus className="h-4 w-4" />}
+                block
+                onClick={() => setDrawerVisible(false)}
+              >
+                Đăng tin
+              </Button>
+            </div>
+          )}
 
-      <AuthModalComponent />
+          <div>
+            <Text className="mb-3 block text-sm font-medium text-gray-500">
+              Danh mục
+            </Text>
+            <Menu
+              mode="inline"
+              className="border-none"
+              selectedKeys={getSelectedKeys()}
+              items={mobileMenuItems.map((item) => ({
+                ...item,
+                onClick: () => setDrawerVisible(false),
+              }))}
+            />
+          </div>
+        </div>
+      </Drawer>
     </>
   );
 }
