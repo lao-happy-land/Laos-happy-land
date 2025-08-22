@@ -11,7 +11,6 @@ import {
   Phone,
   Calendar,
   Shield,
-  Award,
 } from "lucide-react";
 import Image from "next/image";
 import { numberToString } from "@/share/helper/number-to-string";
@@ -100,23 +99,25 @@ export default function PropertyCard({ property }: { property: Property }) {
             </div>
           </div>
           <div className="flex items-center gap-4 text-sm text-gray-600">
-            {property.details.bedrooms > 0 && (
+            {(property.details?.bedrooms ?? 0) > 0 && (
               <div className="flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">
                 <Bed className="h-4 w-4" />
-                <span className="font-medium">{property.details.bedrooms}</span>
+                <span className="font-medium">
+                  {property.details?.bedrooms}
+                </span>
               </div>
             )}
-            {property.details.bathrooms > 0 && (
+            {(property.details?.bathrooms ?? 0) > 0 && (
               <div className="flex items-center gap-1.5 rounded-full bg-purple-50 px-2.5 py-1 text-purple-700">
                 <Bath className="h-4 w-4" />
                 <span className="font-medium">
-                  {property.details.bathrooms}
+                  {property.details?.bathrooms}
                 </span>
               </div>
             )}
             <div className="flex items-center gap-1 rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700">
               <Star className="h-3 w-3 fill-current" />
-              <span>{property.details.area} m²</span>
+              <span>{property.details?.area ?? 0} m²</span>
             </div>
             <div className="flex items-center gap-1.5 rounded-full bg-orange-50 px-2.5 py-1 text-orange-700">
               <span className="font-medium">{property.legalStatus}</span>
