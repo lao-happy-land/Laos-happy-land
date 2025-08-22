@@ -48,14 +48,12 @@ const NAV_ITEMS = [
     title: "Nhà đất cho thuê",
     href: "/properties-for-rent",
     icon: <Home className="h-4 w-4" />,
-    href: "/properties-for-sale"
   },
   {
     key: "projects",
     title: "Dự án",
-    href: "/projects",
+    href: "/project",
     icon: <Building2 className="h-4 w-4" />,
-    href: "/project"
   },
   {
     key: "news",
