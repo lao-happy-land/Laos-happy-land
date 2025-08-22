@@ -16,7 +16,7 @@ export const ADMIN_NAV_ITEMS = (pathname: string) => [
   },
   {
     id: 3,
-    label: "Quản lý loại bất động sản",
+    label: "Quản lý loại BĐS",
     icon: "/images/admin/sidebar/triangle-li.svg",
     href: "/admin/property-types",
     active: pathname === "/admin/property-types",
@@ -24,7 +24,7 @@ export const ADMIN_NAV_ITEMS = (pathname: string) => [
 
   {
     id: 4,
-    label: "Quản lý bất động sản",
+    label: "Quản lý BĐS",
     icon: "/images/admin/sidebar/triangle-li.svg",
     href: "/admin/properties",
     active: pathname === "/admin/properties",

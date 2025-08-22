@@ -162,40 +162,38 @@ export const authService = {
   },
 
   logout(): void {
-    // Clear localStorage or cookies
+    // Clear localStorage and cookies - only token
     if (typeof window !== "undefined") {
       localStorage.removeItem("access_token");
-      localStorage.removeItem("user");
+
+      // Clear cookie
+      document.cookie =
+        "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     }
   },
 
-  setAuthData(token: string, user: User) {
+  setAuthToken(token: string) {
     if (typeof window !== "undefined") {
       localStorage.setItem("access_token", token);
-      localStorage.setItem("user", JSON.stringify(user));
-    }
-  },
 
-  getAuthData() {
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("access_token");
-      const user = localStorage.getItem("user");
-      return {
-        token,
-        user: user ? (JSON.parse(user) as User) : null,
-      };
+      // Also set cookie for middleware
+      document.cookie = `access_token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; samesite=lax; secure=false`;
     }
-    return { token: null, user: null };
-  },
-
-  isAuthenticated(): boolean {
-    const { token } = this.getAuthData();
-    return !!token;
   },
 
   getAuthToken(): string | null {
-    const { token } = this.getAuthData();
-    return token;
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("access_token");
+    }
+    return null;
+  },
+
+  // Get user data from token (not from localStorage)
+  getUserFromToken(): User | null {
+    const token = this.getAuthToken();
+    if (!token) return null;
+
+    return this.decodeTokenPayload(token);
   },
 };
 
