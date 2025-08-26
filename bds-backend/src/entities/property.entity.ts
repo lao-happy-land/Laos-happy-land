@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 import { AbstractEntity } from 'src/common/entities';
-import { TransactionEnum } from 'src/common/enum/enum';
+import {  PropertyStatusEnum, TransactionEnum } from 'src/common/enum/enum';
 import { PropertyType } from './property-type.entity';
 
 @Entity('properties')
@@ -72,16 +72,20 @@ export class Property extends AbstractEntity {
   @Column({ type: 'text', nullable: true })
   mainImage: string;
 
+  @Column({
+    type: 'enum',
+    enum: PropertyStatusEnum,
+    default: PropertyStatusEnum.PENDING,
+  })
+  status: PropertyStatusEnum;
+
+  @Column({ type: 'text', nullable: true})
+  reason: string;
+
   constructor(property: Partial<Property>) {
     super();
     Object.assign(this, property);
   }
 }
 
-// list Image
-
-// add provider
-
-// remove area and bedroom bathrooms
-
-// add json filed
+//content detail array object => {type: {example h1,p}, value: string}

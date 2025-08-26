@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/entities/user.entity';
-import { EntityManager, Repository } from 'typeorm';
+import { Brackets, EntityManager, Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import { CreateUserDto } from './dto/create_user.dto';
 import { GetUserDto } from './dto/get_user.dto';
@@ -63,25 +63,34 @@ export class UserService {
     return { user, message: 'User created successfully' };
   }
 
-  async getAll(params: GetUserDto) {
-    const users = this.userRepository
+  async getAll(params: GetUserDto): Promise<ResponsePaginate<User>> {
+    const query = this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.role', 'role')
-      .skip(params.skip)
-      .take(params.take)
       .orderBy('user.createdAt', params.OrderSort);
 
-    if (params.fullName) {
-      users.andWhere('user.fullName LIKE :fullName', {
-        fullName: `%${params.fullName}%`,
-      });
-    }
-
     if (params.role) {
-      users.andWhere('role.name = :role', { role: params.role });
+      query.andWhere('role.name = :role', { role: params.role });
     }
 
-    const [result, total] = await users.getManyAndCount();
+    if (params.search) {
+      query.andWhere(
+        new Brackets((qb) => {
+          qb.orWhere('user.fullName ILIKE :search', {
+            search: `%${params.search}%`,
+          })
+            .orWhere('user.email ILIKE :search', {
+              search: `%${params.search}%`,
+            })
+            .orWhere('user.phone ILIKE :search', {
+              search: `%${params.search}%`,
+            });
+        }),
+      );
+    }
+
+    const [result, total] = await query.getManyAndCount();
+
     const pageMetaDto = new PageMetaDto({
       itemCount: total,
       pageOptionsDto: params,
@@ -214,16 +223,33 @@ export class UserService {
         requested: 'true',
       })
       .skip(params.skip)
-      .take(params.take)
+      .take(params.perPage)
       .orderBy('user.createdAt', params.OrderSort);
 
-    if (params.fullName) {
-      query.andWhere('user.fullName LIKE :fullName', {
-        fullName: `%${params.fullName}%`,
-      });
+    if (params.search) {
+      query.andWhere(
+        new Brackets((qb) => {
+          qb.orWhere('user.fullName ILIKE :search', {
+            search: `%${params.search}%`,
+          })
+            .orWhere('user.email ILIKE :search', {
+              search: `%${params.search}%`,
+            })
+            .orWhere('user.phone ILIKE :search', {
+              search: `%${params.search}%`,
+            });
+        }),
+      );
     }
 
-    const [result, total] = await query.getManyAndCount();
+    if (params.role) {
+      query.andWhere('role.name = :role', { role: params.role });
+    }
+
+    const [result, total] = await query
+      .skip(params.skip)
+      .take(params.perPage)
+      .getManyAndCount();
 
     const pageMetaDto = new PageMetaDto({
       itemCount: total,

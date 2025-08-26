@@ -26,7 +26,7 @@ export class PropertyTypeService {
     const propertyTypes = this.propertyTypeRepository
       .createQueryBuilder('propertyType')
       .skip(params.skip)
-      .take(params.take)
+      .take(params.perPage)
       .orderBy('propertyType.createdAt', params.OrderSort);
     const [result, total] = await propertyTypes.getManyAndCount();
     const pageMetaDto = new PageMetaDto({

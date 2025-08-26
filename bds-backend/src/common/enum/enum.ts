@@ -11,5 +11,12 @@ export enum RoleEnum {
 
 export enum TransactionEnum {
   RENT = 'rent',
-  SALE = 'sale'
+  SALE = 'sale',
+  PROJECT = 'project'
+}
+
+export enum PropertyStatusEnum {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
 }

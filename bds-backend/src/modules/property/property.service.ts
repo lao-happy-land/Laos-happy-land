@@ -15,6 +15,9 @@ import { User } from 'src/entities/user.entity';
 import { Multer } from 'multer';
 import { CloudinaryService } from 'src/service/cloudinary.service';
 import { PropertyType } from 'src/entities/property-type.entity';
+import { PageOptionsDto } from 'src/common/dtos/pageOption';
+import { PropertyStatusEnum } from 'src/common/enum/enum';
+import { RejectPropertyDto } from './dto/reject_property.dto';
 
 @Injectable()
 export class PropertyService {
@@ -94,7 +97,7 @@ export class PropertyService {
       .leftJoinAndSelect('property.owner', 'owner')
       .leftJoinAndSelect('property.type', 'type')
       .skip(params.skip)
-      .take(params.take)
+      .take(params.perPage)
       .orderBy('property.createdAt', params.OrderSort);
 
     if (params.type) {
@@ -159,6 +162,18 @@ export class PropertyService {
       });
     }
 
+    if (params.transaction) {
+      properties.andWhere('property.transactionType = :transactionType', {
+        transactionType: params.transaction,
+      });
+    }
+
+    if (params.status) {
+      properties.andWhere('property.status = :status', {
+        status: params.status,
+      });
+    }
+
     const [result, total] = await properties.getManyAndCount();
     const pageMetaDto = new PageMetaDto({
       itemCount: total,
@@ -178,7 +193,33 @@ export class PropertyService {
     if (!property) {
       throw new BadRequestException('Property not found');
     }
+
+    property.viewsCount = (property.viewsCount || 0) + 1;
+    await this.propertyRepository.save(property);
     return { property, message: 'Success' };
+  }
+
+  async getByUser(userId: string, params: PageOptionsDto) {
+    if (!userId) {
+      throw new BadRequestException('User ID is required');
+    }
+
+    const queryBuilder = this.propertyRepository
+      .createQueryBuilder('property')
+      .leftJoinAndSelect('property.type', 'type')
+      .where('property.owner_id = :userId', { userId })
+      .orderBy('property.createdAt', 'DESC')
+      .skip(params.skip)
+      .take(params.perPage);
+
+    const [properties, total] = await queryBuilder.getManyAndCount();
+
+    const pageMetaDto = new PageMetaDto({
+      itemCount: total,
+      pageOptionsDto: params,
+    });
+
+    return new ResponsePaginate(properties, pageMetaDto, 'Success');
   }
 
   async update(
@@ -271,5 +312,27 @@ export class PropertyService {
     }
     await this.entityManager.remove(property);
     return { message: 'Property deleted successfully' };
+  }
+
+  async approveProperty(id: string) {
+    const property = await this.propertyRepository.findOne({ where: { id } });
+    if (!property) throw new NotFoundException('Property not found');
+
+    property.status = PropertyStatusEnum.APPROVED;
+    await this.propertyRepository.save(property);
+    return { property, message: 'Property approved successfully' };
+  }
+
+  async rejectProperty(id: string, rejectPropertyDto: RejectPropertyDto) {
+    const property = await this.propertyRepository.findOne({ where: { id } });
+    if (!property) throw new NotFoundException('Property not found');
+
+    property.status = PropertyStatusEnum.REJECTED;
+    if (rejectPropertyDto.reason) {
+      property.reason = rejectPropertyDto.reason;
+    }
+
+    await this.propertyRepository.save(property);
+    return { property, message: 'Property rejected successfully' };
   }
 }

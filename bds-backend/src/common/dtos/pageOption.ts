@@ -1,9 +1,11 @@
 import { Type } from 'class-transformer';
 import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { OrderSort } from '../enum/enum';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class PageOptionsDto {
   @IsString()
+  @IsOptional()
   search?: string = '';
 
   @IsEnum(OrderSort)
@@ -16,6 +18,7 @@ export class PageOptionsDto {
   @IsInt()
   @Min(1)
   @IsOptional()
+  @ApiPropertyOptional()
   page?: number = 1;
 
   @Type(() => Number)
@@ -23,9 +26,10 @@ export class PageOptionsDto {
   @Min(1)
   @Max(100)
   @IsOptional()
-  take?: number = 6;
+  @ApiPropertyOptional()
+  perPage?: number = 6;
 
   get skip(): number {
-    return (this.page - 1) * this.take;
+    return (this.page - 1) * this.perPage;
   }
 }

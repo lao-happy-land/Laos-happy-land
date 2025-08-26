@@ -12,11 +12,13 @@ import {
 } from '@nestjs/common';
 import { PropertyService } from './property.service';
 import { CreatePropertyDto } from './dto/create_property.dto';
-import { ApiBody, ApiConsumes, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { GetPropertiesFilterDto } from './dto/get_property.dto';
 import { UpdatePropertyDto } from './dto/update_property.dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { Multer } from 'multer';
+import { PageOptionsDto } from 'src/common/dtos/pageOption';
+import { RejectPropertyDto } from './dto/reject_property.dto';
 
 @Controller('property')
 export class PropertyController {
@@ -48,8 +50,6 @@ export class PropertyController {
   }
 
   @Get()
-  @ApiQuery({ name: 'skip', required: false, type: Number })
-  @ApiQuery({ name: 'take', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Success' })
   async getAll(@Query() params: GetPropertiesFilterDto) {
     return this.propertyService.getAll(params);
@@ -59,6 +59,15 @@ export class PropertyController {
   @ApiResponse({ status: 200, description: 'Property found' })
   async get(@Param('id') id: string) {
     return this.propertyService.get(id);
+  }
+
+  @Get('owner/:userId')
+  @ApiResponse({ status: 200, description: 'Success' })
+  async getByUser(
+    @Param('userId') userId: string,
+    @Query() params: PageOptionsDto,
+  ) {
+    return this.propertyService.getByUser(userId, params);
   }
 
   @Patch(':id')
@@ -92,5 +101,27 @@ export class PropertyController {
   @ApiResponse({ status: 200, description: 'Property deleted successfully' })
   async remove(@Param('id') id: string) {
     return this.propertyService.remove(id);
+  }
+
+  @Patch(':id/approve')
+  @ApiOperation({ summary: 'Approve a property' })
+  @ApiParam({ name: 'id', description: 'Property ID' })
+  @ApiResponse({ status: 200, description: 'Property approved successfully' })
+  @ApiResponse({ status: 404, description: 'Property not found' })
+  async approve(@Param('id') id: string) {
+    return this.propertyService.approveProperty(id);
+  }
+
+  @Patch(':id/reject')
+  @ApiOperation({ summary: 'Reject a property' })
+  @ApiParam({ name: 'id', description: 'Property ID' })
+  @ApiBody({
+    type: RejectPropertyDto,
+    description: 'Reason for rejection (optional)',
+  })
+  @ApiResponse({ status: 200, description: 'Property rejected successfully' })
+  @ApiResponse({ status: 404, description: 'Property not found' })
+  async reject(@Param('id') id: string, @Body() rejectPropertyDto: RejectPropertyDto) {
+    return this.propertyService.rejectProperty(id, rejectPropertyDto);
   }
 }

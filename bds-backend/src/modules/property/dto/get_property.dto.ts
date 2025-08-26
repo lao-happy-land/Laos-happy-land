@@ -11,7 +11,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PageOptionsDto } from 'src/common/dtos/pageOption';
-import { TransactionEnum } from 'src/common/enum/enum';
+import { PropertyStatusEnum, TransactionEnum } from 'src/common/enum/enum';
 
 export class GetPropertiesFilterDto extends PageOptionsDto {
   @ApiPropertyOptional({
@@ -98,4 +98,12 @@ export class GetPropertiesFilterDto extends PageOptionsDto {
   @Type(() => Boolean)
   @IsBoolean()
   isVerified?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Trạng thái hệ thống',
+    enum: PropertyStatusEnum
+  })
+  @IsOptional()
+  @IsIn(Object.values(PropertyStatusEnum))
+  status?: string;
 }
