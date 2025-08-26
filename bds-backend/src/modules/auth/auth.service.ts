@@ -156,4 +156,19 @@ export class AuthService {
       access_token,
     };
   }
+
+  async resetPassword(email: string, newPassword: string): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) {
+      throw new BadRequestException('User with this email does not exist');
+    }
+    const salt = crypto.randomBytes(16).toString('hex');
+
+    const hashedPassword = this.hashPassword(newPassword.trim(), salt);
+
+    user.password = hashedPassword;
+    await this.userRepository.save(user);
+
+    return user;
+  }
 }

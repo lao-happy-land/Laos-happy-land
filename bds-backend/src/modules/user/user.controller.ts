@@ -41,10 +41,6 @@ export class UserController {
   }
 
   @Get()
-  @ApiQuery({ name: 'skip', required: false, type: Number })
-  @ApiQuery({ name: 'take', required: false, type: Number })
-  @ApiQuery({ name: 'fullName', required: false, type: String })
-  @ApiQuery({ name: 'role', required: false, type: String })
   async getAll(@Query() params: GetUserDto) {
     return this.userService.getAll(params);
   }

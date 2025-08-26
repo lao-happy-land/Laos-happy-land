@@ -24,7 +24,7 @@ export class UserRoleService {
     const userRoles = this.userRoleRepository
       .createQueryBuilder('userRole')
       .skip(params.skip)
-      .take(params.take)
+      .take(params.perPage)
       .orderBy('userRole.createdAt', params.OrderSort);
     const [result, total] = await userRoles.getManyAndCount();
     const pageMetaDto = new PageMetaDto({
