@@ -7,18 +7,23 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UploadedFiles,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { PropertyService } from './property.service';
 import { CreatePropertyDto } from './dto/create_property.dto';
-import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { GetPropertiesFilterDto } from './dto/get_property.dto';
 import { UpdatePropertyDto } from './dto/update_property.dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { Multer } from 'multer';
 import { PageOptionsDto } from 'src/common/dtos/pageOption';
 import { RejectPropertyDto } from './dto/reject_property.dto';
+import { User } from 'src/entities/user.entity';
+import { Request } from 'express';
+import { AuthGuard, OptionalAuthGuard } from '../auth/guard/auth.guard';
 
 @Controller('property')
 export class PropertyController {
@@ -50,9 +55,15 @@ export class PropertyController {
   }
 
   @Get()
+  @UseGuards(OptionalAuthGuard)
+  @ApiBearerAuth()
   @ApiResponse({ status: 200, description: 'Success' })
-  async getAll(@Query() params: GetPropertiesFilterDto) {
-    return this.propertyService.getAll(params);
+  async getAll(
+    @Query() params: GetPropertiesFilterDto,
+    @Req() req: Request,
+  ) {
+    const user = req.user as User;
+    return this.propertyService.getAll(params, user);
   }
 
   @Get(':id')

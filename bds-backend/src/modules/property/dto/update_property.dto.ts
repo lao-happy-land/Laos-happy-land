@@ -10,6 +10,7 @@ import {
 } from 'class-validator';
 import { TransactionEnum } from 'src/common/enum/enum';
 import { Multer } from 'multer';
+import { Type } from 'class-transformer';
 
 export class UpdatePropertyDto {
   @ApiPropertyOptional({
@@ -43,6 +44,7 @@ export class UpdatePropertyDto {
   })
   @IsOptional()
   @IsNumber()
+  @Type(() => Number)
   price?: number;
 
   @ApiPropertyOptional({
@@ -55,14 +57,6 @@ export class UpdatePropertyDto {
   })
   @IsOptional()
   details?: any;
-
-  @ApiPropertyOptional({
-    description: 'Trạng thái xác minh',
-    example: true,
-  })
-  @IsOptional()
-  @IsBoolean()
-  isVerified?: boolean;
 
   @ApiPropertyOptional({
     description: 'Tình trạng pháp lý',

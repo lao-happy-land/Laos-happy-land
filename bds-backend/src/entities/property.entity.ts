@@ -40,9 +40,6 @@ export class Property extends AbstractEntity {
   @Column({ type: 'jsonb', nullable: true })
   priceHistory: any;
 
-  @Column({ type: 'boolean', default: false })
-  isVerified: boolean;
-
   @Column({ type: 'jsonb', nullable: true })
   details: any;
 
