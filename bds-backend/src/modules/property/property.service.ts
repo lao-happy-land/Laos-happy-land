@@ -91,7 +91,9 @@ export class PropertyService {
     return { property, message: 'Property created successfully' };
   }
 
-  async getAll(params: GetPropertiesFilterDto) {
+  async getAll(params: GetPropertiesFilterDto, user: User) {
+    const isAdmin = !!user?.role && user.role.toString().toLowerCase() === 'admin';
+
     const properties = this.propertyRepository
       .createQueryBuilder('property')
       .leftJoinAndSelect('property.owner', 'owner')
@@ -99,6 +101,14 @@ export class PropertyService {
       .skip(params.skip)
       .take(params.perPage)
       .orderBy('property.createdAt', params.OrderSort);
+
+      
+
+    if (!isAdmin) {
+      properties.andWhere('property.status = :status', {
+        status: PropertyStatusEnum.APPROVED,
+      });
+    }
 
     if (params.type) {
       properties.andWhere('type.name = :type', { type: params.type });
@@ -168,7 +178,7 @@ export class PropertyService {
       });
     }
 
-    if (params.status) {
+    if (params.status && user.role?.name === 'Admin') {
       properties.andWhere('property.status = :status', {
         status: params.status,
       });
