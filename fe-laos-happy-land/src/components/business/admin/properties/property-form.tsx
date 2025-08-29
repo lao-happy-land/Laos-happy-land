@@ -7,7 +7,6 @@ import {
   Input,
   Select,
   InputNumber,
-  Switch,
   Button,
   Upload,
   Card,
@@ -118,7 +117,6 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
         area: currentProperty.details?.area ?? undefined,
         bedrooms: currentProperty.details?.bedrooms ?? undefined,
         bathrooms: currentProperty.details?.bathrooms ?? undefined,
-        isVerified: currentProperty.isVerified ?? false,
         legalStatus: currentProperty.legalStatus ?? undefined,
         location: currentProperty.location ?? undefined,
         transactionType: currentProperty.transactionType,
@@ -135,10 +133,9 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
       area?: number;
       bedrooms?: number;
       bathrooms?: number;
-      isVerified?: boolean;
       legalStatus?: string;
       location?: string;
-      transactionType: "rent" | "sale";
+      transactionType: "rent" | "sale" | "project";
     }) => {
       const formData: CreatePropertyDto | UpdatePropertyDto = {
         typeId: values.typeId,
@@ -150,17 +147,18 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
           bedrooms: values.bedrooms,
           bathrooms: values.bathrooms,
         },
-        isVerified: values.isVerified,
         legalStatus: values.legalStatus,
         location: values.location,
         transactionType: values.transactionType,
       };
 
+      // Handle main image
       if (mainImageList.length > 0 && mainImageList[0]?.originFileObj) {
         (formData as CreatePropertyDto).mainImage =
           mainImageList[0].originFileObj;
       }
 
+      // Handle additional images
       const imageFiles = imagesList
         .filter((file) => file.originFileObj)
         .map((file) => file.originFileObj as File);
@@ -170,7 +168,14 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
 
       if (mode === "create") {
         const createData = formData as CreatePropertyDto;
-        createData.user_id = useAuthStore.getState().user?.id ?? "";
+        const userId = useAuthStore.getState().user?.id;
+
+        if (!userId) {
+          throw new Error("User ID not found. Please log in again.");
+        }
+
+        createData.user_id = userId;
+
         return await propertyService.createProperty(createData);
       } else {
         return await propertyService.updateProperty(propertyId!, formData);
@@ -205,10 +210,9 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
     area?: number;
     bedrooms?: number;
     bathrooms?: number;
-    isVerified?: boolean;
     legalStatus?: string;
     location?: string;
-    transactionType: "rent" | "sale";
+    transactionType: "rent" | "sale" | "project";
   }) => {
     submitForm(values);
   };
@@ -311,6 +315,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     <Select placeholder="Chọn hình thức giao dịch">
                       <Option value="sale">Bán</Option>
                       <Option value="rent">Cho thuê</Option>
+                      <Option value="project">Dự án</Option>
                     </Select>
                   </Form.Item>
                 </Col>
@@ -369,7 +374,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
               </Row>
 
               <Row gutter={16}>
-                <Col xs={24} md={8}>
+                <Col xs={24} md={12}>
                   <Form.Item name="bedrooms" label="Số phòng ngủ">
                     <InputNumber
                       placeholder="Số phòng ngủ"
@@ -378,22 +383,13 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     />
                   </Form.Item>
                 </Col>
-                <Col xs={24} md={8}>
+                <Col xs={24} md={12}>
                   <Form.Item name="bathrooms" label="Số phòng tắm">
                     <InputNumber
                       placeholder="Số phòng tắm"
                       style={{ width: "100%" }}
                       min={0}
                     />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={8}>
-                  <Form.Item
-                    name="isVerified"
-                    label="Trạng thái xác minh"
-                    valuePropName="checked"
-                  >
-                    <Switch />
                   </Form.Item>
                 </Col>
               </Row>

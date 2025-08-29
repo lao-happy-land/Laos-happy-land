@@ -1,4 +1,4 @@
-export const numberToString = (number: number, locale = "vi-VN") => {
+export const numberToString = (number: number, language = "vi-VN") => {
   if (number >= 1000000000) {
     return (number / 1000000000).toFixed(0) + " tỷ";
   }
@@ -8,5 +8,5 @@ export const numberToString = (number: number, locale = "vi-VN") => {
   if (number >= 1000) {
     return (number / 1000).toFixed(0) + " nghìn";
   }
-  return number.toString();
+  return number.toLocaleString(language);
 };
