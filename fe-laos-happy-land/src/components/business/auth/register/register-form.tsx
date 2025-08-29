@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Form, Input, Button, Row, Col, message } from "antd";
+import { Form, Input, Button, Row, Col, App } from "antd";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
 import { authService } from "@/share/service/auth.service";
 
@@ -14,6 +14,7 @@ export default function RegisterForm({
   onSuccess,
   onError,
 }: RegisterFormProps) {
+  const { message } = App.useApp();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
 

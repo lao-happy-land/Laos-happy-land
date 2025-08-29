@@ -3,12 +3,12 @@
 import { useEffect } from "react";
 import { useAuthStore } from "@/share/store/auth.store";
 
-interface AppInitializerProps {
+export default function AuthProvider({
+  children,
+}: {
   children: React.ReactNode;
-}
-
-export default function AppInitializer({ children }: AppInitializerProps) {
-  const { initialize } = useAuthStore();
+}) {
+  const initialize = useAuthStore((state) => state.initialize);
 
   useEffect(() => {
     initialize();

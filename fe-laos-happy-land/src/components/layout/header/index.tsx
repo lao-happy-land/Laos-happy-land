@@ -50,9 +50,9 @@ const NAV_ITEMS = [
     icon: <Home className="h-4 w-4" />,
   },
   {
-    key: "projects",
+    key: "properties-for-project",
     title: "Dự án",
-    href: "/project",
+    href: "/properties-for-project",
     icon: <Building2 className="h-4 w-4" />,
   },
   {
@@ -81,8 +81,12 @@ const NAV_ITEMS = [
   },
 ];
 
-export default function Header() {
-  const { user, isAuthenticated, logout } = useAuthStore();
+export default function Header({
+  isAuthenticated,
+}: {
+  isAuthenticated: boolean;
+}) {
+  const { user, logout } = useAuthStore();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const router = useRouter();
@@ -111,8 +115,8 @@ export default function Header() {
       return user.fullName;
     }
 
-    if (user.email) {
-      return user.email;
+    if (user.fullName) {
+      return user.fullName;
     }
 
     return "User";
@@ -249,7 +253,7 @@ export default function Header() {
                       })),
                     }}
                     trigger={["click"]}
-                    placement="bottomCenter"
+                    placement="bottom"
                   >
                     <Tooltip placement="right" title="Thêm">
                       <Button type="text">
@@ -323,6 +327,13 @@ export default function Header() {
                   type="default"
                   icon={<Plus className="h-4 w-4" />}
                   className="flex items-center gap-1"
+                  onClick={() => {
+                    if (isAuthenticated) {
+                      router.push("/create-property");
+                    } else {
+                      router.push("/login?redirect=/create-property");
+                    }
+                  }}
                 >
                   Đăng tin
                 </Button>

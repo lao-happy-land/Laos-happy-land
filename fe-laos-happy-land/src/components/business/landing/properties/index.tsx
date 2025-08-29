@@ -6,7 +6,6 @@ import {
   Filter,
   MapPin,
   Heart,
-  ChevronLeft,
   ChevronRight,
   Search,
   Square,
@@ -15,6 +14,7 @@ import {
   Building2,
   ArrowRight,
   CheckCircle,
+  List,
 } from "lucide-react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { numberToString } from "@/share/helper/number-to-string";
@@ -23,20 +23,27 @@ import {
   Input,
   Checkbox,
   Typography,
-  message,
   Slider,
   Radio,
-  Switch,
   Spin,
   Empty,
+  Pagination,
+  App,
+  Tooltip,
 } from "antd";
 import { PRICE_RANGE_OPTIONS } from "@/share/constant/home-search";
 import propertyService from "@/share/service/property.service";
+import propertyTypeService from "@/share/service/property-type.service";
 import { useRequest } from "ahooks";
-import type { Property } from "@/@types/types";
+import type { APIResponse, Property, PropertyType } from "@/@types/types";
 import PropertyCard from "./property-card";
 
-const PropertiesForSale = () => {
+interface PropertiesProps {
+  transaction: "sale" | "rent" | "project";
+}
+
+const Properties = ({ transaction }: PropertiesProps) => {
+  const { message } = App.useApp();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -47,29 +54,50 @@ const PropertiesForSale = () => {
   const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<string[]>(
     [],
   );
-  const [selectedLocation, setSelectedLocation] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState("all");
   const [keyword, setKeyword] = useState("");
   const [debouncedKeyword, setDebouncedKeyword] = useState("");
-  const [sortBy, setSortBy] = useState("newest");
   const [currentPage, setCurrentPage] = useState(1);
+  const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
 
   const [priceRange, setPriceRange] = useState<[number, number]>([
     0, 100000000000,
   ]);
+  const [areaRange, setAreaRange] = useState<[number, number]>([0, 1000]);
   const [selectedPriceRange, setSelectedPriceRange] = useState<string>("all");
+  const [selectedAreaRange, setSelectedAreaRange] = useState<string>("all");
 
   const [priceRangeOpen, setPriceRangeOpen] = useState(false);
   const [propertyTypeOpen, setPropertyTypeOpen] = useState(false);
-  const [verifiedOpen, setVerifiedOpen] = useState(false);
-  const [brokerOpen, setBrokerOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [areaOpen, setAreaOpen] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [layout, setLayout] = useState<"grid" | "list">("list");
 
   const searchModalRef = useRef<HTMLDivElement>(null);
   const locationModalRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLDivElement>(null);
   const locationButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Fetch property types
+  const { loading: propertyTypesLoading } = useRequest(
+    async () => {
+      const response = await propertyTypeService.getPropertyTypes();
+      return response.data ?? [];
+    },
+    {
+      onSuccess: (data) => {
+        setPropertyTypes(data);
+      },
+      onError: (error) => {
+        console.error("Failed to fetch property types:", error);
+        message.error("Không thể tải danh sách loại bất động sản");
+      },
+    },
+  );
 
   const updateSearchParams = useCallback(
     (params: Record<string, string | string[]>) => {
@@ -113,7 +141,9 @@ const PropertiesForSale = () => {
   } = useRequest(
     async (params?: Record<string, string | number | string[] | boolean>) => {
       const apiParams: Record<string, string | number | string[] | boolean> = {
-        transaction: "sale",
+        transaction: transaction,
+        page: currentPage,
+        perPage: pageSize,
         ...params,
       };
 
@@ -137,36 +167,23 @@ const PropertiesForSale = () => {
         apiParams.maxArea = parseInt(maxArea);
       }
 
-      if (selectedLocation?.trim()) {
+      if (selectedLocation && selectedLocation !== "all") {
         apiParams.location = selectedLocation;
       }
 
       if (selectedPropertyTypes.length > 0) {
-        apiParams.propertyTypes = selectedPropertyTypes;
-      }
-
-      if (verifiedOpen) {
-        apiParams.isVerified = true;
-      }
-
-      if (brokerOpen) {
-        apiParams.isBroker = true;
+        apiParams.type = selectedPropertyTypes.join(",");
       }
 
       const response = await propertyService.getProperties(apiParams);
-      return response as unknown as {
-        data: Property[];
-        meta: {
-          itemCount: number;
-          pageCount: number;
-          hasPreviousPage: boolean;
-          hasNextPage: boolean;
-        };
-      };
+      return response as unknown as APIResponse<Property[]>;
     },
     {
       manual: true,
       cacheKey: "properties-search",
+      onSuccess: (data) => {
+        setTotal(data.meta?.itemCount ?? 0);
+      },
     },
   );
 
@@ -194,7 +211,7 @@ const PropertiesForSale = () => {
     if (isInitialLoad) return;
 
     fetchProperties();
-  }, [verifiedOpen, brokerOpen, fetchProperties, isInitialLoad]);
+  }, [fetchProperties, isInitialLoad]);
 
   useClickAway(() => {
     setSearchModalOpen(false);
@@ -209,6 +226,7 @@ const PropertiesForSale = () => {
     setLocationModalOpen(false);
     setPriceRangeOpen(false);
     setPropertyTypeOpen(false);
+    setAreaOpen(false);
   }, [searchModalRef, locationModalRef, searchInputRef, locationButtonRef]);
 
   useEventListener(
@@ -218,6 +236,7 @@ const PropertiesForSale = () => {
       setLocationModalOpen(false);
       setPriceRangeOpen(false);
       setPropertyTypeOpen(false);
+      setAreaOpen(false);
     },
     { target: typeof document !== "undefined" ? document : undefined },
   );
@@ -234,6 +253,7 @@ const PropertiesForSale = () => {
       if (isOutsideDropdown && isOutsideButton) {
         setPriceRangeOpen(false);
         setPropertyTypeOpen(false);
+        setAreaOpen(false);
       }
     };
 
@@ -246,7 +266,7 @@ const PropertiesForSale = () => {
   }, [priceRangeOpen, propertyTypeOpen]);
 
   const locations = [
-    { id: "", label: "Tất cả khu vực" },
+    { id: "all", label: "Tất cả khu vực" },
     { id: "vientiane", label: "Vientiane" },
     { id: "luang-prabang", label: "Luang Prabang" },
     { id: "pakse", label: "Pakse" },
@@ -296,87 +316,25 @@ const PropertiesForSale = () => {
   ];
 
   const allProvinces = [
-    "An Giang",
-    "Cao Bằng",
-    "Hải Phòng",
-    "Nam Định",
-    "Bà Rịa Vũng Tàu",
-    "Đà Nẵng",
-    "Hậu Giang",
-    "Nghệ An",
-    "Bắc Giang",
-    "Đắk Lắk",
-    "Hồ Chí Minh",
-    "Ninh Bình",
-    "Bắc Kạn",
-    "Đắk Nông",
-    "Hòa Bình",
-    "Ninh Thuận",
-    "Bạc Liêu",
-    "Điện Biên",
-    "Hưng Yên",
-    "Phú Thọ",
-    "Thừa Thiên Huế",
-    "Tây Ninh",
-    "Lào Cai",
-    "Phú Yên",
-    "Tiền Giang",
-    "Vĩnh Long",
-    "Vĩnh Phúc",
-    "Yên Bái",
-    "Cà Mau",
-    "Lạng Sơn",
-    "Quảng Bình",
-    "Trà Vinh",
-    "Cần Thơ",
-    "Lâm Đồng",
-    "Quảng Nam",
-    "Tuyên Quang",
-    "Đồng Tháp",
-    "Long An",
-    "Quảng Ngãi",
-    "Vĩnh Phúc",
-  ];
-
-  const sortOptions = [
-    { id: "newest", label: "Mới nhất" },
-    { id: "price-low", label: "Giá thấp nhất" },
-    { id: "price-high", label: "Giá cao nhất" },
-    { id: "area-large", label: "Diện tích lớn nhất" },
-    { id: "area-small", label: "Diện tích nhỏ nhất" },
+    "all",
+    "vientiane",
+    "luang-prabang",
+    "pakse",
+    "savannakhet",
+    "thakhek",
+    "xam-nua",
   ];
 
   const priceRanges = PRICE_RANGE_OPTIONS;
 
+  // Generate property type options from API data
   const propertyTypeOptions = [
     { id: "all", name: "Tất cả nhà đất", icon: <Home className="h-4 w-4" /> },
-    {
-      id: "apartment",
-      name: "Căn hộ chung cư",
+    ...propertyTypes.map((type) => ({
+      id: type.id,
+      name: type.name,
       icon: <Building2 className="h-4 w-4" />,
-    },
-    {
-      id: "mini-apartment",
-      name: "Chung cư mini, căn hộ dịch vụ",
-      icon: <Building2 className="h-4 w-4" />,
-    },
-    { id: "house", name: "Nhà riêng", icon: <Home className="h-4 w-4" /> },
-    {
-      id: "villa",
-      name: "Nhà biệt thự, liền kề",
-      icon: <Home className="h-4 w-4" />,
-    },
-    {
-      id: "street-house",
-      name: "Nhà mặt phố",
-      icon: <Home className="h-4 w-4" />,
-    },
-    {
-      id: "shophouse",
-      name: "Shophouse, nhà phố thương mại",
-      icon: <Building2 className="h-4 w-4" />,
-    },
-    { id: "land", name: "Đất nền", icon: <Square className="h-4 w-4" /> },
+    })),
   ];
 
   const handleSearch = () => {
@@ -387,12 +345,12 @@ const PropertiesForSale = () => {
     if (minArea) params.minArea = minArea;
     if (maxArea) params.maxArea = maxArea;
     if (selectedPropertyTypes.length > 0) {
-      params.selectedPropertyTypes = selectedPropertyTypes;
+      params.type = selectedPropertyTypes.join(",");
     }
-    if (selectedLocation) params.selectedLocation = selectedLocation;
+    if (selectedLocation && selectedLocation !== "all") {
+      params.location = selectedLocation;
+    }
     if (keyword) params.keyword = keyword;
-    if (verifiedOpen) params.isVerified = "true";
-    if (brokerOpen) params.isBroker = "true";
 
     updateSearchParams(params);
     message.success("Đang tìm kiếm...");
@@ -402,9 +360,7 @@ const PropertiesForSale = () => {
     let newSelectedTypes: string[];
 
     if (type === "all") {
-      const allTypeIds = propertyTypeOptions
-        .filter((option) => option.id !== "all")
-        .map((option) => option.id);
+      const allTypeIds = propertyTypes.map((pt) => pt.id);
       const isAllSelected = allTypeIds.every((id) =>
         selectedPropertyTypes.includes(id),
       );
@@ -423,7 +379,7 @@ const PropertiesForSale = () => {
     setSelectedPropertyTypes(newSelectedTypes);
 
     updateSearchParams({
-      selectedPropertyTypes: newSelectedTypes,
+      type: newSelectedTypes.join(","),
     });
   };
 
@@ -541,42 +497,100 @@ const PropertiesForSale = () => {
     updateSearchParams(params);
   };
 
+  const handleAreaRangeChange = (value: [number, number]) => {
+    setAreaRange(value);
+    setSelectedAreaRange("");
+    setMinArea(value[0].toString());
+    setMaxArea(value[1].toString());
+
+    const params: Record<string, string> = {};
+    if (value[0] !== 0) {
+      params.minArea = value[0].toString();
+    } else {
+      params.minArea = "";
+    }
+    if (value[1] !== 1000) {
+      params.maxArea = value[1].toString();
+    } else {
+      params.maxArea = "";
+    }
+
+    updateSearchParams(params);
+  };
+
+  const handleAreaRangeSelection = (rangeValue: string) => {
+    setSelectedAreaRange(rangeValue);
+
+    let minValue = 0;
+    let maxValue = 1000;
+
+    switch (rangeValue) {
+      case "under-50":
+        minValue = 0;
+        maxValue = 50;
+        break;
+      case "50-100":
+        minValue = 50;
+        maxValue = 100;
+        break;
+      case "100-200":
+        minValue = 100;
+        maxValue = 200;
+        break;
+      case "200-500":
+        minValue = 200;
+        maxValue = 500;
+        break;
+      case "500-1000":
+        minValue = 500;
+        maxValue = 1000;
+        break;
+      case "over-1000":
+        minValue = 1000;
+        maxValue = 1000;
+        break;
+      case "all":
+      default:
+        minValue = 0;
+        maxValue = 1000;
+        break;
+    }
+
+    setAreaRange([minValue, maxValue]);
+    setMinArea(minValue.toString());
+    setMaxArea(maxValue.toString());
+
+    const params: Record<string, string> = {};
+    if (minValue !== 0) {
+      params.minArea = minValue.toString();
+    } else {
+      params.minArea = "";
+    }
+    if (maxValue !== 1000) {
+      params.maxArea = maxValue.toString();
+    } else {
+      params.maxArea = "";
+    }
+
+    updateSearchParams(params);
+  };
+
   const togglePropertyTypeModal = () => {
     setPropertyTypeOpen(!propertyTypeOpen);
     setPriceRangeOpen(false);
+    setAreaOpen(false);
   };
 
   const togglePriceRangeModal = () => {
     setPriceRangeOpen(!priceRangeOpen);
     setPropertyTypeOpen(false);
+    setAreaOpen(false);
   };
 
-  const toggleVerifiedModal = () => {
-    const newVerifiedOpen = !verifiedOpen;
-    setVerifiedOpen(newVerifiedOpen);
-
-    const params: Record<string, string> = {};
-    if (newVerifiedOpen) {
-      params.isVerified = "true";
-    } else {
-      params.isVerified = "";
-    }
-
-    updateSearchParams(params);
-  };
-
-  const toggleBrokerModal = () => {
-    const newBrokerOpen = !brokerOpen;
-    setBrokerOpen(newBrokerOpen);
-
-    const params: Record<string, string> = {};
-    if (newBrokerOpen) {
-      params.isBroker = "true";
-    } else {
-      params.isBroker = "";
-    }
-
-    updateSearchParams(params);
+  const toggleAreaModal = () => {
+    setAreaOpen(!areaOpen);
+    setPriceRangeOpen(false);
+    setPropertyTypeOpen(false);
   };
 
   const handleSearchInputClick = () => {
@@ -584,6 +598,8 @@ const PropertiesForSale = () => {
     setLocationModalOpen(false);
     setPriceRangeOpen(false);
     setPropertyTypeOpen(false);
+    setAreaOpen(false);
+    setLocationModalOpen(false);
   };
 
   const handleLocationClick = () => {
@@ -591,6 +607,7 @@ const PropertiesForSale = () => {
     setSearchModalOpen(false);
     setPriceRangeOpen(false);
     setPropertyTypeOpen(false);
+    setAreaOpen(false);
   };
 
   const handleDistrictSelect = (districtName: string) => {
@@ -607,24 +624,8 @@ const PropertiesForSale = () => {
     setLocationModalOpen(false);
 
     updateSearchParams({
-      selectedLocation: provinceName || "",
+      location: provinceName || "",
     });
-  };
-
-  const clearAllFilters = () => {
-    setMinPrice("");
-    setMaxPrice("");
-    setMinArea("");
-    setMaxArea("");
-    setSelectedPropertyTypes([]);
-    setSelectedLocation("");
-    setKeyword("");
-    setVerifiedOpen(false);
-    setBrokerOpen(false);
-    setPriceRange([0, 100000000000]);
-    setSelectedPriceRange("all");
-
-    router.push(pathname);
   };
 
   useEffect(() => {
@@ -633,12 +634,9 @@ const PropertiesForSale = () => {
     const urlMinArea = searchParams.get("minArea");
     const urlMaxArea = searchParams.get("maxArea");
     const urlSelectedPropertyTypes =
-      searchParams.get("selectedPropertyTypes")?.split(",").filter(Boolean) ??
-      [];
-    const urlSelectedLocation = searchParams.get("selectedLocation") ?? "";
+      searchParams.get("type")?.split(",").filter(Boolean) ?? [];
+    const urlSelectedLocation = searchParams.get("location") ?? "all";
     const urlKeyword = searchParams.get("keyword") ?? "";
-    const urlIsVerified = searchParams.get("isVerified") === "true";
-    const urlIsBroker = searchParams.get("isBroker") === "true";
 
     // Update state
     setMinPrice(urlMinPrice ?? "");
@@ -649,13 +647,16 @@ const PropertiesForSale = () => {
     setSelectedLocation(urlSelectedLocation);
     setKeyword(urlKeyword);
     setDebouncedKeyword(urlKeyword);
-    setVerifiedOpen(urlIsVerified);
-    setBrokerOpen(urlIsBroker);
 
     // Update price range
     const newMinPrice = parseInt(urlMinPrice ?? "0");
     const newMaxPrice = parseInt(urlMaxPrice ?? "100000000000");
     setPriceRange([newMinPrice, newMaxPrice]);
+
+    // Update area range
+    const newMinArea = parseInt(urlMinArea ?? "0");
+    const newMaxArea = parseInt(urlMaxArea ?? "1000");
+    setAreaRange([newMinArea, newMaxArea]);
 
     // Update selected price range
     let newSelectedPriceRange = "all";
@@ -678,6 +679,28 @@ const PropertiesForSale = () => {
     }
     setSelectedPriceRange(newSelectedPriceRange);
 
+    // Update selected area range
+    let newSelectedAreaRange = "all";
+    const urlMinAreaNum = parseInt(urlMinArea ?? "0");
+    const urlMaxAreaNum = parseInt(urlMaxArea ?? "1000");
+
+    if (urlMinAreaNum === 0 && urlMaxAreaNum === 50) {
+      newSelectedAreaRange = "under-50";
+    } else if (urlMinAreaNum === 50 && urlMaxAreaNum === 100) {
+      newSelectedAreaRange = "50-100";
+    } else if (urlMinAreaNum === 100 && urlMaxAreaNum === 200) {
+      newSelectedAreaRange = "100-200";
+    } else if (urlMinAreaNum === 200 && urlMaxAreaNum === 500) {
+      newSelectedAreaRange = "200-500";
+    } else if (urlMinAreaNum === 500 && urlMaxAreaNum === 1000) {
+      newSelectedAreaRange = "500-1000";
+    } else if (urlMinAreaNum === 1000 && urlMaxAreaNum === 1000) {
+      newSelectedAreaRange = "over-1000";
+    } else if (urlMinAreaNum !== 0 || urlMaxAreaNum !== 1000) {
+      newSelectedAreaRange = "";
+    }
+    setSelectedAreaRange(newSelectedAreaRange);
+
     setIsInitialLoad(false);
   }, [searchParams]);
 
@@ -695,10 +718,23 @@ const PropertiesForSale = () => {
     return () => clearTimeout(timer);
   }, [keyword, debouncedKeyword, updateSearchParams, isInitialLoad]);
 
+  // Fetch properties when page changes
+  useEffect(() => {
+    if (isInitialLoad) return;
+    fetchProperties();
+  }, [currentPage, fetchProperties, isInitialLoad]);
+
+  // Initial fetch
+  useEffect(() => {
+    if (!isInitialLoad) {
+      fetchProperties();
+    }
+  }, [fetchProperties, isInitialLoad]);
+
   const getFilterDisplayText = () => {
     const filters = [];
 
-    if (selectedLocation) {
+    if (selectedLocation && selectedLocation !== "all") {
       const location = locations.find((loc) => loc.id === selectedLocation);
       if (location) {
         filters.push(location.label);
@@ -706,23 +742,32 @@ const PropertiesForSale = () => {
     }
 
     if (selectedPropertyTypes.length > 0) {
-      const typeNames = {
-        apartment: "Căn hộ",
-        house: "Nhà riêng",
-        villa: "Villa",
-        shophouse: "Shophouse",
-        land: "Đất nền",
-      };
-      const typeText = selectedPropertyTypes
-        .map((type) => typeNames[type as keyof typeof typeNames] || type)
-        .join(", ");
-      filters.push(typeText);
+      const typeNames = selectedPropertyTypes
+        .map((typeId) => {
+          const propertyType = propertyTypes.find((pt) => pt.id === typeId);
+          return propertyType?.name ?? typeId;
+        })
+        .filter(Boolean);
+
+      if (typeNames.length > 0) {
+        filters.push(typeNames.join(", "));
+      }
     }
 
     if (minPrice && maxPrice) {
       filters.push(
         `${numberToString(parseInt(minPrice))} - ${numberToString(parseInt(maxPrice))}`,
       );
+    }
+
+    if (minArea || maxArea) {
+      if (minArea && maxArea) {
+        filters.push(`${minArea}m² - ${maxArea}m²`);
+      } else if (minArea) {
+        filters.push(`Từ ${minArea}m²`);
+      } else if (maxArea) {
+        filters.push(`Đến ${maxArea}m²`);
+      }
     }
 
     if (keyword) {
@@ -767,8 +812,8 @@ const PropertiesForSale = () => {
                 boxShadow: "none",
               }}
             >
-              <span className="text-sm font-medium text-gray-900">
-                {selectedLocation ? selectedLocation : "Tây Ninh"}
+              <span className="text-sm font-medium text-gray-900 capitalize">
+                {selectedLocation !== "all" ? selectedLocation : "Tất cả"}
               </span>
               <ChevronRight size={14} className="rotate-90 text-gray-400" />
             </Button>
@@ -1022,11 +1067,7 @@ const PropertiesForSale = () => {
               <Button
                 type="default"
                 onClick={togglePropertyTypeModal}
-                className={`filter-dropdown-button flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-2 transition-all duration-200 ${
-                  propertyTypeOpen
-                    ? "border-red-500 bg-red-50 text-red-600"
-                    : "hover:border-gray-300"
-                }`}
+                className="filter-dropdown-button flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-2 transition-all duration-200"
               >
                 <span className="text-sm text-gray-600">Loại nhà đất</span>
                 <ChevronRight
@@ -1058,30 +1099,39 @@ const PropertiesForSale = () => {
                   </div>
 
                   <div className="max-h-64 overflow-y-auto p-3">
-                    {propertyTypeOptions.map((type) => (
-                      <div
-                        key={type.id}
-                        className="flex cursor-pointer items-center gap-3 rounded px-2 py-2 hover:bg-gray-50"
-                        onClick={() => handleSelectedPropertyType(type.id)}
-                      >
-                        <Checkbox
-                          checked={
-                            type.id === "all"
-                              ? propertyTypeOptions
-                                  .filter((option) => option.id !== "all")
-                                  .every((option) =>
-                                    selectedPropertyTypes.includes(option.id),
-                                  )
-                              : selectedPropertyTypes.includes(type.id)
-                          }
-                          className="text-red-500"
-                        />
-                        <span className="text-gray-600">{type.icon}</span>
-                        <span className="text-sm text-gray-700">
-                          {type.name}
+                    {propertyTypesLoading ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Spin size="small" />
+                        <span className="ml-2 text-sm text-gray-500">
+                          Đang tải loại bất động sản...
                         </span>
                       </div>
-                    ))}
+                    ) : (
+                      propertyTypeOptions.map((type) => (
+                        <div
+                          key={type.id}
+                          className="flex cursor-pointer items-center gap-3 rounded px-2 py-2 hover:bg-gray-50"
+                          onClick={() => handleSelectedPropertyType(type.id)}
+                        >
+                          <Checkbox
+                            checked={
+                              type.id === "all"
+                                ? propertyTypes
+                                    .map((pt) => pt.id)
+                                    .every((id) =>
+                                      selectedPropertyTypes.includes(id),
+                                    )
+                                : selectedPropertyTypes.includes(type.id)
+                            }
+                            className="text-red-500"
+                          />
+                          <span className="text-gray-600">{type.icon}</span>
+                          <span className="text-sm text-gray-700">
+                            {type.name}
+                          </span>
+                        </div>
+                      ))
+                    )}
                   </div>
 
                   <div className="flex justify-between border-t border-gray-100 p-3">
@@ -1090,7 +1140,7 @@ const PropertiesForSale = () => {
                       onClick={() => {
                         setSelectedPropertyTypes([]);
                         updateSearchParams({
-                          selectedPropertyTypes: [],
+                          type: [],
                         });
                       }}
                       className="text-sm text-gray-500 hover:text-red-500"
@@ -1114,11 +1164,7 @@ const PropertiesForSale = () => {
               <Button
                 type="default"
                 onClick={togglePriceRangeModal}
-                className={`filter-dropdown-button flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-2 transition-all duration-200 ${
-                  priceRangeOpen
-                    ? "border-red-500 bg-red-50 text-red-600"
-                    : "hover:border-gray-300"
-                }`}
+                className="filter-dropdown-button flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-2 transition-all duration-200"
               >
                 <span className="text-sm text-gray-600">Mức giá</span>
                 <ChevronRight
@@ -1248,26 +1294,161 @@ const PropertiesForSale = () => {
               )}
             </div>
 
-            {/* Verified Filter */}
-            <div
-              className="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 transition-all duration-200 hover:border-gray-300"
-              onClick={toggleVerifiedModal}
-            >
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <span className="text-sm text-gray-600">Tin xác thực</span>
-              <Switch checked={verifiedOpen} />
-            </div>
+            {/* Area Filter */}
+            <div className="relative">
+              <Button
+                type="default"
+                onClick={toggleAreaModal}
+                className="filter-dropdown-button flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-2 transition-all duration-200"
+              >
+                <span className="text-sm text-gray-600">Diện tích</span>
+                <ChevronRight
+                  size={14}
+                  className={`text-gray-400 transition-transform duration-200 ${
+                    areaOpen ? "rotate-90" : ""
+                  }`}
+                />
+              </Button>
 
-            {/* Broker Filter */}
-            <div
-              className="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 transition-all duration-200 hover:border-gray-300"
-              onClick={toggleBrokerModal}
-            >
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <span className="text-sm text-gray-600">
-                Môi giới chuyên nghiệp
-              </span>
-              <Switch checked={brokerOpen} />
+              {/* Area Filter Dropdown */}
+              {areaOpen && (
+                <div
+                  className="filter-dropdown absolute top-full left-0 z-50 mt-2 w-72 rounded-lg border border-gray-200 bg-white shadow-lg"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="border-b border-gray-100 p-3">
+                    <div className="flex items-center justify-between">
+                      <Typography.Title level={5} className="mb-0 text-sm">
+                        Diện tích
+                      </Typography.Title>
+                      <Button
+                        type="text"
+                        icon={<X className="text-gray-600" size={14} />}
+                        onClick={() => setAreaOpen(false)}
+                        className="flex h-5 w-5 items-center justify-center"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-3">
+                    {/* Custom Area Range */}
+                    <div className="mb-6">
+                      <div className="mb-4 flex gap-4">
+                        <div className="flex-1">
+                          <Typography.Text className="mb-1 block text-sm text-gray-600">
+                            Từ: {minArea || "0"}m²
+                          </Typography.Text>
+                          <Input
+                            placeholder="Từ"
+                            className="rounded-lg"
+                            value={minArea}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setMinArea(value);
+                              if (value) {
+                                updateSearchParams({ minArea: value });
+                              } else {
+                                updateSearchParams({ minArea: "" });
+                              }
+                            }}
+                            suffix="m²"
+                          />
+                        </div>
+                        <div className="flex items-end">
+                          <ArrowRight className="mb-2 h-5 w-5 text-gray-400" />
+                        </div>
+                        <div className="flex-1">
+                          <Typography.Text className="mb-1 block text-sm text-gray-600">
+                            Đến: {maxArea || "∞"}m²
+                          </Typography.Text>
+                          <Input
+                            placeholder="Đến"
+                            className="rounded-lg"
+                            value={maxArea}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setMaxArea(value);
+                              if (value) {
+                                updateSearchParams({ maxArea: value });
+                              } else {
+                                updateSearchParams({ maxArea: "" });
+                              }
+                            }}
+                            suffix="m²"
+                          />
+                        </div>
+                      </div>
+                      <Slider
+                        range
+                        value={areaRange}
+                        onChange={(value) =>
+                          handleAreaRangeChange(value as [number, number])
+                        }
+                        min={0}
+                        step={5}
+                        tooltip={{
+                          formatter: (value?: number) => {
+                            if (typeof value !== "number") return "";
+                            return `${numberToString(value)}`;
+                          },
+                        }}
+                        max={1000}
+                        className="mb-4"
+                      />
+                    </div>
+
+                    {/* Predefined Area Ranges */}
+                    <div className="max-h-48 overflow-y-auto">
+                      <Radio.Group
+                        value={selectedAreaRange}
+                        onChange={(e) =>
+                          handleAreaRangeSelection(e.target.value as string)
+                        }
+                        className="w-full"
+                      >
+                        {[
+                          { value: "under-50", label: "Dưới 50m²" },
+                          { value: "50-100", label: "50-100m²" },
+                          { value: "100-200", label: "100-200m²" },
+                          { value: "200-500", label: "200-500m²" },
+                          { value: "500-1000", label: "500-1000m²" },
+                          { value: "over-1000", label: "Trên 1000m²" },
+                        ].map((range) => (
+                          <div key={range.value} className="mb-2">
+                            <Radio value={range.value} className="text-sm">
+                              {range.label}
+                            </Radio>
+                          </div>
+                        ))}
+                      </Radio.Group>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between border-t border-gray-100 p-3">
+                    <Button
+                      type="text"
+                      onClick={() => {
+                        setMinArea("");
+                        setMaxArea("");
+                        updateSearchParams({
+                          minArea: "",
+                          maxArea: "",
+                        });
+                      }}
+                      className="text-sm text-gray-500 hover:text-red-500"
+                    >
+                      Đặt lại
+                    </Button>
+                    <Button
+                      type="primary"
+                      onClick={() => setAreaOpen(false)}
+                      className="border-0 bg-red-500 text-sm hover:bg-red-600"
+                    >
+                      Áp dụng
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1316,29 +1497,45 @@ const PropertiesForSale = () => {
             ) : (
               <>
                 {/* Enhanced Results Header */}
-                <div className="mb-4 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div className="mb-4 flex flex-col justify-between gap-6">
                   <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-3"></div>
-
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <div className="flex items-center gap-2">
-                        <span>Hiện có</span>
-                        <span className="text-lg font-bold text-red-500">
-                          {properties?.meta.itemCount.toString()}
-                        </span>
-                        <span>bất động sản</span>
-                        {propertiesLoading && (
-                          <Spin size="small" className="ml-2" />
+                    <div className="flex w-full items-center justify-between gap-2 text-sm text-gray-600">
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                          <span>Hiện có</span>
+                          <span className="text-lg font-bold text-red-500">
+                            {properties?.meta.itemCount.toString()}
+                          </span>
+                          <span>bất động sản</span>
+                          {propertiesLoading && (
+                            <Spin size="small" className="ml-2" />
+                          )}
+                        </div>
+                        {getFilterDisplayText() && (
+                          <div className="flex items-center gap-2">
+                            <span>cho</span>
+                            <span className="rounded bg-gray-100 px-2 py-1 font-medium text-gray-900">
+                              &quot;{getFilterDisplayText()}&quot;
+                            </span>
+                          </div>
                         )}
                       </div>
-                      {getFilterDisplayText() && (
-                        <div className="flex items-center gap-2">
-                          <span>cho</span>
-                          <span className="rounded bg-gray-100 px-2 py-1 font-medium text-gray-900">
-                            &quot;{getFilterDisplayText()}&quot;
-                          </span>
-                        </div>
-                      )}
+                      <div className="hidden md:block">
+                        <Tooltip title="Chuyển đổi giao diện">
+                          <Button
+                            icon={
+                              layout === "grid" ? (
+                                <Square size={16} />
+                              ) : (
+                                <List size={16} />
+                              )
+                            }
+                            onClick={() =>
+                              setLayout(layout === "grid" ? "list" : "grid")
+                            }
+                          />
+                        </Tooltip>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1349,10 +1546,26 @@ const PropertiesForSale = () => {
                     <Empty description="Không tìm thấy bất động sản phù hợp" />
                   </div>
                 ) : (
-                  <div className="space-y-6">
+                  <div
+                    className={`grid grid-cols-1 gap-6 ${
+                      layout === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : ""
+                    }`}
+                  >
                     {properties?.data.map((property) => (
                       <PropertyCard key={property.id} property={property} />
                     ))}
+                    <div className="col-span-full">
+                      <Pagination
+                        align="center"
+                        total={total}
+                        pageSize={pageSize}
+                        current={currentPage}
+                        onChange={(page, pageSize) => {
+                          setCurrentPage(page);
+                          setPageSize(pageSize);
+                        }}
+                      />
+                    </div>
                   </div>
                 )}
               </>
@@ -1389,200 +1602,6 @@ const PropertiesForSale = () => {
                 </div>
               </div>
             </div>
-
-            {/* Enhanced Pagination */}
-            {properties?.meta.pageCount &&
-              properties?.meta.pageCount > 1 &&
-              properties?.meta.itemCount &&
-              properties?.meta.itemCount > 0 && (
-                <div className="mt-12">
-                  <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-                    {/* Page Info */}
-                    <div className="text-sm text-gray-600">
-                      Hiển thị{" "}
-                      <span className="font-medium text-gray-900">
-                        {(properties?.meta.itemCount ?? 0) + 1}
-                      </span>{" "}
-                      -{" "}
-                      <span className="font-medium text-gray-900">
-                        {Math.min(
-                          (properties?.meta.itemCount ?? 0) + 1,
-                          properties?.meta.itemCount ?? 0,
-                        )}
-                      </span>{" "}
-                      trong tổng số{" "}
-                      <span className="font-medium text-gray-900">
-                        {properties?.meta.itemCount}
-                      </span>{" "}
-                      kết quả
-                    </div>
-
-                    {/* Pagination Controls */}
-                    <div className="flex items-center gap-2">
-                      <Button
-                        onClick={() =>
-                          setCurrentPage((prev) => Math.max(prev - 1, 1))
-                        }
-                        disabled={currentPage === 1}
-                        icon={<ChevronLeft className="h-4 w-4" />}
-                        className="border-gray-300 hover:bg-gray-50 disabled:opacity-50"
-                      >
-                        <span className="hidden sm:inline">Trước</span>
-                      </Button>
-
-                      <div className="flex items-center gap-1">
-                        {Array.from(
-                          { length: properties?.meta.pageCount ?? 0 },
-                          (_, index) => {
-                            const page = index + 1;
-                            if (
-                              page === 1 ||
-                              page === properties?.meta.pageCount ||
-                              (page >= currentPage - 2 &&
-                                page <= currentPage + 2)
-                            ) {
-                              return (
-                                <Button
-                                  key={page}
-                                  onClick={() => setCurrentPage(page)}
-                                  className={`h-10 w-10 p-0 transition-all duration-200 ${
-                                    page === currentPage
-                                      ? "border-red-500 bg-red-500 text-white shadow-lg hover:bg-red-600"
-                                      : "border-gray-300 hover:border-red-300 hover:bg-gray-50"
-                                  }`}
-                                >
-                                  {page}
-                                </Button>
-                              );
-                            } else if (
-                              page === currentPage - 3 ||
-                              page === currentPage + 3
-                            ) {
-                              return (
-                                <span
-                                  key={page}
-                                  className="flex h-10 w-10 items-center justify-center text-gray-500"
-                                >
-                                  ...
-                                </span>
-                              );
-                            }
-                            return null;
-                          },
-                        )}
-                      </div>
-
-                      <Button
-                        onClick={() =>
-                          setCurrentPage((prev) =>
-                            Math.min(prev + 1, properties?.meta.pageCount ?? 0),
-                          )
-                        }
-                        disabled={
-                          currentPage === (properties?.meta.pageCount ?? 0)
-                        }
-                        icon={<ChevronRight className="h-4 w-4" />}
-                        className="border-gray-300 hover:bg-gray-50 disabled:opacity-50"
-                      >
-                        <span className="hidden sm:inline">Sau</span>
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-          </div>
-
-          {/* Enhanced Filters Sidebar */}
-          <div className="w-full lg:w-80 lg:flex-shrink-0">
-            <div className="rounded-xl bg-white p-6 shadow-lg lg:sticky lg:top-20">
-              <div className="mb-6 flex items-center justify-between">
-                <h3 className="flex items-center text-lg font-bold text-gray-900">
-                  <Filter className="mr-3 h-5 w-5 text-red-500" />
-                  Bộ lọc
-                </h3>
-                <Button
-                  type="text"
-                  size="small"
-                  onClick={clearAllFilters}
-                  className="text-gray-500 hover:text-red-500"
-                >
-                  Đặt lại
-                </Button>
-              </div>
-
-              {/* Area - Hidden on mobile */}
-              <div className="mb-4 hidden lg:mb-6 lg:block">
-                <h4 className="mb-2 text-xs font-semibold text-gray-800 lg:mb-3 lg:text-sm">
-                  Diện tích
-                </h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    "< 30m²",
-                    "30-50m²",
-                    "50-80m²",
-                    "80-100m²",
-                    "100-150m²",
-                    "> 150m²",
-                  ].map((area) => (
-                    <Button
-                      key={area}
-                      size="small"
-                      className="border-gray-300 text-xs hover:border-red-500 hover:bg-red-50 hover:text-red-500"
-                    >
-                      {area}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Bedrooms - Hidden on mobile */}
-              <div className="mb-4 hidden lg:mb-6 lg:block">
-                <h4 className="mb-2 text-xs font-semibold text-gray-800 lg:mb-3 lg:text-sm">
-                  Số phòng ngủ
-                </h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {["1 PN", "2 PN", "3 PN", "4+ PN"].map((bedroom) => (
-                    <Button
-                      key={bedroom}
-                      size="small"
-                      className="border-gray-300 text-xs hover:border-red-500 hover:bg-red-50 hover:text-red-500"
-                    >
-                      {bedroom}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Special Features - Hidden on mobile */}
-              <div className="mb-4 hidden lg:mb-6 lg:block">
-                <h4 className="mb-2 text-xs font-semibold text-gray-800 lg:mb-3 lg:text-sm">
-                  Đặc điểm
-                </h4>
-                <div className="space-y-2">
-                  {[
-                    "Có hình ảnh",
-                    "Có video",
-                    "Chính chủ",
-                    "Căn góc",
-                    "Gần trường học",
-                    "Gần bệnh viện",
-                  ].map((feature) => (
-                    <Checkbox key={feature} className="text-sm">
-                      {feature}
-                    </Checkbox>
-                  ))}
-                </div>
-              </div>
-
-              <Button
-                type="primary"
-                size="large"
-                className="w-full border-red-500 bg-red-500 shadow-lg hover:border-red-600 hover:bg-red-600"
-              >
-                <Filter className="mr-2 h-4 w-4" />
-                Áp dụng bộ lọc
-              </Button>
-            </div>
           </div>
         </div>
       </div>
@@ -1590,4 +1609,4 @@ const PropertiesForSale = () => {
   );
 };
 
-export default PropertiesForSale;
+export default Properties;

@@ -786,7 +786,9 @@ const SearchBox = () => {
                   }`}
                 >
                   <span className="text-sm font-medium sm:text-base">
-                    Mức giá
+                    {selectedPriceRange === "all"
+                      ? "Mức giá"
+                      : `${numberToString(priceRange[0])} - ${numberToString(priceRange[1])}`}
                   </span>
                   <ChevronDown
                     size={16}
@@ -931,7 +933,9 @@ const SearchBox = () => {
                   }`}
                 >
                   <span className="text-sm font-medium sm:text-base">
-                    Diện tích
+                    {selectedAreaRange === "all"
+                      ? "Diện tích"
+                      : `${numberToString(areaRange[0])} - ${numberToString(areaRange[1])}`}
                   </span>
                   <ChevronDown
                     size={16}
