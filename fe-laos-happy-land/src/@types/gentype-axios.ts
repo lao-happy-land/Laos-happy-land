@@ -108,6 +108,13 @@ export interface LoginDto {
   password: string;
 }
 
+export interface ResetPasswordDto {
+  /** Email of the user */
+  email: string;
+  /** New password for the user */
+  newPassword: string;
+}
+
 export interface CreatePropertyDto {
   /**
    * ID loại bất động sản (PropertyType)
@@ -140,11 +147,6 @@ export interface CreatePropertyDto {
    */
   details?: object;
   /**
-   * Trạng thái xác minh
-   * @example true
-   */
-  isVerified?: boolean;
-  /**
    * Tình trạng pháp lý
    * @example "Sổ hồng đầy đủ"
    */
@@ -158,7 +160,7 @@ export interface CreatePropertyDto {
    * Hình thức giao dịch
    * @example "sale"
    */
-  transactionType: "rent" | "sale";
+  transactionType: "rent" | "sale" | "project";
   /**
    * Ảnh chính của bất động sản
    * @format binary
@@ -195,11 +197,6 @@ export interface UpdatePropertyDto {
    */
   details?: object;
   /**
-   * Trạng thái xác minh
-   * @example true
-   */
-  isVerified?: boolean;
-  /**
    * Tình trạng pháp lý
    * @example "Sổ hồng đầy đủ"
    */
@@ -213,7 +210,7 @@ export interface UpdatePropertyDto {
    * Hình thức giao dịch
    * @example "sale"
    */
-  transactionType?: "rent" | "sale";
+  transactionType?: "rent" | "sale" | "project";
   /**
    * Ảnh chính của bất động sản
    * @format binary
@@ -221,6 +218,11 @@ export interface UpdatePropertyDto {
   mainImage?: File;
   /** Danh sách ảnh phụ của bất động sản */
   images?: File[];
+}
+
+export interface RejectPropertyDto {
+  /** Lý do từ chối */
+  reason?: string;
 }
 
 export interface CreatePropertyTypeDto {
@@ -239,19 +241,28 @@ export interface CreateUserRoleDto {
   name: string;
 }
 
-import type {
-  AxiosInstance,
-  AxiosRequestConfig,
-  AxiosResponse,
-  HeadersDefaults,
-  ResponseType,
-} from "axios";
+export interface CreateSettingDto {
+  /** Description setting */
+  description?: string;
+  /** Hotline setting */
+  hotline?: string;
+  /** Facebook url */
+  facebook?: string;
+  /** List images setting */
+  images?: File[];
+  /**
+   * Banner image setting
+   * @format binary
+   */
+  banner?: File;
+}
+
+import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, HeadersDefaults, ResponseType } from "axios";
 import axios from "axios";
 
 export type QueryParamsType = Record<string | number, any>;
 
-export interface FullRequestParams
-  extends Omit<AxiosRequestConfig, "data" | "params" | "url" | "responseType"> {
+export interface FullRequestParams extends Omit<AxiosRequestConfig, "data" | "params" | "url" | "responseType"> {
   /** set parameter to `true` for call `securityWorker` for this request */
   secure?: boolean;
   /** request path */
@@ -266,13 +277,9 @@ export interface FullRequestParams
   body?: unknown;
 }
 
-export type RequestParams = Omit<
-  FullRequestParams,
-  "body" | "method" | "query" | "path"
->;
+export type RequestParams = Omit<FullRequestParams, "body" | "method" | "query" | "path">;
 
-export interface ApiConfig<SecurityDataType = unknown>
-  extends Omit<AxiosRequestConfig, "data" | "cancelToken"> {
+export interface ApiConfig<SecurityDataType = unknown> extends Omit<AxiosRequestConfig, "data" | "cancelToken"> {
   securityWorker?: (
     securityData: SecurityDataType | null,
   ) => Promise<AxiosRequestConfig | void> | AxiosRequestConfig | void;
@@ -306,9 +313,7 @@ export class HttpClient<SecurityDataType = unknown> {
     injectHeaders,
     ...axiosConfig
   }: ApiConfig<SecurityDataType> = {}) {
-    this.instance =
-      instance ??
-      axios.create({ ...axiosConfig, baseURL: axiosConfig.baseURL || "" });
+    this.instance = instance ?? axios.create({ ...axiosConfig, baseURL: axiosConfig.baseURL || "" });
     this.secure = secure;
     this.format = format;
     this.securityWorker = securityWorker;
@@ -319,10 +324,7 @@ export class HttpClient<SecurityDataType = unknown> {
     this.securityData = data;
   };
 
-  protected mergeRequestParams(
-    params1: AxiosRequestConfig,
-    params2?: AxiosRequestConfig,
-  ): AxiosRequestConfig {
+  protected mergeRequestParams(params1: AxiosRequestConfig, params2?: AxiosRequestConfig): AxiosRequestConfig {
     const method = params1.method || (params2 && params2.method);
 
     return {
@@ -330,11 +332,7 @@ export class HttpClient<SecurityDataType = unknown> {
       ...params1,
       ...(params2 || {}),
       headers: {
-        ...((method &&
-          this.instance.defaults.headers[
-            method.toLowerCase() as keyof HeadersDefaults
-          ]) ||
-          {}),
+        ...((method && this.instance.defaults.headers[method.toLowerCase() as keyof HeadersDefaults]) || {}),
         ...(params1.headers || {}),
         ...((params2 && params2.headers) || {}),
       },
@@ -352,15 +350,11 @@ export class HttpClient<SecurityDataType = unknown> {
   protected createFormData(input: Record<string, unknown>): FormData {
     return Object.keys(input || {}).reduce((formData, key) => {
       const property = input[key];
-      const propertyContent: any[] =
-        property instanceof Array ? property : [property];
+      const propertyContent: any[] = property instanceof Array ? property : [property];
 
       for (const formItem of propertyContent) {
         const isFileType = formItem instanceof Blob || formItem instanceof File;
-        formData.append(
-          key,
-          isFileType ? formItem : this.stringifyFormItem(formItem),
-        );
+        formData.append(key, isFileType ? formItem : this.stringifyFormItem(formItem));
       }
 
       return formData;
@@ -384,29 +378,17 @@ export class HttpClient<SecurityDataType = unknown> {
     const requestParams = this.mergeRequestParams(params, secureParams);
     const responseFormat = format || this.format || undefined;
 
-    if (
-      type === ContentType.FormData &&
-      body &&
-      body !== null &&
-      typeof body === "object"
-    ) {
+    if (type === ContentType.FormData && body && body !== null && typeof body === "object") {
       body = this.createFormData(body as Record<string, unknown>);
     }
 
-    if (
-      type === ContentType.Text &&
-      body &&
-      body !== null &&
-      typeof body !== "string"
-    ) {
+    if (type === ContentType.Text && body && body !== null && typeof body !== "string") {
       body = JSON.stringify(body);
     }
 
     let headers = {
       ...(requestParams.headers || {}),
-      ...(type && type !== ContentType.FormData
-        ? { "Content-Type": type }
-        : {}),
+      ...(type && type !== ContentType.FormData ? { "Content-Type": type } : {}),
     };
 
     if (this.injectHeaders) {
@@ -431,9 +413,7 @@ export class HttpClient<SecurityDataType = unknown> {
  *
  * API cho website bất động sản
  */
-export class Api<
-  SecurityDataType extends unknown,
-> extends HttpClient<SecurityDataType> {
+export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDataType> {
   api = {
     /**
      * No description
@@ -460,18 +440,12 @@ export class Api<
      */
     userControllerGetAll: (
       query?: {
-        /** Full name of the user */
-        fullName?: string;
-        /** Email of the user */
-        email?: string;
-        /** Phone number of the user */
-        phone?: string;
+        page?: number;
+        perPage?: number;
+        /** Search of the user */
+        search?: string;
         /** Role of the user */
         role?: string;
-        /** Avatar url of the user */
-        avatarUrl?: string;
-        take?: number;
-        skip?: number;
       },
       params: RequestParams = {},
     ) =>
@@ -491,16 +465,13 @@ export class Api<
      */
     userControllerGetBankRequests: (
       query?: {
-        /** Full name of the user */
-        fullName?: string;
-        /** Email of the user */
-        email?: string;
-        /** Phone number of the user */
-        phone?: string;
+        page?: number;
+        perPage?: number;
+        /** Search of the user */
+        search?: string;
         /** Role of the user */
         role?: string;
-        /** Avatar url of the user */
-        avatarUrl?: string;
+        fullName?: string;
         take?: number;
         skip?: number;
       },
@@ -534,11 +505,7 @@ export class Api<
      * @name UserControllerUpdate
      * @request PATCH:/api/user/{id}
      */
-    userControllerUpdate: (
-      id: string,
-      data: FormData,
-      params: RequestParams = {},
-    ) =>
+    userControllerUpdate: (id: string, data: UpdateUserDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/user/${id}`,
         method: "PATCH",
@@ -674,14 +641,28 @@ export class Api<
     /**
      * No description
      *
+     * @tags Auth
+     * @name AuthControllerResetPassword
+     * @summary Reset user password
+     * @request POST:/api/auth/reset-password
+     */
+    authControllerResetPassword: (data: ResetPasswordDto, params: RequestParams = {}) =>
+      this.request<void, void>({
+        path: `/api/auth/reset-password`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
      * @tags Property
      * @name PropertyControllerCreate
      * @request POST:/api/property
      */
-    propertyControllerCreate: (
-      data: CreatePropertyDto,
-      params: RequestParams = {},
-    ) =>
+    propertyControllerCreate: (data: CreatePropertyDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/property`,
         method: "POST",
@@ -696,9 +677,12 @@ export class Api<
      * @tags Property
      * @name PropertyControllerGetAll
      * @request GET:/api/property
+     * @secure
      */
     propertyControllerGetAll: (
       query?: {
+        page?: number;
+        perPage?: number;
         /** Loại bất động sản */
         type?: string;
         /** Từ khóa tìm kiếm tiêu đề/mô tả */
@@ -718,11 +702,11 @@ export class Api<
         /** Vị trí */
         location?: string;
         /** Trạng thái bán/cho thuê */
-        transaction?: "rent" | "sale";
+        transaction?: "rent" | "sale" | "project";
         /** Trạng thái xác minh */
         isVerified?: boolean;
-        take?: number;
-        skip?: number;
+        /** Trạng thái hệ thống */
+        status?: "pending" | "approved" | "rejected";
       },
       params: RequestParams = {},
     ) =>
@@ -730,6 +714,7 @@ export class Api<
         path: `/api/property`,
         method: "GET",
         query: query,
+        secure: true,
         ...params,
       }),
 
@@ -754,11 +739,7 @@ export class Api<
      * @name PropertyControllerUpdate
      * @request PATCH:/api/property/{id}
      */
-    propertyControllerUpdate: (
-      id: string,
-      data: UpdatePropertyDto,
-      params: RequestParams = {},
-    ) =>
+    propertyControllerUpdate: (id: string, data: UpdatePropertyDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/property/${id}`,
         method: "PATCH",
@@ -784,15 +765,66 @@ export class Api<
     /**
      * No description
      *
+     * @tags Property
+     * @name PropertyControllerGetByUser
+     * @request GET:/api/property/owner/{userId}
+     */
+    propertyControllerGetByUser: (
+      userId: string,
+      query?: {
+        page?: number;
+        perPage?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/property/owner/${userId}`,
+        method: "GET",
+        query: query,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Property
+     * @name PropertyControllerApprove
+     * @summary Approve a property
+     * @request PATCH:/api/property/{id}/approve
+     */
+    propertyControllerApprove: (id: string, params: RequestParams = {}) =>
+      this.request<void, void>({
+        path: `/api/property/${id}/approve`,
+        method: "PATCH",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Property
+     * @name PropertyControllerReject
+     * @summary Reject a property
+     * @request PATCH:/api/property/{id}/reject
+     */
+    propertyControllerReject: (id: string, data: RejectPropertyDto, params: RequestParams = {}) =>
+      this.request<void, void>({
+        path: `/api/property/${id}/reject`,
+        method: "PATCH",
+        body: data,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
      * @tags PropertyType
      * @name PropertyTypeControllerCreate
      * @summary Create a new property type
      * @request POST:/api/property-type
      */
-    propertyTypeControllerCreate: (
-      data: CreatePropertyTypeDto,
-      params: RequestParams = {},
-    ) =>
+    propertyTypeControllerCreate: (data: CreatePropertyTypeDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/property-type`,
         method: "POST",
@@ -809,10 +841,17 @@ export class Api<
      * @summary Get all property types with pagination
      * @request GET:/api/property-type
      */
-    propertyTypeControllerGetAll: (params: RequestParams = {}) =>
+    propertyTypeControllerGetAll: (
+      query?: {
+        page?: number;
+        perPage?: number;
+      },
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/property-type`,
         method: "GET",
+        query: query,
         ...params,
       }),
 
@@ -839,11 +878,7 @@ export class Api<
      * @summary Update a property type by ID
      * @request PATCH:/api/property-type/{id}
      */
-    propertyTypeControllerUpdate: (
-      id: string,
-      data: CreatePropertyTypeDto,
-      params: RequestParams = {},
-    ) =>
+    propertyTypeControllerUpdate: (id: string, data: CreatePropertyTypeDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/property-type/${id}`,
         method: "PATCH",
@@ -875,10 +910,7 @@ export class Api<
      * @summary Create user role
      * @request POST:/api/user-role
      */
-    userRoleControllerCreate: (
-      data: CreateUserRoleDto,
-      params: RequestParams = {},
-    ) =>
+    userRoleControllerCreate: (data: CreateUserRoleDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/user-role`,
         method: "POST",
@@ -895,10 +927,17 @@ export class Api<
      * @summary Get all user roles
      * @request GET:/api/user-role
      */
-    userRoleControllerGetAll: (params: RequestParams = {}) =>
+    userRoleControllerGetAll: (
+      query?: {
+        page?: number;
+        perPage?: number;
+      },
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/user-role`,
         method: "GET",
+        query: query,
         ...params,
       }),
 
@@ -914,6 +953,109 @@ export class Api<
       this.request<void, any>({
         path: `/api/user-role/${id}`,
         method: "GET",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags images
+     * @name ImageControllerUploadImage
+     * @request POST:/api/images/upload
+     */
+    imageControllerUploadImage: (
+      data: {
+        /** @format binary */
+        image?: File;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/images/upload`,
+        method: "POST",
+        body: data,
+        type: ContentType.FormData,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Setting
+     * @name SettingControllerCreate
+     * @request POST:/api/setting
+     */
+    settingControllerCreate: (data: CreateSettingDto, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/setting`,
+        method: "POST",
+        body: data,
+        type: ContentType.FormData,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Setting
+     * @name SettingControllerGetAll
+     * @request GET:/api/setting
+     */
+    settingControllerGetAll: (
+      query?: {
+        page?: number;
+        perPage?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/setting`,
+        method: "GET",
+        query: query,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Setting
+     * @name SettingControllerGet
+     * @request GET:/api/setting/{id}
+     */
+    settingControllerGet: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/setting/${id}`,
+        method: "GET",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Setting
+     * @name SettingControllerUpdate
+     * @request PATCH:/api/setting/{id}
+     */
+    settingControllerUpdate: (id: string, data: CreateSettingDto, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/setting/${id}`,
+        method: "PATCH",
+        body: data,
+        type: ContentType.FormData,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Setting
+     * @name SettingControllerRemove
+     * @request DELETE:/api/setting/{id}
+     */
+    settingControllerRemove: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/setting/${id}`,
+        method: "DELETE",
         ...params,
       }),
   };

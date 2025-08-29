@@ -9,13 +9,10 @@ export const userService = {
   },
 
   getAllUsers: async (params?: {
-    fullName?: string;
-    email?: string;
-    phone?: string;
+    search?: string;
     role?: string;
-    avatarUrl?: string;
-    take?: number;
-    skip?: number;
+    page?: number;
+    perPage?: number;
   }): Promise<APIResponse<User[]>> => {
     const response = await api.userControllerGetAll(params);
     return response.data as unknown as APIResponse<User[]>;
@@ -30,12 +27,16 @@ export const userService = {
     id: string,
     data: UpdateUserDto,
   ): Promise<UpdateUserDto> => {
-    const formData = new FormData();
-    if (data.fullName) formData.append("fullName", data.fullName);
-    if (data.email) formData.append("email", data.email);
-    if (data.phone) formData.append("phone", data.phone);
-    if (data.roleId) formData.append("roleId", data.roleId);
-    const response = await api.userControllerUpdate(id, formData);
+    // Create a new object without the email field to prevent editing
+    const updateData: UpdateUserDto = {
+      fullName: data.fullName,
+      phone: data.phone,
+      roleId: data.roleId,
+      password: data.password,
+      image: data.image,
+    };
+
+    const response = await api.userControllerUpdate(id, updateData);
     return response.data as unknown as UpdateUserDto;
   },
 

@@ -1,5 +1,5 @@
 import type { CreateUserDto, UpdateUserDto } from "@/@types/gentype-axios";
-import { Col, Form, Input, Modal, Row, Select, message } from "antd";
+import { Col, Form, Input, Modal, Row, Select, App } from "antd";
 import { useEffect } from "react";
 import { useUserRoles } from "@/share/hook/useUserRoles";
 import { useRequest } from "ahooks";
@@ -34,6 +34,7 @@ export default function UserModal({
   action: "create" | "update";
   refreshUsers: () => void;
 }) {
+  const { message } = App.useApp();
   const [form] = Form.useForm();
   const { userRoles } = useUserRoles();
 
@@ -132,7 +133,7 @@ export default function UserModal({
                 { type: "email", message: "Email không hợp lệ!" },
               ]}
             >
-              <Input />
+              <Input disabled={action === "update"} />
             </Form.Item>
           </Col>
           <Col span={12}>

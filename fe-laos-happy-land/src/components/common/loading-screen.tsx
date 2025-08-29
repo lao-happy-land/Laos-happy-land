@@ -231,9 +231,9 @@ export default function LoadingScreen({
                   : currentVariant.spinner.includes("green")
                     ? "#10b981"
                     : "#8b5cf6",
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              animation: `floating ${4 + Math.random() * 4}s ease-in-out infinite ${Math.random() * 2}s`,
+              top: `${10 + ((i * 12) % 80)}%`,
+              left: `${15 + ((i * 18) % 70)}%`,
+              animation: `floating ${4 + (i % 3)}s ease-in-out infinite ${(i * 0.3) % 2}s`,
             }}
           />
         ))}

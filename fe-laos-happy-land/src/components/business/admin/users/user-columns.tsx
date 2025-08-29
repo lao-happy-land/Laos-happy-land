@@ -53,6 +53,8 @@ export const getColumns = (
           />
           <div>
             <div style={{ fontWeight: 500 }}>{user.fullName}</div>
+            <div style={{ fontWeight: 500 }}>{user.id}</div>
+
             <Text type="secondary">ID: {user.id.slice(0, 8)}...</Text>
           </div>
         </Space>

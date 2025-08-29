@@ -57,24 +57,25 @@ export default function Users() {
     searchParams.get("search") ?? "",
   );
   const [filterRole, setFilterRole] = useState(searchParams.get("role") ?? "");
-  // const [skip, setSkip] = useState(Number(searchParams.get("skip")) ?? 1);
-  // const [take, setTake] = useState(Number(searchParams.get("take")) ?? 10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
 
   // Sync URL params with component state
   useEffect(() => {
     const urlSearch = searchParams.get("search") ?? "";
     const urlRole = searchParams.get("role") ?? "";
-    // const urlPage = Number(searchParams.get("skip")) ?? 1;
-    // const urlSize = Number(searchParams.get("take")) ?? 10;
+    const urlPage = parseInt(searchParams.get("page") ?? "1");
+    const urlPageSize = parseInt(searchParams.get("pageSize") ?? "10");
 
     if (urlSearch !== searchTerm) {
       setSearchTerm(urlSearch);
       setSearchInputValue(urlSearch);
     }
     if (urlRole !== filterRole) setFilterRole(urlRole);
-    // if (urlPage !== skip) setSkip(urlPage);
-    // if (urlSize !== take) setTake(urlSize);
-  }, [searchParams, searchTerm, filterRole]);
+    if (urlPage !== currentPage) setCurrentPage(urlPage);
+    if (urlPageSize !== pageSize) setPageSize(urlPageSize);
+  }, [searchParams, searchTerm, filterRole, currentPage, pageSize]);
 
   const {
     data: usersData = { data: [], meta: { itemCount: 0, pageCount: 0 } },
@@ -83,10 +84,10 @@ export default function Users() {
   } = useRequest(
     async () => {
       const response = await userService.getAllUsers({
-        // take: take,
-        // skip: skip,
-        fullName: searchTerm || undefined,
+        search: searchTerm || undefined,
         role: filterRole || undefined,
+        page: currentPage,
+        perPage: pageSize,
       });
       return response as unknown as {
         data: User[];
@@ -99,7 +100,10 @@ export default function Users() {
       };
     },
     {
-      refreshDeps: [searchTerm, filterRole],
+      refreshDeps: [searchTerm, filterRole, currentPage, pageSize],
+      onSuccess: (data) => {
+        setTotal(data.meta.itemCount ?? 0);
+      },
       onError: (error) => {
         console.error("Error loading users:", error);
         message.error("Không thể tải danh sách người dùng. Vui lòng thử lại.");
@@ -108,10 +112,6 @@ export default function Users() {
   );
 
   const users = usersData.data || [];
-  const { itemCount: total } = usersData.meta || {
-    itemCount: 0,
-    pageCount: 0,
-  };
 
   const { userRoles, rolesLoading } = useUserRoles();
 
@@ -152,7 +152,7 @@ export default function Users() {
 
   const handleSearch = () => {
     setSearchTerm(searchInputValue);
-    updateURLParams({ search: searchInputValue });
+    updateURLParams({ search: searchInputValue, page: 1 });
   };
 
   const handleSearchChange = (value: string) => {
@@ -162,7 +162,13 @@ export default function Users() {
   const handleRoleChange = (value: string) => {
     const roleValue = value === "all" ? "" : value;
     setFilterRole(roleValue);
-    updateURLParams({ role: roleValue });
+    updateURLParams({ role: roleValue, page: 1 });
+  };
+
+  const handlePaginationChange = (page: number, size: number) => {
+    setCurrentPage(page);
+    setPageSize(size);
+    updateURLParams({ page, pageSize: size });
   };
 
   const handleEditUser = (user: User) => {
@@ -273,14 +279,10 @@ export default function Users() {
         <Pagination
           style={{ marginTop: "20px" }}
           align="center"
-          // current={skip}
-          // pageSize={take}
           total={total}
-          onChange={(_page, _pageSize) => {
-            // setSkip(page);
-            // setTake(pageSize ?? 10);
-            // updateURLParams({ skip: page, take: pageSize ?? 10 });
-          }}
+          onChange={handlePaginationChange}
+          current={currentPage}
+          pageSize={pageSize}
         />
       </Card>
 
