@@ -92,7 +92,7 @@ export class PropertyService {
   }
 
   async getAll(params: GetPropertiesFilterDto, user: User) {
-    const isAdmin = !!user?.role && user.role.toString().toLowerCase() === 'admin';
+    const isAdmin = !!user?.role && user.role.toString() === 'Admin';
 
     const properties = this.propertyRepository
       .createQueryBuilder('property')
@@ -178,7 +178,7 @@ export class PropertyService {
       });
     }
 
-    if (params.status && user.role?.name === 'Admin') {
+    if (params.status && user.role.toString() === 'Admin') {
       properties.andWhere('property.status = :status', {
         status: params.status,
       });
