@@ -63,6 +63,7 @@ export class PropertyController {
     @Req() req: Request,
   ) {
     const user = req.user as User;
+    console.log(user)
     return this.propertyService.getAll(params, user);
   }
 
