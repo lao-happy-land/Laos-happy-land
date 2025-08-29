@@ -5,6 +5,7 @@ import type { User } from "@/share/service/auth.service";
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+  isInitialized: boolean; // Add initialization flag
 
   // Actions
   login: (
@@ -19,8 +20,12 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
+  isInitialized: false,
 
   initialize: () => {
+    // Only run on client side to prevent hydration mismatch
+    if (typeof window === "undefined") return;
+
     try {
       const userData = authService.getUserFromToken();
       const token = authService.getAuthToken();
@@ -28,12 +33,14 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({
         user: userData,
         isAuthenticated: !!userData && !!token,
+        isInitialized: true,
       });
     } catch (error) {
       console.error("Auth initialization error:", error);
       set({
         user: null,
         isAuthenticated: false,
+        isInitialized: true,
       });
     }
   },
@@ -52,28 +59,29 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       const userData = authService.getUserFromToken();
 
-      // Login successful - auth store updated
-
+      // Update auth store state immediately
       set({
         user: userData,
         isAuthenticated: !!userData,
+        isInitialized: true,
       });
 
-      // Small delay to ensure cookie is fully processed by browser
+      // Use a longer delay to ensure cookie is properly set and middleware can read it
       setTimeout(() => {
         if (redirectUrl && redirectUrl !== "/") {
-          window.location.replace(redirectUrl);
+          window.location.href = redirectUrl;
         } else if (userData?.role?.toLowerCase() === "admin") {
-          window.location.replace("/admin");
+          window.location.href = "/admin";
         } else {
-          window.location.replace("/");
+          window.location.href = "/";
         }
-      }, 500); // Longer delay to ensure cookie is processed
+      }, 1000); // Increased delay to ensure cookie is set
     } catch (error: unknown) {
       console.error("Login error:", error);
       set({
         user: null,
         isAuthenticated: false,
+        isInitialized: true,
       });
       throw error; // Re-throw to let component handle the error
     }
@@ -81,10 +89,12 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: () => {
     authService.logout();
+    window.location.href = "/";
 
     set({
       user: null,
       isAuthenticated: false,
+      isInitialized: true,
     });
   },
 }));

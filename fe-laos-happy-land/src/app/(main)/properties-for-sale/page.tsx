@@ -1,5 +1,5 @@
-import PropertiesForSale from "@/components/business/landing/properties-for-sale";
+import Properties from "@/components/business/landing/properties";
 
 export default function HomePage() {
-  return <PropertiesForSale />;
+  return <Properties transaction="sale" />;
 }

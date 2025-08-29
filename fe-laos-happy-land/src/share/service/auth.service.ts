@@ -164,26 +164,45 @@ export const authService = {
   logout(): void {
     // Clear localStorage and cookies - only token
     if (typeof window !== "undefined") {
-      localStorage.removeItem("access_token");
-
-      // Clear cookie
-      document.cookie =
-        "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      try {
+        localStorage.removeItem("access_token");
+        // Clear cookie
+        document.cookie =
+          "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      } catch (error) {
+        console.error("Error clearing auth data:", error);
+      }
     }
   },
 
   setAuthToken(token: string) {
     if (typeof window !== "undefined") {
-      localStorage.setItem("access_token", token);
+      try {
+        localStorage.setItem("access_token", token);
+        // Set cookie for middleware with proper attributes
+        const cookieValue = `access_token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; samesite=lax`;
+        document.cookie = cookieValue;
 
-      // Also set cookie for middleware
-      document.cookie = `access_token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; samesite=lax; secure=false`;
+        // Also try setting with domain if available
+        if (window.location.hostname !== "localhost") {
+          document.cookie = `${cookieValue}; domain=${window.location.hostname}`;
+        }
+
+        console.log("Token set in localStorage and cookie");
+      } catch (error) {
+        console.error("Error setting auth token:", error);
+      }
     }
   },
 
   getAuthToken(): string | null {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("access_token");
+      try {
+        return localStorage.getItem("access_token");
+      } catch (error) {
+        console.error("Error getting auth token:", error);
+        return null;
+      }
     }
     return null;
   },
@@ -194,6 +213,18 @@ export const authService = {
     if (!token) return null;
 
     return this.decodeTokenPayload(token);
+  },
+
+  // Verify user role from server (optional - for additional security)
+  async verifyUserRole(): Promise<User | null> {
+    try {
+      // You can add an API endpoint to verify the user's role
+      // For now, we'll just return the decoded token data
+      return this.getUserFromToken();
+    } catch (error) {
+      console.error("Error verifying user role:", error);
+      return null;
+    }
   },
 };
 

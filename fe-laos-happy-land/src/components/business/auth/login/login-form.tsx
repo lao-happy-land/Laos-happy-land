@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Form, Input, Button, Checkbox, message } from "antd";
+import { Form, Input, Button, Checkbox, App } from "antd";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 import { useAuthStore } from "@/share/store/auth.store";
 
@@ -11,6 +11,7 @@ interface LoginFormProps {
 }
 
 export default function LoginForm({ onError, redirectUrl }: LoginFormProps) {
+  const { message } = App.useApp();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const { login } = useAuthStore();

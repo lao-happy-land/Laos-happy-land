@@ -2,8 +2,11 @@ export type APIResponse<T> = {
   data: T;
   meta: {
     page: number;
-    limit: number;
-    total: number;
+    itemCount: number;
+    pageCount: number;
+    take: number;
+    hasPreviousPage: boolean;
+    hasNextPage: boolean;
   };
 };
 
@@ -29,7 +32,7 @@ export type Property = {
     date: string;
     price: string | number;
   }[];
-  isVerified: boolean;
+  status: "pending" | "approved" | "rejected";
   details: {
     area: number;
     bedrooms: number;
@@ -42,7 +45,7 @@ export type Property = {
   transactionType: "rent" | "sale";
   images: string[] | null;
   mainImage: string | null;
-  owner: string | User | null;
+  owner: User | null;
   type?: {
     id: string;
     name: string;

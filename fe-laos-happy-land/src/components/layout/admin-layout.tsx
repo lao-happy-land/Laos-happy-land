@@ -1,43 +1,64 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ADMIN_NAV_ITEMS } from "@/share/constant/admin-nav-constant";
 import { useAuthStore } from "@/share/store/auth.store";
-import { LogOut, User, Settings, Bell } from "lucide-react";
-import { Button } from "antd";
+import { LogOut, User, Settings } from "lucide-react";
+import { Button, Dropdown, App } from "antd";
+import LoadingScreen from "@/components/common/loading-screen";
+import UnauthorizedPage from "@/app/unauthorized/page";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
+  const { modal } = App.useApp();
   const pathname = usePathname();
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { user, isAuthenticated, isInitialized, logout } = useAuthStore();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setUserDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+  // Show loading while auth is being initialized
+  if (!isInitialized) {
+    return (
+      <LoadingScreen
+        variant="primary"
+        message="Đang tải trang..."
+        size="lg"
+        showProgress
+        duration={3}
+      />
+    );
+  }
 
   if (!isAuthenticated) {
-    return null;
+    return <UnauthorizedPage />;
+  }
+
+  // Check if user has admin role
+  if (user?.role?.toLowerCase() !== "admin") {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="mb-4 text-6xl">🚫</div>
+          <h1 className="mb-2 text-2xl font-bold text-gray-900">
+            Không có quyền truy cập
+          </h1>
+          <p className="mb-6 text-gray-600">
+            Bạn không có quyền truy cập trang quản trị
+          </p>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-lg bg-gray-600 px-6 py-3 text-white transition-colors hover:bg-gray-700"
+          >
+            Về trang chủ
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   const menuItems = ADMIN_NAV_ITEMS(pathname);
@@ -60,33 +81,24 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
-      {/* Enhanced Sidebar */}
+      {/* Sidebar */}
       <aside
-        className={`flex h-screen flex-col bg-white shadow-xl transition-all duration-300 ${
+        className={`relative z-40 flex h-full flex-col bg-white shadow-lg transition-all duration-300 ${
           sidebarCollapsed ? "w-20" : "w-64"
         }`}
       >
-        {/* Logo Section */}
-        <div className="flex h-20 items-center justify-center border-r border-b border-gray-200 px-6">
+        {/* Logo */}
+        <div className="flex h-20 items-center justify-center border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 p-2">
-              <Image
-                src="/images/admin/logo.svg"
-                alt="Logo"
-                width={24}
-                height={24}
-                className="object-contain brightness-0 invert filter"
-              />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#fc746f]">
+              <span className="text-lg font-bold text-white">A</span>
             </div>
-
-            <div className={`${sidebarCollapsed ? "hidden" : "flex flex-col"}`}>
-              <span className="text-lg font-bold whitespace-nowrap text-gray-900">
-                Lào BDS
-              </span>
-              <span className="text-xs whitespace-nowrap text-gray-600">
-                Admin Panel
-              </span>
-            </div>
+            {!sidebarCollapsed && (
+              <div>
+                <h1 className="text-lg font-bold text-gray-900">Admin</h1>
+                <p className="text-xs text-gray-500">Dashboard</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -98,14 +110,13 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                 <Link
                   href={item.href}
                   className={`group relative flex items-center gap-3 rounded-xl px-3 py-3 transition-all duration-200 ${
-                    item.active
-                      ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md"
-                      : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                    item.active ? "text-white shadow-md" : "hover:bg-gray-100"
                   }`}
+                  style={item.active ? { backgroundColor: "#fc746f" } : {}}
                   title={sidebarCollapsed ? item.label : undefined}
                 >
                   {item.active && (
-                    <div className="absolute top-1/2 left-0 h-8 w-1 -translate-y-1/2 rounded-r-full bg-white"></div>
+                    <div className="absolute top-1/2 left-0 h-8 w-1 -translate-y-1/2 rounded-r-full bg-white" />
                   )}
                   <div
                     className={`flex h-6 w-6 items-center justify-center rounded-lg transition-all duration-200 ${
@@ -127,7 +138,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                     />
                   </div>
                   {!sidebarCollapsed && (
-                    <span className="text-sm font-medium whitespace-nowrap">
+                    <span
+                      className={`text-sm font-medium whitespace-nowrap ${
+                        item.active ? "text-white" : "text-gray-700"
+                      }`}
+                    >
                       {item.label}
                     </span>
                   )}
@@ -185,37 +200,82 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
             {/* User Section */}
             <div className="flex items-center gap-4">
-              {/* Notifications */}
-              <button className="group relative rounded-xl p-3 transition-all duration-200 hover:bg-gray-50">
-                <Bell className="h-5 w-5 text-gray-600 transition-all duration-200 group-hover:scale-110 group-hover:text-gray-900" />
-                <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 ring-2 ring-white"></span>
-              </button>
-
               {/* User Dropdown */}
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="group flex items-center gap-3 rounded-xl p-2 transition-all duration-200 hover:bg-gray-50"
+              <Dropdown
+                menu={{
+                  items: [
+                    {
+                      key: "user-info",
+                      disabled: true,
+                      className: "border-b border-gray-100 px-4 py-3",
+                      label: (
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {user?.fullName ?? "User"}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            {user?.email ?? "user@example.com"}
+                          </p>
+                          <p className="mt-1 text-xs font-medium text-blue-600 capitalize">
+                            {user?.role ?? "user"}
+                          </p>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: "profile",
+                      icon: <User className="h-4 w-4" />,
+                      label: <Link href="/admin/profile">Hồ sơ cá nhân</Link>,
+                    },
+                    {
+                      key: "settings",
+                      icon: <Settings className="h-4 w-4" />,
+                      label: <Link href="/admin/settings">Cài đặt</Link>,
+                    },
+                    {
+                      type: "divider",
+                    },
+                    {
+                      key: "logout",
+                      icon: <LogOut className="h-4 w-4" />,
+                      danger: true,
+                      label: "Đăng xuất",
+                      onClick: () => {
+                        modal.confirm({
+                          title: "Xác nhận đăng xuất",
+                          content: "Bạn có chắc chắn muốn đăng xuất?",
+                          okText: "Đăng xuất",
+                          cancelText: "Hủy",
+                          okType: "danger",
+                          onOk: () => {
+                            logout();
+                          },
+                        });
+                      },
+                    },
+                  ],
+                }}
+                trigger={["click"]}
+                placement="bottomRight"
+                arrow
+              >
+                <Button
+                  type="text"
+                  size="large"
+                  className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-2 transition-all duration-200 hover:border-gray-300 hover:shadow-md"
                 >
-                  <div className="relative">
-                    {/* User Avatar - using first letter if no avatar */}
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 ring-2 ring-gray-200 transition-all duration-200 group-hover:ring-blue-300">
-                      <span className="text-sm font-medium text-white">
-                        {user?.fullName?.charAt(0)?.toUpperCase() ?? "U"}
-                      </span>
-                    </div>
-                    <div className="absolute -right-1 -bottom-1 h-3 w-3 rounded-full bg-green-500 ring-2 ring-white"></div>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600">
+                    <span className="text-sm font-medium text-white">
+                      {user?.fullName?.charAt(0) ?? "U"}
+                    </span>
                   </div>
-                  <div className="hidden text-left sm:block">
+                  <div className="hidden md:block">
                     <p className="text-sm font-medium text-gray-900">
                       {user?.fullName ?? "User"}
                     </p>
-                    <p className="text-xs text-gray-600">
-                      {user?.email ?? "user@example.com"}
-                    </p>
                   </div>
                   <svg
-                    className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${userDropdownOpen ? "rotate-180" : ""}`}
+                    className="h-4 w-4 text-gray-400 transition-transform duration-200"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -227,52 +287,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                       d="M19 9l-7 7-7-7"
                     />
                   </svg>
-                </button>
-
-                {/* Dropdown Menu */}
-                {userDropdownOpen && (
-                  <div className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-gray-200 bg-white py-2 shadow-xl">
-                    <div className="border-b border-gray-100 px-4 py-3">
-                      <p className="text-sm font-medium text-gray-900">
-                        {user?.fullName ?? "User"}
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        {user?.email ?? "user@example.com"}
-                      </p>
-                      <p className="mt-1 text-xs font-medium text-blue-600 capitalize">
-                        {user?.role ?? "user"}
-                      </p>
-                    </div>
-                    <Link
-                      href="/admin/profile"
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50"
-                      onClick={() => setUserDropdownOpen(false)}
-                    >
-                      <User className="h-4 w-4" />
-                      Hồ sơ cá nhân
-                    </Link>
-                    <Link
-                      href="/admin/settings"
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50"
-                      onClick={() => setUserDropdownOpen(false)}
-                    >
-                      <Settings className="h-4 w-4" />
-                      Cài đặt
-                    </Link>
-                    <hr className="my-2" />
-                    <Button
-                      className="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50"
-                      onClick={() => {
-                        setUserDropdownOpen(false);
-                        logout();
-                      }}
-                    >
-                      <LogOut className="h-4 w-4" />
-                      Đăng xuất
-                    </Button>
-                  </div>
-                )}
-              </div>
+                </Button>
+              </Dropdown>
             </div>
           </div>
         </header>
@@ -292,14 +308,6 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           </div>
         </main>
       </div>
-
-      {/* Overlay for mobile sidebar */}
-      {sidebarCollapsed && (
-        <div
-          className="bg-opacity-50 fixed inset-0 z-30 bg-black lg:hidden"
-          onClick={() => setSidebarCollapsed(false)}
-        />
-      )}
     </div>
   );
 };

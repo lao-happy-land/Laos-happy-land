@@ -4,12 +4,10 @@ import { type Metadata } from "next";
 import { Be_Vietnam_Pro } from "next/font/google";
 import AntdConfigProvider from "@/share/config/antd.config";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
-import AppInitializer from "@/components/layout/app-initializer";
 import { App } from "antd";
 import { Suspense } from "react";
-import LoadingScreen, {
-  LoadingPresets,
-} from "@/components/common/loading-screen";
+import LoadingScreen from "@/components/common/loading-screen";
+import AuthProvider from "@/components/common/auth-provider";
 
 export const metadata: Metadata = {
   title: "Laos Happy Land - Bất động sản Lào",
@@ -72,7 +70,7 @@ export default function RootLayout({
         <AntdRegistry>
           <AntdConfigProvider>
             <App>
-              <AppInitializer>
+              <AuthProvider>
                 <Suspense
                   fallback={
                     <LoadingScreen
@@ -86,7 +84,7 @@ export default function RootLayout({
                 >
                   {children}
                 </Suspense>
-              </AppInitializer>
+              </AuthProvider>
             </App>
           </AntdConfigProvider>
         </AntdRegistry>
