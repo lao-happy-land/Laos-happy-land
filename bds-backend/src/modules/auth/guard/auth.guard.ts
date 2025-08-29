@@ -53,10 +53,10 @@ export class OptionalAuthGuard implements CanActivate {
         secret: jwtConstants.secret,
       });
       request.user = payload;
+      return true;
     } catch {
-      request.user = null;
+      throw new UnauthorizedException('Invalid or expired token');
     }
-    return true;
   }
 
   private extractTokenFromHeader(request: Request): string | undefined {
