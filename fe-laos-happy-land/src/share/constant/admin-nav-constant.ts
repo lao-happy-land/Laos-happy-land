@@ -29,12 +29,4 @@ export const ADMIN_NAV_ITEMS = (pathname: string) => [
     href: "/admin/properties",
     active: pathname === "/admin/properties",
   },
-
-  {
-    id: 5,
-    label: "Quản lý dự án",
-    icon: "/images/admin/sidebar/triangle-li.svg",
-    href: "/admin/projects",
-    active: pathname === "/admin/projects",
-  },
 ];
