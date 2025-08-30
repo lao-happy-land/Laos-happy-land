@@ -85,7 +85,9 @@ const Properties = ({ transaction }: PropertiesProps) => {
   // Fetch property types
   const { loading: propertyTypesLoading } = useRequest(
     async () => {
-      const response = await propertyTypeService.getPropertyTypes();
+      const response = await propertyTypeService.getPropertyTypes({
+        transaction: transaction,
+      });
       return response.data ?? [];
     },
     {
@@ -155,7 +157,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
         apiParams.minPrice = parseInt(minPrice);
       }
 
-      if (maxPrice && maxPrice !== "100000000000") {
+      if (maxPrice && maxPrice !== "100000000000" && maxPrice !== "") {
         apiParams.maxPrice = parseInt(maxPrice);
       }
 
@@ -328,6 +330,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
   const priceRanges = PRICE_RANGE_OPTIONS;
 
   // Generate property type options from API data
+
   const propertyTypeOptions = [
     { id: "all", name: "Tất cả nhà đất", icon: <Home className="h-4 w-4" /> },
     ...propertyTypes.map((type) => ({
@@ -426,8 +429,20 @@ const Properties = ({ transaction }: PropertiesProps) => {
     }
 
     setPriceRange([minValue, maxValue]);
-    setMinPrice(minValue.toString());
-    setMaxPrice(maxValue.toString());
+    // For "all" option, clear the input fields
+    if (rangeValue === "all") {
+      setMinPrice("");
+      setMaxPrice("");
+    } else {
+      // For "under-500" option, show "0" in min price input
+      if (rangeValue === "under-500") {
+        setMinPrice("0");
+        setMaxPrice(maxValue.toString());
+      } else {
+        setMinPrice(minValue.toString());
+        setMaxPrice(maxValue.toString());
+      }
+    }
 
     const params: Record<string, string> = {};
     if (minValue !== 0) {
@@ -435,7 +450,8 @@ const Properties = ({ transaction }: PropertiesProps) => {
     } else {
       params.minPrice = "";
     }
-    if (maxValue !== 100000000000) {
+    // For "all" option, don't set maxPrice (infinity)
+    if (rangeValue !== "all" && maxValue !== 100000000000) {
       params.maxPrice = maxValue.toString();
     } else {
       params.maxPrice = "";
@@ -456,6 +472,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
     } else {
       params.minPrice = "";
     }
+    // If max value is at the maximum, treat it as infinity (no maxPrice parameter)
     if (value[1] !== 100000000000) {
       params.maxPrice = value[1].toString();
     } else {
@@ -488,6 +505,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
     setMaxPrice(numValue.toString());
 
     const params: Record<string, string> = {};
+    // If max value is at the maximum, treat it as infinity (no maxPrice parameter)
     if (numValue !== 100000000000) {
       params.maxPrice = numValue.toString();
     } else {
@@ -1201,12 +1219,15 @@ const Properties = ({ transaction }: PropertiesProps) => {
                       <div className="mb-4 flex gap-4">
                         <div className="flex-1">
                           <Typography.Text className="mb-1 block text-sm text-gray-600">
-                            Từ: {numberToString(priceRange[0])}
+                            Từ:{" "}
+                            {minPrice
+                              ? numberToString(parseInt(minPrice))
+                              : "0"}
                           </Typography.Text>
                           <Input
                             placeholder="Từ"
                             className="rounded-lg"
-                            value={priceRange[0]}
+                            value={minPrice}
                             onChange={(e) =>
                               handleMinPriceInputChange(
                                 parseInt(e.target.value),
@@ -1219,12 +1240,15 @@ const Properties = ({ transaction }: PropertiesProps) => {
                         </div>
                         <div className="flex-1">
                           <Typography.Text className="mb-1 block text-sm text-gray-600">
-                            Đến: {numberToString(priceRange[1])}
+                            Đến:{" "}
+                            {maxPrice
+                              ? numberToString(parseInt(maxPrice))
+                              : "∞"}
                           </Typography.Text>
                           <Input
                             placeholder="Đến"
                             className="rounded-lg"
-                            value={priceRange[1]}
+                            value={maxPrice}
                             onChange={(e) =>
                               handleMaxPriceInputChange(
                                 parseInt(e.target.value),
@@ -1247,7 +1271,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                             return `${numberToString(value)}`;
                           },
                         }}
-                        max={20000000000}
+                        max={100000000000}
                         className="mb-4"
                       />
                     </div>
