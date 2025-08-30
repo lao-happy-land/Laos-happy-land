@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { CreatePropertyTypeDto } from './dto/create_property_type.dto';
 import { GetPropertyTypeDto } from './dto/get_property_type.dto';
 import { PageMetaDto } from 'src/common/dtos/pageMeta';
-import { ResponsePaginateObject } from 'src/common/dtos/reponsePaginate';
+import { ResponsePaginate, ResponsePaginateObject } from 'src/common/dtos/reponsePaginate';
 
 @Injectable()
 export class PropertyTypeService {
@@ -47,23 +47,12 @@ export class PropertyTypeService {
 
     const [result, total] = await queryBuilder.getManyAndCount();
 
-    const grouped = result.reduce(
-      (acc, item) => {
-        if (!acc[item.transactionType]) {
-          acc[item.transactionType] = [];
-        }
-        acc[item.transactionType].push(item);
-        return acc;
-      },
-      {} as Record<string, any[]>,
-    );
-
     const pageMetaDto = new PageMetaDto({
       itemCount: total,
       pageOptionsDto: params,
     });
 
-    return new ResponsePaginateObject(grouped, pageMetaDto, 'Success');
+    return new ResponsePaginate(result, pageMetaDto, 'Success');
   }
 
   async get(id: string) {
