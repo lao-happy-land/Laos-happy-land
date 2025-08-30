@@ -126,7 +126,7 @@ export default function CreateProperty() {
       manual: true,
       onSuccess: () => {
         message.success("Tạo tin đăng thành công!");
-        router.push("/dashboard");
+        router.push("/");
       },
       onError: (error) => {
         console.error("Failed to submit form:", error);
