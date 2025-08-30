@@ -14,7 +14,15 @@ import {
 } from '@nestjs/common';
 import { PropertyService } from './property.service';
 import { CreatePropertyDto } from './dto/create_property.dto';
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { GetPropertiesFilterDto } from './dto/get_property.dto';
 import { UpdatePropertyDto } from './dto/update_property.dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
@@ -23,13 +31,15 @@ import { PageOptionsDto } from 'src/common/dtos/pageOption';
 import { RejectPropertyDto } from './dto/reject_property.dto';
 import { User } from 'src/entities/user.entity';
 import { Request } from 'express';
-import { AuthGuard, OptionalAuthGuard } from '../auth/guard/auth.guard';
+import { AdminGuard, AuthGuard, OptionalAuthGuard } from '../auth/guard/auth.guard';
 
 @Controller('property')
 export class PropertyController {
   constructor(private readonly propertyService: PropertyService) {}
 
   @Post()
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreatePropertyDto })
   @ApiResponse({ status: 200, description: 'Property created successfully' })
@@ -40,6 +50,7 @@ export class PropertyController {
     ]),
   )
   async create(
+    @Req() req: Request,
     @Body() createPropertyDto: CreatePropertyDto,
     @UploadedFiles()
     files: {
@@ -47,10 +58,12 @@ export class PropertyController {
       images?: Multer.File[];
     },
   ) {
+    const user = req.user as User;
     return this.propertyService.create(
       createPropertyDto,
       files.mainImage?.[0],
       files.images || [],
+      user,
     );
   }
 
@@ -58,13 +71,18 @@ export class PropertyController {
   @UseGuards(OptionalAuthGuard)
   @ApiBearerAuth()
   @ApiResponse({ status: 200, description: 'Success' })
-  async getAll(
-    @Query() params: GetPropertiesFilterDto,
-    @Req() req: Request,
-  ) {
+  async getAll(@Query() params: GetPropertiesFilterDto, @Req() req: Request) {
     const user = req.user as User;
-    console.log(user)
     return this.propertyService.getAll(params, user);
+  }
+
+  @Get('owner')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: 'Success' })
+  async getByUser(@Req() req: Request, @Query() params: PageOptionsDto) {
+    const user = req.user as User;
+    return this.propertyService.getByUser(params, user);
   }
 
   @Get(':id')
@@ -73,16 +91,9 @@ export class PropertyController {
     return this.propertyService.get(id);
   }
 
-  @Get('owner/:userId')
-  @ApiResponse({ status: 200, description: 'Success' })
-  async getByUser(
-    @Param('userId') userId: string,
-    @Query() params: PageOptionsDto,
-  ) {
-    return this.propertyService.getByUser(userId, params);
-  }
-
   @Patch(':id')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UpdatePropertyDto })
   @ApiResponse({ status: 200, description: 'Property updated successfully' })
@@ -110,12 +121,17 @@ export class PropertyController {
   }
 
   @Delete(':id')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
   @ApiResponse({ status: 200, description: 'Property deleted successfully' })
-  async remove(@Param('id') id: string) {
-    return this.propertyService.remove(id);
+  async remove(@Param('id') id: string, @Req() req: Request) {
+    const user = req.user as User;
+    return this.propertyService.remove(id, user);
   }
 
   @Patch(':id/approve')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Approve a property' })
   @ApiParam({ name: 'id', description: 'Property ID' })
   @ApiResponse({ status: 200, description: 'Property approved successfully' })
@@ -125,6 +141,8 @@ export class PropertyController {
   }
 
   @Patch(':id/reject')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Reject a property' })
   @ApiParam({ name: 'id', description: 'Property ID' })
   @ApiBody({
@@ -133,7 +151,10 @@ export class PropertyController {
   })
   @ApiResponse({ status: 200, description: 'Property rejected successfully' })
   @ApiResponse({ status: 404, description: 'Property not found' })
-  async reject(@Param('id') id: string, @Body() rejectPropertyDto: RejectPropertyDto) {
+  async reject(
+    @Param('id') id: string,
+    @Body() rejectPropertyDto: RejectPropertyDto,
+  ) {
     return this.propertyService.rejectProperty(id, rejectPropertyDto);
   }
 }

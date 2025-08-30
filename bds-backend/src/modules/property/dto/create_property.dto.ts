@@ -23,13 +23,6 @@ export class CreatePropertyDto {
   typeId: string;
 
   @ApiProperty({
-    example: '6933c706-3180-47a0-b56b-c98180d8afda',
-    description: 'User ID associated with the order',
-  })
-  @IsUUID()
-  user_id: string;
-
-  @ApiProperty({
     description: 'Tiêu đề tin rao',
     example: 'Căn hộ cao cấp 2PN tại Quận 1, view sông tuyệt đẹp',
   })

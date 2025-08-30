@@ -1,6 +1,7 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -25,7 +26,7 @@ export class AuthGuard implements CanActivate {
       });
       request.user = payload;
     } catch {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Invalid or expired token');
     }
     return true;
   }
@@ -66,16 +67,37 @@ export class OptionalAuthGuard implements CanActivate {
 }
 
 @Injectable()
-export class RoleGuard implements CanActivate {
-  constructor(private readonly reflector: Reflector) {}
+export class AdminGuard implements CanActivate {
+  constructor(private jwtService: JwtService) {}
 
-  canActivate(context: ExecutionContext): boolean {
-    const roles = this.reflector.get<string[]>('roles', context.getHandler());
-    if (!roles) {
-      return true;
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest<Request>();
+    const token = this.extractTokenFromHeader(request);
+
+    if (!token) {
+      throw new UnauthorizedException('Token is required');
     }
-    const request = context.switchToHttp().getRequest();
-    const user = request.user;
-    return roles.includes(user.role);
+
+    try {
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: jwtConstants.secret,
+      });
+
+      request.user = payload;
+
+      if (payload.role !== 'Admin') {
+        throw new ForbiddenException('Admin role required');
+      }
+
+      return true;
+    } catch (err) {
+      if (err instanceof ForbiddenException) throw err;
+      throw new UnauthorizedException('Invalid or expired token');
+    }
+  }
+
+  private extractTokenFromHeader(request: Request): string | undefined {
+    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+    return type === 'Bearer' ? token : undefined;
   }
 }

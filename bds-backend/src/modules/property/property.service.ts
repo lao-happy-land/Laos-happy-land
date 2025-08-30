@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -32,13 +33,12 @@ export class PropertyService {
     createPropertyDto: CreatePropertyDto,
     mainImage?: Multer.File,
     images?: File[],
+    user?: any,
   ) {
-    const user = await this.entityManager.findOneBy(User, {
-      id: createPropertyDto.user_id,
+    const isAdmin = !!user?.role && user.role.toString() === 'Admin';
+    const owner = await this.entityManager.findOneBy(User, {
+      id: user.sub,
     });
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
 
     const propertyType = await this.entityManager.findOneBy(PropertyType, {
       id: createPropertyDto.typeId,
@@ -47,7 +47,7 @@ export class PropertyService {
       throw new BadRequestException('Property type not found');
     }
 
-    const { user_id, typeId, ...propertyData } = createPropertyDto;
+    const { typeId, ...propertyData } = createPropertyDto;
 
     if (typeof propertyData.details === 'string') {
       try {
@@ -83,11 +83,15 @@ export class PropertyService {
 
     const property = this.propertyRepository.create({
       ...propertyData,
-      owner: user,
+      owner: owner,
       type: propertyType,
+      status: isAdmin
+        ? PropertyStatusEnum.APPROVED
+        : PropertyStatusEnum.PENDING,
     });
 
     await this.entityManager.save(property);
+
     return { property, message: 'Property created successfully' };
   }
 
@@ -101,8 +105,6 @@ export class PropertyService {
       .skip(params.skip)
       .take(params.perPage)
       .orderBy('property.createdAt', params.OrderSort);
-
-      
 
     if (!isAdmin) {
       properties.andWhere('property.status = :status', {
@@ -209,10 +211,11 @@ export class PropertyService {
     return { property, message: 'Success' };
   }
 
-  async getByUser(userId: string, params: PageOptionsDto) {
-    if (!userId) {
-      throw new BadRequestException('User ID is required');
-    }
+  async getByUser(params: PageOptionsDto, user: any) {
+    const owner = await this.entityManager.findOneBy(User, {
+      id: user.sub,
+    });
+    const userId = owner.id;
 
     const queryBuilder = this.propertyRepository
       .createQueryBuilder('property')
@@ -312,14 +315,24 @@ export class PropertyService {
     return { property, message: 'Property updated successfully' };
   }
 
-  async remove(id: string) {
+  async remove(id: string, user: any) {
     const property = await this.propertyRepository.findOne({
       where: { id },
+      relations: ['owner'],
     });
 
     if (!property) {
-      throw new NotFoundException('Tour not found');
+      throw new NotFoundException('Property not found');
     }
+    const isAdmin = user?.role?.toString() === 'Admin';
+    const isOwner = property.owner?.id === user?.sub;
+
+    if (!isAdmin && !isOwner) {
+      throw new ForbiddenException(
+        'You are not allowed to delete this property',
+      );
+    }
+
     await this.entityManager.remove(property);
     return { message: 'Property deleted successfully' };
   }
