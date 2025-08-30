@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { CreatePropertyTypeDto } from './dto/create_property_type.dto';
 import { GetPropertyTypeDto } from './dto/get_property_type.dto';
 import { PageMetaDto } from 'src/common/dtos/pageMeta';
-import { ResponsePaginate } from 'src/common/dtos/reponsePaginate';
+import { ResponsePaginateObject } from 'src/common/dtos/reponsePaginate';
 
 @Injectable()
 export class PropertyTypeService {
@@ -15,25 +15,55 @@ export class PropertyTypeService {
   ) {}
 
   async create(createPropertyTypeDto: CreatePropertyTypeDto) {
+    const { name } = createPropertyTypeDto;
+
+    if (!name) {
+      throw new BadRequestException('Name is required');
+    }
+
+    const existed = await this.propertyTypeRepository.findOneBy({ name });
+    if (existed) {
+      throw new BadRequestException('Property type name already exists');
+    }
+
     const propertyType = this.propertyTypeRepository.create(
       createPropertyTypeDto,
     );
     await this.propertyTypeRepository.save(propertyType);
+
     return { propertyType, message: 'Property type created successfully' };
   }
 
   async getAll(params: GetPropertyTypeDto) {
-    const propertyTypes = this.propertyTypeRepository
+    const queryBuilder = this.propertyTypeRepository
       .createQueryBuilder('propertyType')
       .skip(params.skip)
       .take(params.perPage)
       .orderBy('propertyType.createdAt', params.OrderSort);
-    const [result, total] = await propertyTypes.getManyAndCount();
+
+    if(params.transaction){
+      queryBuilder.andWhere('propertyType.transactionType = :transaction', { transaction: params.transaction });
+    }
+
+    const [result, total] = await queryBuilder.getManyAndCount();
+
+    const grouped = result.reduce(
+      (acc, item) => {
+        if (!acc[item.transactionType]) {
+          acc[item.transactionType] = [];
+        }
+        acc[item.transactionType].push(item);
+        return acc;
+      },
+      {} as Record<string, any[]>,
+    );
+
     const pageMetaDto = new PageMetaDto({
       itemCount: total,
       pageOptionsDto: params,
     });
-    return new ResponsePaginate(result, pageMetaDto, 'Success');
+
+    return new ResponsePaginateObject(grouped, pageMetaDto, 'Success');
   }
 
   async get(id: string) {
@@ -52,21 +82,29 @@ export class PropertyTypeService {
     if (!propertyType) {
       throw new BadRequestException('Property type not found');
     }
-    if (propertyType) {
-      if (updatePropertyTypeDto.name) {
-        if (
-          await this.propertyTypeRepository.findOneBy({
-            name: updatePropertyTypeDto.name,
-          })
-        ) {
-          throw new BadRequestException('Property type name already exists');
-        } else {
-          propertyType.name = updatePropertyTypeDto.name;
-        }
+
+    if (updatePropertyTypeDto.name) {
+      const existed = await this.propertyTypeRepository.findOneBy({
+        name: updatePropertyTypeDto.name,
+      });
+
+      if (existed && existed.id !== id) {
+        throw new BadRequestException('Property type name already exists');
       }
+
+      propertyType.name = updatePropertyTypeDto.name;
     }
+
+    if (updatePropertyTypeDto.transactionType) {
+      propertyType.transactionType = updatePropertyTypeDto.transactionType;
+    }
+
     await this.propertyTypeRepository.save(propertyType);
-    return { propertyType, message: 'Property type updated successfully' };
+
+    return {
+      propertyType,
+      message: 'Property type updated successfully',
+    };
   }
 
   async remove(id: string) {
