@@ -66,12 +66,15 @@ const AdminProperties = () => {
   const [total, setTotal] = useState(0);
 
   // Fetch property types
-  const { loading: propertyTypesLoading } = useRequest(
+  const { loading: propertyTypesLoading, run: fetchPropertyTypes } = useRequest(
     async () => {
-      const response = await propertyTypeService.getPropertyTypes();
+      const response = await propertyTypeService.getPropertyTypes({
+        transaction: selectedTransactionType as "rent" | "sale" | "project",
+      });
       return response.data ?? [];
     },
     {
+      manual: true,
       onSuccess: (data) => {
         setPropertyTypes(data);
       },
@@ -81,6 +84,11 @@ const AdminProperties = () => {
       },
     },
   );
+
+  useEffect(() => {
+    fetchPropertyTypes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTransactionType]);
 
   // Update URL parameters
   const updateSearchParams = useCallback(
@@ -97,7 +105,9 @@ const AdminProperties = () => {
         } else {
           const shouldRemove =
             value === "" ||
+            value === "0" ||
             value === 0 ||
+            value === "100000000000" ||
             value === 100000000000 ||
             value === "false" ||
             value === "all" ||
@@ -252,8 +262,19 @@ const AdminProperties = () => {
       const [min, max] = range as [number, number];
       setPriceRange([min, max]);
       const params: Record<string, string | string[] | number> = {};
-      if (min > 0) params.minPrice = min;
-      if (max < 100000000000) params.maxPrice = max;
+
+      if (min > 0) {
+        params.minPrice = min;
+      } else {
+        params.minPrice = "";
+      }
+
+      if (max < 100000000000) {
+        params.maxPrice = max;
+      } else {
+        params.maxPrice = "";
+      }
+
       updateSearchParams(params);
     }
   };
@@ -525,6 +546,23 @@ const AdminProperties = () => {
             <Form form={form} layout="vertical">
               <Row gutter={[24, 16]}>
                 <Col xs={24} md={8}>
+                  <Form.Item label="Hình thức">
+                    <Select
+                      placeholder="Chọn hình thức"
+                      value={selectedTransactionType}
+                      onChange={handleTransactionTypeChange}
+                      allowClear
+                      loading={propertyTypesLoading}
+                    >
+                      <Option value="all">Tất cả</Option>
+                      <Option value="sale">Bán</Option>
+                      <Option value="rent">Cho thuê</Option>
+                      <Option value="project">Dự án</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+
+                <Col xs={24} md={8}>
                   <Form.Item label="Loại bất động sản">
                     <Select
                       mode="multiple"
@@ -533,6 +571,7 @@ const AdminProperties = () => {
                       onChange={handlePropertyTypeChange}
                       loading={propertyTypesLoading}
                       allowClear
+                      maxTagCount="responsive"
                     >
                       {propertyTypes.map((type) => (
                         <Option key={type.id} value={type.id}>
@@ -550,27 +589,12 @@ const AdminProperties = () => {
                       value={selectedStatus}
                       onChange={handleStatusChange}
                       allowClear
+                      loading={propertyTypesLoading}
                     >
                       <Option value="all">Tất cả</Option>
                       <Option value="pending">Chờ duyệt</Option>
                       <Option value="approved">Đã duyệt</Option>
                       <Option value="rejected">Từ chối</Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24} md={8}>
-                  <Form.Item label="Hình thức giao dịch">
-                    <Select
-                      placeholder="Chọn hình thức giao dịch"
-                      value={selectedTransactionType}
-                      onChange={handleTransactionTypeChange}
-                      allowClear
-                    >
-                      <Option value="all">Tất cả</Option>
-                      <Option value="sale">Bán</Option>
-                      <Option value="rent">Cho thuê</Option>
-                      <Option value="project">Dự án</Option>
                     </Select>
                   </Form.Item>
                 </Col>

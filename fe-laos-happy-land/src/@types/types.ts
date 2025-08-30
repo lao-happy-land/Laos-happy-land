@@ -67,4 +67,11 @@ export type Property = {
 export type PropertyType = {
   id: string;
   name: string;
+  createdAt: string;
+  createdBy: string | null;
+  updatedAt: string;
+  updatedBy: string | null;
+  deletedAt: string | null;
+  deletedBy: string | null;
+  transactionType: "rent" | "sale" | "project";
 };
