@@ -45,16 +45,22 @@ export default function CreateProperty() {
   const router = useRouter();
   const [form] = Form.useForm();
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
+  const [selectedTransactionType, setSelectedTransactionType] = useState<
+    "rent" | "sale" | "project"
+  >("sale");
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
 
   // Load property types
-  const { loading: loadingTypes } = useRequest(
+  const { loading: loadingTypes, run: fetchPropertyTypes } = useRequest(
     async () => {
-      const response = await propertyTypeService.getPropertyTypes();
+      const response = await propertyTypeService.getPropertyTypes({
+        transaction: selectedTransactionType,
+      });
       return response.data;
     },
     {
+      manual: true,
       onSuccess: (data) => {
         setPropertyTypes(data);
       },
@@ -63,6 +69,11 @@ export default function CreateProperty() {
       },
     },
   );
+
+  useEffect(() => {
+    fetchPropertyTypes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTransactionType]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -94,7 +105,6 @@ export default function CreateProperty() {
 
       const formData: CreatePropertyDto = {
         typeId: values.typeId,
-        user_id: userId,
         title: values.title,
         description: values.description,
         price: values.price,
@@ -186,6 +196,12 @@ export default function CreateProperty() {
     setMainImageFile(null);
   };
 
+  const handleTransactionTypeChange = (value: "rent" | "sale" | "project") => {
+    setSelectedTransactionType(value);
+    // Clear the selected property type when transaction type changes
+    form.setFieldsValue({ typeId: undefined });
+  };
+
   return (
     <div className="min-h-screen py-8">
       <div className="container mx-auto px-4">
@@ -250,6 +266,8 @@ export default function CreateProperty() {
                     placeholder="Chọn loại giao dịch"
                     size="large"
                     className="rounded-lg"
+                    onChange={handleTransactionTypeChange}
+                    loading={loadingTypes}
                   >
                     <Option value="sale">Bán</Option>
                     <Option value="rent">Cho thuê</Option>

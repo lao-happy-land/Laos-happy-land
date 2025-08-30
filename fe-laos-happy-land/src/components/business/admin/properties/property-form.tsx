@@ -43,14 +43,20 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
   const [mainImageList, setMainImageList] = useState<UploadFile[]>([]);
   const [imagesList, setImagesList] = useState<UploadFile[]>([]);
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
+  const [selectedTransactionType, setSelectedTransactionType] = useState<
+    "rent" | "sale" | "project"
+  >("sale");
   const [currentProperty, setCurrentProperty] = useState<Property | null>(null);
 
-  const { loading: propertyTypesLoading } = useRequest(
+  const { loading: propertyTypesLoading, run: fetchPropertyTypes } = useRequest(
     async () => {
-      const response = await propertyTypeService.getPropertyTypes();
+      const response = await propertyTypeService.getPropertyTypes({
+        transaction: selectedTransactionType,
+      });
       return response;
     },
     {
+      manual: true,
       onSuccess: (response) => {
         setPropertyTypes(response.data ?? []);
       },
@@ -60,6 +66,11 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
       },
     },
   );
+
+  useEffect(() => {
+    fetchPropertyTypes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTransactionType]);
 
   const { loading: propertyLoading } = useRequest(
     async () => {
@@ -107,6 +118,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
 
   useEffect(() => {
     if (currentProperty) {
+      setSelectedTransactionType(currentProperty.transactionType);
       form.setFieldsValue({
         typeId: currentProperty.type?.id,
         title: currentProperty.title,
@@ -174,8 +186,6 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
           throw new Error("User ID not found. Please log in again.");
         }
 
-        createData.user_id = userId;
-
         return await propertyService.createProperty(createData);
       } else {
         return await propertyService.updateProperty(propertyId!, formData);
@@ -237,6 +247,12 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
     return false;
   };
 
+  const handleTransactionTypeChange = (value: "rent" | "sale" | "project") => {
+    setSelectedTransactionType(value);
+    // Clear the selected property type when transaction type changes
+    form.setFieldsValue({ typeId: undefined });
+  };
+
   if (propertyTypesLoading || propertyLoading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
@@ -283,6 +299,28 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
               <Row gutter={16}>
                 <Col xs={24} md={12}>
                   <Form.Item
+                    name="transactionType"
+                    label="Hình thức"
+                    rules={[
+                      {
+                        required: true,
+                        message: "Vui lòng chọn hình thức",
+                      },
+                    ]}
+                  >
+                    <Select
+                      placeholder="Chọn hình thức"
+                      onChange={handleTransactionTypeChange}
+                      loading={propertyTypesLoading}
+                    >
+                      <Option value="sale">Bán</Option>
+                      <Option value="rent">Cho thuê</Option>
+                      <Option value="project">Dự án</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item
                     name="typeId"
                     label="Loại bất động sản"
                     rules={[
@@ -292,30 +330,15 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                       },
                     ]}
                   >
-                    <Select placeholder="Chọn loại bất động sản">
+                    <Select
+                      placeholder="Chọn loại bất động sản"
+                      loading={propertyTypesLoading}
+                    >
                       {propertyTypes.map((type) => (
                         <Option key={type.id} value={type.id}>
                           {type.name}
                         </Option>
                       ))}
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item
-                    name="transactionType"
-                    label="Hình thức giao dịch"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Vui lòng chọn hình thức giao dịch",
-                      },
-                    ]}
-                  >
-                    <Select placeholder="Chọn hình thức giao dịch">
-                      <Option value="sale">Bán</Option>
-                      <Option value="rent">Cho thuê</Option>
-                      <Option value="project">Dự án</Option>
                     </Select>
                   </Form.Item>
                 </Col>

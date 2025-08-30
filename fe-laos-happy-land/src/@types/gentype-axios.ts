@@ -122,11 +122,6 @@ export interface CreatePropertyDto {
    */
   typeId: string;
   /**
-   * User ID associated with the order
-   * @example "6933c706-3180-47a0-b56b-c98180d8afda"
-   */
-  user_id: string;
-  /**
    * Tiêu đề tin rao
    * @example "Căn hộ cao cấp 2PN tại Quận 1, view sông tuyệt đẹp"
    */
@@ -231,6 +226,11 @@ export interface CreatePropertyTypeDto {
    * @example "Apartment"
    */
   name: string;
+  /**
+   * Hình thức giao dịch
+   * @example "sale"
+   */
+  transactionType: "rent" | "sale" | "project";
 }
 
 export interface CreateUserRoleDto {
@@ -558,6 +558,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @tags User
      * @name UserControllerApproveIsFromBank
      * @request PATCH:/api/user/{id}/approve
+     * @secure
      */
     userControllerApproveIsFromBank: (
       id: string,
@@ -570,6 +571,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         path: `/api/user/${id}/approve`,
         method: "PATCH",
         body: data,
+        secure: true,
         type: ContentType.Json,
         ...params,
       }),
@@ -661,12 +663,14 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @tags Property
      * @name PropertyControllerCreate
      * @request POST:/api/property
+     * @secure
      */
     propertyControllerCreate: (data: CreatePropertyDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/property`,
         method: "POST",
         body: data,
+        secure: true,
         type: ContentType.FormData,
         ...params,
       }),
@@ -722,6 +726,29 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * No description
      *
      * @tags Property
+     * @name PropertyControllerGetByUser
+     * @request GET:/api/property/owner
+     * @secure
+     */
+    propertyControllerGetByUser: (
+      query?: {
+        page?: number;
+        perPage?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/property/owner`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Property
      * @name PropertyControllerGet
      * @request GET:/api/property/{id}
      */
@@ -738,12 +765,14 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @tags Property
      * @name PropertyControllerUpdate
      * @request PATCH:/api/property/{id}
+     * @secure
      */
     propertyControllerUpdate: (id: string, data: UpdatePropertyDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/property/${id}`,
         method: "PATCH",
         body: data,
+        secure: true,
         type: ContentType.FormData,
         ...params,
       }),
@@ -754,33 +783,13 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @tags Property
      * @name PropertyControllerRemove
      * @request DELETE:/api/property/{id}
+     * @secure
      */
     propertyControllerRemove: (id: string, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/property/${id}`,
         method: "DELETE",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Property
-     * @name PropertyControllerGetByUser
-     * @request GET:/api/property/owner/{userId}
-     */
-    propertyControllerGetByUser: (
-      userId: string,
-      query?: {
-        page?: number;
-        perPage?: number;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<void, any>({
-        path: `/api/property/owner/${userId}`,
-        method: "GET",
-        query: query,
+        secure: true,
         ...params,
       }),
 
@@ -791,11 +800,13 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @name PropertyControllerApprove
      * @summary Approve a property
      * @request PATCH:/api/property/{id}/approve
+     * @secure
      */
     propertyControllerApprove: (id: string, params: RequestParams = {}) =>
       this.request<void, void>({
         path: `/api/property/${id}/approve`,
         method: "PATCH",
+        secure: true,
         ...params,
       }),
 
@@ -806,12 +817,14 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @name PropertyControllerReject
      * @summary Reject a property
      * @request PATCH:/api/property/{id}/reject
+     * @secure
      */
     propertyControllerReject: (id: string, data: RejectPropertyDto, params: RequestParams = {}) =>
       this.request<void, void>({
         path: `/api/property/${id}/reject`,
         method: "PATCH",
         body: data,
+        secure: true,
         type: ContentType.Json,
         ...params,
       }),
@@ -845,6 +858,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: {
         page?: number;
         perPage?: number;
+        /** Trạng thái */
+        transaction?: "rent" | "sale" | "project";
       },
       params: RequestParams = {},
     ) =>
