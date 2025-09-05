@@ -9,6 +9,7 @@ import {
   Input,
   Select,
   InputNumber,
+  Switch,
   Button,
   Upload,
   Divider,
@@ -27,10 +28,17 @@ import {
   Plus,
   Camera,
   X,
+  Shield,
+  Utensils,
+  Car,
+  Snowflake,
+  Tv,
+  Wifi,
 } from "lucide-react";
 import type { CreatePropertyDto } from "@/@types/gentype-axios";
 import type { PropertyType } from "@/@types/types";
 import { useRequest } from "ahooks";
+import ProjectContentBuilder from "@/components/business/common/project-content-builder";
 import propertyService from "@/share/service/property.service";
 import propertyTypeService from "@/share/service/property-type.service";
 import Image from "next/image";
@@ -90,9 +98,20 @@ export default function CreateProperty() {
       area?: number;
       bedrooms?: number;
       bathrooms?: number;
+      wifi: boolean;
+      tv: boolean;
+      airConditioner: boolean;
+      parking: boolean;
+      kitchen: boolean;
+      security: boolean;
       legalStatus?: string;
       location?: string;
       transactionType: "rent" | "sale" | "project";
+      content?: (
+        | { type: "heading"; text: string; level?: 1 | 2 | 3 }
+        | { type: "paragraph"; text: string }
+        | { type: "image"; url: string; caption?: string }
+      )[];
     }) => {
       if (!mainImageFile) {
         throw new Error("Vui lòng tải lên ảnh chính");
@@ -115,6 +134,16 @@ export default function CreateProperty() {
           area: values.area,
           bedrooms: values.bedrooms,
           bathrooms: values.bathrooms,
+          wifi: values.wifi ?? false,
+          tv: values.tv ?? false,
+          airConditioner: values.airConditioner ?? false,
+          parking: values.parking ?? false,
+          kitchen: values.kitchen ?? false,
+          security: values.security ?? false,
+          content:
+            values.transactionType === "project"
+              ? (values.content ?? [])
+              : undefined,
         },
         mainImage: mainImageFile,
         images: imageFiles,
@@ -143,12 +172,22 @@ export default function CreateProperty() {
     area?: number;
     bedrooms?: number;
     bathrooms?: number;
+    wifi: boolean;
+    tv: boolean;
+    airConditioner: boolean;
+    parking: boolean;
+    kitchen: boolean;
+    security: boolean;
     legalStatus?: string;
     location?: string;
     transactionType: "rent" | "sale" | "project";
   }) => {
-    if (!mainImageFile) {
+    if (selectedTransactionType !== "project" && !mainImageFile) {
       message.error("Vui lòng tải lên ảnh chính");
+      return;
+    }
+    if (selectedTransactionType !== "project" && imageFiles.length < 3) {
+      message.error("Vui lòng tải lên ít nhất 3 ảnh phụ");
       return;
     }
     submitForm(values);
@@ -267,7 +306,6 @@ export default function CreateProperty() {
                     size="large"
                     className="rounded-lg"
                     onChange={handleTransactionTypeChange}
-                    loading={loadingTypes}
                   >
                     <Option value="sale">Bán</Option>
                     <Option value="rent">Cho thuê</Option>
@@ -296,6 +334,35 @@ export default function CreateProperty() {
                   </Select>
                 </Form.Item>
               </div>
+              <Form.Item
+                name="description"
+                label={<Text className="font-medium">Mô tả chi tiết</Text>}
+                rules={[{ required: true, message: "Vui lòng nhập mô tả!" }]}
+              >
+                <TextArea
+                  rows={6}
+                  placeholder="Mô tả chi tiết về bất động sản, tiện ích xung quanh, hướng nhà, view..."
+                  className="rounded-lg"
+                />
+              </Form.Item>
+              {/* Project Content Builder */}
+              {selectedTransactionType === "project" && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
+                    <Title
+                      level={3}
+                      className="!mb-0 !text-xl !font-semibold !text-gray-900"
+                    >
+                      Nội dung dự án
+                    </Title>
+                  </div>
+                  <ProjectContentBuilder
+                    form={form}
+                    name="content"
+                    textFieldName="value"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Location */}
@@ -335,10 +402,12 @@ export default function CreateProperty() {
                 </Title>
               </div>
 
-              <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+              <div
+                className={`grid grid-cols-2 gap-6 ${selectedTransactionType === "project" ? "md:grid-cols-3" : "md:grid-cols-5"}`}
+              >
                 <Form.Item
                   name="price"
-                  label={<Text className="font-medium">Giá (VNĐ)</Text>}
+                  label={<Text className="font-medium">Giá (LAK)</Text>}
                   rules={[{ required: true, message: "Vui lòng nhập giá!" }]}
                 >
                   <InputNumber
@@ -377,166 +446,239 @@ export default function CreateProperty() {
                 </Form.Item>
 
                 <Form.Item
-                  name="bedrooms"
+                  name="legalStatus"
                   label={
-                    <span className="flex items-center gap-1 font-medium">
-                      <Bed className="h-4 w-4" />
-                      Phòng ngủ
-                    </span>
+                    <Text className="font-medium">Tình trạng pháp lý</Text>
                   }
                 >
-                  <InputNumber
-                    min={0}
-                    placeholder="0"
+                  <Input
+                    placeholder="Nhập tình trạng pháp lý..."
                     size="large"
-                    style={{ width: "100%" }}
+                    className="rounded-lg"
                   />
                 </Form.Item>
 
-                <Form.Item
-                  name="bathrooms"
-                  label={
-                    <span className="flex items-center gap-1 font-medium">
-                      <Bath className="h-4 w-4" />
-                      Phòng tắm
-                    </span>
-                  }
-                >
-                  <InputNumber
-                    min={0}
-                    placeholder="0"
-                    size="large"
-                    style={{ width: "100%" }}
-                  />
-                </Form.Item>
+                {selectedTransactionType === "rent" ||
+                  (selectedTransactionType === "sale" && (
+                    <>
+                      <Form.Item
+                        name="bedrooms"
+                        label={
+                          <span className="flex items-center gap-1 font-medium">
+                            <Bed className="h-4 w-4" />
+                            Phòng ngủ
+                          </span>
+                        }
+                      >
+                        <InputNumber
+                          min={0}
+                          placeholder="0"
+                          size="large"
+                          style={{ width: "100%" }}
+                        />
+                      </Form.Item>
+
+                      <Form.Item
+                        name="bathrooms"
+                        label={
+                          <span className="flex items-center gap-1 font-medium">
+                            <Bath className="h-4 w-4" />
+                            Phòng tắm
+                          </span>
+                        }
+                      >
+                        <InputNumber
+                          min={0}
+                          placeholder="0"
+                          size="large"
+                          style={{ width: "100%" }}
+                        />
+                      </Form.Item>
+                    </>
+                  ))}
               </div>
 
-              <Form.Item
-                name="legalStatus"
-                label={<Text className="font-medium">Tình trạng pháp lý</Text>}
-              >
-                <Select
-                  placeholder="Chọn tình trạng pháp lý"
-                  size="large"
-                  className="rounded-lg"
-                  allowClear
-                >
-                  <Option value="Sổ hồng đầy đủ">Sổ hồng đầy đủ</Option>
-                  <Option value="Sổ hồng riêng">Sổ hồng riêng</Option>
-                  <Option value="Sổ đỏ">Sổ đỏ</Option>
-                  <Option value="Đang hoàn thiện">Đang hoàn thiện</Option>
-                  <Option value="Chưa có sổ">Chưa có sổ</Option>
-                </Select>
-              </Form.Item>
-
-              <Form.Item
-                name="description"
-                label={<Text className="font-medium">Mô tả chi tiết</Text>}
-                rules={[{ required: true, message: "Vui lòng nhập mô tả!" }]}
-              >
-                <TextArea
-                  rows={6}
-                  placeholder="Mô tả chi tiết về bất động sản, tiện ích xung quanh, hướng nhà, view..."
-                  className="rounded-lg"
-                />
-              </Form.Item>
+              {/* Amenities */}
+              <div className="space-y-4">
+                {selectedTransactionType !== "project" && (
+                  <>
+                    <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
+                      <Title
+                        level={3}
+                        className="!mb-0 !text-xl !font-semibold !text-gray-900"
+                      >
+                        Tiện ích
+                      </Title>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 md:grid-cols-6">
+                      <Form.Item
+                        name="wifi"
+                        label={
+                          <p className="flex items-center gap-1 font-medium text-green-600">
+                            <Wifi className="h-4 w-4" /> WiFi
+                          </p>
+                        }
+                        valuePropName="checked"
+                      >
+                        <Switch />
+                      </Form.Item>
+                      <Form.Item
+                        name="tv"
+                        label={
+                          <p className="flex items-center gap-1 font-medium text-red-600">
+                            <Tv className="h-4 w-4" /> TV
+                          </p>
+                        }
+                        valuePropName="checked"
+                      >
+                        <Switch />
+                      </Form.Item>
+                      <Form.Item
+                        name="airConditioner"
+                        label={
+                          <p className="flex items-center gap-1 font-medium text-blue-600">
+                            <Snowflake className="h-4 w-4" /> Điều hòa
+                          </p>
+                        }
+                        valuePropName="checked"
+                      >
+                        <Switch />
+                      </Form.Item>
+                      <Form.Item
+                        name="parking"
+                        label={
+                          <p className="flex items-center gap-1 font-medium text-orange-600">
+                            <Car className="h-4 w-4" /> Bãi đỗ xe
+                          </p>
+                        }
+                        valuePropName="checked"
+                      >
+                        <Switch />
+                      </Form.Item>
+                      <Form.Item
+                        name="kitchen"
+                        label={
+                          <p className="flex items-center gap-1 font-medium text-pink-600">
+                            <Utensils className="h-4 w-4" /> Nhà bếp
+                          </p>
+                        }
+                        valuePropName="checked"
+                      >
+                        <Switch />
+                      </Form.Item>
+                      <Form.Item
+                        name="security"
+                        label={
+                          <p className="flex items-center gap-1 font-medium text-green-600">
+                            <Shield className="h-4 w-4" /> An ninh
+                          </p>
+                        }
+                        valuePropName="checked"
+                      >
+                        <Switch />
+                      </Form.Item>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Images */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
-                <Camera className="h-6 w-6 text-purple-600" />
-                <Title
-                  level={3}
-                  className="!mb-0 !text-xl !font-semibold !text-gray-900"
-                >
-                  Hình ảnh
-                </Title>
-              </div>
 
-              {/* Main Image */}
-              <div className="space-y-4">
-                <Text className="font-medium">Ảnh chính *</Text>
-                <div className="rounded-lg border-2 border-dashed border-gray-300 p-6 text-center transition-colors hover:border-blue-400">
-                  {mainImageFile ? (
-                    <div className="relative h-64 w-full">
-                      <Image
-                        src={URL.createObjectURL(mainImageFile)}
-                        alt="Main"
-                        className="h-64 w-full rounded-lg object-cover object-center"
-                        width={128}
-                        height={128}
-                      />
-                      <div className="absolute -right-3 -bottom-3">
-                        <Button
-                          danger
-                          onClick={removeMainImage}
-                          size="small"
-                          shape="circle"
-                        >
-                          <X className="size-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <Upload
-                      beforeUpload={handleMainImageUpload}
-                      showUploadList={false}
-                    >
-                      <div className="space-y-2">
-                        <UploadIcon className="mx-auto h-12 w-12 text-gray-400" />
-                        <Text className="block text-gray-600">
-                          Tải lên ảnh chính
-                        </Text>
-                        <Text className="block text-sm text-gray-500">
-                          JPG, PNG, GIF tối đa 5MB
-                        </Text>
-                      </div>
-                    </Upload>
-                  )}
+            {selectedTransactionType !== "project" && (
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
+                  <Camera className="h-6 w-6 text-purple-600" />
+                  <Title
+                    level={3}
+                    className="!mb-0 !text-xl !font-semibold !text-gray-900"
+                  >
+                    Hình ảnh
+                  </Title>
                 </div>
-              </div>
-
-              {/* Additional Images */}
-              <div className="space-y-4">
-                <Text className="font-medium">Ảnh phụ (tối đa 9 ảnh)</Text>
-                <div className="flex flex-wrap gap-6">
-                  {imageFiles.map((file, index) => (
-                    <div key={index} className="relative size-24 rounded-lg">
-                      <Image
-                        src={URL.createObjectURL(file)}
-                        alt={`Image ${index + 1}`}
-                        className="size-24 rounded-lg object-cover"
-                        width={100}
-                        height={100}
-                      />
-                      <div className="absolute -right-3 -bottom-3">
-                        <Button
-                          danger
-                          shape="circle"
-                          size="small"
-                          onClick={() => removeImage(index)}
-                        >
-                          <X className="size-4" />
-                        </Button>
+                {/* Main Image */}
+                <div className="space-y-4">
+                  <Text className="font-medium">Ảnh chính *</Text>
+                  <div className="rounded-lg border-2 border-dashed border-gray-300 p-6 text-center transition-colors hover:border-blue-400">
+                    {mainImageFile ? (
+                      <div className="relative h-64 w-full">
+                        <Image
+                          src={URL.createObjectURL(mainImageFile)}
+                          alt="Main"
+                          className="h-64 w-full rounded-lg object-cover object-center"
+                          width={128}
+                          height={128}
+                        />
+                        <div className="absolute -right-3 -bottom-3">
+                          <Button
+                            danger
+                            onClick={removeMainImage}
+                            size="small"
+                            shape="circle"
+                          >
+                            <X className="size-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                  {imageFiles.length < 9 && (
-                    <Upload
-                      beforeUpload={handleImagesUpload}
-                      showUploadList={false}
-                    >
-                      <div className="flex size-24 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-300 transition-colors hover:border-blue-400">
-                        <Plus className="h-6 w-6 text-gray-400" />
-                      </div>
-                    </Upload>
-                  )}
+                    ) : (
+                      <Upload
+                        beforeUpload={handleMainImageUpload}
+                        showUploadList={false}
+                      >
+                        <div className="space-y-2">
+                          <UploadIcon className="mx-auto h-12 w-12 text-gray-400" />
+                          <Text className="block text-gray-600">
+                            Tải lên ảnh chính
+                          </Text>
+                          <Text className="block text-sm text-gray-500">
+                            JPG, PNG, GIF tối đa 5MB
+                          </Text>
+                        </div>
+                      </Upload>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            <Divider />
+                {/* Additional Images */}
+                <div className="space-y-4">
+                  <Text className="font-medium">Ảnh phụ (tối đa 9 ảnh)</Text>
+                  <div className="flex flex-wrap gap-6">
+                    {imageFiles.map((file, index) => (
+                      <div key={index} className="relative size-24 rounded-lg">
+                        <Image
+                          src={URL.createObjectURL(file)}
+                          alt={`Image ${index + 1}`}
+                          className="size-24 rounded-lg object-cover"
+                          width={100}
+                          height={100}
+                        />
+                        <div className="absolute -right-3 -bottom-3">
+                          <Button
+                            danger
+                            shape="circle"
+                            size="small"
+                            onClick={() => removeImage(index)}
+                          >
+                            <X className="size-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    {imageFiles.length < 9 && (
+                      <Upload
+                        beforeUpload={handleImagesUpload}
+                        showUploadList={false}
+                      >
+                        <div className="flex size-24 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-300 transition-colors hover:border-blue-400">
+                          <Plus className="h-6 w-6 text-gray-400" />
+                        </div>
+                      </Upload>
+                    )}
+                  </div>
+                </div>
+                <Divider />
+              </div>
+            )}
 
             {/* Submit */}
             <div className="flex justify-end space-x-4">

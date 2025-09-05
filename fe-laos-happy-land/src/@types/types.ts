@@ -23,6 +23,11 @@ export type User = {
   role: UserRole;
 };
 
+export type Content =
+  | { type: "heading"; text: string; level?: 1 | 2 | 3 }
+  | { type: "paragraph"; text: string }
+  | { type: "image"; url: string; caption?: string };
+
 export type Property = {
   id: string;
   title: string;
@@ -37,12 +42,21 @@ export type Property = {
     area: number;
     bedrooms: number;
     bathrooms: number;
+    // amenities
+    wifi?: boolean;
+    tv?: boolean;
+    airConditioner?: boolean;
+    parking?: boolean;
+    kitchen?: boolean;
+    security?: boolean;
+    // project content (used when transactionType = "project")
+    content?: Content[];
   } | null;
   viewsCount: number;
   legalStatus: string | null;
   location: string | null;
   priority: number;
-  transactionType: "rent" | "sale";
+  transactionType: "rent" | "sale" | "project";
   images: string[] | null;
   mainImage: string | null;
   owner: User | null;
@@ -74,4 +88,9 @@ export type PropertyType = {
   deletedAt: string | null;
   deletedBy: string | null;
   transactionType: "rent" | "sale" | "project";
+};
+
+export type UploadImageResult = {
+  url: string;
+  message: string;
 };
