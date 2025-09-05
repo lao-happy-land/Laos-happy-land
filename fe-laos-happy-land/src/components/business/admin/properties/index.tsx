@@ -86,7 +86,9 @@ const AdminProperties = () => {
   );
 
   useEffect(() => {
-    fetchPropertyTypes();
+    if (selectedTransactionType !== "all") {
+      fetchPropertyTypes();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTransactionType]);
 
@@ -683,7 +685,7 @@ const AdminProperties = () => {
               dataIndex: "title",
               key: "title",
               fixed: "left",
-              width: 400,
+              width: 340,
               render: (title: string, property: Property) => (
                 <div className="flex items-start gap-3">
                   <div className="min-w-0 flex-1">
@@ -701,7 +703,7 @@ const AdminProperties = () => {
               title: "Người đăng",
               dataIndex: "owner",
               key: "owner",
-              width: 120,
+              width: 160,
               render: (owner: User | string) => (
                 <Tag color="blue">
                   {typeof owner === "string"
@@ -714,7 +716,7 @@ const AdminProperties = () => {
               title: "Loại",
               dataIndex: "type",
               key: "type",
-              width: 120,
+              width: 180,
               render: (
                 type: { id: string; name: string } | null | undefined,
               ) => <Tag color="blue">{type?.name ?? "Không xác định"}</Tag>,
@@ -731,7 +733,7 @@ const AdminProperties = () => {
               title: "Trạng thái",
               dataIndex: "status",
               key: "status",
-              width: 120,
+              width: 80,
               render: (status: "pending" | "approved" | "rejected") => (
                 <Tag
                   color={
@@ -754,7 +756,7 @@ const AdminProperties = () => {
               title: "Lượt xem",
               dataIndex: "viewsCount",
               key: "viewsCount",
-              width: 200,
+              width: 80,
               render: (count: number) => count || 0,
             },
             {

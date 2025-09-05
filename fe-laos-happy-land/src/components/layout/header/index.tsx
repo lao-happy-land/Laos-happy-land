@@ -265,7 +265,7 @@ export default function Header({
               </nav>
             </div>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center">
               <div className="lg:hidden">
                 <Button
                   type="text"

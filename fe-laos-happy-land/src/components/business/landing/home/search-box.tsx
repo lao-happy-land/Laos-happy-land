@@ -12,7 +12,7 @@ import {
   Card,
   Space,
   Typography,
-  message,
+  App,
   Input,
   Radio,
   Slider,
@@ -45,6 +45,7 @@ import {
 const { Title, Text } = Typography;
 
 const SearchBox = () => {
+  const { message } = App.useApp();
   const router = useRouter();
   const [searchType, setSearchType] = useState("sale");
 
@@ -258,9 +259,13 @@ const SearchBox = () => {
     } else {
       searchParams.delete("keyword");
     }
-    router.push(
-      `${searchType === "sale" || searchType === "rent" ? "/properties-for-sale" : "/projects"}?${searchParams.toString()}`,
-    );
+    if (searchType === "sale") {
+      router.push(`/properties-for-sale?${searchParams.toString()}`);
+    } else if (searchType === "rent") {
+      router.push(`/properties-for-rent?${searchParams.toString()}`);
+    } else if (searchType === "project") {
+      router.push(`/property-for-project?${searchParams.toString()}`);
+    }
     message.success("Đang tìm kiếm...");
   };
 
