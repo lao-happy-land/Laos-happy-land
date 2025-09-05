@@ -7,6 +7,7 @@ import {
   Input,
   Select,
   InputNumber,
+  Switch,
   Button,
   Upload,
   Card,
@@ -16,7 +17,17 @@ import {
   message,
   Spin,
 } from "antd";
-import { Plus, Save, ArrowLeft } from "lucide-react";
+import {
+  Plus,
+  Save,
+  ArrowLeft,
+  Wifi,
+  Tv,
+  Snowflake,
+  Car,
+  Utensils,
+  Shield,
+} from "lucide-react";
 import type { UploadFile, UploadProps } from "antd";
 import { useRequest } from "ahooks";
 import type {
@@ -26,6 +37,7 @@ import type {
 import type { PropertyType, Property } from "@/@types/types";
 import propertyService from "@/share/service/property.service";
 import propertyTypeService from "@/share/service/property-type.service";
+import ProjectContentBuilder from "@/components/business/common/project-content-builder";
 import { useAuthStore } from "@/share/store/auth.store";
 
 const { Title, Text } = Typography;
@@ -129,6 +141,13 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
         area: currentProperty.details?.area ?? undefined,
         bedrooms: currentProperty.details?.bedrooms ?? undefined,
         bathrooms: currentProperty.details?.bathrooms ?? undefined,
+        wifi: currentProperty.details?.wifi ?? false,
+        tv: currentProperty.details?.tv ?? false,
+        airConditioner: currentProperty.details?.airConditioner ?? false,
+        parking: currentProperty.details?.parking ?? false,
+        kitchen: currentProperty.details?.kitchen ?? false,
+        security: currentProperty.details?.security ?? false,
+        content: currentProperty.details?.content ?? undefined,
         legalStatus: currentProperty.legalStatus ?? undefined,
         location: currentProperty.location ?? undefined,
         transactionType: currentProperty.transactionType,
@@ -145,6 +164,17 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
       area?: number;
       bedrooms?: number;
       bathrooms?: number;
+      wifi: boolean;
+      tv: boolean;
+      airConditioner: boolean;
+      parking: boolean;
+      kitchen?: boolean;
+      security?: boolean;
+      content?: (
+        | { type: "heading"; text: string; level?: 1 | 2 | 3 }
+        | { type: "paragraph"; text: string }
+        | { type: "image"; url: string; caption?: string }
+      )[];
       legalStatus?: string;
       location?: string;
       transactionType: "rent" | "sale" | "project";
@@ -158,6 +188,16 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
           area: values.area,
           bedrooms: values.bedrooms,
           bathrooms: values.bathrooms,
+          wifi: values.wifi ?? false,
+          tv: values.tv ?? false,
+          airConditioner: values.airConditioner ?? false,
+          parking: values.parking ?? false,
+          kitchen: values.kitchen ?? false,
+          security: values.security ?? false,
+          content:
+            values.transactionType === "project"
+              ? (values.content ?? [])
+              : undefined,
         },
         legalStatus: values.legalStatus,
         location: values.location,
@@ -220,10 +260,26 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
     area?: number;
     bedrooms?: number;
     bathrooms?: number;
+    wifi: boolean;
+    tv: boolean;
+    airConditioner: boolean;
+    parking: boolean;
+    kitchen: boolean;
+    security: boolean;
     legalStatus?: string;
     location?: string;
     transactionType: "rent" | "sale" | "project";
   }) => {
+    if (selectedTransactionType !== "project") {
+      if (mainImageList.length < 1) {
+        message.error("Vui lòng tải lên ảnh chính");
+        return;
+      }
+      if (imagesList.length < 3) {
+        message.error("Vui lòng tải lên ít nhất 3 ảnh phụ");
+        return;
+      }
+    }
     submitForm(values);
   };
 
@@ -253,7 +309,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
     form.setFieldsValue({ typeId: undefined });
   };
 
-  if (propertyTypesLoading || propertyLoading) {
+  if (propertyLoading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <Spin size="large" />
@@ -291,6 +347,8 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
         form={form}
         layout="vertical"
         onFinish={handleSubmit}
+        scrollToFirstError
+        initialValues={{ transactionType: "sale" }}
         className="space-y-6"
       >
         <Row gutter={24}>
@@ -311,7 +369,6 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     <Select
                       placeholder="Chọn hình thức"
                       onChange={handleTransactionTypeChange}
-                      loading={propertyTypesLoading}
                     >
                       <Option value="sale">Bán</Option>
                       <Option value="rent">Cho thuê</Option>
@@ -352,113 +409,202 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                 <Input placeholder="Nhập tiêu đề tin đăng" />
               </Form.Item>
 
+              <Form.Item name="location" label="Địa chỉ">
+                <Input placeholder="Nhập địa chỉ bất động sản" />
+              </Form.Item>
+
               <Form.Item name="description" label="Mô tả chi tiết">
                 <TextArea
                   rows={4}
                   placeholder="Nhập mô tả chi tiết về bất động sản"
                 />
               </Form.Item>
-
-              <Form.Item name="location" label="Địa chỉ">
-                <Input placeholder="Nhập địa chỉ bất động sản" />
-              </Form.Item>
+              {selectedTransactionType === "project" && (
+                <Row gutter={16} style={{ marginTop: 16 }}>
+                  <Col span={24}>
+                    <Card type="inner" title="Nội dung dự án">
+                      <ProjectContentBuilder
+                        form={form}
+                        name="content"
+                        textFieldName="value"
+                      />
+                    </Card>
+                  </Col>
+                </Row>
+              )}
             </Card>
           </Col>
 
           <Col span={24} style={{ marginTop: 16 }}>
             <Card title="Chi tiết bất động sản" className="mb-6">
-              <Row gutter={16}>
-                <Col xs={24} md={8}>
-                  <Form.Item name="price" label="Giá (LAK)">
-                    <InputNumber
-                      placeholder="Nhập giá"
-                      style={{ width: "100%" }}
-                      formatter={(value) =>
-                        `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                      }
-                      parser={(value) => value!.replace(/\$\s?|(,*)/g, "")}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={8}>
-                  <Form.Item name="area" label="Diện tích (m²)">
-                    <InputNumber
-                      placeholder="Nhập diện tích"
-                      style={{ width: "100%" }}
-                      min={0}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={8}>
-                  <Form.Item name="legalStatus" label="Tình trạng pháp lý">
-                    <Input placeholder="Ví dụ: Sổ hồng đầy đủ" />
-                  </Form.Item>
-                </Col>
-              </Row>
+              <div
+                className={`grid grid-cols-1 gap-4 ${selectedTransactionType === "project" ? "md:grid-cols-3" : "md:grid-cols-6"}`}
+              >
+                <Form.Item name="price" label="Giá (LAK)">
+                  <InputNumber
+                    placeholder="Nhập giá"
+                    style={{ width: "100%" }}
+                    formatter={(value) =>
+                      `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                    }
+                    parser={(value) => value!.replace(/\$\s?|(,*)/g, "")}
+                  />
+                </Form.Item>
 
-              <Row gutter={16}>
-                <Col xs={24} md={12}>
-                  <Form.Item name="bedrooms" label="Số phòng ngủ">
-                    <InputNumber
-                      placeholder="Số phòng ngủ"
-                      style={{ width: "100%" }}
-                      min={0}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item name="bathrooms" label="Số phòng tắm">
-                    <InputNumber
-                      placeholder="Số phòng tắm"
-                      style={{ width: "100%" }}
-                      min={0}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
+                <Form.Item name="area" label="Diện tích (m²)">
+                  <InputNumber
+                    placeholder="Nhập diện tích"
+                    style={{ width: "100%" }}
+                    min={0}
+                  />
+                </Form.Item>
+
+                <Form.Item name="legalStatus" label="Tình trạng pháp lý">
+                  <Input placeholder="Ví dụ: Sổ hồng đầy đủ" />
+                </Form.Item>
+
+                {selectedTransactionType !== "project" && (
+                  <>
+                    <Form.Item name="bedrooms" label="Số phòng ngủ">
+                      <InputNumber
+                        placeholder="Số phòng ngủ"
+                        style={{ width: "100%" }}
+                        min={0}
+                      />
+                    </Form.Item>
+
+                    <Form.Item name="bathrooms" label="Số phòng tắm">
+                      <InputNumber
+                        placeholder="Số phòng tắm"
+                        style={{ width: "100%" }}
+                        min={0}
+                      />
+                    </Form.Item>
+                  </>
+                )}
+              </div>
+
+              {selectedTransactionType !== "project" && (
+                <Row gutter={16}>
+                  <Col span={24}>
+                    <Card type="inner" title="Tiện ích">
+                      <div className="grid grid-cols-3 gap-4 md:grid-cols-6">
+                        <Form.Item
+                          name="wifi"
+                          label={
+                            <p className="flex items-center gap-1 font-medium text-green-600">
+                              <Wifi className="h-4 w-4" /> WiFi
+                            </p>
+                          }
+                          valuePropName="checked"
+                        >
+                          <Switch />
+                        </Form.Item>
+                        <Form.Item
+                          name="tv"
+                          label={
+                            <p className="flex items-center gap-1 font-medium text-red-600">
+                              <Tv className="h-4 w-4" /> TV
+                            </p>
+                          }
+                          valuePropName="checked"
+                        >
+                          <Switch />
+                        </Form.Item>
+                        <Form.Item
+                          name="airConditioner"
+                          label={
+                            <p className="flex items-center gap-1 font-medium text-blue-600">
+                              <Snowflake className="h-4 w-4" /> Điều hòa
+                            </p>
+                          }
+                          valuePropName="checked"
+                        >
+                          <Switch />
+                        </Form.Item>
+                        <Form.Item
+                          name="parking"
+                          label={
+                            <p className="flex items-center gap-1 font-medium text-orange-600">
+                              <Car className="h-4 w-4" /> Bãi đỗ xe
+                            </p>
+                          }
+                          valuePropName="checked"
+                        >
+                          <Switch />
+                        </Form.Item>
+                        <Form.Item
+                          name="kitchen"
+                          label={
+                            <p className="flex items-center gap-1 font-medium text-pink-600">
+                              <Utensils className="h-4 w-4" /> Nhà bếp
+                            </p>
+                          }
+                          valuePropName="checked"
+                        >
+                          <Switch />
+                        </Form.Item>
+                        <Form.Item
+                          name="security"
+                          label={
+                            <p className="flex items-center gap-1 font-medium text-green-600">
+                              <Shield className="h-4 w-4" /> An ninh
+                            </p>
+                          }
+                          valuePropName="checked"
+                        >
+                          <Switch />
+                        </Form.Item>
+                      </div>
+                    </Card>
+                  </Col>
+                </Row>
+              )}
             </Card>
           </Col>
 
-          <Col span={24} style={{ marginTop: 16 }}>
-            <Card title="Hình ảnh" className="mb-6">
-              <Row gutter={16}>
-                <Col xs={24} md={12}>
-                  <Form.Item label="Ảnh chính">
-                    <Upload
-                      listType="picture-card"
-                      fileList={mainImageList}
-                      onChange={handleMainImageChange}
-                      beforeUpload={beforeUpload}
-                      maxCount={1}
-                    >
-                      {mainImageList.length < 1 && (
+          {selectedTransactionType !== "project" && (
+            <Col span={24} style={{ marginTop: 16 }}>
+              <Card title="Hình ảnh" className="mb-6">
+                <Row gutter={16}>
+                  <Col xs={24} md={12}>
+                    <Form.Item label="Ảnh chính">
+                      <Upload
+                        listType="picture-card"
+                        fileList={mainImageList}
+                        onChange={handleMainImageChange}
+                        beforeUpload={beforeUpload}
+                        maxCount={1}
+                      >
+                        {mainImageList.length < 1 && (
+                          <div>
+                            <Plus className="h-4 w-4" />
+                            <div className="mt-2">Tải lên</div>
+                          </div>
+                        )}
+                      </Upload>
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24} md={12}>
+                    <Form.Item label="Ảnh phụ">
+                      <Upload
+                        listType="picture-card"
+                        fileList={imagesList}
+                        onChange={handleImagesChange}
+                        beforeUpload={beforeUpload}
+                        multiple
+                      >
                         <div>
                           <Plus className="h-4 w-4" />
                           <div className="mt-2">Tải lên</div>
                         </div>
-                      )}
-                    </Upload>
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item label="Ảnh phụ">
-                    <Upload
-                      listType="picture-card"
-                      fileList={imagesList}
-                      onChange={handleImagesChange}
-                      beforeUpload={beforeUpload}
-                      multiple
-                    >
-                      <div>
-                        <Plus className="h-4 w-4" />
-                        <div className="mt-2">Tải lên</div>
-                      </div>
-                    </Upload>
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Card>
-          </Col>
+                      </Upload>
+                    </Form.Item>
+                  </Col>
+                </Row>
+              </Card>
+            </Col>
+          )}
         </Row>
 
         <div className="flex justify-end gap-4">
