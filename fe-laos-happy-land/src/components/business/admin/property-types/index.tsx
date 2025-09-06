@@ -44,7 +44,7 @@ export default function PropertyTypes() {
     searchParams.get("search") ?? "",
   );
   const [filterTransaction, setFilterTransaction] = useState(
-    searchParams.get("transaction") ?? "",
+    searchParams.get("transaction") ?? "all",
   );
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -53,7 +53,7 @@ export default function PropertyTypes() {
   // Sync URL params with component state
   useEffect(() => {
     const urlSearch = searchParams.get("search") ?? "";
-    const urlTransaction = searchParams.get("transaction") ?? "";
+    const urlTransaction = searchParams.get("transaction") ?? "all";
     const urlPage = parseInt(searchParams.get("page") ?? "1");
     const urlPageSize = parseInt(searchParams.get("pageSize") ?? "10");
 
@@ -78,11 +78,10 @@ export default function PropertyTypes() {
     async () => {
       const response = await propertyTypeService.getPropertyTypes({
         search: searchTerm || undefined,
-        transaction: filterTransaction as
-          | "rent"
-          | "sale"
-          | "project"
-          | undefined,
+        transaction:
+          filterTransaction === "all"
+            ? undefined
+            : (filterTransaction as "rent" | "sale" | "project" | undefined),
         page: currentPage,
         perPage: pageSize,
       });
@@ -128,7 +127,8 @@ export default function PropertyTypes() {
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (searchInputValue) params.set("search", searchInputValue);
-    if (filterTransaction) params.set("transaction", filterTransaction);
+    if (filterTransaction !== "all")
+      params.set("transaction", filterTransaction);
     params.set("page", "1");
     params.set("pageSize", pageSize.toString());
     router.push(`${pathname}?${params.toString()}`);
@@ -137,7 +137,7 @@ export default function PropertyTypes() {
   const handleClearSearch = () => {
     setSearchInputValue("");
     setSearchTerm("");
-    setFilterTransaction("");
+    setFilterTransaction("all");
     setCurrentPage(1);
     router.push(pathname);
   };
@@ -145,7 +145,8 @@ export default function PropertyTypes() {
   const handlePageChange = (page: number, size: number) => {
     const params = new URLSearchParams();
     if (searchTerm) params.set("search", searchTerm);
-    if (filterTransaction) params.set("transaction", filterTransaction);
+    if (filterTransaction !== "all")
+      params.set("transaction", filterTransaction);
     params.set("page", page.toString());
     params.set("pageSize", size.toString());
     router.push(`${pathname}?${params.toString()}`);
@@ -205,6 +206,17 @@ export default function PropertyTypes() {
       default:
         return transactionType;
     }
+  };
+
+  const handleTransactionTypeChange = (value: string) => {
+    setFilterTransaction(value === "all" ? "all" : value);
+    const params = new URLSearchParams();
+    if (searchTerm) params.set("search", searchTerm);
+    if (value !== "all") params.set("transaction", value);
+    params.set("page", "1");
+    params.set("pageSize", pageSize.toString());
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}` : pathname);
   };
 
   const columns = [
@@ -310,10 +322,16 @@ export default function PropertyTypes() {
             <Select
               placeholder="Lọc theo hình thức giao dịch"
               value={filterTransaction || undefined}
-              onChange={(value) => setFilterTransaction(value)}
+              onChange={(value) => {
+                handleTransactionTypeChange(value);
+              }}
               allowClear
+              onClear={() => {
+                handleTransactionTypeChange("all");
+              }}
               style={{ width: "100%" }}
             >
+              <Option value="all">Tất cả</Option>
               <Option value="sale">Bán</Option>
               <Option value="rent">Cho thuê</Option>
               <Option value="project">Dự án</Option>
