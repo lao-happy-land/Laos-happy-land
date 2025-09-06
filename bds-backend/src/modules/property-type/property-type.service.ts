@@ -41,6 +41,10 @@ export class PropertyTypeService {
       .take(params.perPage)
       .orderBy('propertyType.createdAt', params.OrderSort);
 
+    if(params.search) {
+      queryBuilder.andWhere('propertyType.name ILIKE :search', { search: `%${params.search}%` });
+    }
+
     if(params.transaction){
       queryBuilder.andWhere('propertyType.transactionType = :transaction', { transaction: params.transaction });
     }
