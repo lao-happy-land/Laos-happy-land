@@ -1,6 +1,6 @@
 "use client";
 
-import { Row, Col, Card, Divider, App, Spin } from "antd";
+import { Row, Col, Card, Divider, Spin } from "antd";
 import type { Content } from "@/@types/types";
 import HeaderBar from "@/components/business/property-details/header-bar";
 import Gallery from "@/components/business/property-details/gallery";
@@ -34,7 +34,6 @@ type Details = {
 type TransactionEnum = "sale" | "rent" | "project";
 
 export default function PropertyDetails({ propertyId }: Props) {
-  const { message } = App.useApp();
   const { data: property, loading } = useRequest(() =>
     propertyService.getPropertyById(propertyId),
   );
@@ -77,7 +76,7 @@ export default function PropertyDetails({ propertyId }: Props) {
   }
 
   return (
-    <>
+    <div className="container mx-auto my-4 px-4">
       <HeaderBar
         title={property.title ?? ""}
         location={property.location ?? ""}
@@ -152,6 +151,6 @@ export default function PropertyDetails({ propertyId }: Props) {
           />
         </Col>
       </Row>
-    </>
+    </div>
   );
 }
