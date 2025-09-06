@@ -9,17 +9,19 @@ import {
   Max,
   IsIn,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { PageOptionsDto } from 'src/common/dtos/pageOption';
 import { PropertyStatusEnum, TransactionEnum } from 'src/common/enum/enum';
 
 export class GetPropertiesFilterDto extends PageOptionsDto {
   @ApiPropertyOptional({
-    description: 'Loại bất động sản',
+    description: 'Loại bất động sản (có thể truyền nhiều, cách nhau dấu phẩy)',
+    example: '1,2,3',
   })
   @IsOptional()
-  @IsString()
-  type?: string;
+  @IsString({ each: true })
+  @Transform(({ value }) => value.split(',').map((v: string) => v.trim()))
+  type?: string[];
 
   @ApiPropertyOptional({
     description: 'Từ khóa tìm kiếm tiêu đề/mô tả',
@@ -101,7 +103,7 @@ export class GetPropertiesFilterDto extends PageOptionsDto {
 
   @ApiPropertyOptional({
     description: 'Trạng thái hệ thống',
-    enum: PropertyStatusEnum
+    enum: PropertyStatusEnum,
   })
   @IsOptional()
   @IsIn(Object.values(PropertyStatusEnum))
