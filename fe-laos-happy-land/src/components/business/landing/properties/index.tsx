@@ -332,7 +332,6 @@ const Properties = ({ transaction }: PropertiesProps) => {
   // Generate property type options from API data
 
   const propertyTypeOptions = [
-    { id: "all", name: "Tất cả nhà đất", icon: <Home className="h-4 w-4" /> },
     ...propertyTypes.map((type) => ({
       id: type.id,
       name: type.name,
@@ -1071,7 +1070,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
           </div>
 
           {/* Filter Row */}
-          <div className="mt-4 flex flex-wrap items-center gap-3">
+          <div className="relative mt-4 grid grid-cols-2 items-center gap-3 md:grid-cols-4">
             {/* Filter Button */}
             <Button
               icon={<Filter className="h-4 w-4" />}
@@ -1081,13 +1080,12 @@ const Properties = ({ transaction }: PropertiesProps) => {
             </Button>
 
             {/* Property Type Filter */}
-            <div className="relative">
+            <div className="md:relative">
               <Button
-                type="default"
                 onClick={togglePropertyTypeModal}
-                className="filter-dropdown-button flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-2 transition-all duration-200"
+                className="filter-dropdown-button flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-2 transition-all duration-200"
               >
-                <span className="text-sm text-gray-600">Loại nhà đất</span>
+                <span className="text-sm text-gray-600">Loại BĐS</span>
                 <ChevronRight
                   size={14}
                   className={`text-gray-400 transition-transform duration-200 ${
@@ -1099,7 +1097,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
               {/* Property Type Dropdown */}
               {propertyTypeOpen && (
                 <div
-                  className="filter-dropdown absolute top-full left-0 z-50 mt-2 w-64 rounded-lg border border-gray-200 bg-white shadow-lg"
+                  className="filter-dropdown absolute top-full right-0 z-50 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="border-b border-gray-100 p-3">
@@ -1178,11 +1176,10 @@ const Properties = ({ transaction }: PropertiesProps) => {
             </div>
 
             {/* Price Filter */}
-            <div className="relative">
+            <div className="md:relative">
               <Button
-                type="default"
                 onClick={togglePriceRangeModal}
-                className="filter-dropdown-button flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-2 transition-all duration-200"
+                className="filter-dropdown-button flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-2 transition-all duration-200"
               >
                 <span className="text-sm text-gray-600">Mức giá</span>
                 <ChevronRight
@@ -1196,7 +1193,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
               {/* Price Range Dropdown */}
               {priceRangeOpen && (
                 <div
-                  className="filter-dropdown absolute top-full left-0 z-50 mt-2 w-72 rounded-lg border border-gray-200 bg-white shadow-lg"
+                  className="filter-dropdown absolute top-full right-0 z-50 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="border-b border-gray-100 p-3">
@@ -1319,11 +1316,10 @@ const Properties = ({ transaction }: PropertiesProps) => {
             </div>
 
             {/* Area Filter */}
-            <div className="relative">
+            <div className="md:relative">
               <Button
-                type="default"
                 onClick={toggleAreaModal}
-                className="filter-dropdown-button flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-2 transition-all duration-200"
+                className="filter-dropdown-button flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-2 transition-all duration-200"
               >
                 <span className="text-sm text-gray-600">Diện tích</span>
                 <ChevronRight
@@ -1337,7 +1333,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
               {/* Area Filter Dropdown */}
               {areaOpen && (
                 <div
-                  className="filter-dropdown absolute top-full left-0 z-50 mt-2 w-72 rounded-lg border border-gray-200 bg-white shadow-lg"
+                  className="filter-dropdown absolute top-full right-0 z-50 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="border-b border-gray-100 p-3">
