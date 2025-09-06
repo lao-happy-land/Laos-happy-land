@@ -264,7 +264,7 @@ const SearchBox = () => {
     } else if (searchType === "rent") {
       router.push(`/properties-for-rent?${searchParams.toString()}`);
     } else if (searchType === "project") {
-      router.push(`/property-for-project?${searchParams.toString()}`);
+      router.push(`/properties-for-project?${searchParams.toString()}`);
     }
     message.success("Đang tìm kiếm...");
   };
@@ -695,10 +695,7 @@ const SearchBox = () => {
                   }`}
                 >
                   <span className="text-sm font-medium sm:text-base">
-                    Loại{" "}
-                    {searchType === "sale" || searchType === "rent"
-                      ? "nhà đất"
-                      : "dự án"}
+                    Loại BĐS
                   </span>
                   <ChevronDown
                     size={16}
