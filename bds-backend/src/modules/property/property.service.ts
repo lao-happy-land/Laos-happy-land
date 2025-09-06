@@ -112,8 +112,8 @@ export class PropertyService {
       });
     }
 
-    if (params.type) {
-      properties.andWhere('type.id = :type', { type: params.type });
+    if (params.type?.length) {
+      properties.andWhere('type.id IN (:...types)', { types: params.type });
     }
 
     if (params.keyword) {
