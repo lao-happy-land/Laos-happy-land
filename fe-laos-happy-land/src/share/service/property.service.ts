@@ -24,6 +24,14 @@ const propertyService = {
     return response.data as unknown as APIResponse<Property[]>;
   },
 
+  getPropertiesByUser: async (params?: {
+    page?: number;
+    perPage?: number;
+  }): Promise<APIResponse<Property[]>> => {
+    const response = await api.propertyControllerGetByUser(params);
+    return response.data as unknown as APIResponse<Property[]>;
+  },
+
   getPropertyById: async (id: string): Promise<Property> => {
     const response = await api.propertyControllerGet(id);
     const data = response.data as unknown as {
