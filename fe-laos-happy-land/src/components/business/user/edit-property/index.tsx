@@ -15,6 +15,7 @@ import {
   Divider,
   Typography,
   App,
+  Spin,
 } from "antd";
 import {
   Building2,
@@ -35,21 +36,23 @@ import {
   Tv,
   Wifi,
 } from "lucide-react";
-import type { CreatePropertyDto } from "@/@types/gentype-axios";
+import type { UpdatePropertyDto } from "@/@types/gentype-axios";
 import type { PropertyType } from "@/@types/types";
 import { useRequest } from "ahooks";
-import ProjectContentBuilder from "@/components/business/common/project-content-builder";
 import propertyService from "@/share/service/property.service";
 import propertyTypeService from "@/share/service/property-type.service";
+import ProjectContentBuilder from "@/components/business/common/project-content-builder";
 import Image from "next/image";
 
 const { TextArea } = Input;
 const { Option } = Select;
 const { Title, Text } = Typography;
 
-export default function CreateProperty() {
+type EditPropertyProps = { propertyId: string };
+
+export default function EditProperty({ propertyId }: EditPropertyProps) {
   const { message } = App.useApp();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const router = useRouter();
   const [form] = Form.useForm();
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
@@ -58,6 +61,11 @@ export default function CreateProperty() {
   >("sale");
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+
+  const { data: property, loading: loadingProperty } = useRequest(async () => {
+    const data = await propertyService.getPropertyById(propertyId);
+    return data;
+  });
 
   // Load property types
   const { loading: loadingTypes, run: fetchPropertyTypes } = useRequest(
@@ -69,9 +77,7 @@ export default function CreateProperty() {
     },
     {
       manual: true,
-      onSuccess: (data) => {
-        setPropertyTypes(data);
-      },
+      onSuccess: (data) => setPropertyTypes(data),
       onError: () => {
         message.error("Không thể tải danh sách loại bất động sản");
       },
@@ -85,9 +91,33 @@ export default function CreateProperty() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push("/login?redirect=/create-property");
+      router.push("/login?redirect=/edit-property");
     }
   }, [isAuthenticated, router]);
+
+  useEffect(() => {
+    if (!property) return;
+    setSelectedTransactionType(property.transactionType);
+    form.setFieldsValue({
+      title: property.title,
+      description: property.description,
+      price: Number(property.price) || 0,
+      area: property.details?.area,
+      bedrooms: property.details?.bedrooms,
+      bathrooms: property.details?.bathrooms,
+      wifi: property.details?.wifi ?? false,
+      tv: property.details?.tv ?? false,
+      airConditioner: property.details?.airConditioner ?? false,
+      parking: property.details?.parking ?? false,
+      kitchen: property.details?.kitchen ?? false,
+      security: property.details?.security ?? false,
+      legalStatus: property.legalStatus ?? "",
+      location: property.location ?? "",
+      transactionType: property.transactionType,
+      typeId: property.type?.id,
+      content: property.details?.content,
+    });
+  }, [property, form]);
 
   const { loading: submitting, run: submitForm } = useRequest(
     async (values: {
@@ -113,21 +143,12 @@ export default function CreateProperty() {
         | { type: "image"; url: string; caption?: string }
       )[];
     }) => {
-      if (!mainImageFile) {
-        throw new Error("Vui lòng tải lên ảnh chính");
-      }
-
-      const userId = user?.id;
-      if (!userId) {
-        throw new Error("User ID not found. Please log in again.");
-      }
-
-      const formData: CreatePropertyDto = {
+      const formData: UpdatePropertyDto = {
         typeId: values.typeId,
         title: values.title,
         description: values.description,
         price: values.price,
-        legalStatus: values.legalStatus,
+        legalStatus: values.legalStatus ?? "",
         location: values.location,
         transactionType: values.transactionType,
         details: {
@@ -145,21 +166,18 @@ export default function CreateProperty() {
               ? (values.content ?? [])
               : undefined,
         },
-        mainImage: mainImageFile,
-        images: imageFiles,
-      };
+      } as UpdatePropertyDto;
 
-      return await propertyService.createProperty(formData);
+      return await propertyService.updateProperty(propertyId, formData);
     },
     {
       manual: true,
       onSuccess: () => {
-        message.success("Tạo tin đăng thành công!");
+        message.success("Cập nhật tin đăng thành công!");
         router.push("/dashboard");
       },
-      onError: (error) => {
-        console.error("Failed to submit form:", error);
-        message.error("Không thể tạo tin đăng");
+      onError: () => {
+        message.error("Không thể cập nhật tin đăng");
       },
     },
   );
@@ -182,14 +200,6 @@ export default function CreateProperty() {
     location?: string;
     transactionType: "rent" | "sale" | "project";
   }) => {
-    if (selectedTransactionType !== "project" && !mainImageFile) {
-      message.error("Vui lòng tải lên ảnh chính");
-      return;
-    }
-    if (selectedTransactionType !== "project" && imageFiles.length < 3) {
-      message.error("Vui lòng tải lên ít nhất 3 ảnh phụ");
-      return;
-    }
     submitForm(values);
   };
 
@@ -205,7 +215,7 @@ export default function CreateProperty() {
       return false;
     }
     setMainImageFile(file);
-    return false; // Prevent default upload
+    return false;
   };
 
   const handleImagesUpload = (file: File) => {
@@ -224,7 +234,7 @@ export default function CreateProperty() {
       return false;
     }
     setImageFiles([...imageFiles, file]);
-    return false; // Prevent default upload
+    return false;
   };
 
   const removeImage = (index: number) => {
@@ -237,9 +247,16 @@ export default function CreateProperty() {
 
   const handleTransactionTypeChange = (value: "rent" | "sale" | "project") => {
     setSelectedTransactionType(value);
-    // Clear the selected property type when transaction type changes
     form.setFieldsValue({ typeId: undefined });
   };
+
+  if (loadingProperty || !property) {
+    return (
+      <div className="flex min-h-[300px] items-center justify-center">
+        <Spin />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen py-8">
@@ -249,10 +266,10 @@ export default function CreateProperty() {
             level={1}
             className="!mb-2 !text-3xl !font-bold !text-gray-900"
           >
-            Đăng tin bất động sản
+            Cập nhật tin bất động sản
           </Title>
           <Text className="text-lg text-gray-600">
-            Chia sẻ thông tin bất động sản của bạn với cộng đồng
+            Chỉnh sửa thông tin tin đăng của bạn
           </Text>
         </div>
 
@@ -263,7 +280,7 @@ export default function CreateProperty() {
             onFinish={handleSubmit}
             className="space-y-8"
             initialValues={{
-              transactionType: "sale",
+              transactionType: property.transactionType,
             }}
           >
             {/* Basic Information */}
@@ -341,10 +358,11 @@ export default function CreateProperty() {
               >
                 <TextArea
                   rows={6}
-                  placeholder="Mô tả chi tiết về bất động sản, tiện ích xung quanh, hướng nhà, view..."
+                  placeholder="Mô tả chi tiết về bất động sản..."
                   className="rounded-lg"
                 />
               </Form.Item>
+
               {/* Project Content Builder */}
               {selectedTransactionType === "project" && (
                 <div className="space-y-4">
@@ -445,6 +463,7 @@ export default function CreateProperty() {
                   />
                 </Form.Item>
 
+                {/* Legal Status */}
                 <Form.Item
                   name="legalStatus"
                   label={
@@ -458,133 +477,129 @@ export default function CreateProperty() {
                   />
                 </Form.Item>
 
-                {selectedTransactionType === "rent" ||
-                  (selectedTransactionType === "sale" && (
-                    <>
-                      <Form.Item
-                        name="bedrooms"
-                        label={
-                          <span className="flex items-center gap-1 font-medium">
-                            <Bed className="h-4 w-4" />
-                            Phòng ngủ
-                          </span>
-                        }
-                      >
-                        <InputNumber
-                          min={0}
-                          placeholder="0"
-                          size="large"
-                          style={{ width: "100%" }}
-                        />
-                      </Form.Item>
-
-                      <Form.Item
-                        name="bathrooms"
-                        label={
-                          <span className="flex items-center gap-1 font-medium">
-                            <Bath className="h-4 w-4" />
-                            Phòng tắm
-                          </span>
-                        }
-                      >
-                        <InputNumber
-                          min={0}
-                          placeholder="0"
-                          size="large"
-                          style={{ width: "100%" }}
-                        />
-                      </Form.Item>
-                    </>
-                  ))}
-              </div>
-
-              {/* Amenities */}
-              <div className="space-y-4">
                 {selectedTransactionType !== "project" && (
                   <>
-                    <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
-                      <Title
-                        level={3}
-                        className="!mb-0 !text-xl !font-semibold !text-gray-900"
-                      >
-                        Tiện ích
-                      </Title>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4 md:grid-cols-6">
-                      <Form.Item
-                        name="wifi"
-                        label={
-                          <p className="flex items-center gap-1 font-medium text-green-600">
-                            <Wifi className="h-4 w-4" /> WiFi
-                          </p>
-                        }
-                        valuePropName="checked"
-                      >
-                        <Switch />
-                      </Form.Item>
-                      <Form.Item
-                        name="tv"
-                        label={
-                          <p className="flex items-center gap-1 font-medium text-red-600">
-                            <Tv className="h-4 w-4" /> TV
-                          </p>
-                        }
-                        valuePropName="checked"
-                      >
-                        <Switch />
-                      </Form.Item>
-                      <Form.Item
-                        name="airConditioner"
-                        label={
-                          <p className="flex items-center gap-1 font-medium text-blue-600">
-                            <Snowflake className="h-4 w-4" /> Điều hòa
-                          </p>
-                        }
-                        valuePropName="checked"
-                      >
-                        <Switch />
-                      </Form.Item>
-                      <Form.Item
-                        name="parking"
-                        label={
-                          <p className="flex items-center gap-1 font-medium text-orange-600">
-                            <Car className="h-4 w-4" /> Bãi đỗ xe
-                          </p>
-                        }
-                        valuePropName="checked"
-                      >
-                        <Switch />
-                      </Form.Item>
-                      <Form.Item
-                        name="kitchen"
-                        label={
-                          <p className="flex items-center gap-1 font-medium text-pink-600">
-                            <Utensils className="h-4 w-4" /> Nhà bếp
-                          </p>
-                        }
-                        valuePropName="checked"
-                      >
-                        <Switch />
-                      </Form.Item>
-                      <Form.Item
-                        name="security"
-                        label={
-                          <p className="flex items-center gap-1 font-medium text-green-600">
-                            <Shield className="h-4 w-4" /> An ninh
-                          </p>
-                        }
-                        valuePropName="checked"
-                      >
-                        <Switch />
-                      </Form.Item>
-                    </div>
+                    <Form.Item
+                      name="bedrooms"
+                      label={
+                        <span className="flex items-center gap-1 font-medium">
+                          <Bed className="h-4 w-4" />
+                          Phòng ngủ
+                        </span>
+                      }
+                    >
+                      <InputNumber
+                        min={0}
+                        placeholder="0"
+                        size="large"
+                        style={{ width: "100%" }}
+                      />
+                    </Form.Item>
+
+                    <Form.Item
+                      name="bathrooms"
+                      label={
+                        <span className="flex items-center gap-1 font-medium">
+                          <Bath className="h-4 w-4" />
+                          Phòng tắm
+                        </span>
+                      }
+                    >
+                      <InputNumber
+                        min={0}
+                        placeholder="0"
+                        size="large"
+                        style={{ width: "100%" }}
+                      />
+                    </Form.Item>
                   </>
                 )}
               </div>
+
+              {/* Amenities */}
+              {selectedTransactionType !== "project" && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
+                    <Title
+                      level={3}
+                      className="!mb-0 !text-xl !font-semibold !text-gray-900"
+                    >
+                      Tiện ích
+                    </Title>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 md:grid-cols-6">
+                    <Form.Item
+                      name="wifi"
+                      label={
+                        <p className="flex items-center gap-1 font-medium text-green-600">
+                          <Wifi className="h-4 w-4" /> WiFi
+                        </p>
+                      }
+                      valuePropName="checked"
+                    >
+                      <Switch />
+                    </Form.Item>
+                    <Form.Item
+                      name="tv"
+                      label={
+                        <p className="flex items-center gap-1 font-medium text-red-600">
+                          <Tv className="h-4 w-4" /> TV
+                        </p>
+                      }
+                      valuePropName="checked"
+                    >
+                      <Switch />
+                    </Form.Item>
+                    <Form.Item
+                      name="airConditioner"
+                      label={
+                        <p className="flex items-center gap-1 font-medium text-blue-600">
+                          <Snowflake className="h-4 w-4" /> Điều hòa
+                        </p>
+                      }
+                      valuePropName="checked"
+                    >
+                      <Switch />
+                    </Form.Item>
+                    <Form.Item
+                      name="parking"
+                      label={
+                        <p className="flex items-center gap-1 font-medium text-orange-600">
+                          <Car className="h-4 w-4" /> Bãi đỗ xe
+                        </p>
+                      }
+                      valuePropName="checked"
+                    >
+                      <Switch />
+                    </Form.Item>
+                    <Form.Item
+                      name="kitchen"
+                      label={
+                        <p className="flex items-center gap-1 font-medium text-pink-600">
+                          <Utensils className="h-4 w-4" /> Nhà bếp
+                        </p>
+                      }
+                      valuePropName="checked"
+                    >
+                      <Switch />
+                    </Form.Item>
+                    <Form.Item
+                      name="security"
+                      label={
+                        <p className="flex items-center gap-1 font-medium text-green-600">
+                          <Shield className="h-4 w-4" /> An ninh
+                        </p>
+                      }
+                      valuePropName="checked"
+                    >
+                      <Switch />
+                    </Form.Item>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Images */}
-
+            {/* Images (optional updates) */}
             {selectedTransactionType !== "project" && (
               <div className="space-y-6">
                 <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
@@ -593,12 +608,11 @@ export default function CreateProperty() {
                     level={3}
                     className="!mb-0 !text-xl !font-semibold !text-gray-900"
                   >
-                    Hình ảnh
+                    Hình ảnh (tuỳ chọn cập nhật)
                   </Title>
                 </div>
-                {/* Main Image */}
                 <div className="space-y-4">
-                  <Text className="font-medium">Ảnh chính *</Text>
+                  <Text className="font-medium">Ảnh chính</Text>
                   <div className="rounded-lg border-2 border-dashed border-gray-300 p-6 text-center transition-colors hover:border-blue-400">
                     {mainImageFile ? (
                       <div className="relative h-64 w-full">
@@ -638,8 +652,6 @@ export default function CreateProperty() {
                     )}
                   </div>
                 </div>
-
-                {/* Additional Images */}
                 <div className="space-y-4">
                   <Text className="font-medium">Ảnh phụ (tối đa 9 ảnh)</Text>
                   <div className="flex flex-wrap gap-6">
@@ -675,8 +687,8 @@ export default function CreateProperty() {
                       </Upload>
                     )}
                   </div>
+                  <Divider />
                 </div>
-                <Divider />
               </div>
             )}
 
@@ -698,7 +710,7 @@ export default function CreateProperty() {
                 loading={submitting}
                 className="rounded-lg bg-blue-600 hover:bg-blue-700"
               >
-                Đăng tin
+                Cập nhật
               </Button>
             </div>
           </Form>

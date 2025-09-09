@@ -18,9 +18,9 @@ export const userService = {
     return response.data as unknown as APIResponse<User[]>;
   },
 
-  getUserById: async (id: string): Promise<APIResponse<User>> => {
+  getUserById: async (id: string): Promise<{ user: User; message: string }> => {
     const response = await api.userControllerGet(id);
-    return response.data as unknown as APIResponse<User>;
+    return response.data as unknown as { user: User; message: string };
   },
 
   updateUser: async (
@@ -47,5 +47,13 @@ export const userService = {
   getAllUserRoles: async () => {
     const response = await api.userRoleControllerGetAll();
     return response.data as unknown as UserRole[];
+  },
+
+  updateProfile: async (id: string, formData: FormData) => {
+    const response = await api.userControllerUpdate(
+      id,
+      formData as UpdateUserDto,
+    );
+    return response.data as unknown as { user: User; message: string };
   },
 };
