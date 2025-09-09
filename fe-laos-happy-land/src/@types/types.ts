@@ -21,6 +21,17 @@ export type User = {
   email: string;
   phone: string;
   role: UserRole;
+  createdAt: string;
+  createdBy: string | null;
+  updatedAt: string;
+  updatedBy: string | null;
+  avatarUrl?: string | null;
+  location?: string | null;
+  deletedAt: string | null;
+  deletedBy: string | null;
+  image: string | null;
+  fromBank: string | null;
+  password: string;
 };
 
 export type Content =
