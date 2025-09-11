@@ -13,6 +13,8 @@ interface AuthState {
     password: string,
     redirectUrl?: string,
   ) => Promise<void>;
+  googleLogin: (redirectUrl?: string) => Promise<void>;
+  handleGoogleCallback: (code: string, redirectUrl?: string) => Promise<void>;
   logout: () => void;
   initialize: () => void;
 }
@@ -84,6 +86,66 @@ export const useAuthStore = create<AuthState>((set) => ({
         isInitialized: true,
       });
       throw error; // Re-throw to let component handle the error
+    }
+  },
+
+  googleLogin: async (redirectUrl?: string) => {
+    try {
+      // Store redirect URL for after Google OAuth
+      if (redirectUrl) {
+        sessionStorage.setItem("google_redirect_url", redirectUrl);
+      }
+
+      // Redirect to Google OAuth
+      await authService.googleLogin();
+    } catch (error: unknown) {
+      console.error("Google login error:", error);
+      throw error;
+    }
+  },
+
+  handleGoogleCallback: async (token: string, redirectUrl?: string) => {
+    try {
+      // Use auth service to handle Google callback
+      const response = await authService.handleGoogleCallback(token);
+
+      if (!response.access_token) {
+        throw new Error("No access token received from Google");
+      }
+
+      // Token is already stored by authService.handleGoogleCallback
+      const userData = authService.getUserFromToken();
+
+      // Update auth store state immediately
+      set({
+        user: userData,
+        isAuthenticated: !!userData,
+        isInitialized: true,
+      });
+
+      // Get redirect URL from sessionStorage or parameter
+      const finalRedirectUrl =
+        redirectUrl ?? sessionStorage.getItem("google_redirect_url");
+      sessionStorage.removeItem("google_redirect_url");
+
+      // Use a longer delay to ensure cookie is properly set and middleware can read it
+      setTimeout(() => {
+        if (finalRedirectUrl && finalRedirectUrl !== "/") {
+          window.location.href = finalRedirectUrl;
+        } else if (userData?.role?.toLowerCase() === "admin") {
+          window.location.href = "/admin";
+        } else {
+          window.location.href = "/";
+        }
+      }, 1000);
+    } catch (error: unknown) {
+      console.error("Google callback error:", error);
+      set({
+        user: null,
+        isAuthenticated: false,
+        isInitialized: true,
+      });
+      throw error;
     }
   },
 

@@ -193,7 +193,6 @@ const SearchBox = () => {
   ];
 
   const propertyTypeOptions = [
-    { id: "all", name: "Tất cả nhà đất", icon: <Home className="h-4 w-4" /> },
     {
       id: "apartment",
       name: "Căn hộ chung cư",

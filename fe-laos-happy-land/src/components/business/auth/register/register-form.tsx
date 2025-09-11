@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Form, Input, Button, Row, Col, App } from "antd";
+import { Form, Input, Button, Row, Col, App, Divider } from "antd";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
 import { authService } from "@/share/service/auth.service";
+import GoogleLoginButton from "../google-login-button";
 
 interface RegisterFormProps {
   onSuccess?: (message: string) => void;
@@ -163,6 +164,14 @@ export default function RegisterForm({
         >
           Đăng ký
         </Button>
+      </Form.Item>
+
+      <Divider>Hoặc</Divider>
+
+      <Form.Item>
+        <GoogleLoginButton onError={onError}>
+          Đăng ký với Google
+        </GoogleLoginButton>
       </Form.Item>
     </Form>
   );

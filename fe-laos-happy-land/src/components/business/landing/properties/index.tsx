@@ -30,6 +30,7 @@ import {
   Pagination,
   App,
   Tooltip,
+  Col,
 } from "antd";
 import { PRICE_RANGE_OPTIONS } from "@/share/constant/home-search";
 import propertyService from "@/share/service/property.service";
@@ -37,6 +38,7 @@ import propertyTypeService from "@/share/service/property-type.service";
 import { useRequest } from "ahooks";
 import type { APIResponse, Property, PropertyType } from "@/@types/types";
 import PropertyCard from "./property-card";
+import PropertyCardSkeleton from "@/components/business/common/property-card-skeleton";
 
 interface PropertiesProps {
   transaction: "sale" | "rent" | "project";
@@ -796,691 +798,11 @@ const Properties = ({ transaction }: PropertiesProps) => {
 
   return (
     <div className="min-h-screen">
-      <div className="">
-        <div className="container mx-auto px-4 py-4">
-          <div className="relative flex items-center gap-2 rounded-xl border border-gray-200">
-            <div
-              ref={searchInputRef}
-              className="search-input flex flex-1 items-center gap-2"
-            >
-              <Input
-                prefix={<Search className="mx-2 text-gray-500" size={18} />}
-                placeholder={keyword || "Đường Láng"}
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                onClick={handleSearchInputClick}
-                style={{
-                  border: "none",
-                  backgroundColor: "transparent",
-                  boxShadow: "none",
-                }}
-                onPressEnter={handleSearch}
-              />
-            </div>
-
-            <Button
-              type="text"
-              ref={locationButtonRef}
-              className="location-button flex w-1/10 items-center gap-2 rounded-lg bg-white px-3 py-2"
-              onClick={handleLocationClick}
-              style={{
-                border: "none",
-                backgroundColor: "transparent",
-                boxShadow: "none",
-              }}
-            >
-              <span className="text-sm font-medium text-gray-900 capitalize">
-                {selectedLocation !== "all" ? selectedLocation : "Tất cả"}
-              </span>
-              <ChevronRight size={14} className="rotate-90 text-gray-400" />
-            </Button>
-
-            <Button
-              type="primary"
-              size="large"
-              onClick={handleSearch}
-              className="rounded-lg border-red-500 bg-red-500 px-6 hover:border-red-600 hover:bg-red-600"
-            >
-              Tìm kiếm
-            </Button>
-            {searchModalOpen && (
-              <div
-                ref={searchModalRef}
-                className="search-popup absolute top-full left-0 z-50 mt-2 h-[60vh] w-full overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-2xl sm:h-[50vh]"
-              >
-                <div className="p-4 sm:p-6">
-                  <div className="mb-4 flex items-center justify-between sm:mb-6">
-                    <div>
-                      <Typography.Title
-                        level={4}
-                        className="mb-1 text-base sm:text-lg"
-                      >
-                        Tìm kiếm
-                      </Typography.Title>
-                      <Typography.Text
-                        type="secondary"
-                        className="text-xs sm:text-sm"
-                      >
-                        Nhập từ khóa tìm kiếm
-                      </Typography.Text>
-                    </div>
-                    <Button
-                      type="text"
-                      icon={<X className="h-4 w-4 sm:h-5 sm:w-5" />}
-                      onClick={() => setSearchModalOpen(false)}
-                      className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-600 sm:h-8 sm:w-8"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                    <div className="lg:col-span-1">
-                      <div className="mb-3 flex items-center gap-2 sm:mb-4">
-                        <MapPin className="h-4 w-4 text-gray-500 sm:h-5 sm:w-5" />
-                        <Typography.Text
-                          strong
-                          className="text-sm sm:text-base"
-                        >
-                          Danh sách quận huyện
-                        </Typography.Text>
-                      </div>
-                      <div className="max-h-96 space-y-2 overflow-y-auto">
-                        {districts.map((district) => (
-                          <div
-                            key={district.id}
-                            className="flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-all duration-200 hover:bg-gray-50"
-                            onClick={() => handleDistrictSelect(district.name)}
-                          >
-                            <MapPin className="h-4 w-4 text-gray-500" />
-                            <span className="text-sm font-medium">
-                              {district.name}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Right Panel - Search Trends */}
-                    <div className="lg:col-span-2">
-                      <div className="mb-3 flex items-center gap-2 sm:mb-4">
-                        <div className="flex h-4 w-4 items-center justify-center rounded-full bg-red-500 sm:h-5 sm:w-5">
-                          <span className="text-xs text-white">🔥</span>
-                        </div>
-                        <Typography.Text
-                          strong
-                          className="text-sm sm:text-base"
-                        >
-                          Xu hướng tìm kiếm
-                        </Typography.Text>
-                      </div>
-                      <div className="space-y-3">
-                        {districts
-                          .sort((a, b) => b.searchCount - a.searchCount)
-                          .slice(0, 5)
-                          .map((district, index) => (
-                            <div
-                              key={district.id}
-                              className="flex cursor-pointer items-center justify-between rounded-lg p-3 transition-all duration-200 hover:bg-gray-50"
-                              onClick={() =>
-                                handleDistrictSelect(district.name)
-                              }
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200">
-                                  <span className="text-sm font-medium text-gray-600">
-                                    #{index + 1}
-                                  </span>
-                                </div>
-                                <span className="text-sm font-medium">
-                                  {district.name}
-                                </span>
-                              </div>
-                              <span className="text-sm text-gray-500">
-                                {district.searchCount.toLocaleString()} lượt tìm
-                                kiếm
-                              </span>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Location Modal */}
-            {locationModalOpen && (
-              <div
-                ref={locationModalRef}
-                className="location-popup absolute top-full left-0 z-50 mt-2 h-[60vh] w-full overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-2xl sm:h-[50vh]"
-              >
-                <div className="p-4 sm:p-6">
-                  <div className="mb-4 flex items-center justify-between sm:mb-6">
-                    <div>
-                      <Typography.Title
-                        level={4}
-                        className="mb-1 text-base sm:text-lg"
-                      >
-                        Chọn khu vực tìm kiếm
-                      </Typography.Title>
-                      <Typography.Text
-                        type="secondary"
-                        className="text-xs sm:text-sm"
-                      >
-                        Bạn muốn tìm bất động sản tại tỉnh thành nào?
-                      </Typography.Text>
-                    </div>
-                    <Button
-                      type="text"
-                      icon={<X className="h-4 w-4 sm:h-5 sm:w-5" />}
-                      onClick={() => setLocationModalOpen(false)}
-                      className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-600 sm:h-8 sm:w-8"
-                    />
-                  </div>
-
-                  {/* Popular Cities */}
-                  <div className="mb-6 sm:mb-8">
-                    <div className="mb-3 flex items-center gap-2 sm:mb-4">
-                      <div className="flex h-4 w-4 items-center justify-center rounded-full bg-red-500 sm:h-5 sm:w-5">
-                        <span className="text-xs text-white">🔥</span>
-                      </div>
-                      <Typography.Text strong className="text-sm sm:text-base">
-                        Top tỉnh thành nổi bật
-                      </Typography.Text>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
-                      {popularCities.map((city) => (
-                        <div
-                          key={city.id}
-                          className={`group relative h-20 overflow-hidden rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-lg sm:h-24 sm:rounded-xl ${
-                            selectedLocation === city.name
-                              ? "bg-red-50 ring-2 ring-red-500 ring-offset-2"
-                              : "hover:ring-2 hover:ring-red-300"
-                          }`}
-                          onClick={() => handleProvinceSelect(city.name)}
-                        >
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
-                          <div
-                            className={`absolute inset-0 ${
-                              selectedLocation === city.name
-                                ? "bg-red-200"
-                                : "bg-gray-300"
-                            }`}
-                          ></div>
-                          <div className="absolute right-3 bottom-3 left-3">
-                            <Typography.Text
-                              strong
-                              className={`text-sm drop-shadow-lg ${
-                                selectedLocation === city.name
-                                  ? "text-red-800"
-                                  : "text-white"
-                              }`}
-                            >
-                              {city.name}
-                            </Typography.Text>
-                          </div>
-                          {selectedLocation === city.name && (
-                            <div className="absolute top-2 right-2">
-                              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white">
-                                <CheckCircle className="text-white" size={16} />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* All Locations */}
-                  <div>
-                    <div className="mb-3 flex items-center gap-2 sm:mb-4">
-                      <div className="flex h-4 w-4 items-center justify-center rounded-full bg-gray-500 sm:h-5 sm:w-5">
-                        <span className="text-xs text-white">🌍</span>
-                      </div>
-                      <Typography.Text strong className="text-sm sm:text-base">
-                        Tất cả tỉnh thành
-                      </Typography.Text>
-                    </div>
-                    <div className="grid max-h-96 grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-6">
-                      {allProvinces.map((province) => (
-                        <Button
-                          key={province}
-                          type={
-                            selectedLocation === province
-                              ? "primary"
-                              : "default"
-                          }
-                          onClick={() => handleProvinceSelect(province)}
-                          className={`w-full rounded-lg px-2 py-2 text-left text-xs font-medium transition-all duration-200 sm:px-3 sm:text-sm ${
-                            selectedLocation === province
-                              ? "border-red-500 bg-red-500 text-white shadow-md"
-                              : "text-gray-700 hover:border-red-300 hover:bg-red-50 hover:text-red-600"
-                          }`}
-                        >
-                          <label className="capitalize">{province}</label>
-                          {selectedLocation === province && (
-                            <CheckCircle className="ml-2 h-4 w-4" />
-                          )}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Filter Row */}
-          <div className="relative mt-4 grid grid-cols-2 items-center gap-3 md:grid-cols-4">
-            {/* Filter Button */}
-            <Button
-              icon={<Filter className="h-4 w-4" />}
-              className="rounded-lg border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-            >
-              Lọc
-            </Button>
-
-            {/* Property Type Filter */}
-            <div className="md:relative">
-              <Button
-                onClick={togglePropertyTypeModal}
-                className="filter-dropdown-button flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-2 transition-all duration-200"
-              >
-                <span className="text-sm text-gray-600">Loại BĐS</span>
-                <ChevronRight
-                  size={14}
-                  className={`text-gray-400 transition-transform duration-200 ${
-                    propertyTypeOpen ? "rotate-90" : ""
-                  }`}
-                />
-              </Button>
-
-              {/* Property Type Dropdown */}
-              {propertyTypeOpen && (
-                <div
-                  className="filter-dropdown absolute top-full right-0 z-50 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="border-b border-gray-100 p-3">
-                    <div className="flex items-center justify-between">
-                      <Typography.Title level={5} className="mb-0 text-sm">
-                        Loại nhà đất
-                      </Typography.Title>
-                      <Button
-                        type="text"
-                        icon={<X className="text-gray-600" size={14} />}
-                        onClick={() => setPropertyTypeOpen(false)}
-                        className="flex h-5 w-5 items-center justify-center"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="max-h-64 overflow-y-auto p-3">
-                    {propertyTypesLoading ? (
-                      <div className="flex items-center justify-center py-4">
-                        <Spin size="small" />
-                        <span className="ml-2 text-sm text-gray-500">
-                          Đang tải loại bất động sản...
-                        </span>
-                      </div>
-                    ) : (
-                      propertyTypeOptions.map((type) => (
-                        <div
-                          key={type.id}
-                          className="flex cursor-pointer items-center gap-3 rounded px-2 py-2 hover:bg-gray-50"
-                          onClick={() => handleSelectedPropertyType(type.id)}
-                        >
-                          <Checkbox
-                            checked={
-                              type.id === "all"
-                                ? propertyTypes
-                                    .map((pt) => pt.id)
-                                    .every((id) =>
-                                      selectedPropertyTypes.includes(id),
-                                    )
-                                : selectedPropertyTypes.includes(type.id)
-                            }
-                            className="text-red-500"
-                          />
-                          <span className="text-gray-600">{type.icon}</span>
-                          <span className="text-sm text-gray-700">
-                            {type.name}
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-
-                  <div className="flex justify-between border-t border-gray-100 p-3">
-                    <Button
-                      type="text"
-                      onClick={() => {
-                        setSelectedPropertyTypes([]);
-                        updateSearchParams({
-                          type: [],
-                        });
-                      }}
-                      className="text-sm text-gray-500 hover:text-red-500"
-                    >
-                      Đặt lại
-                    </Button>
-                    <Button
-                      type="primary"
-                      onClick={() => setPropertyTypeOpen(false)}
-                      className="border-0 bg-red-500 text-sm hover:bg-red-600"
-                    >
-                      Áp dụng
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Price Filter */}
-            <div className="md:relative">
-              <Button
-                onClick={togglePriceRangeModal}
-                className="filter-dropdown-button flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-2 transition-all duration-200"
-              >
-                <span className="text-sm text-gray-600">Mức giá</span>
-                <ChevronRight
-                  size={14}
-                  className={`text-gray-400 transition-transform duration-200 ${
-                    priceRangeOpen ? "rotate-90" : ""
-                  }`}
-                />
-              </Button>
-
-              {/* Price Range Dropdown */}
-              {priceRangeOpen && (
-                <div
-                  className="filter-dropdown absolute top-full right-0 z-50 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="border-b border-gray-100 p-3">
-                    <div className="flex items-center justify-between">
-                      <Typography.Title level={5} className="mb-0 text-sm">
-                        Mức giá
-                      </Typography.Title>
-                      <Button
-                        type="text"
-                        icon={<X className="text-gray-600" size={14} />}
-                        onClick={() => setPriceRangeOpen(false)}
-                        className="flex h-5 w-5 items-center justify-center"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="p-3">
-                    {/* Custom Price Range */}
-                    <div className="mb-6">
-                      <div className="mb-4 flex gap-4">
-                        <div className="flex-1">
-                          <Typography.Text className="mb-1 block text-sm text-gray-600">
-                            Từ:{" "}
-                            {minPrice
-                              ? numberToString(parseInt(minPrice))
-                              : "0"}
-                          </Typography.Text>
-                          <Input
-                            placeholder="Từ"
-                            className="rounded-lg"
-                            value={minPrice}
-                            onChange={(e) =>
-                              handleMinPriceInputChange(
-                                parseInt(e.target.value),
-                              )
-                            }
-                          />
-                        </div>
-                        <div className="flex items-end">
-                          <ArrowRight className="mb-2 h-5 w-5 text-gray-400" />
-                        </div>
-                        <div className="flex-1">
-                          <Typography.Text className="mb-1 block text-sm text-gray-600">
-                            Đến:{" "}
-                            {maxPrice
-                              ? numberToString(parseInt(maxPrice))
-                              : "∞"}
-                          </Typography.Text>
-                          <Input
-                            placeholder="Đến"
-                            className="rounded-lg"
-                            value={maxPrice}
-                            onChange={(e) =>
-                              handleMaxPriceInputChange(
-                                parseInt(e.target.value),
-                              )
-                            }
-                          />
-                        </div>
-                      </div>
-                      <Slider
-                        range
-                        value={priceRange}
-                        onChange={(value) =>
-                          handlePriceRangeChange(value as [number, number])
-                        }
-                        min={0}
-                        step={1000000}
-                        tooltip={{
-                          formatter: (value?: number) => {
-                            if (typeof value !== "number") return "";
-                            return `${numberToString(value)}`;
-                          },
-                        }}
-                        max={100000000000}
-                        className="mb-4"
-                      />
-                    </div>
-
-                    {/* Predefined Price Ranges */}
-                    <div className="max-h-48 overflow-y-auto">
-                      <Radio.Group
-                        value={selectedPriceRange}
-                        onChange={(e) =>
-                          handlePriceRangeSelection(e.target.value as string)
-                        }
-                        className="w-full"
-                      >
-                        {priceRanges.map((range) => (
-                          <div key={range.value} className="mb-2">
-                            <Radio value={range.value} className="text-sm">
-                              {range.label}
-                            </Radio>
-                          </div>
-                        ))}
-                      </Radio.Group>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between border-t border-gray-100 p-3">
-                    <Button
-                      type="text"
-                      onClick={() => {
-                        handlePriceRangeSelection("all");
-                      }}
-                      className="text-sm text-gray-500 hover:text-red-500"
-                    >
-                      Đặt lại
-                    </Button>
-                    <Button
-                      type="primary"
-                      onClick={() => setPriceRangeOpen(false)}
-                      className="border-0 bg-red-500 text-sm hover:bg-red-600"
-                    >
-                      Áp dụng
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Area Filter */}
-            <div className="md:relative">
-              <Button
-                onClick={toggleAreaModal}
-                className="filter-dropdown-button flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-2 transition-all duration-200"
-              >
-                <span className="text-sm text-gray-600">Diện tích</span>
-                <ChevronRight
-                  size={14}
-                  className={`text-gray-400 transition-transform duration-200 ${
-                    areaOpen ? "rotate-90" : ""
-                  }`}
-                />
-              </Button>
-
-              {/* Area Filter Dropdown */}
-              {areaOpen && (
-                <div
-                  className="filter-dropdown absolute top-full right-0 z-50 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="border-b border-gray-100 p-3">
-                    <div className="flex items-center justify-between">
-                      <Typography.Title level={5} className="mb-0 text-sm">
-                        Diện tích
-                      </Typography.Title>
-                      <Button
-                        type="text"
-                        icon={<X className="text-gray-600" size={14} />}
-                        onClick={() => setAreaOpen(false)}
-                        className="flex h-5 w-5 items-center justify-center"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="p-3">
-                    {/* Custom Area Range */}
-                    <div className="mb-6">
-                      <div className="mb-4 flex gap-4">
-                        <div className="flex-1">
-                          <Typography.Text className="mb-1 block text-sm text-gray-600">
-                            Từ: {minArea || "0"}m²
-                          </Typography.Text>
-                          <Input
-                            placeholder="Từ"
-                            className="rounded-lg"
-                            value={minArea}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setMinArea(value);
-                              if (value) {
-                                updateSearchParams({ minArea: value });
-                              } else {
-                                updateSearchParams({ minArea: "" });
-                              }
-                            }}
-                            suffix="m²"
-                          />
-                        </div>
-                        <div className="flex items-end">
-                          <ArrowRight className="mb-2 h-5 w-5 text-gray-400" />
-                        </div>
-                        <div className="flex-1">
-                          <Typography.Text className="mb-1 block text-sm text-gray-600">
-                            Đến: {maxArea || "∞"}m²
-                          </Typography.Text>
-                          <Input
-                            placeholder="Đến"
-                            className="rounded-lg"
-                            value={maxArea}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setMaxArea(value);
-                              if (value) {
-                                updateSearchParams({ maxArea: value });
-                              } else {
-                                updateSearchParams({ maxArea: "" });
-                              }
-                            }}
-                            suffix="m²"
-                          />
-                        </div>
-                      </div>
-                      <Slider
-                        range
-                        value={areaRange}
-                        onChange={(value) =>
-                          handleAreaRangeChange(value as [number, number])
-                        }
-                        min={0}
-                        step={5}
-                        tooltip={{
-                          formatter: (value?: number) => {
-                            if (typeof value !== "number") return "";
-                            return `${numberToString(value)}`;
-                          },
-                        }}
-                        max={1000}
-                        className="mb-4"
-                      />
-                    </div>
-
-                    {/* Predefined Area Ranges */}
-                    <div className="max-h-48 overflow-y-auto">
-                      <Radio.Group
-                        value={selectedAreaRange}
-                        onChange={(e) =>
-                          handleAreaRangeSelection(e.target.value as string)
-                        }
-                        className="w-full"
-                      >
-                        {[
-                          { value: "under-50", label: "Dưới 50m²" },
-                          { value: "50-100", label: "50-100m²" },
-                          { value: "100-200", label: "100-200m²" },
-                          { value: "200-500", label: "200-500m²" },
-                          { value: "500-1000", label: "500-1000m²" },
-                          { value: "over-1000", label: "Trên 1000m²" },
-                        ].map((range) => (
-                          <div key={range.value} className="mb-2">
-                            <Radio value={range.value} className="text-sm">
-                              {range.label}
-                            </Radio>
-                          </div>
-                        ))}
-                      </Radio.Group>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between border-t border-gray-100 p-3">
-                    <Button
-                      type="text"
-                      onClick={() => {
-                        setMinArea("");
-                        setMaxArea("");
-                        updateSearchParams({
-                          minArea: "",
-                          maxArea: "",
-                        });
-                      }}
-                      className="text-sm text-gray-500 hover:text-red-500"
-                    >
-                      Đặt lại
-                    </Button>
-                    <Button
-                      type="primary"
-                      onClick={() => setAreaOpen(false)}
-                      className="border-0 bg-red-500 text-sm hover:bg-red-600"
-                    >
-                      Áp dụng
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex flex-col justify-center gap-6 lg:flex-row">
-          {/* Left Content - Property Listing */}
-          <div className="w-full">
-            {/* Enhanced Breadcrumb */}
-            <div className="mb-4 flex items-center text-sm">
+      <div className="sticky top-[80px] right-0 left-0 z-50 container mx-auto px-4 py-4">
+        <div className="relative rounded-2xl bg-white shadow-md ring-1 ring-gray-200/50 backdrop-blur-sm">
+          {/* Search Form */}
+          <div className="p-4 lg:p-6">
+            <div className="my-4 flex items-center text-sm">
               <div className="flex items-center space-x-2">
                 <span className="cursor-pointer text-gray-500 transition-colors hover:text-red-500 hover:underline">
                   Trang chủ
@@ -1500,66 +822,751 @@ const Properties = ({ transaction }: PropertiesProps) => {
                 )}
               </div>
             </div>
-
-            <div className="mb-2">
-              <h1 className="text-2xl font-bold text-gray-900">
-                Mua bán nhà đất Lào
-              </h1>
-            </div>
-
-            {isInitialLoad ? (
-              <div className="flex h-[500px] items-center justify-center">
-                <div className="text-center">
-                  <Spin size="large" />
-                  <p className="mt-4 text-gray-600">Đang tải dữ liệu...</p>
+            <div className="relative grid grid-cols-5 gap-4">
+              {/* Search Input */}
+              <div ref={searchInputRef} className="search-input col-span-2">
+                <div className="relative w-full">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-4">
+                    <Search className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <Input
+                    size="large"
+                    prefix={<Search className="h-5 w-5 text-gray-400" />}
+                    placeholder="Nhập địa điểm, dự án, hoặc từ khóa..."
+                    value={keyword}
+                    onChange={(e) => setKeyword(e.target.value)}
+                    onClick={handleSearchInputClick}
+                    onPressEnter={handleSearch}
+                  />
+                  {keyword && (
+                    <button
+                      onClick={() => setKeyword("")}
+                      className="absolute inset-y-0 right-0 flex items-center pr-4"
+                    >
+                      <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                    </button>
+                  )}
                 </div>
               </div>
-            ) : (
-              <>
-                {/* Enhanced Results Header */}
-                <div className="mb-4 flex flex-col justify-between gap-6">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex w-full items-center justify-between gap-2 text-sm text-gray-600">
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-2">
-                          <span>Hiện có</span>
-                          <span className="text-lg font-bold text-red-500">
-                            {properties?.meta.itemCount.toString()}
+
+              {/* Location Selector */}
+              <div className="col-span-2">
+                <Button
+                  size="large"
+                  ref={locationButtonRef}
+                  onClick={handleLocationClick}
+                  className="flex h-12 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 shadow-sm transition-all duration-200 hover:border-red-300 hover:bg-red-50"
+                >
+                  <div className="flex items-center gap-3">
+                    <MapPin className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm font-medium text-gray-700 capitalize">
+                      {selectedLocation !== "all"
+                        ? selectedLocation
+                        : "Tất cả khu vực"}
+                    </span>
+                  </div>
+                  <ChevronRight size={16} className="rotate-90 text-gray-400" />
+                </Button>
+              </div>
+
+              {/* Search Button */}
+              <Button
+                type="primary"
+                size="large"
+                onClick={handleSearch}
+                className="h-12 rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-8 font-semibold shadow-lg transition-all duration-200 hover:from-red-600 hover:to-red-700 hover:shadow-xl"
+              >
+                <Search className="hidden h-4 w-4 lg:block" />
+                Tìm kiếm
+              </Button>
+            </div>
+
+            {/* Filter Row */}
+            <div className="mt-4 grid grid-cols-3 items-center gap-3 md:grid-cols-3">
+              {/* Property Type Filter */}
+              <div className="md:relative">
+                <Button
+                  onClick={togglePropertyTypeModal}
+                  className="filter-dropdown-button flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm transition-all duration-200 hover:border-red-300 hover:bg-red-50"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100">
+                      <span className="text-xs">🏠</span>
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">
+                      Loại BĐS
+                    </span>
+                  </div>
+                  <ChevronRight
+                    size={16}
+                    className={`text-gray-400 transition-transform duration-200 ${
+                      propertyTypeOpen ? "rotate-90" : ""
+                    }`}
+                  />
+                </Button>
+
+                {/* Property Type Dropdown */}
+                {propertyTypeOpen && (
+                  <div
+                    className="filter-dropdown absolute top-full right-0 z-50 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="border-b border-gray-100 p-3">
+                      <div className="flex items-center justify-between">
+                        <Typography.Title level={5} className="mb-0 text-sm">
+                          Loại nhà đất
+                        </Typography.Title>
+                        <Button
+                          type="text"
+                          icon={<X className="text-gray-600" size={14} />}
+                          onClick={() => setPropertyTypeOpen(false)}
+                          className="flex h-5 w-5 items-center justify-center"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="max-h-64 overflow-y-auto p-3">
+                      {propertyTypesLoading ? (
+                        <div className="flex items-center justify-center py-4">
+                          <Spin size="small" />
+                          <span className="ml-2 text-sm text-gray-500">
+                            Đang tải loại bất động sản...
                           </span>
-                          <span>bất động sản</span>
-                          {propertiesLoading && (
-                            <Spin size="small" className="ml-2" />
-                          )}
                         </div>
-                        {getFilterDisplayText() && (
-                          <div className="flex items-center gap-2">
-                            <span>cho</span>
-                            <span className="rounded bg-gray-100 px-2 py-1 font-medium text-gray-900">
-                              &quot;{getFilterDisplayText()}&quot;
+                      ) : (
+                        propertyTypeOptions.map((type) => (
+                          <div
+                            key={type.id}
+                            className="flex cursor-pointer items-center gap-3 rounded px-2 py-2 hover:bg-gray-50"
+                            onClick={() => handleSelectedPropertyType(type.id)}
+                          >
+                            <Checkbox
+                              checked={
+                                type.id === "all"
+                                  ? propertyTypes
+                                      .map((pt) => pt.id)
+                                      .every((id) =>
+                                        selectedPropertyTypes.includes(id),
+                                      )
+                                  : selectedPropertyTypes.includes(type.id)
+                              }
+                              className="text-red-500"
+                            />
+                            <span className="text-gray-600">{type.icon}</span>
+                            <span className="text-sm text-gray-700">
+                              {type.name}
                             </span>
                           </div>
-                        )}
+                        ))
+                      )}
+                    </div>
+
+                    <div className="flex justify-between border-t border-gray-100 p-3">
+                      <Button
+                        type="text"
+                        onClick={() => {
+                          setSelectedPropertyTypes([]);
+                          updateSearchParams({
+                            type: [],
+                          });
+                        }}
+                        className="text-sm text-gray-500 hover:text-red-500"
+                      >
+                        Đặt lại
+                      </Button>
+                      <Button
+                        type="primary"
+                        onClick={() => setPropertyTypeOpen(false)}
+                        className="border-0 bg-red-500 text-sm hover:bg-red-600"
+                      >
+                        Áp dụng
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Price Filter */}
+              <div className="md:relative">
+                <Button
+                  onClick={togglePriceRangeModal}
+                  className="filter-dropdown-button flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm transition-all duration-200 hover:border-red-300 hover:bg-red-50"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100">
+                      <span className="text-xs">💰</span>
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">
+                      Mức giá
+                    </span>
+                  </div>
+                  <ChevronRight
+                    size={16}
+                    className={`text-gray-400 transition-transform duration-200 ${
+                      priceRangeOpen ? "rotate-90" : ""
+                    }`}
+                  />
+                </Button>
+
+                {/* Price Range Dropdown */}
+                {priceRangeOpen && (
+                  <div
+                    className="filter-dropdown absolute top-full right-0 z-50 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="border-b border-gray-100 p-3">
+                      <div className="flex items-center justify-between">
+                        <Typography.Title level={5} className="mb-0 text-sm">
+                          Mức giá
+                        </Typography.Title>
+                        <Button
+                          type="text"
+                          icon={<X className="text-gray-600" size={14} />}
+                          onClick={() => setPriceRangeOpen(false)}
+                          className="flex h-5 w-5 items-center justify-center"
+                        />
                       </div>
-                      <div className="hidden md:block">
-                        <Tooltip title="Chuyển đổi giao diện">
-                          <Button
-                            icon={
-                              layout === "grid" ? (
-                                <Square size={16} />
-                              ) : (
-                                <List size={16} />
-                              )
-                            }
-                            onClick={() =>
-                              setLayout(layout === "grid" ? "list" : "grid")
-                            }
-                          />
-                        </Tooltip>
+                    </div>
+
+                    <div className="p-3">
+                      {/* Custom Price Range */}
+                      <div className="mb-6">
+                        <div className="mb-4 flex gap-4">
+                          <div className="flex-1">
+                            <Typography.Text className="mb-1 block text-sm text-gray-600">
+                              Từ:{" "}
+                              {minPrice
+                                ? numberToString(parseInt(minPrice))
+                                : "0"}
+                            </Typography.Text>
+                            <Input
+                              placeholder="Từ"
+                              className="rounded-lg"
+                              value={minPrice}
+                              onChange={(e) =>
+                                handleMinPriceInputChange(
+                                  parseInt(e.target.value),
+                                )
+                              }
+                            />
+                          </div>
+                          <div className="flex items-end">
+                            <ArrowRight className="mb-2 h-5 w-5 text-gray-400" />
+                          </div>
+                          <div className="flex-1">
+                            <Typography.Text className="mb-1 block text-sm text-gray-600">
+                              Đến:{" "}
+                              {maxPrice
+                                ? numberToString(parseInt(maxPrice))
+                                : "∞"}
+                            </Typography.Text>
+                            <Input
+                              placeholder="Đến"
+                              className="rounded-lg"
+                              value={maxPrice}
+                              onChange={(e) =>
+                                handleMaxPriceInputChange(
+                                  parseInt(e.target.value),
+                                )
+                              }
+                            />
+                          </div>
+                        </div>
+                        <Slider
+                          range
+                          value={priceRange}
+                          onChange={(value) =>
+                            handlePriceRangeChange(value as [number, number])
+                          }
+                          min={0}
+                          step={1000000}
+                          tooltip={{
+                            formatter: (value?: number) => {
+                              if (typeof value !== "number") return "";
+                              return `${numberToString(value)}`;
+                            },
+                          }}
+                          max={100000000000}
+                          className="mb-4"
+                        />
+                      </div>
+
+                      {/* Predefined Price Ranges */}
+                      <div className="max-h-48 overflow-y-auto">
+                        <Radio.Group
+                          value={selectedPriceRange}
+                          onChange={(e) =>
+                            handlePriceRangeSelection(e.target.value as string)
+                          }
+                          className="w-full"
+                        >
+                          {priceRanges.map((range) => (
+                            <div key={range.value} className="mb-2">
+                              <Radio value={range.value} className="text-sm">
+                                {range.label}
+                              </Radio>
+                            </div>
+                          ))}
+                        </Radio.Group>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between border-t border-gray-100 p-3">
+                      <Button
+                        type="text"
+                        onClick={() => {
+                          handlePriceRangeSelection("all");
+                        }}
+                        className="text-sm text-gray-500 hover:text-red-500"
+                      >
+                        Đặt lại
+                      </Button>
+                      <Button
+                        type="primary"
+                        onClick={() => setPriceRangeOpen(false)}
+                        className="border-0 bg-red-500 text-sm hover:bg-red-600"
+                      >
+                        Áp dụng
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Area Filter */}
+              <div className="md:relative">
+                <Button
+                  onClick={toggleAreaModal}
+                  className="filter-dropdown-button flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm transition-all duration-200 hover:border-red-300 hover:bg-red-50"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-100">
+                      <span className="text-xs">📐</span>
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">
+                      Diện tích
+                    </span>
+                  </div>
+                  <ChevronRight
+                    size={16}
+                    className={`text-gray-400 transition-transform duration-200 ${
+                      areaOpen ? "rotate-90" : ""
+                    }`}
+                  />
+                </Button>
+
+                {/* Area Filter Dropdown */}
+                {areaOpen && (
+                  <div
+                    className="filter-dropdown absolute top-full right-0 z-50 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="border-b border-gray-100 p-3">
+                      <div className="flex items-center justify-between">
+                        <Typography.Title level={5} className="mb-0 text-sm">
+                          Diện tích
+                        </Typography.Title>
+                        <Button
+                          type="text"
+                          icon={<X className="text-gray-600" size={14} />}
+                          onClick={() => setAreaOpen(false)}
+                          className="flex h-5 w-5 items-center justify-center"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="p-3">
+                      {/* Custom Area Range */}
+                      <div className="mb-6">
+                        <div className="mb-4 flex gap-4">
+                          <div className="flex-1">
+                            <Typography.Text className="mb-1 block text-sm text-gray-600">
+                              Từ: {minArea || "0"}m²
+                            </Typography.Text>
+                            <Input
+                              placeholder="Từ"
+                              className="rounded-lg"
+                              value={minArea}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setMinArea(value);
+                                if (value) {
+                                  updateSearchParams({ minArea: value });
+                                } else {
+                                  updateSearchParams({ minArea: "" });
+                                }
+                              }}
+                              suffix="m²"
+                            />
+                          </div>
+                          <div className="flex items-end">
+                            <ArrowRight className="mb-2 h-5 w-5 text-gray-400" />
+                          </div>
+                          <div className="flex-1">
+                            <Typography.Text className="mb-1 block text-sm text-gray-600">
+                              Đến: {maxArea || "∞"}m²
+                            </Typography.Text>
+                            <Input
+                              placeholder="Đến"
+                              className="rounded-lg"
+                              value={maxArea}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setMaxArea(value);
+                                if (value) {
+                                  updateSearchParams({ maxArea: value });
+                                } else {
+                                  updateSearchParams({ maxArea: "" });
+                                }
+                              }}
+                              suffix="m²"
+                            />
+                          </div>
+                        </div>
+                        <Slider
+                          range
+                          value={areaRange}
+                          onChange={(value) =>
+                            handleAreaRangeChange(value as [number, number])
+                          }
+                          min={0}
+                          step={5}
+                          tooltip={{
+                            formatter: (value?: number) => {
+                              if (typeof value !== "number") return "";
+                              return `${numberToString(value)}`;
+                            },
+                          }}
+                          max={1000}
+                          className="mb-4"
+                        />
+                      </div>
+
+                      {/* Predefined Area Ranges */}
+                      <div className="max-h-48 overflow-y-auto">
+                        <Radio.Group
+                          value={selectedAreaRange}
+                          onChange={(e) =>
+                            handleAreaRangeSelection(e.target.value as string)
+                          }
+                          className="w-full"
+                        >
+                          {[
+                            { value: "under-50", label: "Dưới 50m²" },
+                            { value: "50-100", label: "50-100m²" },
+                            { value: "100-200", label: "100-200m²" },
+                            { value: "200-500", label: "200-500m²" },
+                            { value: "500-1000", label: "500-1000m²" },
+                            { value: "over-1000", label: "Trên 1000m²" },
+                          ].map((range) => (
+                            <div key={range.value} className="mb-2">
+                              <Radio value={range.value} className="text-sm">
+                                {range.label}
+                              </Radio>
+                            </div>
+                          ))}
+                        </Radio.Group>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between border-t border-gray-100 p-3">
+                      <Button
+                        type="text"
+                        onClick={() => {
+                          setMinArea("");
+                          setMaxArea("");
+                          updateSearchParams({
+                            minArea: "",
+                            maxArea: "",
+                          });
+                        }}
+                        className="text-sm text-gray-500 hover:text-red-500"
+                      >
+                        Đặt lại
+                      </Button>
+                      <Button
+                        type="primary"
+                        onClick={() => setAreaOpen(false)}
+                        className="border-0 bg-red-500 text-sm hover:bg-red-600"
+                      >
+                        Áp dụng
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          {searchModalOpen && (
+            <div
+              ref={searchModalRef}
+              className="search-popup absolute top-full left-0 z-50 mt-4 w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl"
+            >
+              {/* Modal Header */}
+              <div className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Tìm kiếm thông minh
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Khám phá các khu vực phổ biến
+                    </p>
+                  </div>
+                  <Button
+                    type="text"
+                    icon={<X className="h-5 w-5" />}
+                    onClick={() => setSearchModalOpen(false)}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-400 shadow-sm transition-all duration-200 hover:bg-gray-100 hover:text-gray-600"
+                  />
+                </div>
+              </div>
+
+              <div className="max-h-[60vh] overflow-y-auto">
+                <div className="p-6">
+                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                    <div className="lg:col-span-1">
+                      <div className="mb-4 flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
+                          <MapPin className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-900">
+                            Quận huyện
+                          </h4>
+                          <p className="text-sm text-gray-500">
+                            Chọn khu vực tìm kiếm
+                          </p>
+                        </div>
+                      </div>
+                      <div className="max-h-80 space-y-1 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-2">
+                        {districts.map((district) => (
+                          <div
+                            key={district.id}
+                            className="flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-all duration-200 hover:bg-white hover:shadow-sm"
+                            onClick={() => handleDistrictSelect(district.name)}
+                          >
+                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white">
+                              <MapPin className="h-3 w-3 text-gray-500" />
+                            </div>
+                            <span className="text-sm font-medium text-gray-700">
+                              {district.name}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Right Panel - Search Trends */}
+                    <div className="lg:col-span-2">
+                      <div className="mb-4 flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-red-500 to-orange-500">
+                          <span className="text-sm">🔥</span>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-900">
+                            Xu hướng tìm kiếm
+                          </h4>
+                          <p className="text-sm text-gray-500">
+                            Khu vực được tìm kiếm nhiều nhất
+                          </p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        {districts
+                          .sort((a, b) => b.searchCount - a.searchCount)
+                          .slice(0, 5)
+                          .map((district, index) => (
+                            <div
+                              key={district.id}
+                              className="group flex cursor-pointer items-center justify-between rounded-xl border border-gray-200 bg-white p-4 transition-all duration-200 hover:border-red-300 hover:bg-red-50 hover:shadow-md"
+                              onClick={() =>
+                                handleDistrictSelect(district.name)
+                              }
+                            >
+                              <div className="flex items-center gap-4">
+                                <div
+                                  className={`flex h-8 w-8 items-center justify-center rounded-full font-semibold text-white ${
+                                    index === 0
+                                      ? "bg-gradient-to-r from-yellow-400 to-yellow-500"
+                                      : index === 1
+                                        ? "bg-gradient-to-r from-gray-400 to-gray-500"
+                                        : index === 2
+                                          ? "bg-gradient-to-r from-orange-400 to-orange-500"
+                                          : "bg-gradient-to-r from-blue-400 to-blue-500"
+                                  }`}
+                                >
+                                  <span className="text-sm">#{index + 1}</span>
+                                </div>
+                                <div>
+                                  <span className="font-medium text-gray-900">
+                                    {district.name}
+                                  </span>
+                                  <div className="mt-1 flex items-center gap-1">
+                                    <div className="h-1 w-16 rounded-full bg-gray-200">
+                                      <div
+                                        className="h-1 rounded-full bg-gradient-to-r from-red-500 to-orange-500"
+                                        style={{
+                                          width: `${(district.searchCount / Math.max(...districts.map((d) => d.searchCount))) * 100}%`,
+                                        }}
+                                      ></div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-sm font-semibold text-red-600">
+                                  {district.searchCount.toLocaleString()}
+                                </span>
+                                <p className="text-xs text-gray-500">
+                                  lượt tìm kiếm
+                                </p>
+                              </div>
+                            </div>
+                          ))}
                       </div>
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
 
+          {/* Location Modal */}
+          {locationModalOpen && (
+            <div
+              ref={locationModalRef}
+              className="location-popup absolute top-full left-0 z-50 mt-4 w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl"
+            >
+              {/* Modal Header */}
+              <div className="border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Chọn khu vực tìm kiếm
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Bạn muốn tìm bất động sản tại tỉnh thành nào?
+                    </p>
+                  </div>
+                  <Button
+                    type="text"
+                    icon={<X className="h-5 w-5" />}
+                    onClick={() => setLocationModalOpen(false)}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-400 shadow-sm transition-all duration-200 hover:bg-gray-100 hover:text-gray-600"
+                  />
+                </div>
+              </div>
+
+              <div className="max-h-[60vh] overflow-y-auto">
+                <div className="p-6">
+                  {/* Popular Cities */}
+                  <div className="mb-8">
+                    <div className="mb-4 flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-red-500 to-pink-500">
+                        <span className="text-sm">🔥</span>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-900">
+                          Top tỉnh thành nổi bật
+                        </h4>
+                        <p className="text-sm text-gray-500">
+                          Các khu vực được quan tâm nhiều nhất
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
+                      {popularCities.map((city) => (
+                        <div
+                          key={city.id}
+                          className={`group relative h-24 overflow-hidden rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-lg ${
+                            selectedLocation === city.name
+                              ? "ring-2 ring-red-500 ring-offset-2"
+                              : "hover:ring-2 hover:ring-red-300"
+                          }`}
+                          onClick={() => handleProvinceSelect(city.name)}
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300"></div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                          <div className="absolute right-3 bottom-3 left-3">
+                            <span
+                              className={`text-sm font-semibold drop-shadow-lg ${
+                                selectedLocation === city.name
+                                  ? "text-red-800"
+                                  : "text-white"
+                              }`}
+                            >
+                              {city.name}
+                            </span>
+                          </div>
+                          {selectedLocation === city.name && (
+                            <div className="absolute top-2 right-2">
+                              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-lg">
+                                <CheckCircle className="h-4 w-4" />
+                              </div>
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-white/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100"></div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* All Locations */}
+                  <div>
+                    <div className="mb-4 flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-indigo-500">
+                        <span className="text-sm">🌍</span>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-900">
+                          Tất cả tỉnh thành
+                        </h4>
+                        <p className="text-sm text-gray-500">
+                          Chọn từ danh sách đầy đủ
+                        </p>
+                      </div>
+                    </div>
+                    <div className="max-h-80 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-3">
+                      <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
+                        {allProvinces.map((province) => (
+                          <button
+                            key={province}
+                            onClick={() => handleProvinceSelect(province)}
+                            className={`flex items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-medium transition-all duration-200 ${
+                              selectedLocation === province
+                                ? "bg-red-500 text-white shadow-md"
+                                : "bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 hover:shadow-sm"
+                            }`}
+                          >
+                            <span className="capitalize">{province}</span>
+                            {selectedLocation === province && (
+                              <CheckCircle className="h-4 w-4" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {/* Enhanced Breadcrumb */}
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex flex-col justify-center gap-6 lg:flex-row">
+          {/* Left Content - Property Listing */}
+          <div className="w-full">
+            {propertiesLoading ? (
+              Array.from({ length: 10 }).map((_, index) => (
+                <PropertyCardSkeleton key={index} />
+              ))
+            ) : (
+              <>
                 {/* Property List */}
                 {properties?.data.length === 0 ? (
                   <div className="flex h-[500px] items-center justify-center">

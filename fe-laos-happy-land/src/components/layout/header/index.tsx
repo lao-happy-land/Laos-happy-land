@@ -33,7 +33,7 @@ import {
 import type { User } from "@/share/service/auth.service";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/share/store/auth.store";
-
+import Image from "next/image";
 const { Text } = Typography;
 
 const NAV_ITEMS = [
@@ -157,9 +157,7 @@ export default function Header({
     <>
       <div className="sticky top-0 z-50 w-full">
         <header
-          className={`bg-white shadow-lg transition-all duration-200 ${
-            isScrolled ? "h-[60px]" : "h-[80px]"
-          }`}
+          className={`h-[80px] border-b border-neutral-200 bg-white transition-all duration-200`}
         >
           <div className="mx-auto flex h-full items-center justify-between px-4 lg:px-6">
             <div className="flex items-center">
@@ -167,28 +165,21 @@ export default function Header({
                 href="/"
                 className="group flex items-center space-x-3 transition-transform duration-200 hover:scale-105"
               >
-                <div
-                  className={`flex items-center justify-center rounded-xl bg-gradient-to-br from-[#fc746f] to-[#ff8a80] shadow-lg transition-all duration-300 group-hover:shadow-xl ${
-                    isScrolled ? "h-8 w-8" : "h-10 w-10"
-                  }`}
-                >
-                  <Building2
-                    className={`text-white transition-all duration-300 ${
-                      isScrolled ? "h-4 w-4" : "h-5 w-5"
-                    }`}
+                <div className={`flex items-center ${"h-12 w-12"}`}>
+                  <Image
+                    src="/images/logo.png"
+                    alt="Logo"
+                    width={100}
+                    height={100}
                   />
                 </div>
-                <div className="hidden sm:block">
-                  <div
-                    className={`font-bold text-[#fc746f] transition-all duration-300 group-hover:text-[#ff8a80] ${
-                      isScrolled ? "text-lg" : "text-xl"
-                    }`}
-                  >
-                    Lào BDS
-                  </div>
-                  <Text className="text-xs text-gray-500 transition-colors group-hover:text-gray-600">
-                    Bất động sản Lào
-                  </Text>
+                <div>
+                  <h1 className="text-primary-500 text-lg font-bold">
+                    Laohappyland
+                  </h1>
+                  <p className="text-xs text-neutral-600">
+                    No.1 property platform
+                  </p>
                 </div>
               </Link>
             </div>
@@ -201,17 +192,17 @@ export default function Header({
                     {item.href ? (
                       <Link
                         href={item.href}
-                        className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 hover:bg-orange-50 hover:text-[#fc746f] ${
+                        className={`hover:bg-primary-50 hover:text-primary-500 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
                           getSelectedKeys().includes(item.key)
-                            ? "bg-orange-50 text-[#fc746f]"
-                            : "text-gray-500"
+                            ? "bg-primary-50 text-primary-500"
+                            : "text-neutral-600"
                         }`}
                       >
                         <span
                           className={
                             getSelectedKeys().includes(item.key)
-                              ? "text-[#fc746f]"
-                              : "text-gray-500"
+                              ? "text-primary-500"
+                              : "text-neutral-500"
                           }
                         >
                           {item.icon}
@@ -219,16 +210,16 @@ export default function Header({
                         <span
                           className={`whitespace-nowrap ${
                             getSelectedKeys().includes(item.key)
-                              ? "text-[#fc746f]"
-                              : "text-gray-600"
+                              ? "text-primary-500"
+                              : "text-neutral-600"
                           }`}
                         >
                           {item.title}
                         </span>
                       </Link>
                     ) : (
-                      <span className="flex cursor-not-allowed items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-500 opacity-60">
-                        <span className="text-gray-400">{item.icon}</span>
+                      <span className="flex cursor-not-allowed items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-500 opacity-60">
+                        <span className="text-neutral-400">{item.icon}</span>
                         <span className="whitespace-nowrap">{item.title}</span>
                       </span>
                     )}
@@ -245,7 +236,7 @@ export default function Header({
                         label: item.href ? (
                           <Link href={item.href}>{item.title}</Link>
                         ) : (
-                          <span className="cursor-not-allowed text-gray-400">
+                          <span className="cursor-not-allowed text-neutral-400">
                             {item.title}
                           </span>
                         ),
@@ -257,7 +248,7 @@ export default function Header({
                   >
                     <Tooltip placement="right" title="Thêm">
                       <Button type="text">
-                        <MoreHorizontal className="h-4 w-4 text-gray-500" />
+                        <MoreHorizontal className="h-4 w-4 text-neutral-500" />
                       </Button>
                     </Tooltip>
                   </Dropdown>
@@ -287,7 +278,7 @@ export default function Header({
                     >
                       <Avatar
                         size="small"
-                        className="bg-[#fc746f]"
+                        className="bg-primary-500"
                         icon={<UserIcon className="h-4 w-4" />}
                       >
                         {displayName.charAt(0).toUpperCase()}
@@ -346,8 +337,8 @@ export default function Header({
       <Drawer
         title={
           <div className="flex items-center space-x-3">
-            <Building2 className="h-6 w-6 text-[#fc746f]" />
-            <span className="text-lg font-bold text-[#fc746f]">Lào BDS</span>
+            <Building2 className="h-6 w-6 text-orange-600" />
+            <span className="text-lg font-bold text-orange-600">Lào BDS</span>
           </div>
         }
         placement="right"
@@ -361,7 +352,7 @@ export default function Header({
               <div className="flex items-center space-x-3 rounded-lg bg-orange-50 p-4">
                 <Avatar
                   size="large"
-                  className="bg-[#fc746f]"
+                  className="bg-orange-600"
                   icon={<UserIcon className="h-5 w-5" />}
                 >
                   {displayName.charAt(0).toUpperCase()}
