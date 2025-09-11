@@ -8,6 +8,8 @@ import api from "./api.service";
 
 const propertyService = {
   getProperties: async (params?: {
+    perPage?: number;
+    page?: number;
     type?: string;
     keyword?: string;
     minPrice?: number;

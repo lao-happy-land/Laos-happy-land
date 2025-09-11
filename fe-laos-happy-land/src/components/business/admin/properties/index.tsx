@@ -546,25 +546,25 @@ const AdminProperties = () => {
         {showFilters && (
           <div className="mt-6 border-t border-gray-100 pt-6">
             <Form form={form} layout="vertical">
-              <Row gutter={[24, 16]}>
-                <Col xs={24} md={8}>
-                  <Form.Item label="Hình thức">
-                    <Select
-                      placeholder="Chọn hình thức"
-                      value={selectedTransactionType}
-                      onChange={handleTransactionTypeChange}
-                      allowClear
-                      loading={propertyTypesLoading}
-                    >
-                      <Option value="all">Tất cả</Option>
-                      <Option value="sale">Bán</Option>
-                      <Option value="rent">Cho thuê</Option>
-                      <Option value="project">Dự án</Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
+              <div
+                className={`grid grid-cols-1 gap-6 md:grid-cols-${selectedTransactionType === "all" ? "4" : "5"}`}
+              >
+                <Form.Item label="Hình thức">
+                  <Select
+                    placeholder="Chọn hình thức"
+                    value={selectedTransactionType}
+                    onChange={handleTransactionTypeChange}
+                    allowClear
+                    loading={propertyTypesLoading}
+                  >
+                    <Option value="all">Tất cả</Option>
+                    <Option value="sale">Bán</Option>
+                    <Option value="rent">Cho thuê</Option>
+                    <Option value="project">Dự án</Option>
+                  </Select>
+                </Form.Item>
 
-                <Col xs={24} md={8}>
+                {selectedTransactionType !== "all" && (
                   <Form.Item label="Loại bất động sản">
                     <Select
                       mode="multiple"
@@ -582,64 +582,57 @@ const AdminProperties = () => {
                       ))}
                     </Select>
                   </Form.Item>
-                </Col>
+                )}
 
-                <Col xs={24} md={8}>
-                  <Form.Item label="Trạng thái">
-                    <Select
-                      placeholder="Chọn trạng thái"
-                      value={selectedStatus}
-                      onChange={handleStatusChange}
-                      allowClear
-                      loading={propertyTypesLoading}
-                    >
-                      <Option value="all">Tất cả</Option>
-                      <Option value="pending">Chờ duyệt</Option>
-                      <Option value="approved">Đã duyệt</Option>
-                      <Option value="rejected">Từ chối</Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24} md={8}>
-                  <Form.Item label="Vị trí">
-                    <Select
-                      placeholder="Chọn vị trí"
-                      value={selectedLocation}
-                      onChange={handleLocationChange}
-                      allowClear
-                    >
-                      <Option value="all">Tất cả</Option>
-                      <Option value="vientiane">Vientiane</Option>
-                      <Option value="luang-prabang">Luang Prabang</Option>
-                      <Option value="pakse">Pakse</Option>
-                      <Option value="savannakhet">Savannakhet</Option>
-                      <Option value="thakhek">Thakhek</Option>
-                      <Option value="xam-nua">Xam Nua</Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24} md={8}>
-                  <Form.Item label="Khoảng giá (LAK)">
-                    <div className="space-y-2">
-                      <Slider
-                        range
-                        min={0}
-                        max={100000000000}
-                        step={100000000}
-                        value={priceRange}
-                        onChange={handlePriceRangeChange}
-                      />
-                      <div className="flex gap-2 text-xs text-gray-500">
-                        <span>{numberToString(priceRange[0])} LAK</span>
-                        <span>-</span>
-                        <span>{numberToString(priceRange[1])} LAK</span>
-                      </div>
+                <Form.Item label="Trạng thái">
+                  <Select
+                    placeholder="Chọn trạng thái"
+                    value={selectedStatus}
+                    onChange={handleStatusChange}
+                    allowClear
+                    loading={propertyTypesLoading}
+                  >
+                    <Option value="all">Tất cả</Option>
+                    <Option value="pending">Chờ duyệt</Option>
+                    <Option value="approved">Đã duyệt</Option>
+                    <Option value="rejected">Từ chối</Option>
+                  </Select>
+                </Form.Item>
+                <Form.Item label="Khoảng giá (LAK)">
+                  <div className="space-y-2">
+                    <Slider
+                      range
+                      min={0}
+                      max={100000000000}
+                      step={100000000}
+                      value={priceRange}
+                      onChange={handlePriceRangeChange}
+                    />
+                    <div className="flex gap-2 text-xs text-gray-500">
+                      <span>{numberToString(priceRange[0])} LAK</span>
+                      <span>-</span>
+                      <span>{numberToString(priceRange[1])} LAK</span>
                     </div>
-                  </Form.Item>
-                </Col>
-              </Row>
+                  </div>
+                </Form.Item>
+
+                <Form.Item label="Vị trí">
+                  <Select
+                    placeholder="Chọn vị trí"
+                    value={selectedLocation}
+                    onChange={handleLocationChange}
+                    allowClear
+                  >
+                    <Option value="all">Tất cả</Option>
+                    <Option value="vientiane">Vientiane</Option>
+                    <Option value="luang-prabang">Luang Prabang</Option>
+                    <Option value="pakse">Pakse</Option>
+                    <Option value="savannakhet">Savannakhet</Option>
+                    <Option value="thakhek">Thakhek</Option>
+                    <Option value="xam-nua">Xam Nua</Option>
+                  </Select>
+                </Form.Item>
+              </div>
 
               <div className="flex justify-end gap-2">
                 <Button onClick={handleClearFilters}>Xóa bộ lọc</Button>

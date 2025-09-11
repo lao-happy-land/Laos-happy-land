@@ -162,13 +162,13 @@ export default function Register() {
             <div className="mt-8 text-center">
               <p className="text-xs text-gray-500">
                 Bằng cách đăng ký, bạn đồng ý với{" "}
-                <a href="#" className="text-[#fc746f] hover:text-[#ff8a80]">
+                <Link href="#" className="text-[#fc746f] hover:text-[#ff8a80]">
                   Điều khoản sử dụng
-                </a>{" "}
+                </Link>{" "}
                 và{" "}
-                <a href="#" className="text-[#fc746f] hover:text-[#ff8a80]">
+                <Link href="#" className="text-[#fc746f] hover:text-[#ff8a80]">
                   Chính sách bảo mật
-                </a>
+                </Link>
               </p>
             </div>
           </div>
