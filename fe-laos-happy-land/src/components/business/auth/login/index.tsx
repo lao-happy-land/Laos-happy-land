@@ -14,7 +14,7 @@ export default function Login() {
   const redirectUrl = searchParams.get("redirect") ?? undefined;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-pink-50">
+    <div className="from-primary-50 to-secondary-50 min-h-screen bg-gradient-to-br via-white">
       <div className="flex min-h-screen">
         <div className="relative hidden lg:flex lg:flex-1 lg:flex-col lg:justify-center lg:px-8">
           <Image
@@ -114,13 +114,13 @@ export default function Login() {
             <div className="mt-8 text-center">
               <p className="text-xs text-gray-500">
                 Bằng cách đăng nhập, bạn đồng ý với{" "}
-                <a href="#" className="text-[#fc746f] hover:text-[#ff8a80]">
+                <Link href="#" className="text-[#fc746f] hover:text-[#ff8a80]">
                   Điều khoản sử dụng
-                </a>{" "}
+                </Link>{" "}
                 và{" "}
-                <a href="#" className="text-[#fc746f] hover:text-[#ff8a80]">
+                <Link href="#" className="text-[#fc746f] hover:text-[#ff8a80]">
                   Chính sách bảo mật
-                </a>
+                </Link>
               </p>
             </div>
           </div>
