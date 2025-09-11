@@ -41,12 +41,12 @@ export default function UnauthorizedPage() {
           <div className="mt-8 text-center">
             <p className="text-xs text-gray-500">
               Nếu bạn cho rằng đây là lỗi, vui lòng{" "}
-              <a
+              <Link
                 href="mailto:support@example.com"
                 className="text-blue-600 hover:text-blue-500"
               >
                 liên hệ hỗ trợ
-              </a>
+              </Link>
             </p>
           </div>
         </div>

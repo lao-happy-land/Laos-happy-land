@@ -46,6 +46,10 @@ export interface AuthResponse {
   message?: string;
 }
 
+export interface GoogleAuthResponse {
+  access_token: string;
+}
+
 interface TokenPayload {
   sub?: string;
   id?: string;
@@ -225,6 +229,42 @@ export const authService = {
       console.error("Error verifying user role:", error);
       return null;
     }
+  },
+
+  // Google OAuth methods
+  getGoogleLoginUrl(): string {
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL;
+    return `${backendUrl}api/auth/google/login`;
+  },
+
+  async handleGoogleCallback(token: string): Promise<AuthResponse> {
+    try {
+      if (!token) {
+        throw new Error("No access token received from Google");
+      }
+
+      // Store token
+      this.setAuthToken(token);
+
+      // Decode user info from token
+      const userInfo = this.decodeTokenPayload(token);
+
+      return {
+        access_token: token,
+        user: userInfo ?? undefined,
+      };
+    } catch (error: unknown) {
+      console.error("Google callback error:", error);
+      if (typeof error === "object" && error !== null && "message" in error) {
+        throw new Error((error as { message: string }).message);
+      }
+      throw new Error("Google authentication failed");
+    }
+  },
+
+  async googleLogin(): Promise<void> {
+    // Redirect to Google OAuth
+    window.location.href = this.getGoogleLoginUrl();
   },
 };
 

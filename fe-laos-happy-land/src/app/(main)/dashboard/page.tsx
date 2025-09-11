@@ -107,16 +107,16 @@ export default function DashboardPage() {
   }, [properties]);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-neutral-50 py-8">
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="mb-2 text-3xl font-bold text-gray-900">
+              <h1 className="mb-2 text-3xl font-bold text-neutral-900">
                 Dashboard
               </h1>
-              <p className="text-gray-600">
+              <p className="text-neutral-600">
                 Chào mừng trở lại, {user?.fullName ?? user?.email}!
               </p>
             </div>
@@ -139,7 +139,7 @@ export default function DashboardPage() {
                 title="Tổng tin đăng"
                 value={stats.total}
                 prefix={<Building2 className="h-4 w-4" />}
-                valueStyle={{ color: "#3f8600" }}
+                valueStyle={{ color: "#16a34a" }}
               />
             </Card>
           </Col>
@@ -149,7 +149,7 @@ export default function DashboardPage() {
                 title="Lượt xem"
                 value={stats.totalViews}
                 prefix={<Eye className="h-4 w-4" />}
-                valueStyle={{ color: "#1890ff" }}
+                valueStyle={{ color: "#2563eb" }}
               />
             </Card>
           </Col>

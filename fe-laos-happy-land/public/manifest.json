@@ -1,14 +1,29 @@
 {
   "name": "Laos Happy Land",
   "short_name": "Laos BDS",
+  "name_loc_key": "Laos Happy Land",
+  "key_words": "bất động sản Lào, nhà đất Lào, căn hộ Lào, dự án Lào, đầu tư Lào, Laos real estate. Laohappyland.com, Laohappyland, Laohappyland.com, Laos Happy Land, Laos BDS, Laos property platform, Laos real estate platform",
   "description": "Website bất động sản Lào - Tìm nhà đất, căn hộ, dự án bất động sản tại Lào",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#E03C31",
+  "orientation": "portrait",
+  "display_override": ["window-controls-overlay"],
+  "categories": ["real-estate", "property", "laos"],
+  "lang": "vi-VN, en-US, la-LA",
+  "dir": "ltr",
+  "scope": "/",
+  "screenshots": [
+    {
+      "src": "/images/landingpage/hero-slider/hero-banner-1.jpg",
+      "sizes": "1200x630",
+      "type": "image/jpeg"
+    }
+  ],
   "icons": [
     {
-      "src": "/favicon.ico",
+      "src": "/logo.ico",
       "sizes": "any",
       "type": "image/x-icon"
     }

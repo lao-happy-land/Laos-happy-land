@@ -80,7 +80,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-neutral-50">
       {/* Sidebar */}
       <aside
         className={`relative z-40 flex h-full flex-col bg-white shadow-lg transition-all duration-300 ${
@@ -88,22 +88,22 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         }`}
       >
         {/* Logo */}
-        <div className="flex h-20 items-center justify-center border-b border-gray-200">
+        <div className="flex h-20 items-center justify-center border-b border-neutral-200">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#fc746f]">
+            <div className="bg-primary-500 flex h-10 w-10 items-center justify-center rounded-xl">
               <span className="text-lg font-bold text-white">A</span>
             </div>
             {!sidebarCollapsed && (
               <div>
-                <h1 className="text-lg font-bold text-gray-900">Admin</h1>
-                <p className="text-xs text-gray-500">Dashboard</p>
+                <h1 className="text-lg font-bold text-neutral-900">Admin</h1>
+                <p className="text-xs text-neutral-500">Dashboard</p>
               </div>
             )}
           </div>
         </div>
 
         {/* Enhanced Navigation */}
-        <nav className="flex-1 border-r border-gray-200 p-4">
+        <nav className="flex-1 border-r border-neutral-200 p-4">
           <ul className="space-y-1">
             {menuItems.map((item) => (
               <li key={item.id}>

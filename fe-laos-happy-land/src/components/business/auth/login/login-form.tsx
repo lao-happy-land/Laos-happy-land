@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Form, Input, Button, Checkbox, App } from "antd";
+import { Form, Input, Button, Checkbox, App, Divider } from "antd";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 import { useAuthStore } from "@/share/store/auth.store";
+import GoogleLoginButton from "../google-login-button";
 
 interface LoginFormProps {
   onError?: (error: string) => void;
@@ -95,6 +96,12 @@ export default function LoginForm({ onError, redirectUrl }: LoginFormProps) {
         >
           Đăng nhập
         </Button>
+      </Form.Item>
+
+      <Divider>Hoặc</Divider>
+
+      <Form.Item>
+        <GoogleLoginButton redirectUrl={redirectUrl} onError={onError} />
       </Form.Item>
     </Form>
   );
