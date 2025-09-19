@@ -31,7 +31,11 @@ import { PageOptionsDto } from 'src/common/dtos/pageOption';
 import { RejectPropertyDto } from './dto/reject_property.dto';
 import { User } from 'src/entities/user.entity';
 import { Request } from 'express';
-import { AdminGuard, AuthGuard, OptionalAuthGuard } from '../auth/guard/auth.guard';
+import {
+  AdminGuard,
+  AuthGuard,
+  OptionalAuthGuard,
+} from '../auth/guard/auth.guard';
 
 @Controller('property')
 export class PropertyController {
@@ -51,7 +55,7 @@ export class PropertyController {
   )
   async create(
     @Req() req: Request,
-    @Body() createPropertyDto: CreatePropertyDto,
+    @Body() body: any,
     @UploadedFiles()
     files: {
       mainImage?: Multer.File[];
@@ -59,8 +63,18 @@ export class PropertyController {
     },
   ) {
     const user = req.user as User;
+    if (typeof body.details === 'string') {
+      try {
+        body.details = JSON.parse(body.details);
+      } catch {}
+    }
+    if (typeof body.location === 'string') {
+      try {
+        body.location = JSON.parse(body.location);
+      } catch {}
+    }
     return this.propertyService.create(
-      createPropertyDto,
+      body as CreatePropertyDto,
       files.mainImage?.[0],
       files.images || [],
       user,
@@ -105,16 +119,21 @@ export class PropertyController {
   )
   async update(
     @Param('id') id: string,
-    @Body() updatePropertyDto: UpdatePropertyDto,
+    @Body() body: any,
     @UploadedFiles()
     files: {
       mainImage?: Multer.File[];
       images?: Multer.File[];
     },
   ) {
+    if (typeof body.location === 'string') {
+      try {
+        body.location = JSON.parse(body.location);
+      } catch {}
+    }
     return this.propertyService.update(
       id,
-      updatePropertyDto,
+      body as UpdatePropertyDto,
       files.mainImage?.[0],
       files.images?.length ? files.images : undefined,
     );

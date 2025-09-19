@@ -12,6 +12,7 @@ import e from 'express';
 import { UserRole } from 'src/entities/user-role.entity';
 import { Multer } from 'multer';
 import { CloudinaryService } from 'src/service/cloudinary.service';
+import { LocationInfo } from 'src/entities/location-info.entity';
 
 @Injectable()
 export class UserService {
@@ -47,6 +48,13 @@ export class UserService {
     });
     if (!role) throw new BadRequestException('Role not found');
 
+    const locationInfo = await this.entityManager.findOneBy(LocationInfo, {
+      id: createUserDto.locationInfoId,
+    });
+    if (!locationInfo) {
+      throw new BadRequestException('Location info not found');
+    }
+
     let avatarUrl: string | null = null;
     if (image) {
       avatarUrl = await this.cloudinaryService.uploadAndReturnImageUrl(image);
@@ -56,6 +64,7 @@ export class UserService {
       ...createUserDto,
       password: hashedPassword,
       role,
+      locationInfo,
       avatarUrl,
     });
 
@@ -67,6 +76,9 @@ export class UserService {
     const query = this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.role', 'role')
+      .leftJoinAndSelect('user.locationInfo', 'locationInfo')
+      .skip(params.skip)
+      .take(params.perPage)
       .orderBy('user.createdAt', params.OrderSort);
 
     if (params.role) {
@@ -138,6 +150,16 @@ export class UserService {
         });
         if (!role) throw new BadRequestException('Role not found');
         user.role = role;
+      }
+
+      if (updateUserDto.locationInfoId) {
+        const locationInfo = await this.entityManager.findOneBy(LocationInfo, {
+          id: updateUserDto.locationInfoId,
+        });
+        if (!locationInfo) {
+          throw new BadRequestException('Location info not found');
+        }
+        user.locationInfo = locationInfo;
       }
       if (image) {
         user.avatarUrl =
