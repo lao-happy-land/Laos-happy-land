@@ -9,6 +9,8 @@ import { PropertyTypeModule } from './modules/property-type/property-type.module
 import { UserRoleModule } from './modules/user-role/user-role.module';
 import { ImageModule } from './modules/image/image.module';
 import { SettingModule } from './modules/setting/setting.module';
+import { ExchangeRateModule } from './modules/exchange-rate/exchange-rate.module';
+import { LocationInfoModule } from './modules/location-info/location-info.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
@@ -21,7 +23,9 @@ import { SettingModule } from './modules/setting/setting.module';
     PropertyTypeModule,
     UserRoleModule,
     ImageModule,
-    SettingModule
+    SettingModule,
+    ExchangeRateModule,
+    LocationInfoModule
   ],
 })
 export class AppModule {}

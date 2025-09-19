@@ -9,10 +9,35 @@ import {
   MaxLength,
   IsUUID,
   IsEnum,
+  ValidateNested,
 } from 'class-validator';
 import { TransactionEnum } from 'src/common/enum/enum';
 import { Multer } from 'multer';
 import { Type } from 'class-transformer';
+
+export class LocationDto {
+  @ApiProperty({ example: 21.028511 })
+  @IsNumber()
+  latitude: number;
+
+  @ApiProperty({ example: 105.804817 })
+  @IsNumber()
+  longitude: number;
+
+  @ApiProperty({ example: '123 Nguyễn Huệ, Quận 1, TP.HCM' })
+  @IsString()
+  address: string;
+
+  @ApiPropertyOptional({ example: 'Hà Nội' })
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @ApiPropertyOptional({ example: 'Vietnam' })
+  @IsOptional()
+  @IsString()
+  country?: string;
+}
 
 export class CreatePropertyDto {
   @ApiProperty({
@@ -21,6 +46,13 @@ export class CreatePropertyDto {
   })
   @IsUUID()
   typeId: string;
+
+  @ApiProperty({
+    description: 'ID của LocationInfo',
+    example: 'd7f6a6a0-1234-5678-9876-abcdefabcdef',
+  })
+  @IsUUID()
+  locationInfoId: string;
 
   @ApiProperty({
     description: 'Tiêu đề tin rao',
@@ -61,7 +93,6 @@ export class CreatePropertyDto {
   @IsOptional()
   details?: any;
 
-
   @ApiPropertyOptional({
     description: 'Tình trạng pháp lý',
     example: 'Sổ hồng đầy đủ',
@@ -70,13 +101,13 @@ export class CreatePropertyDto {
   @IsString()
   legalStatus?: string;
 
-  @ApiPropertyOptional({
-    description: 'Vị trí bất động sản',
-    example: '123 Nguyễn Huệ, Quận 1, TP.HCM',
+  @ApiProperty({
+    description: 'Vị trí bất động sản (Mapbox object)',
+    type: LocationDto,
+    required: false,
   })
   @IsOptional()
-  @IsString()
-  location?: string;
+  location?: LocationDto;
 
   @ApiProperty({
     description: 'Hình thức giao dịch',

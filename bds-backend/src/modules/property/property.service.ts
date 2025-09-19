@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Property } from 'src/entities/property.entity';
+import { PriceHistoryEntry, Property } from 'src/entities/property.entity';
 import { EntityManager, Repository } from 'typeorm';
 import { GetPropertiesFilterDto } from './dto/get_property.dto';
 import { ResponsePaginate } from 'src/common/dtos/reponsePaginate';
@@ -19,6 +19,8 @@ import { PropertyType } from 'src/entities/property-type.entity';
 import { PageOptionsDto } from 'src/common/dtos/pageOption';
 import { PropertyStatusEnum } from 'src/common/enum/enum';
 import { RejectPropertyDto } from './dto/reject_property.dto';
+import { ExchangeRateService } from '../exchange-rate/exchange-rate.service';
+import { LocationInfo } from 'src/entities/location-info.entity';
 
 @Injectable()
 export class PropertyService {
@@ -26,6 +28,7 @@ export class PropertyService {
     @InjectRepository(Property)
     private readonly propertyRepository: Repository<Property>,
     private readonly cloudinaryService: CloudinaryService,
+    private readonly exchangeRateService: ExchangeRateService,
     private readonly entityManager: EntityManager,
   ) {}
 
@@ -36,9 +39,7 @@ export class PropertyService {
     user?: any,
   ) {
     const isAdmin = !!user?.role && user.role.toString() === 'Admin';
-    const owner = await this.entityManager.findOneBy(User, {
-      id: user.sub,
-    });
+    const owner = await this.entityManager.findOneBy(User, { id: user.sub });
 
     const propertyType = await this.entityManager.findOneBy(PropertyType, {
       id: createPropertyDto.typeId,
@@ -47,7 +48,14 @@ export class PropertyService {
       throw new BadRequestException('Property type not found');
     }
 
-    const { typeId, ...propertyData } = createPropertyDto;
+    const locationInfo = await this.entityManager.findOneBy(LocationInfo, {
+      id: createPropertyDto.locationInfoId,
+    });
+    if (!locationInfo) {
+      throw new BadRequestException('Location info not found');
+    }
+
+    const { typeId, locationInfoId, price: usdPrice, ...propertyData } = createPropertyDto;
 
     if (typeof propertyData.details === 'string') {
       try {
@@ -72,10 +80,21 @@ export class PropertyService {
       propertyData.images = null;
     }
 
-    if (propertyData.price) {
-      propertyData.priceHistory = [
+    let finalPrice: Record<string, number> = null;
+    let history: PriceHistoryEntry[] = [];
+
+    if (usdPrice !== undefined && usdPrice !== null) {
+      const rates = await this.exchangeRateService.getRates();
+      finalPrice = {};
+      finalPrice['USD'] = usdPrice;
+
+      Object.entries(rates).forEach(([currency, rate]) => {
+        finalPrice[currency] = usdPrice * rate;
+      });
+
+      history = [
         {
-          price: propertyData.price,
+          rates: finalPrice,
           date: new Date().toISOString(),
         },
       ];
@@ -83,7 +102,10 @@ export class PropertyService {
 
     const property = this.propertyRepository.create({
       ...propertyData,
-      owner: owner,
+      price: finalPrice,
+      priceHistory: history,
+      owner,
+      locationInfo: locationInfo,
       type: propertyType,
       status: isAdmin
         ? PropertyStatusEnum.APPROVED
@@ -102,6 +124,7 @@ export class PropertyService {
       .createQueryBuilder('property')
       .leftJoinAndSelect('property.owner', 'owner')
       .leftJoinAndSelect('property.type', 'type')
+      .leftJoinAndSelect('property.locationInfo', 'locationInfo')
       .skip(params.skip)
       .take(params.perPage)
       .orderBy('property.createdAt', params.OrderSort);
@@ -114,6 +137,13 @@ export class PropertyService {
 
     if (params.type?.length) {
       properties.andWhere('type.id IN (:...types)', { types: params.type });
+    }
+
+    if (params.locationInfo?.length) {
+      properties.andWhere(
+        'locationInfo.id IN (:...locationInfos)',
+        { locationInfos: params.locationInfo },
+      );
     }
 
     if (params.keyword) {
@@ -169,9 +199,11 @@ export class PropertyService {
     }
 
     if (params.location) {
-      properties.andWhere('property.location ILIKE :location', {
-        location: `%${params.location}%`,
-      });
+      properties.andWhere(
+        `(property.location ->> 'address') ILIKE :location OR 
+      property.location ->> 'city' ILIKE :location`,
+        { location: `%${params.location}%` },
+      );
     }
 
     if (params.transaction) {
@@ -260,6 +292,26 @@ export class PropertyService {
       property.type = propertyType;
     }
 
+    if (updatePropertyDto.locationInfoId) {
+      const locationInfo = await this.entityManager.findOneBy(LocationInfo, {
+        id: updatePropertyDto.locationInfoId,
+      });
+      if (!locationInfo) {
+        throw new BadRequestException('Location info not found');
+      }
+      property.locationInfo = locationInfo;
+    }
+
+    if (updatePropertyDto.location) {
+      if (typeof updatePropertyDto.location === 'string') {
+        try {
+          updatePropertyDto.location = JSON.parse(updatePropertyDto.location);
+        } catch (e) {
+          throw new BadRequestException('Invalid location format');
+        }
+      }
+    }
+
     if (updatePropertyDto.details) {
       if (typeof updatePropertyDto.details === 'string') {
         try {
@@ -276,39 +328,41 @@ export class PropertyService {
     }
 
     if (images && images.length > 0) {
-      const imageUrls = await Promise.all(
+      property.images = await Promise.all(
         images.map(async (file) => {
           return await this.cloudinaryService.uploadAndReturnImageUrl(file);
         }),
       );
-      property.images = imageUrls;
     }
 
     if (
       updatePropertyDto.price !== undefined &&
       updatePropertyDto.price !== null
     ) {
-      const newPrice = Number(updatePropertyDto.price);
-      const currentPrice = Number(property.price);
+      const newUsd = Number(updatePropertyDto.price);
+      if (!isNaN(newUsd)) {
+        const rates = await this.exchangeRateService.getRates();
+        const converted: Record<string, number> = { USD: newUsd };
 
-      if (!isNaN(newPrice) && newPrice !== currentPrice) {
-        const history = property.priceHistory || [];
-        const lastPrice =
-          history.length > 0 ? Number(history[history.length - 1].price) : null;
+        Object.entries(rates).forEach(([currency, rate]) => {
+          converted[currency] = newUsd * rate;
+        });
 
-        if (lastPrice !== newPrice) {
-          history.push({
-            price: newPrice,
+        property.price = converted;
+        property.priceHistory = [
+          ...(property.priceHistory || []),
+          {
+            rates: converted,
             date: new Date().toISOString(),
-          });
-          property.priceHistory = history;
-        }
+          },
+        ];
       }
     }
 
     Object.assign(property, {
       ...updatePropertyDto,
       typeId: undefined,
+      price: property.price, // giữ nguyên price đã convert
     });
 
     await this.entityManager.save(property);

@@ -12,6 +12,7 @@ import {
 } from 'typeorm';
 import { Property } from './property.entity';
 import { UserRole } from './user-role.entity';
+import { LocationInfo } from './location-info.entity';
 
 @Entity({ name: 'users' })
 export class User extends AbstractEntity {
@@ -33,6 +34,12 @@ export class User extends AbstractEntity {
   @ManyToOne(() => UserRole, (role) => role.users, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'role_id' })
   role: UserRole;
+
+  @ManyToOne(() => LocationInfo, (locationInfo) => locationInfo.users, {
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'location_info_id' })
+  locationInfo: LocationInfo;
 
   @Column({ nullable: true })
   avatarUrl: string;

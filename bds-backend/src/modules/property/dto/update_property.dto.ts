@@ -7,10 +7,12 @@ import {
   MaxLength,
   IsUUID,
   IsEnum,
+  ValidateNested,
 } from 'class-validator';
 import { TransactionEnum } from 'src/common/enum/enum';
 import { Multer } from 'multer';
 import { Type } from 'class-transformer';
+import { LocationDto } from './create_property.dto';
 
 export class UpdatePropertyDto {
   @ApiPropertyOptional({
@@ -20,6 +22,14 @@ export class UpdatePropertyDto {
   @IsOptional()
   @IsUUID()
   typeId?: string;
+
+  @ApiPropertyOptional({
+    description: 'ID của LocationInfo',
+    example: 'd7f6a6a0-1234-5678-9876-abcdefabcdef',
+  })
+  @IsOptional()
+  @IsUUID()
+  locationInfoId?: string;
 
   @ApiPropertyOptional({
     description: 'Tiêu đề tin rao',
@@ -67,12 +77,12 @@ export class UpdatePropertyDto {
   legalStatus?: string;
 
   @ApiPropertyOptional({
-    description: 'Vị trí bất động sản',
-    example: '123 Nguyễn Huệ, Quận 1, TP.HCM',
+    description: 'Vị trí bất động sản (Mapbox object)',
+    type: LocationDto,
+    required: false,
   })
   @IsOptional()
-  @IsString()
-  location?: string;
+  location?: LocationDto;
 
   @ApiPropertyOptional({
     description: 'Hình thức giao dịch',
