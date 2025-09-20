@@ -35,10 +35,18 @@ import {
 import { PRICE_RANGE_OPTIONS } from "@/share/constant/home-search";
 import propertyService from "@/share/service/property.service";
 import propertyTypeService from "@/share/service/property-type.service";
+import locationInfoService from "@/share/service/location-info.service";
 import { useRequest } from "ahooks";
-import type { APIResponse, Property, PropertyType } from "@/@types/types";
+import type {
+  APIResponse,
+  Property,
+  PropertyType,
+  LocationInfo,
+} from "@/@types/types";
 import PropertyCard from "./property-card";
 import PropertyCardSkeleton from "@/components/business/common/property-card-skeleton";
+
+import Image from "next/image";
 
 interface PropertiesProps {
   transaction: "sale" | "rent" | "project";
@@ -57,6 +65,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
     [],
   );
   const [selectedLocation, setSelectedLocation] = useState("all");
+  const [locationInfos, setLocationInfos] = useState<LocationInfo[]>([]);
   const [keyword, setKeyword] = useState("");
   const [debouncedKeyword, setDebouncedKeyword] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -99,6 +108,23 @@ const Properties = ({ transaction }: PropertiesProps) => {
       onError: (error) => {
         console.error("Failed to fetch property types:", error);
         message.error("Không thể tải danh sách loại bất động sản");
+      },
+    },
+  );
+
+  // Fetch location infos
+  const { loading: locationInfosLoading } = useRequest(
+    async () => {
+      const response = await locationInfoService.getAllLocationInfo();
+      return response.data ?? [];
+    },
+    {
+      onSuccess: (data) => {
+        setLocationInfos(data);
+      },
+      onError: (error) => {
+        console.error("Failed to fetch location infos:", error);
+        message.error("Không thể tải danh sách khu vực");
       },
     },
   );
@@ -172,7 +198,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
       }
 
       if (selectedLocation && selectedLocation !== "all") {
-        apiParams.location = selectedLocation;
+        apiParams.locationId = selectedLocation;
       }
 
       if (selectedPropertyTypes.length > 0) {
@@ -269,14 +295,13 @@ const Properties = ({ transaction }: PropertiesProps) => {
     }
   }, [priceRangeOpen, propertyTypeOpen]);
 
+  // Create locations array from API data
   const locations = [
     { id: "all", label: "Tất cả khu vực" },
-    { id: "vientiane", label: "Vientiane" },
-    { id: "luang-prabang", label: "Luang Prabang" },
-    { id: "pakse", label: "Pakse" },
-    { id: "savannakhet", label: "Savannakhet" },
-    { id: "thakhek", label: "Thakhek" },
-    { id: "xam-nua", label: "Xam Nua" },
+    ...locationInfos.map((locationInfo) => ({
+      id: locationInfo.id,
+      label: locationInfo.name,
+    })),
   ];
 
   const districts = [
@@ -291,42 +316,17 @@ const Properties = ({ transaction }: PropertiesProps) => {
     { id: "trang-bang", name: "Huyện Trảng Bàng", searchCount: 4083 },
   ];
 
-  const popularCities = [
-    {
-      id: "hanoi",
-      name: "Hà Nội",
-      image: "/images/landingpage/cities/hanoi.jpg",
-    },
-    {
-      id: "ho-chi-minh",
-      name: "Hồ Chí Minh",
-      image: "/images/landingpage/cities/ho-chi-minh.jpg",
-    },
-    {
-      id: "da-nang",
-      name: "Đà Nẵng",
-      image: "/images/landingpage/cities/da-nang.jpg",
-    },
-    {
-      id: "binh-duong",
-      name: "Bình Dương",
-      image: "/images/landingpage/cities/binh-duong.jpg",
-    },
-    {
-      id: "dong-nai",
-      name: "Đồng Nai",
-      image: "/images/landingpage/cities/dong-nai.jpg",
-    },
-  ];
+  // Create popular cities from API data (first 5 locations)
+  const popularCities = locationInfos.slice(0, 5).map((locationInfo) => ({
+    id: locationInfo.id,
+    name: locationInfo.name,
+    imageURL: locationInfo.imageURL ?? "/images/landingpage/cities/default.jpg",
+  }));
 
+  // Create all provinces from API data
   const allProvinces = [
     "all",
-    "vientiane",
-    "luang-prabang",
-    "pakse",
-    "savannakhet",
-    "thakhek",
-    "xam-nua",
+    ...locationInfos.map((locationInfo) => locationInfo.id),
   ];
 
   const priceRanges = PRICE_RANGE_OPTIONS;
@@ -352,7 +352,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
       params.type = selectedPropertyTypes.join(",");
     }
     if (selectedLocation && selectedLocation !== "all") {
-      params.location = selectedLocation;
+      params.locationId = selectedLocation;
     }
     if (keyword) params.keyword = keyword;
 
@@ -638,12 +638,12 @@ const Properties = ({ transaction }: PropertiesProps) => {
     });
   };
 
-  const handleProvinceSelect = (provinceName: string) => {
-    setSelectedLocation(provinceName);
+  const handleProvinceSelect = (id: string) => {
+    setSelectedLocation(id);
     setLocationModalOpen(false);
 
     updateSearchParams({
-      location: provinceName || "",
+      locationId: id || "",
     });
   };
 
@@ -654,7 +654,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
     const urlMaxArea = searchParams.get("maxArea");
     const urlSelectedPropertyTypes =
       searchParams.get("type")?.split(",").filter(Boolean) ?? [];
-    const urlSelectedLocation = searchParams.get("location") ?? "all";
+    const urlSelectedLocation = searchParams.get("locationId") ?? "all";
     const urlKeyword = searchParams.get("keyword") ?? "";
 
     // Update state
@@ -861,7 +861,8 @@ const Properties = ({ transaction }: PropertiesProps) => {
                     <MapPin className="h-4 w-4 text-gray-500" />
                     <span className="text-sm font-medium text-gray-700 capitalize">
                       {selectedLocation !== "all"
-                        ? selectedLocation
+                        ? (locations.find((loc) => loc.id === selectedLocation)
+                            ?.label ?? selectedLocation)
                         : "Tất cả khu vực"}
                     </span>
                   </div>
@@ -1479,34 +1480,40 @@ const Properties = ({ transaction }: PropertiesProps) => {
                       {popularCities.map((city) => (
                         <div
                           key={city.id}
-                          className={`group relative h-24 overflow-hidden rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-lg ${
-                            selectedLocation === city.name
-                              ? "ring-2 ring-red-500 ring-offset-2"
-                              : "hover:ring-2 hover:ring-red-300"
+                          className={`group relative h-32 overflow-hidden rounded-xl border-3 border-solid transition-all duration-200 hover:scale-105 hover:shadow-lg ${
+                            selectedLocation === city.id
+                              ? "border-red-400 hover:border-red-400"
+                              : "border-white hover:border-red-300"
                           }`}
-                          onClick={() => handleProvinceSelect(city.name)}
+                          onClick={() => handleProvinceSelect(city.id)}
                         >
-                          <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300"></div>
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                          <Image
+                            src={city.imageURL}
+                            alt={city.name}
+                            fill
+                            className="object-cover"
+                            priority
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/80"></div>
                           <div className="absolute right-3 bottom-3 left-3">
                             <span
                               className={`text-sm font-semibold drop-shadow-lg ${
-                                selectedLocation === city.name
-                                  ? "text-red-800"
+                                selectedLocation === city.id
+                                  ? "rounded-full bg-white px-2 py-1 text-red-600"
                                   : "text-white"
                               }`}
                             >
                               {city.name}
                             </span>
                           </div>
-                          {selectedLocation === city.name && (
+                          {selectedLocation === city.id && (
                             <div className="absolute top-2 right-2">
                               <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-lg">
                                 <CheckCircle className="h-4 w-4" />
                               </div>
                             </div>
                           )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-white/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100"></div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-black/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100"></div>
                         </div>
                       ))}
                     </div>
@@ -1539,7 +1546,13 @@ const Properties = ({ transaction }: PropertiesProps) => {
                                 : "bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 hover:shadow-sm"
                             }`}
                           >
-                            <span className="capitalize">{province}</span>
+                            <span className="capitalize">
+                              {province === "all"
+                                ? "Tất cả khu vực"
+                                : (locationInfos.find(
+                                    (loc) => loc.id === province,
+                                  )?.name ?? province)}
+                            </span>
                             {selectedLocation === province && (
                               <CheckCircle className="h-4 w-4" />
                             )}
