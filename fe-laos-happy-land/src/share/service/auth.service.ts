@@ -147,11 +147,29 @@ export const authService = {
         throw new Error("Invalid JWT format");
       }
 
-      const payload = JSON.parse(atob(parts[1])) as TokenPayload;
+      // Properly decode base64 with Vietnamese character support
+      const base64Payload = parts[1];
+      // Add padding if needed
+      const paddedPayload =
+        base64Payload + "=".repeat((4 - (base64Payload.length % 4)) % 4);
+
+      // Decode base64 to string with proper UTF-8 handling
+      const decodedPayload = decodeURIComponent(
+        atob(paddedPayload)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join(""),
+      );
+
+      const payload = JSON.parse(decodedPayload) as TokenPayload;
+
+      // Ensure fullName is properly handled for Vietnamese characters
+      const fullName = payload.fullName ?? payload.name ?? "User";
+
       return {
         id: payload.sub ?? payload.id ?? "",
         email: payload.email ?? "",
-        fullName: payload.fullName ?? payload.name ?? "User",
+        fullName: fullName,
         role: payload.role ?? "user",
       };
     } catch (error) {

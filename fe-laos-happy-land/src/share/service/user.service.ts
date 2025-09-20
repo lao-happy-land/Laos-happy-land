@@ -50,10 +50,26 @@ export const userService = {
   },
 
   updateProfile: async (id: string, formData: FormData) => {
-    const response = await api.userControllerUpdate(
-      id,
-      formData as UpdateUserDto,
-    );
-    return response.data as unknown as { user: User; message: string };
+    try {
+      const updateData: UpdateUserDto = {};
+      for (const [key, value] of formData.entries()) {
+        if (key === "image" && value instanceof File) {
+          updateData.image = value;
+        } else if (key === "fullName") {
+          updateData.fullName = value as string;
+        } else if (key === "email") {
+          updateData.email = value as string;
+        } else if (key === "phone") {
+          updateData.phone = value as string;
+        }
+      }
+
+      const response = await api.userControllerUpdate(id, updateData);
+
+      return response.data as unknown as { user: User; message: string };
+    } catch (error) {
+      console.error("Profile update error:", error);
+      throw error;
+    }
   },
 };

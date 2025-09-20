@@ -39,16 +39,47 @@ export type Content =
   | { type: "paragraph"; text: string }
   | { type: "image"; url: string; caption?: string };
 
+export type LocationDto = {
+  latitude: number;
+  longitude: number;
+  address: string;
+  city?: string;
+  country?: string;
+};
+
+export type LocationInfo = {
+  id: string;
+  name: string;
+  imageURL?: string;
+  viewCount?: number;
+  strict?: string[];
+  createdAt: string;
+  createdBy: string | null;
+  updatedAt: string;
+  updatedBy: string | null;
+  deletedAt: string | null;
+  deletedBy: string | null;
+};
+
+export type PropertyPrice = {
+  LAK: number;
+  USD: number;
+  VND: number;
+};
+
+export type PropertyPriceHistory = {
+  date: string;
+  rates: string;
+};
+
 export type Property = {
   id: string;
   title: string;
   description: string;
   price: string;
-  priceHistory: {
-    date: string;
-    price: string | number;
-  }[];
+  priceHistory: PropertyPriceHistory[];
   status: "pending" | "approved" | "rejected";
+  reason?: string | null;
   details: {
     area: number;
     bedrooms: number;
@@ -65,7 +96,8 @@ export type Property = {
   } | null;
   viewsCount: number;
   legalStatus: string | null;
-  location: string | null;
+  location: LocationDto | null;
+  locationInfo?: LocationInfo | null;
   priority: number;
   transactionType: "rent" | "sale" | "project";
   images: string[] | null;
@@ -74,6 +106,7 @@ export type Property = {
   type?: {
     id: string;
     name: string;
+    transactionType: "rent" | "sale" | "project";
     createdAt: string;
     createdBy: string | null;
     updatedAt: string;

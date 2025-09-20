@@ -3,7 +3,6 @@
 import type { Property } from "@/@types/types";
 import {
   MapPin,
-  Heart,
   Bath,
   Bed,
   Star,
@@ -24,6 +23,23 @@ export default function PropertyCard({ property }: { property: Property }) {
 
   const hiddenPhone = property.owner?.phone?.slice(0, -4) + "****";
 
+  // Helper function to validate image URLs
+  const getValidImageUrl = (
+    url: string | undefined,
+    fallback: string,
+  ): string => {
+    if (!url || typeof url !== "string") return fallback;
+    try {
+      new URL(url);
+      return url;
+    } catch {
+      if (url.startsWith("/")) {
+        return url;
+      }
+    }
+    return fallback;
+  };
+
   const handleRevealPhone = () => {
     setIsPhoneRevealed(true);
   };
@@ -42,10 +58,10 @@ export default function PropertyCard({ property }: { property: Property }) {
           <div className="relative flex w-full overflow-hidden">
             <div className="relative h-[240px] w-[60%] flex-shrink-0">
               <Image
-                src={
-                  property.mainImage ??
-                  "/images/landingpage/apartment/apart-1.jpg"
-                }
+                src={getValidImageUrl(
+                  property.mainImage ?? undefined,
+                  "/images/landingpage/apartment/apart-1.jpg",
+                )}
                 alt={property.title}
                 fill
                 className="object-cover"
@@ -58,10 +74,10 @@ export default function PropertyCard({ property }: { property: Property }) {
               {/* Top Image - Full Width */}
               <div className="relative h-[120px] overflow-hidden">
                 <Image
-                  src={
-                    property.images?.[0] ??
-                    "/images/landingpage/apartment/apart-2.jpg"
-                  }
+                  src={getValidImageUrl(
+                    property.images?.[0],
+                    "/images/landingpage/apartment/apart-2.jpg",
+                  )}
                   alt="Property image 2"
                   fill
                   className="object-cover"
@@ -73,10 +89,10 @@ export default function PropertyCard({ property }: { property: Property }) {
               <div className="flex h-[120px]">
                 <div className="relative w-[50%] overflow-hidden">
                   <Image
-                    src={
-                      property.images?.[1] ??
-                      "/images/landingpage/apartment/apart-3.jpg"
-                    }
+                    src={getValidImageUrl(
+                      property.images?.[1],
+                      "/images/landingpage/apartment/apart-3.jpg",
+                    )}
                     alt="Property image 3"
                     fill
                     className="object-cover"
@@ -85,10 +101,10 @@ export default function PropertyCard({ property }: { property: Property }) {
                 </div>
                 <div className="relative w-[50%] overflow-hidden">
                   <Image
-                    src={
-                      property.images?.[2] ??
-                      "/images/landingpage/apartment/apart-4.jpg"
-                    }
+                    src={getValidImageUrl(
+                      property.images?.[2],
+                      "/images/landingpage/apartment/apart-4.jpg",
+                    )}
                     alt="Property image 4"
                     fill
                     className="object-cover"
@@ -112,13 +128,15 @@ export default function PropertyCard({ property }: { property: Property }) {
 
             <div className="mb-2 flex items-center gap-3">
               <span className="text-2xl font-bold text-red-600">
-                {numberToString(Number(property.price))}
+                {property.price
+                  ? numberToString(Number(property.price))
+                  : "Liên hệ"}
               </span>
               <span className="text-gray-500">•</span>
               <div className="flex items-center gap-1">
                 <MapPin className="h-4 w-4" />
                 <span className="text-sm text-gray-600">
-                  {property.location}
+                  {property.location?.address ?? "Chưa cập nhật"}
                 </span>
               </div>
             </div>

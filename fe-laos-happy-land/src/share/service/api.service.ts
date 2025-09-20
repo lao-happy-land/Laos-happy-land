@@ -16,8 +16,6 @@ api.instance.interceptors.request.use(
       }
     }
 
-    // For FormData requests, don't set Content-Type header
-    // Let the browser set it automatically with the correct boundary
     if (config.data instanceof FormData) {
       delete config.headers["Content-Type"];
     }
@@ -37,7 +35,6 @@ api.instance.interceptors.response.use(
     return response;
   },
   (error: unknown) => {
-    // Handle 401 Unauthorized errors (token expired or invalid)
     if (
       error &&
       typeof error === "object" &&
