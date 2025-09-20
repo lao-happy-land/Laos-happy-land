@@ -62,9 +62,9 @@ export type LocationInfo = {
 };
 
 export type PropertyPrice = {
-  LAK: number;
-  USD: number;
-  VND: number;
+  LAK: string;
+  USD: string;
+  VND: string;
 };
 
 export type PropertyPriceHistory = {
@@ -76,7 +76,7 @@ export type Property = {
   id: string;
   title: string;
   description: string;
-  price: string;
+  price: string | PropertyPrice;
   priceHistory: PropertyPriceHistory[];
   status: "pending" | "approved" | "rejected";
   reason?: string | null;

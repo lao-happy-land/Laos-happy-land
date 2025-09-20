@@ -18,16 +18,24 @@ type Content = Heading | ParagraphBlock | ImageBlock;
 type Props = {
   content?: Content[] | null;
   fallbackDescription?: string | null;
+  transactionType?: "sale" | "rent" | "project";
 };
 
 export default function ProjectContent({
   content,
   fallbackDescription,
+  transactionType,
 }: Props) {
   return (
     <div className="mb-8">
       <Title level={3} className="mb-4 text-xl font-semibold">
-        {content && content.length > 0 ? "Nội dung dự án" : "Mô tả chi tiết"}
+        {content && content.length > 0
+          ? transactionType === "project"
+            ? "Nội dung dự án"
+            : transactionType === "sale"
+              ? "Chi tiết bán"
+              : "Chi tiết cho thuê"
+          : "Mô tả chi tiết"}
       </Title>
       <div className="space-y-4">
         {content && content.length > 0 ? (
