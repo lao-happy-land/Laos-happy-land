@@ -36,7 +36,6 @@ import {
   X,
   CheckCircle,
   Loader2,
-  MapPin,
 } from "lucide-react";
 import { useRequest } from "ahooks";
 import type {
@@ -186,7 +185,11 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
         title: currentProperty.title,
         description: currentProperty.description ?? undefined,
         price: currentProperty.price
-          ? parseFloat(currentProperty.price.toString())
+          ? typeof currentProperty.price === "object" &&
+            currentProperty.price !== null &&
+            "USD" in currentProperty.price
+            ? parseFloat(currentProperty.price.USD)
+            : parseFloat(currentProperty.price.toString())
           : undefined,
         area: currentProperty.details?.area ?? undefined,
         bedrooms: currentProperty.details?.bedrooms ?? undefined,
@@ -201,6 +204,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
         legalStatus: currentProperty.legalStatus ?? undefined,
         transactionType: currentProperty.transactionType,
         locationInfoId: currentProperty.locationInfo?.id ?? "",
+        location: currentProperty.location?.address ?? "",
       });
 
       setSelectedLocationInfoId(currentProperty.locationInfo?.id ?? "");
@@ -230,31 +234,41 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
     selectedLocationInfoId,
   ]);
 
+  // Sync locationData with form field
+  useEffect(() => {
+    if (locationData?.address) {
+      form.setFieldValue("location", locationData.address);
+    }
+  }, [locationData, form]);
+
   const { loading: submitting, run: submitForm } = useRequest(
-    async (values: {
-      typeId: string;
-      title: string;
-      description?: string;
-      price?: number;
-      area?: number;
-      bedrooms?: number;
-      bathrooms?: number;
-      wifi?: boolean;
-      tv?: boolean;
-      airConditioner?: boolean;
-      parking?: boolean;
-      kitchen?: boolean;
-      security?: boolean;
-      content?: (
-        | { type: "heading"; text: string; level?: 1 | 2 | 3 }
-        | { type: "paragraph"; text: string }
-        | { type: "image"; url: string; caption?: string }
-      )[];
-      legalStatus?: string;
-      location?: string;
-      locationInfoId?: string;
-      transactionType: "rent" | "sale" | "project";
-    }) => {
+    async (
+      values: {
+        typeId: string;
+        title: string;
+        description?: string;
+        price?: number;
+        area?: number;
+        bedrooms?: number;
+        bathrooms?: number;
+        wifi?: boolean;
+        tv?: boolean;
+        airConditioner?: boolean;
+        parking?: boolean;
+        kitchen?: boolean;
+        security?: boolean;
+        content?: (
+          | { type: "heading"; text: string; level?: 1 | 2 | 3 }
+          | { type: "paragraph"; text: string }
+          | { type: "image"; url: string; caption?: string }
+        )[];
+        legalStatus?: string;
+        location?: string;
+        locationInfoId?: string;
+        transactionType: "rent" | "sale" | "project";
+      },
+      currentLocationInfoId: string,
+    ) => {
       const formData: CreatePropertyDto | UpdatePropertyDto = {
         typeId: values.typeId,
         title: values.title,
@@ -270,15 +284,11 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
           parking: values.parking ?? false,
           kitchen: values.kitchen ?? false,
           security: values.security ?? false,
-          content:
-            values.transactionType === "project"
-              ? (values.content ?? [])
-              : undefined,
+          content: values.content ?? [],
         },
         legalStatus: values.legalStatus,
         location: locationData as LocationDto | undefined,
-        locationInfoId:
-          selectedLocationInfoId || currentProperty?.locationInfo?.id,
+        locationInfoId: currentLocationInfoId,
         transactionType: values.transactionType,
       };
 
@@ -355,40 +365,40 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
     security: boolean;
     legalStatus?: string;
     location?: string;
+    locationInfoId?: string;
     transactionType: "rent" | "sale" | "project";
   }) => {
     if (selectedTransactionType !== "project") {
-      if (!mainImageFile && !existingMainImage) {
+      // Check main image - either new upload or existing image
+      const hasMainImage = mainImageFile ?? mainImageUrl ?? existingMainImage;
+      if (!hasMainImage) {
         message.error("Vui lòng tải lên ảnh chính");
         return;
       }
-      if (imageFiles.length + existingImages.length < 3) {
+
+      // Check additional images - count existing images + new uploads
+      const totalImages = existingImages.length + imageUrls.length;
+      if (totalImages < 3) {
         message.error("Vui lòng tải lên ít nhất 3 ảnh phụ");
         return;
       }
     }
 
-    if (mode === "create") {
-      if (!locationData) {
-        message.error("Vui lòng chọn vị trí trên bản đồ");
-        return;
-      }
-      if (!selectedLocationInfoId) {
-        message.error("Vui lòng chọn khu vực");
-        return;
-      }
-    } else {
-      if (!locationData && !currentProperty?.location) {
-        message.error("Vui lòng chọn vị trí trên bản đồ");
-        return;
-      }
-      if (!selectedLocationInfoId && !currentProperty?.locationInfo?.id) {
-        message.error("Vui lòng chọn khu vực");
-        return;
-      }
+    // Check location from form field
+    if (!values.location) {
+      message.error("Vui lòng chọn vị trí trên bản đồ");
+      return;
     }
 
-    submitForm(values);
+    // Check locationInfoId from form field
+    const currentLocationInfoId =
+      values.locationInfoId ?? selectedLocationInfoId;
+    if (!currentLocationInfoId) {
+      message.error("Vui lòng chọn khu vực");
+      return;
+    }
+
+    submitForm(values, currentLocationInfoId);
   };
 
   const handleMainImageUpload = async (file: File) => {
@@ -581,7 +591,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
             <div className="grid grid-cols-1 gap-x-6 md:grid-cols-2">
               <Form.Item
                 name="price"
-                label={<Text className="font-medium">Giá (LAK)</Text>}
+                label={<Text className="font-medium">Giá (USD$)</Text>}
                 rules={[{ required: true, message: "Vui lòng nhập giá!" }]}
               >
                 <InputNumber
@@ -758,7 +768,11 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                   level={3}
                   className="!mb-0 !text-xl !font-semibold !text-gray-900"
                 >
-                  Nội dung dự án
+                  {selectedTransactionType === "project"
+                    ? "Nội dung dự án"
+                    : selectedTransactionType === "sale"
+                      ? "Chi tiết bán"
+                      : "Chi tiết cho thuê"}
                 </Title>
               </div>
               <ProjectContentBuilder
@@ -771,11 +785,31 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
 
           {/* Location */}
           <div className="space-y-6">
-            <Form.Item>
+            {/* Hidden field to track locationInfoId */}
+            <Form.Item name="locationInfoId" hidden>
+              <Input />
+            </Form.Item>
+
+            {/* Hidden field to track location */}
+            <Form.Item name="location" hidden>
+              <Input />
+            </Form.Item>
+
+            <div className="space-y-2">
+              <Text className="font-medium">Vị trí trên bản đồ *</Text>
               <MapboxLocationSelector
+                form={form}
                 value={locationData}
                 onChange={(newLocationData) => {
+                  console.log(
+                    "MapboxLocationSelector onChange:",
+                    newLocationData,
+                  );
                   setLocationData(newLocationData);
+                  // Update the form field with the location address
+                  if (newLocationData?.address) {
+                    form.setFieldValue("location", newLocationData.address);
+                  }
                 }}
                 placeholder="Chọn vị trí trên bản đồ"
                 initialSearchValue={currentProperty?.location?.address}
@@ -783,6 +817,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                 selectedLocationInfoId={selectedLocationInfoId}
                 onLocationInfoChange={(locationInfoId) => {
                   setSelectedLocationInfoId(locationInfoId);
+                  form.setFieldValue("locationInfoId", locationInfoId);
                 }}
                 loadingLocations={loadingLocations}
                 mode={mode}
@@ -790,7 +825,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                   !!(currentProperty?.location && currentProperty?.locationInfo)
                 }
               />
-            </Form.Item>
+            </div>
           </div>
 
           {/* Images */}

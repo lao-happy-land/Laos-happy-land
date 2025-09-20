@@ -15,7 +15,9 @@ import {
   Divider,
   Typography,
   App,
+  Progress,
   Spin,
+  Tooltip,
 } from "antd";
 import {
   Building2,
@@ -32,15 +34,17 @@ import {
   Car,
   Snowflake,
   Tv,
-  MapPin,
   Wifi,
+  CheckCircle,
+  Loader2,
 } from "lucide-react";
 import type { UpdatePropertyDto } from "@/@types/gentype-axios";
-import type { PropertyType, LocationInfo } from "@/@types/types";
+import type { PropertyType, LocationInfo, Content } from "@/@types/types";
 import { useRequest } from "ahooks";
 import propertyService from "@/share/service/property.service";
 import propertyTypeService from "@/share/service/property-type.service";
 import locationInfoService from "@/share/service/location-info.service";
+import uploadService from "@/share/service/upload.service";
 import ProjectContentBuilder from "@/components/business/common/project-content-builder";
 import MapboxLocationSelector from "@/components/business/common/mapbox-location-selector";
 import Image from "next/image";
@@ -52,7 +56,7 @@ const { Title, Text } = Typography;
 type EditPropertyProps = { propertyId: string };
 
 export default function EditProperty({ propertyId }: EditPropertyProps) {
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const { isAuthenticated } = useAuthStore();
   const router = useRouter();
   const [form] = Form.useForm();
@@ -65,6 +69,13 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
   >("sale");
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [mainImageUrl, setMainImageUrl] = useState<string | null>(null);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [uploadingMainImage, setUploadingMainImage] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState<boolean[]>([]);
+  const [removedExistingImages, setRemovedExistingImages] = useState<number[]>(
+    [],
+  );
   const [locationData, setLocationData] = useState<{
     latitude: number;
     longitude: number;
@@ -100,7 +111,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
   const { loading: loadingLocations, run: fetchLocationInfos } = useRequest(
     async () => {
       const response = await locationInfoService.getAllLocationInfo();
-      return response;
+      return response.data;
     },
     {
       manual: true,
@@ -112,8 +123,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
           setLocationInfos([]);
         }
       },
-      onError: (error) => {
-        console.error("Error loading location infos:", error);
+      onError: (_error) => {
         message.error("Không thể tải danh sách địa điểm");
         setLocationInfos([]);
       },
@@ -145,19 +155,25 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
 
       // Set location data if available
       if (property.location) {
-        setLocationData({
+        const newLocationData = {
           latitude: property.location.latitude,
           longitude: property.location.longitude,
           address: property.location.address,
           city: property.location.city,
           country: property.location.country,
-        });
+        };
+        setLocationData(newLocationData);
       }
 
       form.setFieldsValue({
         title: property.title,
         description: property.description,
-        price: property.price ? parseFloat(property.price) : undefined,
+        price:
+          typeof property.price === "object" &&
+          property.price !== null &&
+          "USD" in property.price
+            ? parseFloat(property.price.USD)
+            : undefined,
         area: property.details?.area,
         bedrooms: property.details?.bedrooms,
         bathrooms: property.details?.bathrooms,
@@ -187,6 +203,20 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
     }
   }, [property?.locationInfo?.id, locationInfos]);
 
+  // Sync selectedLocationInfoId with form field
+  useEffect(() => {
+    if (selectedLocationInfoId) {
+      form.setFieldValue("locationInfoId", selectedLocationInfoId);
+    }
+  }, [selectedLocationInfoId, form]);
+
+  // Sync locationData with form field
+  useEffect(() => {
+    if (locationData?.address) {
+      form.setFieldValue("location", locationData.address);
+    }
+  }, [locationData, form]);
+
   const { loading: submitting, run: submitForm } = useRequest(
     async (values: {
       typeId: string;
@@ -212,15 +242,29 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
         | { type: "image"; url: string; caption?: string }
       )[];
     }) => {
+      // Use already uploaded image URLs or existing images
+      const existingMainImage = property?.mainImage;
+
+      // Use currentLocationInfoId from validation
+      const currentLocationInfoId =
+        values.locationInfoId || selectedLocationInfoId;
+
       const formData: UpdatePropertyDto = {
         typeId: values.typeId,
-        locationInfoId: values.locationInfoId,
+        locationInfoId: currentLocationInfoId,
         title: values.title,
         description: values.description,
         price: values.price,
         legalStatus: values.legalStatus ?? "",
         location: locationData,
         transactionType: values.transactionType,
+        mainImage: mainImageUrl ?? existingMainImage,
+        images: [
+          ...(property?.images?.filter(
+            (_, index) => !removedExistingImages.includes(index),
+          ) ?? []),
+          ...imageUrls,
+        ],
         details: {
           area: values.area,
           bedrooms: values.bedrooms,
@@ -231,10 +275,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
           parking: values.parking ?? false,
           kitchen: values.kitchen ?? false,
           security: values.security ?? false,
-          content:
-            values.transactionType === "project"
-              ? (values.content ?? [])
-              : undefined,
+          content: values.content ?? [],
         },
       } as UpdatePropertyDto;
 
@@ -272,22 +313,140 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
     locationText?: string;
     transactionType: "rent" | "sale" | "project";
   }) => {
-    if (selectedTransactionType !== "project" && !mainImageFile) {
-      message.error("Vui lòng tải lên ảnh chính");
+    // Collect all validation errors
+    const errors: string[] = [];
+
+    // Validate required fields
+    if (!values.title || values.title.trim().length < 10) {
+      errors.push("Tiêu đề phải có ít nhất 10 ký tự");
+    }
+    if (!values.description || values.description.trim().length < 50) {
+      errors.push("Mô tả phải có ít nhất 50 ký tự");
+    }
+    if (!values.typeId) {
+      errors.push("Vui lòng chọn loại bất động sản");
+    }
+    // Check locationInfoId from form or state
+    const currentLocationInfoId =
+      values.locationInfoId || selectedLocationInfoId;
+    if (!currentLocationInfoId) {
+      errors.push("Vui lòng chọn khu vực");
+    }
+    if (!values.price || values.price <= 0) {
+      errors.push("Vui lòng nhập giá hợp lệ");
+    }
+    if (!values.area || values.area <= 0) {
+      errors.push("Vui lòng nhập diện tích hợp lệ");
+    }
+    // Check location from form field
+    if (!values.location) {
+      errors.push("Vui lòng chọn vị trí trên bản đồ");
+    }
+
+    // Validate images for non-project types
+    if (selectedTransactionType !== "project") {
+      // Check main image - either new upload or existing image
+      const hasMainImage = mainImageFile ?? mainImageUrl ?? property?.mainImage;
+      if (!hasMainImage) {
+        errors.push("Vui lòng tải lên ảnh chính");
+      }
+
+      // Check additional images - count existing images that weren't removed + new uploads
+      const remainingExistingImages =
+        property?.images?.filter(
+          (_, index) => !removedExistingImages.includes(index),
+        ).length ?? 0;
+      const totalImages = remainingExistingImages + imageUrls.length;
+      if (totalImages < 3) {
+        errors.push("Vui lòng tải lên ít nhất 3 ảnh phụ");
+      }
+
+      // Check if images are still uploading
+      if (uploadingMainImage) {
+        errors.push("Ảnh chính đang được tải lên, vui lòng chờ");
+      }
+      if (uploadingImages.some((uploading) => uploading)) {
+        errors.push("Một số ảnh phụ đang được tải lên, vui lòng chờ");
+      }
+
+      // Check if main image upload failed
+      if (mainImageFile && !mainImageUrl && !uploadingMainImage) {
+        errors.push("Ảnh chính tải lên thất bại, vui lòng thử lại");
+      }
+
+      // Check if any additional image upload failed
+      const failedUploads = imageFiles.filter(
+        (_, index) =>
+          imageFiles[index] && !imageUrls[index] && !uploadingImages[index],
+      );
+      if (failedUploads.length > 0) {
+        errors.push(
+          `${failedUploads.length} ảnh phụ tải lên thất bại, vui lòng thử lại`,
+        );
+      }
+    }
+
+    // Show validation errors if any
+    if (errors.length > 0) {
+      modal.error({
+        title: "Lỗi xác thực",
+        content: (
+          <div className="space-y-2">
+            <p className="font-medium text-red-600">
+              Vui lòng kiểm tra lại các thông tin sau:
+            </p>
+            <ul className="list-inside list-disc space-y-1 text-sm">
+              {errors.map((error, index) => (
+                <li key={index} className="text-gray-700">
+                  {error}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ),
+        okText: "Đã hiểu",
+      });
       return;
     }
-    if (selectedTransactionType !== "project" && imageFiles.length < 3) {
-      message.error("Vui lòng tải lên ít nhất 3 ảnh phụ");
-      return;
-    }
-    if (!locationData) {
-      message.error("Vui lòng chọn vị trí trên bản đồ");
-      return;
-    }
-    submitForm(values);
+
+    // Show confirmation dialog
+    modal.confirm({
+      title: "Xác nhận cập nhật",
+      content: (
+        <div className="space-y-2">
+          <p>Bạn có chắc chắn muốn cập nhật tin đăng này?</p>
+          <div className="text-sm text-gray-600">
+            <p>
+              <strong>Tiêu đề:</strong> {values.title}
+            </p>
+            <p>
+              <strong>Loại giao dịch:</strong>{" "}
+              {values.transactionType === "sale"
+                ? "Bán"
+                : values.transactionType === "rent"
+                  ? "Cho thuê"
+                  : "Dự án"}
+            </p>
+            {values.price && (
+              <p>
+                <strong>Giá:</strong> {values.price.toLocaleString()} USD
+              </p>
+            )}
+          </div>
+        </div>
+      ),
+      okText: "Cập nhật",
+      cancelText: "Hủy",
+      onOk: () => {
+        submitForm(values);
+      },
+      onCancel: () => {
+        message.info("Đã hủy cập nhật");
+      },
+    });
   };
 
-  const handleMainImageUpload = (file: File) => {
+  const handleMainImageUpload = async (file: File) => {
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
       message.error("Chỉ có thể tải lên file hình ảnh!");
@@ -298,11 +457,26 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
       message.error("Hình ảnh phải nhỏ hơn 5MB!");
       return false;
     }
+
     setMainImageFile(file);
+    setUploadingMainImage(true);
+
+    try {
+      const result = await uploadService.uploadImage(file);
+      setMainImageUrl(result.url);
+      message.success("Tải lên ảnh chính thành công!");
+    } catch (error) {
+      console.error("Failed to upload main image:", error);
+      message.error("Không thể tải lên ảnh chính");
+      setMainImageFile(null);
+    } finally {
+      setUploadingMainImage(false);
+    }
+
     return false;
   };
 
-  const handleImagesUpload = (file: File) => {
+  const handleImagesUpload = async (file: File) => {
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
       message.error("Chỉ có thể tải lên file hình ảnh!");
@@ -313,20 +487,47 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
       message.error("Hình ảnh phải nhỏ hơn 5MB!");
       return false;
     }
-    if (imageFiles.length >= 9) {
+    const existingImagesCount =
+      property?.images?.filter(
+        (_, index) => !removedExistingImages.includes(index),
+      ).length ?? 0;
+    if (existingImagesCount + imageFiles.length >= 9) {
       message.error("Chỉ có thể tải lên tối đa 9 ảnh phụ!");
       return false;
     }
+
+    const newIndex = imageFiles.length;
     setImageFiles([...imageFiles, file]);
+    setUploadingImages([...uploadingImages, true]);
+
+    try {
+      const result = await uploadService.uploadImage(file);
+      setImageUrls([...imageUrls, result.url]);
+      message.success(`Tải lên ảnh ${newIndex + 1} thành công!`);
+    } catch (error) {
+      console.error("Failed to upload image:", error);
+      message.error(`Không thể tải lên ảnh ${newIndex + 1}`);
+      // Remove the failed file
+      setImageFiles(imageFiles.filter((_, i) => i !== newIndex));
+    } finally {
+      setUploadingImages(uploadingImages.filter((_, i) => i !== newIndex));
+    }
+
     return false;
   };
 
   const removeImage = (index: number) => {
     setImageFiles(imageFiles.filter((_, i) => i !== index));
+    setImageUrls(imageUrls.filter((_, i) => i !== index));
+  };
+
+  const removeExistingImage = (index: number) => {
+    setRemovedExistingImages([...removedExistingImages, index]);
   };
 
   const removeMainImage = () => {
     setMainImageFile(null);
+    setMainImageUrl(null);
   };
 
   const handleTransactionTypeChange = (value: "rent" | "sale" | "project") => {
@@ -340,11 +541,6 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
         <Spin />
       </div>
     );
-  }
-
-  if (property?.status === "approved") {
-    message.error("Tin đăng đã được duyệt, không thể chỉnh sửa!");
-    return router.push("/dashboard");
   }
 
   return (
@@ -390,12 +586,16 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                   label={<Text className="font-medium">Tiêu đề tin đăng</Text>}
                   rules={[
                     { required: true, message: "Vui lòng nhập tiêu đề!" },
+                    { min: 10, message: "Tiêu đề phải có ít nhất 10 ký tự!" },
+                    { max: 200, message: "Tiêu đề không được quá 200 ký tự!" },
                   ]}
                 >
                   <Input
                     placeholder="Nhập tiêu đề tin đăng..."
                     size="large"
                     className="rounded-lg"
+                    showCount
+                    maxLength={200}
                   />
                 </Form.Item>
                 <Form.Item
@@ -445,11 +645,19 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                   label={
                     <Text className="font-medium">Tình trạng pháp lý</Text>
                   }
+                  rules={[
+                    {
+                      max: 200,
+                      message: "Tình trạng pháp lý không được quá 200 ký tự!",
+                    },
+                  ]}
                 >
                   <Input
                     placeholder="Nhập tình trạng pháp lý..."
                     size="large"
                     className="rounded-lg"
+                    showCount
+                    maxLength={200}
                   />
                 </Form.Item>
               </div>
@@ -457,8 +665,20 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
               <div className="grid grid-cols-1 gap-x-6 md:grid-cols-2">
                 <Form.Item
                   name="price"
-                  label={<Text className="font-medium">Giá (LAK)</Text>}
-                  rules={[{ required: true, message: "Vui lòng nhập giá!" }]}
+                  label={<Text className="font-medium">Giá (USD$)</Text>}
+                  rules={[
+                    { required: true, message: "Vui lòng nhập giá!" },
+                    {
+                      type: "number",
+                      min: 1,
+                      message: "Giá phải lớn hơn 0!",
+                    },
+                    {
+                      type: "number",
+                      max: 999999999,
+                      message: "Giá không được quá 999,999,999 USD!",
+                    },
+                  ]}
                 >
                   <InputNumber
                     placeholder="Nhập giá..."
@@ -470,6 +690,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       return parsed ? Number(parsed) : 0;
                     }}
                     min={0}
+                    max={999999999}
                     size="large"
                     style={{ width: "100%" }}
                   />
@@ -485,11 +706,22 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                   }
                   rules={[
                     { required: true, message: "Vui lòng nhập diện tích!" },
+                    {
+                      type: "number",
+                      min: 1,
+                      message: "Diện tích phải lớn hơn 0!",
+                    },
+                    {
+                      type: "number",
+                      max: 10000,
+                      message: "Diện tích không được quá 10,000 m²!",
+                    },
                   ]}
                 >
                   <InputNumber
                     min={0}
-                    placeholder="0"
+                    max={10000}
+                    placeholder="Nhập diện tích..."
                     size="large"
                     style={{ width: "100%" }}
                   />
@@ -505,10 +737,23 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                           Phòng ngủ
                         </span>
                       }
+                      rules={[
+                        {
+                          type: "number",
+                          min: 0,
+                          message: "Số phòng ngủ không được âm!",
+                        },
+                        {
+                          type: "number",
+                          max: 20,
+                          message: "Số phòng ngủ không được quá 20!",
+                        },
+                      ]}
                     >
                       <InputNumber
                         min={0}
-                        placeholder="0"
+                        max={20}
+                        placeholder="Nhập số phòng ngủ..."
                         size="large"
                         style={{ width: "100%" }}
                       />
@@ -522,10 +767,23 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                           Phòng tắm
                         </span>
                       }
+                      rules={[
+                        {
+                          type: "number",
+                          min: 0,
+                          message: "Số phòng tắm không được âm!",
+                        },
+                        {
+                          type: "number",
+                          max: 10,
+                          message: "Số phòng tắm không được quá 10!",
+                        },
+                      ]}
                     >
                       <InputNumber
                         min={0}
-                        placeholder="0"
+                        max={10}
+                        placeholder="Nhập số phòng tắm..."
                         size="large"
                         style={{ width: "100%" }}
                       />
@@ -618,12 +876,18 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
               <Form.Item
                 name="description"
                 label={<Text className="font-medium">Mô tả ngắn</Text>}
-                rules={[{ required: true, message: "Vui lòng nhập mô tả!" }]}
+                rules={[
+                  { required: true, message: "Vui lòng nhập mô tả!" },
+                  { min: 50, message: "Mô tả phải có ít nhất 50 ký tự!" },
+                  { max: 2000, message: "Mô tả không được quá 2000 ký tự!" },
+                ]}
               >
                 <TextArea
                   rows={6}
                   placeholder="Mô tả ngắn gọn về bất động sản, tiện ích xung quanh, hướng nhà, view..."
                   className="rounded-lg"
+                  showCount
+                  maxLength={2000}
                 />
               </Form.Item>
               {/* Project Content Builder */}
@@ -637,26 +901,70 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                     Nội dung dự án
                   </Title>
                 </div>
-                <ProjectContentBuilder
-                  form={form}
+                <Form.Item
                   name="content"
-                  textFieldName="value"
-                />
+                  rules={[
+                    {
+                      validator: (_, value) => {
+                        if (selectedTransactionType === "project") {
+                          if (
+                            !value ||
+                            (value as unknown as Content[]).length === 0
+                          ) {
+                            return Promise.reject(
+                              new Error("Vui lòng thêm ít nhất 1 nội dung"),
+                            );
+                          }
+                        }
+                        return Promise.resolve();
+                      },
+                    },
+                  ]}
+                >
+                  <ProjectContentBuilder
+                    form={form}
+                    name="content"
+                    textFieldName="value"
+                  />
+                </Form.Item>
               </div>
             </div>
 
             {/* Location */}
             <div className="space-y-6">
-              <Form.Item>
+              {/* Hidden field to track locationInfoId */}
+              <Form.Item name="locationInfoId" hidden>
+                <Input />
+              </Form.Item>
+
+              {/* Hidden field to track location */}
+              <Form.Item name="location" hidden>
+                <Input />
+              </Form.Item>
+
+              <div className="space-y-2">
+                <Text className="font-medium">Vị trí trên bản đồ *</Text>
                 <MapboxLocationSelector
+                  form={form}
                   value={locationData}
-                  onChange={setLocationData}
+                  onChange={(newLocationData) => {
+                    console.log(
+                      "MapboxLocationSelector onChange:",
+                      newLocationData,
+                    );
+                    setLocationData(newLocationData);
+                    // Update the form field with the location address
+                    if (newLocationData?.address) {
+                      form.setFieldValue("location", newLocationData.address);
+                    }
+                  }}
                   placeholder="Chọn vị trí trên bản đồ"
                   initialSearchValue={property?.location?.address}
                   locationInfos={locationInfos}
                   selectedLocationInfoId={selectedLocationInfoId}
                   onLocationInfoChange={(locationInfoId) => {
                     setSelectedLocationInfoId(locationInfoId);
+                    form.setFieldValue("locationInfoId", locationInfoId);
                   }}
                   loadingLocations={loadingLocations}
                   mode="edit"
@@ -664,7 +972,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                     !!(property?.location && property?.locationInfo)
                   }
                 />
-              </Form.Item>
+              </div>
             </div>
 
             {/* Images */}
@@ -692,6 +1000,54 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                           width={128}
                           height={128}
                         />
+                        {uploadingMainImage && (
+                          <div className="bg-opacity-50 absolute inset-0 flex items-center justify-center rounded-lg bg-black">
+                            <div className="text-center text-white">
+                              <Spin size="large" />
+                              <div className="mt-2 text-sm">
+                                Đang tải lên...
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        {mainImageUrl && !uploadingMainImage && (
+                          <div className="absolute top-2 right-2">
+                            <Tooltip title="Tải lên thành công">
+                              <CheckCircle className="h-6 w-6 rounded-full bg-white text-green-500" />
+                            </Tooltip>
+                          </div>
+                        )}
+                        <div className="absolute -right-3 -bottom-3">
+                          <Button
+                            danger
+                            onClick={removeMainImage}
+                            size="small"
+                            shape="circle"
+                            disabled={uploadingMainImage}
+                          >
+                            <X className="size-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ) : property?.mainImage ? (
+                      <div className="relative h-64 w-full">
+                        <Image
+                          src={property.mainImage}
+                          alt="Existing Main"
+                          className="h-64 w-full rounded-lg object-cover object-center"
+                          width={128}
+                          height={128}
+                        />
+                        <div className="absolute top-2 left-2">
+                          <Tooltip title="Ảnh hiện tại">
+                            <div className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-1">
+                              <CheckCircle className="h-3 w-3 text-blue-600" />
+                              <span className="text-xs text-blue-600">
+                                Hiện tại
+                              </span>
+                            </div>
+                          </Tooltip>
+                        </div>
                         <div className="absolute -right-3 -bottom-3">
                           <Button
                             danger
@@ -707,14 +1063,24 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       <Upload
                         beforeUpload={handleMainImageUpload}
                         showUploadList={false}
+                        disabled={uploadingMainImage}
                       >
                         <div className="space-y-2">
-                          <UploadIcon className="mx-auto h-12 w-12 text-gray-400" />
+                          {uploadingMainImage ? (
+                            <Loader2 className="mx-auto h-12 w-12 animate-spin text-blue-500" />
+                          ) : (
+                            <UploadIcon className="mx-auto h-12 w-12 text-gray-400" />
+                          )}
                           <Text className="block text-gray-600">
-                            Tải lên ảnh chính
+                            {uploadingMainImage
+                              ? "Đang tải lên..."
+                              : "Tải lên ảnh chính"}
                           </Text>
                           <Text className="block text-sm text-gray-500">
                             JPG, PNG, GIF tối đa 5MB
+                          </Text>
+                          <Text className="block text-xs text-gray-400">
+                            Kéo thả hoặc click để chọn
                           </Text>
                         </div>
                       </Upload>
@@ -724,10 +1090,78 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
 
                 {/* Additional Images */}
                 <div className="space-y-4">
-                  <Text className="font-medium">Ảnh phụ (tối đa 9 ảnh)</Text>
-                  <div className="flex flex-wrap gap-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Text className="font-medium">
+                        Ảnh phụ (tối đa 9 ảnh)
+                      </Text>
+                      {imageUrls.length > 0 && (
+                        <Tooltip
+                          title={`${imageUrls.length} ảnh đã tải lên thành công`}
+                        >
+                          <div className="flex items-center gap-1 rounded-full bg-green-100 px-2 py-1">
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            <span className="text-xs text-green-600">
+                              {imageUrls.length}
+                            </span>
+                          </div>
+                        </Tooltip>
+                      )}
+                    </div>
+                    <Text className="text-sm text-gray-500">
+                      {(property?.images?.filter(
+                        (_, index) => !removedExistingImages.includes(index),
+                      ).length ?? 0) + imageFiles.length}
+                      /9 ảnh
+                    </Text>
+                  </div>
+                  <div className="flex flex-wrap gap-4">
+                    {/* Existing images */}
+                    {property?.images?.map(
+                      (imageUrl, index) =>
+                        !removedExistingImages.includes(index) && (
+                          <div
+                            key={`existing-${index}`}
+                            className="relative size-24 rounded-lg"
+                          >
+                            <Image
+                              src={imageUrl}
+                              alt={`Existing Image ${index + 1}`}
+                              className="size-24 rounded-lg object-cover"
+                              width={100}
+                              height={100}
+                            />
+                            <div className="absolute top-1 left-1">
+                              <Tooltip title="Ảnh hiện tại">
+                                <div className="flex items-center gap-1 rounded-full bg-blue-100 px-1 py-0.5">
+                                  <CheckCircle className="h-2 w-2 text-blue-600" />
+                                  <span className="text-xs text-blue-600">
+                                    Hiện tại
+                                  </span>
+                                </div>
+                              </Tooltip>
+                            </div>
+                            <div className="absolute -top-2 -right-2">
+                              <Button
+                                danger
+                                shape="circle"
+                                size="small"
+                                onClick={() => removeExistingImage(index)}
+                                className="h-6 w-6"
+                              >
+                                <X className="size-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        ),
+                    )}
+
+                    {/* New uploaded images */}
                     {imageFiles.map((file, index) => (
-                      <div key={index} className="relative size-24 rounded-lg">
+                      <div
+                        key={`new-${index}`}
+                        className="relative size-24 rounded-lg"
+                      >
                         <Image
                           src={URL.createObjectURL(file)}
                           alt={`Image ${index + 1}`}
@@ -735,29 +1169,69 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                           width={100}
                           height={100}
                         />
-                        <div className="absolute -right-3 -bottom-3">
+                        {uploadingImages[index] && (
+                          <div className="bg-opacity-50 absolute inset-0 flex items-center justify-center rounded-lg bg-black">
+                            <Spin size="small" />
+                          </div>
+                        )}
+                        {imageUrls[index] && !uploadingImages[index] && (
+                          <div className="absolute top-1 right-1">
+                            <Tooltip title="Tải lên thành công">
+                              <CheckCircle className="h-4 w-4 rounded-full bg-white text-green-500" />
+                            </Tooltip>
+                          </div>
+                        )}
+                        <div className="absolute -top-2 -right-2">
                           <Button
                             danger
                             shape="circle"
                             size="small"
                             onClick={() => removeImage(index)}
+                            disabled={uploadingImages[index]}
+                            className="h-6 w-6"
                           >
-                            <X className="size-4" />
+                            <X className="size-3" />
                           </Button>
                         </div>
                       </div>
                     ))}
-                    {imageFiles.length < 9 && (
+                    {(property?.images?.filter(
+                      (_, index) => !removedExistingImages.includes(index),
+                    ).length ?? 0) +
+                      imageFiles.length <
+                      9 && (
                       <Upload
                         beforeUpload={handleImagesUpload}
                         showUploadList={false}
+                        disabled={uploadingImages.some(
+                          (uploading) => uploading,
+                        )}
                       >
                         <div className="flex size-24 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-300 transition-colors hover:border-blue-400">
-                          <Plus className="h-6 w-6 text-gray-400" />
+                          {uploadingImages.some((uploading) => uploading) ? (
+                            <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                          ) : (
+                            <Plus className="h-6 w-6 text-gray-400" />
+                          )}
                         </div>
                       </Upload>
                     )}
                   </div>
+                  {imageFiles.length > 0 && (
+                    <div className="mt-2">
+                      <Progress
+                        percent={Math.round(
+                          (imageUrls.length / imageFiles.length) * 100,
+                        )}
+                        size="small"
+                        status={
+                          imageUrls.length === imageFiles.length
+                            ? "success"
+                            : "active"
+                        }
+                      />
+                    </div>
+                  )}
                 </div>
                 <Divider />
               </div>
