@@ -48,7 +48,7 @@ export class PropertyController {
   @Post()
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
-  @ApiConsumes('multipart/form-data')
+  // @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreatePropertyDto })
   @ApiResponse({ status: 200, description: 'Property created successfully' })
   async create(
@@ -152,7 +152,7 @@ async getByUser(
   @Patch(':id')
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
-  @ApiConsumes('multipart/form-data')
+  // @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UpdatePropertyDto })
   @ApiResponse({ status: 200, description: 'Property updated successfully' })
   async update(
