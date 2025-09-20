@@ -22,6 +22,7 @@ import { RejectPropertyDto } from './dto/reject_property.dto';
 import { ExchangeRateService } from '../exchange-rate/exchange-rate.service';
 import { LocationInfo } from 'src/entities/location-info.entity';
 import { GetPropertyDetailDto } from './dto/get_property_id.dto';
+import { GetPropertyByUserDto } from './dto/get_property_by_user.dto';
 
 @Injectable()
 export class PropertyService {
@@ -121,6 +122,27 @@ export class PropertyService {
     await this.entityManager.save(property);
 
     return { property, message: 'Property created successfully' };
+  }
+
+formatPrice(value: string | number | null): string | null {
+  if (value === null || value === undefined) return null;
+  return value.toString();
+}
+
+  private formatProperty(
+    item: Property,
+    currency?: 'LAK' | 'USD' | 'VND',
+  ): any {
+    if (!currency) return item;
+    const cur = currency;
+    return {
+      ...item,
+      price: this.formatPrice(item.price?.[cur] ?? null),
+      priceHistory: (item.priceHistory || []).map((ph) => ({
+        date: ph.date,
+        rates: this.formatPrice(ph.rates?.[cur] ?? null),
+      })),
+    };
   }
 
   async getAll(params: GetPropertiesFilterDto, user: User) {
@@ -235,26 +257,16 @@ export class PropertyService {
     }
 
     const [result, total] = await properties.getManyAndCount();
-    let finalResult = result;
-    if (params.currency) {
-      finalResult = result.map((item) => {
-        const currency = params.currency!;
-        return {
-          ...item,
-          price: { [currency]: item.price?.[currency] ?? null },
-          priceHistory: (item.priceHistory || []).map((ph) => ({
-            date: ph.date,
-            rates: { [currency]: ph.rates?.[currency] ?? null },
-          })),
-        };
-      });
-    }
+
+    const finalResult = params.currency
+      ? result.map((item) => this.formatProperty(item, params.currency))
+      : result;
+
     const pageMetaDto = new PageMetaDto({
       itemCount: total,
       pageOptionsDto: params,
     });
-
-    return new ResponsePaginate(finalResult, pageMetaDto, 'Success');
+    return new ResponsePaginate(finalResult as any, pageMetaDto, 'Success');
   }
 
   async get(id: string, params: GetPropertyDetailDto) {
@@ -286,29 +298,17 @@ export class PropertyService {
       }
     }
 
-    let finalProperty = property;
-    if (params.currency) {
-      const cur = params.currency;
-      finalProperty = {
-        ...property,
-        price: { [cur]: property.price?.[cur] ?? null },
-        priceHistory: (property.priceHistory || []).map((ph) => ({
-          date: ph.date,
-          rates: { [cur]: ph.rates?.[cur] ?? null },
-        })),
-      };
-    }
-
-    return { property: finalProperty, message: 'Success' };
+    return {
+      property: this.formatProperty(property, params.currency),
+      message: 'Success',
+    };
   }
 
-  async getByUser(params: PageOptionsDto, user: any) {
-    const owner = await this.entityManager.findOneBy(User, {
-      id: user.sub,
-    });
+  async getByUser(params: GetPropertyByUserDto, user: any) {
+    const owner = await this.entityManager.findOneBy(User, { id: user.sub });
     const userId = owner.id;
 
-    const queryBuilder = this.propertyRepository
+    const qb = this.propertyRepository
       .createQueryBuilder('property')
       .leftJoinAndSelect('property.type', 'type')
       .where('property.owner_id = :userId', { userId })
@@ -316,14 +316,17 @@ export class PropertyService {
       .skip(params.skip)
       .take(params.perPage);
 
-    const [properties, total] = await queryBuilder.getManyAndCount();
+    const [properties, total] = await qb.getManyAndCount();
+
+    const finalResult = params.currency
+      ? properties.map((item) => this.formatProperty(item, params.currency))
+      : properties;
 
     const pageMetaDto = new PageMetaDto({
       itemCount: total,
       pageOptionsDto: params,
     });
-
-    return new ResponsePaginate(properties, pageMetaDto, 'Success');
+    return new ResponsePaginate(finalResult as any, pageMetaDto, 'Success');
   }
 
   async update(
