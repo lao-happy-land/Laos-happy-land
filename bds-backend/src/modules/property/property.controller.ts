@@ -11,6 +11,7 @@ import {
   UploadedFiles,
   UseGuards,
   UseInterceptors,
+  Headers,
 } from '@nestjs/common';
 import { PropertyService } from './property.service';
 import { CreatePropertyDto } from './dto/create_property.dto';
@@ -18,6 +19,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiConsumes,
+  ApiHeader,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -37,6 +39,7 @@ import {
   OptionalAuthGuard,
 } from '../auth/guard/auth.guard';
 import { GetPropertyDetailDto } from './dto/get_property_id.dto';
+import { GetPropertyByUserDto } from './dto/get_property_by_user.dto';
 
 @Controller('property')
 export class PropertyController {
@@ -85,25 +88,78 @@ export class PropertyController {
   @Get()
   @UseGuards(OptionalAuthGuard)
   @ApiBearerAuth()
+  @ApiHeader({
+    name: 'currency',
+    description: 'Currency filter (LAK | USD | VND)',
+    required: false,
+    schema: { type: 'string', enum: ['LAK', 'USD', 'VND'] },
+  })
   @ApiResponse({ status: 200, description: 'Success' })
-  async getAll(@Query() params: GetPropertiesFilterDto, @Req() req: Request) {
+  async getAll(
+    @Query() params: GetPropertiesFilterDto,
+    @Headers() rawHeaders: Record<string, string>,
+    @Req() req: Request,
+  ) {
     const user = req.user as User;
-    return this.propertyService.getAll(params, user);
+
+    const mergedParams: GetPropertiesFilterDto = {
+      skip: params.skip ?? 0,
+      perPage: params.perPage ?? 10,
+      ...params,
+      currency:
+        (rawHeaders['currency'] as 'LAK' | 'USD' | 'VND') ?? params.currency,
+    };
+
+    return this.propertyService.getAll(mergedParams, user);
   }
 
-  @Get('owner')
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth()
-  @ApiResponse({ status: 200, description: 'Success' })
-  async getByUser(@Req() req: Request, @Query() params: PageOptionsDto) {
-    const user = req.user as User;
-    return this.propertyService.getByUser(params, user);
-  }
+@Get('owner')
+@UseGuards(AuthGuard)
+@ApiBearerAuth()
+@ApiHeader({
+  name: 'currency',
+  description: 'Currency filter (LAK | USD | VND)',
+  required: false,
+  schema: { type: 'string', enum: ['LAK', 'USD', 'VND'] },
+})
+@ApiResponse({ status: 200, description: 'Success' })
+async getByUser(
+  @Req() req: Request,
+  @Query() params: GetPropertyByUserDto,
+  @Headers() rawHeaders: Record<string, string>,
+) {
+  const user = req.user as User;
+
+  const mergedParams: GetPropertyByUserDto = {
+    skip: params.skip ?? 0,
+    perPage: params.perPage ?? 10,
+    ...params,
+    currency: (rawHeaders['currency'] as 'LAK' | 'USD' | 'VND') ?? params.currency,
+  };
+
+  return this.propertyService.getByUser(mergedParams, user);
+}
 
   @Get(':id')
+  @ApiHeader({
+    name: 'currency',
+    description: 'Currency filter (LAK | USD | VND)',
+    required: false,
+    schema: { type: 'string', enum: ['LAK', 'USD', 'VND'] },
+  })
   @ApiResponse({ status: 200, description: 'Property found' })
-  async get(@Param('id') id: string, @Query() params: GetPropertyDetailDto) {
-    return this.propertyService.get(id, params);
+  async get(
+    @Param('id') id: string,
+    @Query() params: GetPropertyDetailDto,
+    @Headers() rawHeaders: Record<string, string>,
+  ) {
+    const mergedParams: GetPropertyDetailDto = {
+      ...params,
+      currency:
+        (rawHeaders['currency'] as 'LAK' | 'USD' | 'VND') ?? params.currency,
+    };
+
+    return this.propertyService.get(id, mergedParams);
   }
 
   @Patch(':id')
