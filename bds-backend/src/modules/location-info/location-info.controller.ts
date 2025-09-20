@@ -34,6 +34,11 @@ export class LocationInfoController {
     );
   }
 
+  @Get('trending')
+  async getTrendingLocations() {
+    return this.locationInfoService.getTrendingLocations();
+  }
+
   @Get()
   async getAll(@Body() params: any) {
     return this.locationInfoService.getAll(params);

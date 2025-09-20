@@ -53,6 +53,23 @@ export class LocationInfoService {
     return new ResponsePaginate(result, pageMetaDto, 'Success');
   }
 
+  async getTrendingLocations(limit = 5) {
+    const locations = this.locationInfoRepository
+      .createQueryBuilder('locationInfo')
+      .orderBy('locationInfo.viewCount', 'DESC')
+      .take(limit)
+
+    const [result, total] = await locations.getManyAndCount();
+    const pageMetaDto = new PageMetaDto({
+      itemCount: limit,
+      pageOptionsDto: {
+        perPage: limit,
+        skip: 0
+      },
+    });
+    return new ResponsePaginate(result, pageMetaDto, 'Success');
+  }
+
   async get(id: string) {
     const locationInfo = await this.locationInfoRepository
       .createQueryBuilder('locationInfo')
@@ -76,7 +93,8 @@ export class LocationInfoService {
       throw new BadRequestException('Location info not found');
     }
     if (image) {
-      locationInfo.imageURL = await this.cloudinaryService.uploadAndReturnImageUrl(image);
+      locationInfo.imageURL =
+        await this.cloudinaryService.uploadAndReturnImageUrl(image);
     }
 
     Object.assign(locationInfo, updateLocationInfoDto);
