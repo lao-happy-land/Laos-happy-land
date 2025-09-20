@@ -36,6 +36,7 @@ import {
   AuthGuard,
   OptionalAuthGuard,
 } from '../auth/guard/auth.guard';
+import { GetPropertyDetailDto } from './dto/get_property_id.dto';
 
 @Controller('property')
 export class PropertyController {
@@ -101,8 +102,8 @@ export class PropertyController {
 
   @Get(':id')
   @ApiResponse({ status: 200, description: 'Property found' })
-  async get(@Param('id') id: string) {
-    return this.propertyService.get(id);
+  async get(@Param('id') id: string, @Query() params: GetPropertyDetailDto) {
+    return this.propertyService.get(id, params);
   }
 
   @Patch(':id')

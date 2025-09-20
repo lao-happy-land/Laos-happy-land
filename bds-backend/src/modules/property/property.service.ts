@@ -21,6 +21,7 @@ import { PropertyStatusEnum } from 'src/common/enum/enum';
 import { RejectPropertyDto } from './dto/reject_property.dto';
 import { ExchangeRateService } from '../exchange-rate/exchange-rate.service';
 import { LocationInfo } from 'src/entities/location-info.entity';
+import { GetPropertyDetailDto } from './dto/get_property_id.dto';
 
 @Injectable()
 export class PropertyService {
@@ -55,7 +56,12 @@ export class PropertyService {
       throw new BadRequestException('Location info not found');
     }
 
-    const { typeId, locationInfoId, price: usdPrice, ...propertyData } = createPropertyDto;
+    const {
+      typeId,
+      locationInfoId,
+      price: usdPrice,
+      ...propertyData
+    } = createPropertyDto;
 
     if (typeof propertyData.details === 'string') {
       try {
@@ -139,11 +145,17 @@ export class PropertyService {
       properties.andWhere('type.id IN (:...types)', { types: params.type });
     }
 
-    if (params.locationInfo?.length) {
-      properties.andWhere(
-        'locationInfo.id IN (:...locationInfos)',
-        { locationInfos: params.locationInfo },
-      );
+    if (params.locationId) {
+      properties.andWhere('locationInfo.id = :locationId', {
+        locationId: params.locationId,
+      });
+      const location = await this.entityManager.findOne(LocationInfo, {
+        where: { id: params.locationId },
+      });
+      if (location) {
+        location.viewCount = (location.viewCount || 0) + 1;
+        await this.entityManager.save(location);
+      }
     }
 
     if (params.keyword) {
@@ -152,15 +164,19 @@ export class PropertyService {
         { keyword: `%${params.keyword}%` },
       );
     }
-    if (params.minPrice) {
-      properties.andWhere('property.price >= :minPrice', {
-        minPrice: params.minPrice,
-      });
-    }
-    if (params.maxPrice) {
-      properties.andWhere('property.price <= :maxPrice', {
-        maxPrice: params.maxPrice,
-      });
+    if (params.currency) {
+      if (params.minPrice !== undefined) {
+        properties.andWhere(
+          `(property.price ->> :currency)::numeric >= :minPrice`,
+          { currency: params.currency, minPrice: params.minPrice },
+        );
+      }
+      if (params.maxPrice !== undefined) {
+        properties.andWhere(
+          `(property.price ->> :currency)::numeric <= :maxPrice`,
+          { currency: params.currency, maxPrice: params.maxPrice },
+        );
+      }
     }
 
     if (params.minArea) {
@@ -219,28 +235,71 @@ export class PropertyService {
     }
 
     const [result, total] = await properties.getManyAndCount();
+    let finalResult = result;
+    if (params.currency) {
+      finalResult = result.map((item) => {
+        const currency = params.currency!;
+        return {
+          ...item,
+          price: { [currency]: item.price?.[currency] ?? null },
+          priceHistory: (item.priceHistory || []).map((ph) => ({
+            date: ph.date,
+            rates: { [currency]: ph.rates?.[currency] ?? null },
+          })),
+        };
+      });
+    }
     const pageMetaDto = new PageMetaDto({
       itemCount: total,
       pageOptionsDto: params,
     });
 
-    return new ResponsePaginate(result, pageMetaDto, 'Success');
+    return new ResponsePaginate(finalResult, pageMetaDto, 'Success');
   }
 
-  async get(id: string) {
-    const property = await this.propertyRepository
+  async get(id: string, params: GetPropertyDetailDto) {
+    const qb = this.propertyRepository
       .createQueryBuilder('property')
       .leftJoinAndSelect('property.owner', 'owner')
       .leftJoinAndSelect('property.type', 'type')
-      .where('property.id = :id', { id })
-      .getOne();
+      .leftJoinAndSelect('property.locationInfo', 'locationInfo')
+      .where('property.id = :id', { id });
+
+    if (params.currency) {
+      qb.andWhere(`property.price ? :currency`, { currency: params.currency });
+    }
+
+    const property = await qb.getOne();
     if (!property) {
       throw new BadRequestException('Property not found');
     }
 
     property.viewsCount = (property.viewsCount || 0) + 1;
     await this.propertyRepository.save(property);
-    return { property, message: 'Success' };
+    if (property.locationInfo?.id) {
+      const location = await this.entityManager.findOne(LocationInfo, {
+        where: { id: property.locationInfo.id },
+      });
+      if (location) {
+        location.viewCount = (location.viewCount || 0) + 1;
+        await this.entityManager.save(location);
+      }
+    }
+
+    let finalProperty = property;
+    if (params.currency) {
+      const cur = params.currency;
+      finalProperty = {
+        ...property,
+        price: { [cur]: property.price?.[cur] ?? null },
+        priceHistory: (property.priceHistory || []).map((ph) => ({
+          date: ph.date,
+          rates: { [cur]: ph.rates?.[cur] ?? null },
+        })),
+      };
+    }
+
+    return { property: finalProperty, message: 'Success' };
   }
 
   async getByUser(params: PageOptionsDto, user: any) {

@@ -24,13 +24,19 @@ export class GetPropertiesFilterDto extends PageOptionsDto {
   type?: string[];
 
   @ApiPropertyOptional({
-    description: 'location info (có thể truyền nhiều, cách nhau dấu phẩy)',
-    example: '1,2,3',
+    description: 'ID của location',
   })
   @IsOptional()
-  @IsString({ each: true })
-  @Transform(({ value }) => value.split(',').map((v: string) => v.trim()))
-  locationInfo?: string[];
+  @IsString()
+  locationId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Loại tiền để lọc giá (VD: LAK, USD, VND)',
+    example: 'LAK',
+  })
+  @IsOptional()
+  @IsIn(['LAK', 'USD', 'VND'])
+  currency?: 'LAK' | 'USD' | 'VND';
 
   @ApiPropertyOptional({
     description: 'Từ khóa tìm kiếm tiêu đề/mô tả',
