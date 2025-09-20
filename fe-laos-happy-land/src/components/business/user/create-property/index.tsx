@@ -656,6 +656,7 @@ export default function CreateProperty() {
                 ]}
               >
                 <MapboxLocationSelector
+                  form={form}
                   value={locationData ?? undefined}
                   onChange={setLocationData}
                   placeholder="Chọn vị trí trên bản đồ"

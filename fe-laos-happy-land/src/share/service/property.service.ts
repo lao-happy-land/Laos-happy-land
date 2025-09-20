@@ -53,6 +53,7 @@ const propertyService = {
   getPropertiesByUser: async (query?: {
     page?: number;
     perPage?: number;
+    currency?: string;
   }): Promise<APIResponse<Property[]>> => {
     const response = await api.propertyControllerGetByUser(query);
     return response.data as unknown as APIResponse<Property[]>;
@@ -61,35 +62,12 @@ const propertyService = {
   getPropertyById: async (id: string): Promise<Property> => {
     try {
       const response = await api.propertyControllerGet(id);
-      const data = response.data as unknown;
 
-      // Handle different response formats
-      if (data && typeof data === "object" && data !== null) {
-        // If the response has a property field
-        if ("property" in data) {
-          return (data as { property: Property }).property;
-        }
-
-        // If the response is the Property directly
-        if ("id" in data && "title" in data) {
-          return data as Property;
-        }
-
-        // If the response has a data field containing the property
-        if ("data" in data) {
-          const nestedData = (data as { data: unknown }).data;
-          if (
-            nestedData &&
-            typeof nestedData === "object" &&
-            "id" in nestedData
-          ) {
-            return nestedData as Property;
-          }
-        }
-      }
-
-      // Fallback to direct casting
-      return data as Property;
+      const data = response.data as unknown as {
+        property: Property;
+        message: string;
+      };
+      return data.property;
     } catch (error) {
       console.error("PropertyService: Error fetching property:", error);
       throw error;

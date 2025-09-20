@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { Card, Button, Input, Typography, Select, Form } from "antd";
+import {
+  Card,
+  Button,
+  Input,
+  Typography,
+  Select,
+  Form,
+  type FormInstance,
+} from "antd";
 import { MapPin, Search, Check } from "lucide-react";
 import Map from "react-map-gl/mapbox";
 import { Marker, Popup } from "react-map-gl/mapbox";
@@ -34,6 +42,7 @@ interface LocationInfo {
 }
 
 interface MapboxLocationSelectorProps {
+  form?: FormInstance;
   value?: LocationData | null;
   onChange?: (location: LocationData | null) => void;
   placeholder?: string;
@@ -61,6 +70,7 @@ interface MapboxGeocodingResponse {
 }
 
 export default function MapboxLocationSelector({
+  form,
   value,
   onChange,
   placeholder: _placeholder = "Chọn vị trí trên bản đồ",
@@ -76,31 +86,34 @@ export default function MapboxLocationSelector({
   const [mapLocation, setMapLocation] = useState<LocationData | null>(
     value ?? null,
   );
+
+  const [location, setLocation] = useState<LocationData | null>(
+    form?.getFieldValue("location") as LocationData | null,
+  );
   const [searchQuery, setSearchQuery] = useState(initialSearchValue ?? "");
   const [searchResults, setSearchResults] = useState<MapboxFeature[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const mapRef = useRef<MapRef>(null);
 
   const defaultCenter = {
-    longitude: 102.6333,
-    latitude: 17.9757,
+    longitude: location?.longitude ?? 102.6333,
+    latitude: location?.latitude ?? 17.9757,
     zoom: 10,
   };
 
   const [viewState, setViewState] = useState({
     longitude:
-      value?.longitude && typeof value.longitude === "number"
-        ? value.longitude
+      location?.longitude && typeof location.longitude === "number"
+        ? location.longitude
         : defaultCenter.longitude,
     latitude:
-      value?.latitude && typeof value.latitude === "number"
-        ? value.latitude
+      location?.latitude && typeof location.latitude === "number"
+        ? location.latitude
         : defaultCenter.latitude,
-    zoom: value ? 15 : defaultCenter.zoom,
+    zoom: location ? 15 : defaultCenter.zoom,
   });
 
   const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-  const form = Form.useFormInstance();
 
   // Determine if location fields should be required based on mode and existing data
   const isLocationRequired =
@@ -115,7 +128,13 @@ export default function MapboxLocationSelector({
 
   // Initialize with existing data
   useEffect(() => {
+    console.log("MapboxLocationSelector value effect:", {
+      location,
+      mapLocation,
+      searchQuery,
+    });
     if (value && value !== mapLocation) {
+      console.log("Setting mapLocation to:", value);
       setMapLocation(value);
 
       // Only update view state if coordinates are valid numbers
@@ -125,6 +144,11 @@ export default function MapboxLocationSelector({
         !isNaN(value.longitude) &&
         !isNaN(value.latitude)
       ) {
+        console.log("Setting viewState to:", {
+          longitude: value.longitude,
+          latitude: value.latitude,
+          zoom: 15,
+        });
         setViewState({
           longitude: value.longitude,
           latitude: value.latitude,
@@ -137,6 +161,7 @@ export default function MapboxLocationSelector({
         value.address !== searchQuery &&
         searchQuery === ""
       ) {
+        console.log("Setting searchQuery to:", value.address);
         setSearchQuery(value.address);
       }
     }
@@ -222,7 +247,7 @@ export default function MapboxLocationSelector({
       void reverseGeocode(lngLat.lat, lngLat.lng).then((address) => {
         const locationWithAddress = {
           ...newLocation,
-          address: address ?? newLocation.address,
+          address: typeof address === "string" ? address : newLocation.address,
         };
         setMapLocation(locationWithAddress);
         onChange?.(locationWithAddress);
@@ -279,7 +304,7 @@ export default function MapboxLocationSelector({
     const location: LocationData = {
       latitude: lat,
       longitude: lng,
-      address: result.place_name,
+      address: result.place_name || `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
       city: result.context?.find((c) => c.id.startsWith("place"))?.text,
       country: result.context?.find((c) => c.id.startsWith("country"))?.text,
     };
@@ -340,7 +365,7 @@ export default function MapboxLocationSelector({
               </div>
               <div className="col-span-1 grid grid-cols-3 gap-2">
                 <Form.Item
-                  key={selectedLocationInfoId || "empty"}
+                  key={selectedLocationInfoId ?? "empty"}
                   name="locationInfoId"
                   className="col-span-2"
                   initialValue={selectedLocationInfoId}
@@ -456,7 +481,9 @@ export default function MapboxLocationSelector({
                   >
                     <div className="p-2">
                       <Text className="text-sm font-medium">
-                        {mapLocation.address}
+                        {typeof mapLocation.address === "string"
+                          ? mapLocation.address
+                          : `${mapLocation.latitude?.toFixed(6) ?? "N/A"}, ${mapLocation.longitude?.toFixed(6) ?? "N/A"}`}
                       </Text>
                       <div className="mt-1 text-xs text-neutral-500">
                         {mapLocation.latitude?.toFixed(6) ?? "N/A"},{" "}
