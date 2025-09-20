@@ -117,21 +117,17 @@ export class CreatePropertyDto {
   @IsEnum(TransactionEnum)
   transactionType: TransactionEnum;
 
-  @ApiPropertyOptional({
-    type: 'string',
-    format: 'binary',
-    description: 'Ảnh chính của bất động sản',
-  })
+  @ApiPropertyOptional({ description: 'main image' })
   @IsOptional()
-  mainImage?: Multer.File;
+  @IsString()
+  mainImage?: string;
 
   @ApiPropertyOptional({
-    type: 'array',
-    items: { type: 'string', format: 'binary' },
-    description: 'Danh sách ảnh phụ của bất động sản',
+    type: [String],
+    description: 'Danh sách hình anh',
   })
   @IsOptional()
-  images?: Multer.File[];
+  images?: string[];
 
   priceHistory?: any;
 }

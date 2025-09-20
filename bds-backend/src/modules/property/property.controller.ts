@@ -51,20 +51,9 @@ export class PropertyController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreatePropertyDto })
   @ApiResponse({ status: 200, description: 'Property created successfully' })
-  @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'mainImage', maxCount: 1 },
-      { name: 'images', maxCount: 10 },
-    ]),
-  )
   async create(
     @Req() req: Request,
     @Body() body: any,
-    @UploadedFiles()
-    files: {
-      mainImage?: Multer.File[];
-      images?: Multer.File[];
-    },
   ) {
     const user = req.user as User;
     if (typeof body.details === 'string') {
@@ -79,8 +68,6 @@ export class PropertyController {
     }
     return this.propertyService.create(
       body as CreatePropertyDto,
-      files.mainImage?.[0],
-      files.images || [],
       user,
     );
   }
@@ -168,20 +155,9 @@ async getByUser(
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UpdatePropertyDto })
   @ApiResponse({ status: 200, description: 'Property updated successfully' })
-  @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'mainImage', maxCount: 1 },
-      { name: 'images', maxCount: 10 },
-    ]),
-  )
   async update(
     @Param('id') id: string,
     @Body() body: any,
-    @UploadedFiles()
-    files: {
-      mainImage?: Multer.File[];
-      images?: Multer.File[];
-    },
   ) {
     if (typeof body.location === 'string') {
       try {
@@ -191,8 +167,6 @@ async getByUser(
     return this.propertyService.update(
       id,
       body as UpdatePropertyDto,
-      files.mainImage?.[0],
-      files.images?.length ? files.images : undefined,
     );
   }
 
