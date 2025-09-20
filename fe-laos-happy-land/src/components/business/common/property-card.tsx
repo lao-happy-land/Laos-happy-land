@@ -62,11 +62,37 @@ export default function PropertyCard({
         {/* Image Section */}
         <div className={`relative overflow-hidden ${getImageHeight()}`}>
           <Image
-            src={
-              property.mainImage ??
-              property.images?.[0] ??
-              "/images/landingpage/apartment/apart-1.jpg"
-            }
+            src={(() => {
+              const mainImg = property.mainImage;
+              const firstImg = property.images?.[0];
+              const fallback = "/images/landingpage/apartment/apart-1.jpg";
+
+              // Check mainImage
+              if (mainImg && typeof mainImg === "string") {
+                try {
+                  new URL(mainImg);
+                  return mainImg;
+                } catch {
+                  if (mainImg.startsWith("/")) {
+                    return mainImg;
+                  }
+                }
+              }
+
+              // Check first image
+              if (firstImg && typeof firstImg === "string") {
+                try {
+                  new URL(firstImg);
+                  return firstImg;
+                } catch {
+                  if (firstImg.startsWith("/")) {
+                    return firstImg;
+                  }
+                }
+              }
+
+              return fallback;
+            })()}
             alt={property.title}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -145,8 +171,15 @@ export default function PropertyCard({
           {/* Price */}
           <div className="mb-4">
             <div className="text-lg font-bold text-red-500">
-              {numberToString(Number(property.price))}
+              {property.price
+                ? numberToString(Number(property.price))
+                : "Liên hệ"}
             </div>
+            {property.price && (
+              <div className="text-sm text-gray-500">
+                {numberToString(Number(property.price))} LAK
+              </div>
+            )}
           </div>
 
           {/* Location and Area */}
@@ -154,7 +187,7 @@ export default function PropertyCard({
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <MapPin className="h-4 w-4 flex-shrink-0 text-gray-400" />
               <span className="truncate text-sm">
-                {property.location ?? "Chưa cập nhật"}
+                {property.location?.address ?? "Chưa cập nhật"}
               </span>
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-600">

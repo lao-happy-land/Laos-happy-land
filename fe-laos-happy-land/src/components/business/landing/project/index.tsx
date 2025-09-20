@@ -625,9 +625,9 @@ const ProjectPage = () => {
                 <Link href="#" className="block hover:text-blue-400">
                   Bán nhà riêng Hà Nội từ 10 đến 20 tỷ
                 </Link>
-                <Link href="#" className="block hover:text-blue-400">
+                <a href="#" className="block hover:text-blue-400">
                   Bán nhà riêng Hồ Chí Minh từ 10 đến 20 tỷ
-                </Link>
+                </a>
               </div>
             </div>
             <div>

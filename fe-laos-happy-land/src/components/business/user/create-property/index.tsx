@@ -15,11 +15,12 @@ import {
   Divider,
   Typography,
   App,
+  Progress,
+  Spin,
+  Tooltip,
 } from "antd";
 import {
   Building2,
-  MapPin,
-  DollarSign,
   Home,
   Bath,
   Bed,
@@ -34,13 +35,18 @@ import {
   Snowflake,
   Tv,
   Wifi,
+  CheckCircle,
+  Loader2,
 } from "lucide-react";
 import type { CreatePropertyDto } from "@/@types/gentype-axios";
-import type { PropertyType } from "@/@types/types";
+import type { PropertyType, LocationInfo } from "@/@types/types";
 import { useRequest } from "ahooks";
 import ProjectContentBuilder from "@/components/business/common/project-content-builder";
+import MapboxLocationSelector from "@/components/business/common/mapbox-location-selector";
 import propertyService from "@/share/service/property.service";
 import propertyTypeService from "@/share/service/property-type.service";
+import locationInfoService from "@/share/service/location-info.service";
+import uploadService from "@/share/service/upload.service";
 import Image from "next/image";
 
 const { TextArea } = Input;
@@ -53,11 +59,23 @@ export default function CreateProperty() {
   const router = useRouter();
   const [form] = Form.useForm();
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
+  const [locationInfos, setLocationInfos] = useState<LocationInfo[]>([]);
   const [selectedTransactionType, setSelectedTransactionType] = useState<
     "rent" | "sale" | "project"
   >("sale");
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [mainImageUrl, setMainImageUrl] = useState<string | null>(null);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [uploadingMainImage, setUploadingMainImage] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState<boolean[]>([]);
+  const [locationData, setLocationData] = useState<{
+    latitude: number;
+    longitude: number;
+    address: string;
+    city?: string;
+    country?: string;
+  } | null>(null);
 
   // Load property types
   const { loading: loadingTypes, run: fetchPropertyTypes } = useRequest(
@@ -78,8 +96,33 @@ export default function CreateProperty() {
     },
   );
 
+  // Load location infos
+  const { loading: loadingLocations, run: fetchLocationInfos } = useRequest(
+    async () => {
+      const response = await locationInfoService.getAllLocationInfo();
+      return response.data;
+    },
+    {
+      manual: true,
+      onSuccess: (data) => {
+        if (Array.isArray(data)) {
+          setLocationInfos(data);
+        } else {
+          console.warn("Location infos data is not an array:", data);
+          setLocationInfos([]);
+        }
+      },
+      onError: (error) => {
+        console.error("Error loading location infos:", error);
+        message.error("Không thể tải danh sách địa điểm");
+        setLocationInfos([]);
+      },
+    },
+  );
+
   useEffect(() => {
     fetchPropertyTypes();
+    fetchLocationInfos();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTransactionType]);
 
@@ -92,6 +135,7 @@ export default function CreateProperty() {
   const { loading: submitting, run: submitForm } = useRequest(
     async (values: {
       typeId: string;
+      locationInfoId: string;
       title: string;
       description?: string;
       price?: number;
@@ -122,13 +166,23 @@ export default function CreateProperty() {
         throw new Error("User ID not found. Please log in again.");
       }
 
+      // Use already uploaded image URLs
+      if (!mainImageUrl && mainImageFile) {
+        throw new Error("Ảnh chính chưa được tải lên thành công");
+      }
+
+      if (imageUrls.length !== imageFiles.length) {
+        throw new Error("Một số ảnh phụ chưa được tải lên thành công");
+      }
+
       const formData: CreatePropertyDto = {
         typeId: values.typeId,
+        locationInfoId: values.locationInfoId,
         title: values.title,
         description: values.description,
         price: values.price,
         legalStatus: values.legalStatus,
-        location: values.location,
+        location: locationData ?? undefined,
         transactionType: values.transactionType,
         details: {
           area: values.area,
@@ -140,13 +194,10 @@ export default function CreateProperty() {
           parking: values.parking ?? false,
           kitchen: values.kitchen ?? false,
           security: values.security ?? false,
-          content:
-            values.transactionType === "project"
-              ? (values.content ?? [])
-              : undefined,
+          content: values.content ?? [],
         },
-        mainImage: mainImageFile,
-        images: imageFiles,
+        mainImage: mainImageUrl ?? undefined,
+        images: imageUrls.length > 0 ? imageUrls : undefined,
       };
 
       return await propertyService.createProperty(formData);
@@ -166,6 +217,7 @@ export default function CreateProperty() {
 
   const handleSubmit = (values: {
     typeId: string;
+    locationInfoId: string;
     title: string;
     description?: string;
     price?: number;
@@ -180,20 +232,25 @@ export default function CreateProperty() {
     security: boolean;
     legalStatus?: string;
     location?: string;
+    locationText?: string;
     transactionType: "rent" | "sale" | "project";
   }) => {
-    if (selectedTransactionType !== "project" && !mainImageFile) {
+    if (selectedTransactionType !== "project" && !mainImageUrl) {
       message.error("Vui lòng tải lên ảnh chính");
       return;
     }
-    if (selectedTransactionType !== "project" && imageFiles.length < 3) {
+    if (selectedTransactionType !== "project" && imageUrls.length < 3) {
       message.error("Vui lòng tải lên ít nhất 3 ảnh phụ");
+      return;
+    }
+    if (!locationData) {
+      message.error("Vui lòng chọn vị trí trên bản đồ");
       return;
     }
     submitForm(values);
   };
 
-  const handleMainImageUpload = (file: File) => {
+  const handleMainImageUpload = async (file: File) => {
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
       message.error("Chỉ có thể tải lên file hình ảnh!");
@@ -204,11 +261,26 @@ export default function CreateProperty() {
       message.error("Hình ảnh phải nhỏ hơn 5MB!");
       return false;
     }
+
     setMainImageFile(file);
-    return false; // Prevent default upload
+    setUploadingMainImage(true);
+
+    try {
+      const result = await uploadService.uploadImage(file);
+      setMainImageUrl(result.url);
+      message.success("Tải lên ảnh chính thành công!");
+    } catch (error) {
+      console.error("Failed to upload main image:", error);
+      message.error("Không thể tải lên ảnh chính");
+      setMainImageFile(null);
+    } finally {
+      setUploadingMainImage(false);
+    }
+
+    return false;
   };
 
-  const handleImagesUpload = (file: File) => {
+  const handleImagesUpload = async (file: File) => {
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
       message.error("Chỉ có thể tải lên file hình ảnh!");
@@ -223,21 +295,39 @@ export default function CreateProperty() {
       message.error("Chỉ có thể tải lên tối đa 9 ảnh phụ!");
       return false;
     }
+
+    const newIndex = imageFiles.length;
     setImageFiles([...imageFiles, file]);
-    return false; // Prevent default upload
+    setUploadingImages([...uploadingImages, true]);
+
+    try {
+      const result = await uploadService.uploadImage(file);
+      setImageUrls([...imageUrls, result.url]);
+      message.success(`Tải lên ảnh ${newIndex + 1} thành công!`);
+    } catch (error) {
+      console.error("Failed to upload image:", error);
+      message.error(`Không thể tải lên ảnh ${newIndex + 1}`);
+      // Remove the failed file
+      setImageFiles(imageFiles.filter((_, i) => i !== newIndex));
+    } finally {
+      setUploadingImages(uploadingImages.filter((_, i) => i !== newIndex));
+    }
+
+    return false;
   };
 
   const removeImage = (index: number) => {
     setImageFiles(imageFiles.filter((_, i) => i !== index));
+    setImageUrls(imageUrls.filter((_, i) => i !== index));
   };
 
   const removeMainImage = () => {
     setMainImageFile(null);
+    setMainImageUrl(null);
   };
 
   const handleTransactionTypeChange = (value: "rent" | "sale" | "project") => {
     setSelectedTransactionType(value);
-    // Clear the selected property type when transaction type changes
     form.setFieldsValue({ typeId: undefined });
   };
 
@@ -267,7 +357,7 @@ export default function CreateProperty() {
             }}
           >
             {/* Basic Information */}
-            <div className="space-y-6">
+            <div className="space-y-2">
               <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
                 <Building2 className="h-6 w-6 text-blue-600" />
                 <Title
@@ -278,19 +368,20 @@ export default function CreateProperty() {
                 </Title>
               </div>
 
-              <Form.Item
-                name="title"
-                label={<Text className="font-medium">Tiêu đề tin đăng</Text>}
-                rules={[{ required: true, message: "Vui lòng nhập tiêu đề!" }]}
-              >
-                <Input
-                  placeholder="Nhập tiêu đề tin đăng..."
-                  size="large"
-                  className="rounded-lg"
-                />
-              </Form.Item>
-
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+                <Form.Item
+                  name="title"
+                  label={<Text className="font-medium">Tiêu đề tin đăng</Text>}
+                  rules={[
+                    { required: true, message: "Vui lòng nhập tiêu đề!" },
+                  ]}
+                >
+                  <Input
+                    placeholder="Nhập tiêu đề tin đăng..."
+                    size="large"
+                    className="rounded-lg"
+                  />
+                </Form.Item>
                 <Form.Item
                   name="transactionType"
                   label={<Text className="font-medium">Loại giao dịch</Text>}
@@ -312,7 +403,6 @@ export default function CreateProperty() {
                     <Option value="project">Dự án</Option>
                   </Select>
                 </Form.Item>
-
                 <Form.Item
                   name="typeId"
                   label={<Text className="font-medium">Loại bất động sản</Text>}
@@ -333,78 +423,22 @@ export default function CreateProperty() {
                     ))}
                   </Select>
                 </Form.Item>
-              </div>
-              <Form.Item
-                name="description"
-                label={<Text className="font-medium">Mô tả chi tiết</Text>}
-                rules={[{ required: true, message: "Vui lòng nhập mô tả!" }]}
-              >
-                <TextArea
-                  rows={6}
-                  placeholder="Mô tả chi tiết về bất động sản, tiện ích xung quanh, hướng nhà, view..."
-                  className="rounded-lg"
-                />
-              </Form.Item>
-              {/* Project Content Builder */}
-              {selectedTransactionType === "project" && (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
-                    <Title
-                      level={3}
-                      className="!mb-0 !text-xl !font-semibold !text-gray-900"
-                    >
-                      Nội dung dự án
-                    </Title>
-                  </div>
-                  <ProjectContentBuilder
-                    form={form}
-                    name="content"
-                    textFieldName="value"
+
+                <Form.Item
+                  name="legalStatus"
+                  label={
+                    <Text className="font-medium">Tình trạng pháp lý</Text>
+                  }
+                >
+                  <Input
+                    placeholder="Nhập tình trạng pháp lý..."
+                    size="large"
+                    className="rounded-lg"
                   />
-                </div>
-              )}
-            </div>
-
-            {/* Location */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
-                <MapPin className="h-6 w-6 text-green-600" />
-                <Title
-                  level={3}
-                  className="!mb-0 !text-xl !font-semibold !text-gray-900"
-                >
-                  Vị trí
-                </Title>
+                </Form.Item>
               </div>
 
-              <Form.Item
-                name="location"
-                label={<Text className="font-medium">Địa chỉ chi tiết</Text>}
-                rules={[{ required: true, message: "Vui lòng nhập địa chỉ!" }]}
-              >
-                <Input
-                  placeholder="Nhập địa chỉ chi tiết..."
-                  size="large"
-                  className="rounded-lg"
-                />
-              </Form.Item>
-            </div>
-
-            {/* Price and Details */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
-                <DollarSign className="h-6 w-6 text-yellow-600" />
-                <Title
-                  level={3}
-                  className="!mb-0 !text-xl !font-semibold !text-gray-900"
-                >
-                  Giá và thông tin chi tiết
-                </Title>
-              </div>
-
-              <div
-                className={`grid grid-cols-2 gap-6 ${selectedTransactionType === "project" ? "md:grid-cols-3" : "md:grid-cols-5"}`}
-              >
+              <div className="grid grid-cols-1 gap-x-6 md:grid-cols-2">
                 <Form.Item
                   name="price"
                   label={<Text className="font-medium">Giá (LAK)</Text>}
@@ -445,146 +479,201 @@ export default function CreateProperty() {
                   />
                 </Form.Item>
 
-                <Form.Item
-                  name="legalStatus"
-                  label={
-                    <Text className="font-medium">Tình trạng pháp lý</Text>
-                  }
-                >
-                  <Input
-                    placeholder="Nhập tình trạng pháp lý..."
-                    size="large"
-                    className="rounded-lg"
-                  />
-                </Form.Item>
-
-                {selectedTransactionType === "rent" ||
-                  (selectedTransactionType === "sale" && (
-                    <>
-                      <Form.Item
-                        name="bedrooms"
-                        label={
-                          <span className="flex items-center gap-1 font-medium">
-                            <Bed className="h-4 w-4" />
-                            Phòng ngủ
-                          </span>
-                        }
-                      >
-                        <InputNumber
-                          min={0}
-                          placeholder="0"
-                          size="large"
-                          style={{ width: "100%" }}
-                        />
-                      </Form.Item>
-
-                      <Form.Item
-                        name="bathrooms"
-                        label={
-                          <span className="flex items-center gap-1 font-medium">
-                            <Bath className="h-4 w-4" />
-                            Phòng tắm
-                          </span>
-                        }
-                      >
-                        <InputNumber
-                          min={0}
-                          placeholder="0"
-                          size="large"
-                          style={{ width: "100%" }}
-                        />
-                      </Form.Item>
-                    </>
-                  ))}
-              </div>
-
-              {/* Amenities */}
-              <div className="space-y-4">
                 {selectedTransactionType !== "project" && (
                   <>
-                    <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
-                      <Title
-                        level={3}
-                        className="!mb-0 !text-xl !font-semibold !text-gray-900"
-                      >
-                        Tiện ích
-                      </Title>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4 md:grid-cols-6">
-                      <Form.Item
-                        name="wifi"
-                        label={
-                          <p className="flex items-center gap-1 font-medium text-green-600">
-                            <Wifi className="h-4 w-4" /> WiFi
-                          </p>
-                        }
-                        valuePropName="checked"
-                      >
-                        <Switch />
-                      </Form.Item>
-                      <Form.Item
-                        name="tv"
-                        label={
-                          <p className="flex items-center gap-1 font-medium text-red-600">
-                            <Tv className="h-4 w-4" /> TV
-                          </p>
-                        }
-                        valuePropName="checked"
-                      >
-                        <Switch />
-                      </Form.Item>
-                      <Form.Item
-                        name="airConditioner"
-                        label={
-                          <p className="flex items-center gap-1 font-medium text-blue-600">
-                            <Snowflake className="h-4 w-4" /> Điều hòa
-                          </p>
-                        }
-                        valuePropName="checked"
-                      >
-                        <Switch />
-                      </Form.Item>
-                      <Form.Item
-                        name="parking"
-                        label={
-                          <p className="flex items-center gap-1 font-medium text-orange-600">
-                            <Car className="h-4 w-4" /> Bãi đỗ xe
-                          </p>
-                        }
-                        valuePropName="checked"
-                      >
-                        <Switch />
-                      </Form.Item>
-                      <Form.Item
-                        name="kitchen"
-                        label={
-                          <p className="flex items-center gap-1 font-medium text-pink-600">
-                            <Utensils className="h-4 w-4" /> Nhà bếp
-                          </p>
-                        }
-                        valuePropName="checked"
-                      >
-                        <Switch />
-                      </Form.Item>
-                      <Form.Item
-                        name="security"
-                        label={
-                          <p className="flex items-center gap-1 font-medium text-green-600">
-                            <Shield className="h-4 w-4" /> An ninh
-                          </p>
-                        }
-                        valuePropName="checked"
-                      >
-                        <Switch />
-                      </Form.Item>
-                    </div>
+                    <Form.Item
+                      name="bedrooms"
+                      label={
+                        <span className="flex items-center gap-1 font-medium">
+                          <Bed className="h-4 w-4" />
+                          Phòng ngủ
+                        </span>
+                      }
+                    >
+                      <InputNumber
+                        min={0}
+                        placeholder="0"
+                        size="large"
+                        style={{ width: "100%" }}
+                      />
+                    </Form.Item>
+
+                    <Form.Item
+                      name="bathrooms"
+                      label={
+                        <span className="flex items-center gap-1 font-medium">
+                          <Bath className="h-4 w-4" />
+                          Phòng tắm
+                        </span>
+                      }
+                    >
+                      <InputNumber
+                        min={0}
+                        placeholder="0"
+                        size="large"
+                        style={{ width: "100%" }}
+                      />
+                    </Form.Item>
                   </>
                 )}
               </div>
+
+              {selectedTransactionType !== "project" && (
+                <>
+                  <div className="mb-2 flex items-center gap-3 border-b border-gray-200 pb-2">
+                    <Title
+                      level={3}
+                      className="!mb-0 !text-xl !font-semibold !text-gray-900"
+                    >
+                      Tiện ích
+                    </Title>
+                  </div>
+                  <div className="grid grid-cols-3 justify-center gap-4 lg:grid-cols-6">
+                    <Form.Item
+                      name="wifi"
+                      label={
+                        <p className="flex items-center gap-1 font-medium text-green-600">
+                          <Wifi className="h-4 w-4" /> WiFi
+                        </p>
+                      }
+                      valuePropName="checked"
+                    >
+                      <Switch />
+                    </Form.Item>
+                    <Form.Item
+                      name="tv"
+                      label={
+                        <p className="flex items-center gap-1 font-medium text-red-600">
+                          <Tv className="h-4 w-4" /> TV
+                        </p>
+                      }
+                      valuePropName="checked"
+                    >
+                      <Switch />
+                    </Form.Item>
+                    <Form.Item
+                      name="airConditioner"
+                      label={
+                        <p className="flex items-center gap-1 font-medium text-blue-600">
+                          <Snowflake className="h-4 w-4" /> Điều hòa
+                        </p>
+                      }
+                      valuePropName="checked"
+                    >
+                      <Switch />
+                    </Form.Item>
+                    <Form.Item
+                      name="parking"
+                      label={
+                        <p className="flex items-center gap-1 font-medium text-orange-600">
+                          <Car className="h-4 w-4" /> Bãi đỗ xe
+                        </p>
+                      }
+                      valuePropName="checked"
+                    >
+                      <Switch />
+                    </Form.Item>
+                    <Form.Item
+                      name="kitchen"
+                      label={
+                        <p className="flex items-center gap-1 font-medium text-pink-600">
+                          <Utensils className="h-4 w-4" /> Nhà bếp
+                        </p>
+                      }
+                      valuePropName="checked"
+                    >
+                      <Switch />
+                    </Form.Item>
+                    <Form.Item
+                      name="security"
+                      label={
+                        <p className="flex items-center gap-1 font-medium text-green-600">
+                          <Shield className="h-4 w-4" /> An ninh
+                        </p>
+                      }
+                      valuePropName="checked"
+                    >
+                      <Switch />
+                    </Form.Item>
+                  </div>
+                </>
+              )}
+
+              <Form.Item
+                name="description"
+                label={<Text className="font-medium">Mô tả ngắn</Text>}
+                rules={[{ required: true, message: "Vui lòng nhập mô tả!" }]}
+              >
+                <TextArea
+                  rows={6}
+                  placeholder="Mô tả ngắn gọn về bất động sản, tiện ích xung quanh, hướng nhà, view..."
+                  className="rounded-lg"
+                />
+              </Form.Item>
+              {/* Project Content Builder */}
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
+                  <Title
+                    level={3}
+                    className="!mb-0 !text-xl !font-semibold !text-gray-900"
+                  >
+                    Nội dung bất động sản
+                  </Title>
+                </div>
+                <ProjectContentBuilder
+                  form={form}
+                  name="content"
+                  textFieldName="value"
+                />
+              </div>
+            </div>
+
+            {/* Location */}
+            <div className="space-y-6">
+              <Form.Item
+                label={<Text className="font-medium">Vị trí trên bản đồ</Text>}
+                rules={[
+                  {
+                    required: true,
+                    message: "Vui lòng chọn khu vực và vị trí trên bản đồ!",
+                  },
+                  {
+                    validator: (_, value) => {
+                      if (!value) {
+                        return Promise.reject(
+                          new Error("Vui lòng chọn khu vực!"),
+                        );
+                      }
+                      if (!locationData) {
+                        return Promise.reject(
+                          new Error("Vui lòng chọn vị trí trên bản đồ!"),
+                        );
+                      }
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
+              >
+                <MapboxLocationSelector
+                  value={locationData ?? undefined}
+                  onChange={setLocationData}
+                  placeholder="Chọn vị trí trên bản đồ"
+                  locationInfos={locationInfos}
+                  selectedLocationInfoId={
+                    form.getFieldValue("locationInfoId") as string
+                  }
+                  onLocationInfoChange={(locationInfoId) => {
+                    form.setFieldValue("locationInfoId", locationInfoId);
+                  }}
+                  loadingLocations={loadingLocations}
+                  mode="create"
+                  hasExistingLocation={false}
+                />
+              </Form.Item>
             </div>
 
             {/* Images */}
-
             {selectedTransactionType !== "project" && (
               <div className="space-y-6">
                 <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
@@ -598,7 +687,14 @@ export default function CreateProperty() {
                 </div>
                 {/* Main Image */}
                 <div className="space-y-4">
-                  <Text className="font-medium">Ảnh chính *</Text>
+                  <div className="flex items-center gap-2">
+                    <Text className="font-medium">Ảnh chính *</Text>
+                    {mainImageUrl && (
+                      <Tooltip title="Ảnh đã tải lên thành công">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      </Tooltip>
+                    )}
+                  </div>
                   <div className="rounded-lg border-2 border-dashed border-gray-300 p-6 text-center transition-colors hover:border-blue-400">
                     {mainImageFile ? (
                       <div className="relative h-64 w-full">
@@ -609,12 +705,30 @@ export default function CreateProperty() {
                           width={128}
                           height={128}
                         />
+                        {uploadingMainImage && (
+                          <div className="bg-opacity-50 absolute inset-0 flex items-center justify-center rounded-lg bg-black">
+                            <div className="text-center text-white">
+                              <Spin size="large" />
+                              <div className="mt-2 text-sm">
+                                Đang tải lên...
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        {mainImageUrl && !uploadingMainImage && (
+                          <div className="absolute top-2 right-2">
+                            <Tooltip title="Tải lên thành công">
+                              <CheckCircle className="h-6 w-6 rounded-full bg-white text-green-500" />
+                            </Tooltip>
+                          </div>
+                        )}
                         <div className="absolute -right-3 -bottom-3">
                           <Button
                             danger
                             onClick={removeMainImage}
                             size="small"
                             shape="circle"
+                            disabled={uploadingMainImage}
                           >
                             <X className="size-4" />
                           </Button>
@@ -624,14 +738,24 @@ export default function CreateProperty() {
                       <Upload
                         beforeUpload={handleMainImageUpload}
                         showUploadList={false}
+                        disabled={uploadingMainImage}
                       >
                         <div className="space-y-2">
-                          <UploadIcon className="mx-auto h-12 w-12 text-gray-400" />
+                          {uploadingMainImage ? (
+                            <Loader2 className="mx-auto h-12 w-12 animate-spin text-blue-500" />
+                          ) : (
+                            <UploadIcon className="mx-auto h-12 w-12 text-gray-400" />
+                          )}
                           <Text className="block text-gray-600">
-                            Tải lên ảnh chính
+                            {uploadingMainImage
+                              ? "Đang tải lên..."
+                              : "Tải lên ảnh chính"}
                           </Text>
                           <Text className="block text-sm text-gray-500">
                             JPG, PNG, GIF tối đa 5MB
+                          </Text>
+                          <Text className="block text-xs text-gray-400">
+                            Kéo thả hoặc click để chọn
                           </Text>
                         </div>
                       </Upload>
@@ -641,8 +765,29 @@ export default function CreateProperty() {
 
                 {/* Additional Images */}
                 <div className="space-y-4">
-                  <Text className="font-medium">Ảnh phụ (tối đa 9 ảnh)</Text>
-                  <div className="flex flex-wrap gap-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Text className="font-medium">
+                        Ảnh phụ (tối đa 9 ảnh)
+                      </Text>
+                      {imageUrls.length > 0 && (
+                        <Tooltip
+                          title={`${imageUrls.length} ảnh đã tải lên thành công`}
+                        >
+                          <div className="flex items-center gap-1 rounded-full bg-green-100 px-2 py-1">
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            <span className="text-xs text-green-600">
+                              {imageUrls.length}
+                            </span>
+                          </div>
+                        </Tooltip>
+                      )}
+                    </div>
+                    <Text className="text-sm text-gray-500">
+                      {imageFiles.length}/9 ảnh
+                    </Text>
+                  </div>
+                  <div className="flex flex-wrap gap-4">
                     {imageFiles.map((file, index) => (
                       <div key={index} className="relative size-24 rounded-lg">
                         <Image
@@ -652,14 +797,28 @@ export default function CreateProperty() {
                           width={100}
                           height={100}
                         />
-                        <div className="absolute -right-3 -bottom-3">
+                        {uploadingImages[index] && (
+                          <div className="bg-opacity-50 absolute inset-0 flex items-center justify-center rounded-lg bg-black">
+                            <Spin size="small" />
+                          </div>
+                        )}
+                        {imageUrls[index] && !uploadingImages[index] && (
+                          <div className="absolute top-1 right-1">
+                            <Tooltip title="Tải lên thành công">
+                              <CheckCircle className="h-4 w-4 rounded-full bg-white text-green-500" />
+                            </Tooltip>
+                          </div>
+                        )}
+                        <div className="absolute -top-2 -right-2">
                           <Button
                             danger
                             shape="circle"
                             size="small"
                             onClick={() => removeImage(index)}
+                            disabled={uploadingImages[index]}
+                            className="h-6 w-6"
                           >
-                            <X className="size-4" />
+                            <X className="size-3" />
                           </Button>
                         </div>
                       </div>
@@ -668,13 +827,39 @@ export default function CreateProperty() {
                       <Upload
                         beforeUpload={handleImagesUpload}
                         showUploadList={false}
+                        disabled={uploadingImages.some(
+                          (uploading) => uploading,
+                        )}
                       >
                         <div className="flex size-24 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-300 transition-colors hover:border-blue-400">
-                          <Plus className="h-6 w-6 text-gray-400" />
+                          {uploadingImages.some((uploading) => uploading) ? (
+                            <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                          ) : (
+                            <Plus className="h-6 w-6 text-gray-400" />
+                          )}
                         </div>
                       </Upload>
                     )}
                   </div>
+                  {imageFiles.length > 0 && (
+                    <div className="mt-2">
+                      <Progress
+                        percent={Math.round(
+                          (imageUrls.length / imageFiles.length) * 100,
+                        )}
+                        size="small"
+                        status={
+                          imageUrls.length === imageFiles.length
+                            ? "success"
+                            : "active"
+                        }
+                        showInfo={false}
+                      />
+                      <Text className="mt-1 block text-xs text-gray-500">
+                        {imageUrls.length}/{imageFiles.length} ảnh đã tải lên
+                      </Text>
+                    </div>
+                  )}
                 </div>
                 <Divider />
               </div>
