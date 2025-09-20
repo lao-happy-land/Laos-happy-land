@@ -34,12 +34,7 @@ export class PropertyService {
     private readonly entityManager: EntityManager,
   ) {}
 
-  async create(
-    createPropertyDto: CreatePropertyDto,
-    mainImage?: Multer.File,
-    images?: File[],
-    user?: any,
-  ) {
+  async create(createPropertyDto: CreatePropertyDto, user?: any) {
     const isAdmin = !!user?.role && user.role.toString() === 'Admin';
     const owner = await this.entityManager.findOneBy(User, { id: user.sub });
 
@@ -70,21 +65,6 @@ export class PropertyService {
       } catch (e) {
         throw new BadRequestException('Invalid details format');
       }
-    }
-
-    if (mainImage) {
-      propertyData.mainImage =
-        await this.cloudinaryService.uploadAndReturnImageUrl(mainImage);
-    }
-
-    if (images && images.length > 0) {
-      propertyData.images = await Promise.all(
-        images.map(async (file) => {
-          return await this.cloudinaryService.uploadAndReturnImageUrl(file);
-        }),
-      );
-    } else {
-      propertyData.images = null;
     }
 
     let finalPrice: Record<string, number> = null;
@@ -124,10 +104,10 @@ export class PropertyService {
     return { property, message: 'Property created successfully' };
   }
 
-formatPrice(value: string | number | null): string | null {
-  if (value === null || value === undefined) return null;
-  return value.toString();
-}
+  formatPrice(value: string | number | null): string | null {
+    if (value === null || value === undefined) return null;
+    return value.toString();
+  }
 
   private formatProperty(
     item: Property,
@@ -329,12 +309,7 @@ formatPrice(value: string | number | null): string | null {
     return new ResponsePaginate(finalResult as any, pageMetaDto, 'Success');
   }
 
-  async update(
-    id: string,
-    updatePropertyDto: UpdatePropertyDto,
-    mainImage?: Multer.File,
-    images?: Multer.File[],
-  ) {
+  async update(id: string, updatePropertyDto: UpdatePropertyDto) {
     const property = await this.propertyRepository.findOne({
       where: { id },
       relations: ['owner', 'type'],
@@ -384,19 +359,6 @@ formatPrice(value: string | number | null): string | null {
       }
     }
 
-    if (mainImage) {
-      property.mainImage =
-        await this.cloudinaryService.uploadAndReturnImageUrl(mainImage);
-    }
-
-    if (images && images.length > 0) {
-      property.images = await Promise.all(
-        images.map(async (file) => {
-          return await this.cloudinaryService.uploadAndReturnImageUrl(file);
-        }),
-      );
-    }
-
     if (
       updatePropertyDto.price !== undefined &&
       updatePropertyDto.price !== null
@@ -424,7 +386,7 @@ formatPrice(value: string | number | null): string | null {
     Object.assign(property, {
       ...updatePropertyDto,
       typeId: undefined,
-      price: property.price, // giữ nguyên price đã convert
+      price: property.price,
     });
 
     await this.entityManager.save(property);
