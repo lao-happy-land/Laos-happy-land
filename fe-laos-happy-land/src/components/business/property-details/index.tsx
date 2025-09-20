@@ -115,7 +115,11 @@ export default function PropertyDetails({ propertyId }: Props) {
           >
             <div className="mb-6">
               <PriceInfo
-                price={property.price ? parseFloat(property.price) : undefined}
+                price={
+                  (property.price as string)
+                    ? parseFloat(property.price as string)
+                    : undefined
+                }
                 transactionType={property.transactionType as TransactionEnum}
                 createdAt={property.createdAt}
               />
@@ -139,6 +143,7 @@ export default function PropertyDetails({ propertyId }: Props) {
                   : ([] as Content[] | null | undefined)
               }
               fallbackDescription={property.description as string | undefined}
+              transactionType={property.transactionType as TransactionEnum}
             />
 
             <Divider />
