@@ -1,22 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/share/store/auth.store";
-import {
-  Card,
-  Form,
-  Input,
-  Button,
-  Avatar,
-  Typography,
-  Divider,
-  App,
-  Upload,
-  Row,
-  Col,
-  Space,
-} from "antd";
+import { Button, Input, Breadcrumb } from "antd";
 import {
   User,
   MapPin,
@@ -25,19 +12,34 @@ import {
   Edit3,
   Shield,
   Calendar,
+  ArrowLeft,
+  Mail,
+  Phone,
+  Home,
 } from "lucide-react";
 import { useRequest } from "ahooks";
 import { userService } from "@/share/service/user.service";
 import Image from "next/image";
-const { Title, Text } = Typography;
+import Link from "next/link";
 
 export default function Profile() {
-  const { message } = App.useApp();
   const { isAuthenticated, user: extendedUser } = useAuthStore();
   const router = useRouter();
-  const [form] = Form.useForm();
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    address: "",
+  });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -53,15 +55,14 @@ export default function Profile() {
   useEffect(() => {
     if (userData?.user) {
       const user = userData.user;
-      form.setFieldsValue({
+      setFormData({
         fullName: user.fullName ?? "",
         email: user.email ?? "",
         phone: user.phone ?? "",
         address: user.location ?? "",
-        image: user.avatarUrl ?? "",
       });
     }
-  }, [userData, form]);
+  }, [userData]);
 
   const { loading: updating, run: updateProfile } = useRequest(
     async (values: {
@@ -72,56 +73,123 @@ export default function Profile() {
       image?: File;
     }) => {
       const formData = new FormData();
-      formData.append("fullName", values.fullName);
-      formData.append("email", values.email);
-      if (values.phone) formData.append("phone", values.phone);
-      if (values.address) formData.append("address", values.address);
-      if (values.image) formData.append("image", values.image);
 
-      // Get current user ID from auth store
+      // Only include fields that are defined in UpdateUserDto
+      formData.append("fullName", values.fullName ?? "");
+      formData.append("email", values.email ?? "");
+      formData.append("phone", values.phone ?? "");
+
+      // Note: location/address is not in UpdateUserDto, so we'll skip it for now
+      // formData.append("location", values.address || "");
+
+      if (values.image) {
+        formData.append("image", values.image);
+      }
+
       const userId = userData?.user.id ?? "current";
       return await userService.updateProfile(userId, formData);
     },
     {
       manual: true,
       onSuccess: () => {
-        message.success("Cập nhật thông tin thành công!");
+        setMessage({ type: "success", text: "Cập nhật thông tin thành công!" });
         setIsEditing(false);
         setAvatarFile(null);
+        setTimeout(() => setMessage(null), 3000);
       },
-      onError: () => {
-        message.error("Cập nhật thông tin thất bại");
+      onError: (error) => {
+        console.error("Profile update error:", error);
+        setMessage({ type: "error", text: "Cập nhật thông tin thất bại" });
+        setTimeout(() => setMessage(null), 3000);
       },
     },
   );
 
-  const handleSubmit = (values: {
-    fullName: string;
-    email: string;
-    phone?: string;
-    address?: string;
-    image?: File;
-  }) => {
-    updateProfile(values);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const submitData = {
+      ...formData,
+      image: avatarFile ?? undefined,
+    };
+
+    updateProfile(submitData);
   };
 
-  const handleAvatarUpload = (file: File) => {
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
-      message.error("Chỉ có thể tải lên file hình ảnh!");
-      return false;
+      setMessage({ type: "error", text: "Chỉ có thể tải lên file hình ảnh!" });
+      setTimeout(() => setMessage(null), 3000);
+      return;
     }
+
     const isLt2M = file.size / 1024 / 1024 < 2;
     if (!isLt2M) {
-      message.error("Hình ảnh phải nhỏ hơn 2MB!");
-      return false;
+      setMessage({ type: "error", text: "Hình ảnh phải nhỏ hơn 2MB!" });
+      setTimeout(() => setMessage(null), 3000);
+      return;
     }
+
     setAvatarFile(file);
-    return false;
+    setMessage({
+      type: "success",
+      text: "Hình ảnh đã được chọn! Nhấn 'Lưu thay đổi' để cập nhật.",
+    });
+    setTimeout(() => setMessage(null), 3000);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      input.files = e.dataTransfer.files;
+      const event = new Event("change", { bubbles: true });
+      Object.defineProperty(event, "target", { value: input });
+      handleAvatarUpload(event as unknown as ChangeEvent<HTMLInputElement>);
+    }
   };
 
   const removeAvatar = () => {
     setAvatarFile(null);
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
+  const resetForm = () => {
+    if (userData?.user) {
+      setFormData({
+        fullName: userData.user.fullName ?? "",
+        email: userData.user.email ?? "",
+        phone: userData.user.phone ?? "",
+        address: userData.user.location ?? "",
+      });
+    }
+    setAvatarFile(null);
+    setIsEditing(false);
   };
 
   if (!isAuthenticated) {
@@ -130,10 +198,10 @@ export default function Profile() {
 
   if (loadingUser) {
     return (
-      <div className="flex min-h-[300px] items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-neutral-50">
         <div className="text-center">
-          <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-          <p className="text-gray-600">Đang tải thông tin...</p>
+          <div className="border-primary-500 mb-4 h-8 w-8 animate-spin rounded-full border-4 border-t-transparent"></div>
+          <p className="text-neutral-600">Đang tải thông tin...</p>
         </div>
       </div>
     );
@@ -141,147 +209,202 @@ export default function Profile() {
 
   if (!userData?.user) {
     return (
-      <div className="flex min-h-[300px] items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-neutral-50">
         <div className="text-center">
-          <p className="text-gray-600">Không thể tải thông tin người dùng</p>
+          <p className="text-neutral-600">Không thể tải thông tin người dùng</p>
         </div>
       </div>
     );
   }
 
+  const breadcrumbItems = [
+    {
+      title: (
+        <Link
+          href="/"
+          className="hover:text-primary-500 text-neutral-600 transition-colors"
+        >
+          Trang chủ
+        </Link>
+      ),
+    },
+    {
+      title: "Hồ sơ cá nhân",
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4">
+    <div className="min-h-screen bg-neutral-50">
+      {/* Breadcrumb */}
+      <div className="border-b border-neutral-200 bg-white">
+        <div className="mx-auto max-w-7xl px-6 py-4">
+          <Breadcrumb items={breadcrumbItems} />
+        </div>
+      </div>
+
+      {/* Message */}
+      {message && (
+        <div className={`mx-auto max-w-7xl px-6 pt-4`}>
+          <div
+            className={`rounded-lg p-4 ${
+              message.type === "success"
+                ? "bg-accent-50 border-accent-200 text-accent-700 border"
+                : "bg-primary-50 border-primary-200 text-primary-700 border"
+            }`}
+          >
+            {message.text}
+          </div>
+        </div>
+      )}
+
+      <div className="mx-auto max-w-7xl px-6 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <Title
-                level={1}
-                className="!mb-2 !text-3xl !font-bold !text-gray-900"
-              >
+              <h1 className="mb-2 text-4xl font-bold text-neutral-900">
                 Hồ sơ cá nhân
-              </Title>
-              <Text className="text-lg text-gray-600">
+              </h1>
+              <p className="text-lg text-neutral-600">
                 Quản lý thông tin tài khoản của bạn
-              </Text>
+              </p>
             </div>
             <Button
               type={isEditing ? "default" : "primary"}
-              icon={<Edit3 className="h-4 w-4" />}
+              icon={<Edit3 size={16} />}
               size="large"
               onClick={() => setIsEditing(!isEditing)}
-              className="rounded-lg"
+              className="font-semibold"
             >
               {isEditing ? "Hủy chỉnh sửa" : "Chỉnh sửa"}
             </Button>
           </div>
         </div>
 
-        <Row gutter={[24, 24]}>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Profile Overview */}
-          <Col xs={24} lg={8}>
-            <Card className="h-fit">
+          <div className="lg:col-span-1">
+            <div className="rounded-xl bg-white p-6 shadow-sm">
               <div className="text-center">
-                <div className="relative mb-6 inline-block">
+                <div
+                  className={`relative mb-4 inline-block transition-all duration-200 ${
+                    isDragOver
+                      ? "ring-primary-500 ring-opacity-50 scale-105 ring-2"
+                      : ""
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
                   {avatarFile ? (
                     <div className="relative">
-                      <Avatar
-                        size={120}
-                        src={
-                          <Image
-                            src={URL.createObjectURL(avatarFile)}
-                            alt="Avatar"
-                            width={120}
-                            height={120}
-                            className="rounded-full object-cover"
-                          />
-                        }
-                      />
+                      <div className="h-24 w-24 overflow-hidden rounded-full">
+                        <Image
+                          src={URL.createObjectURL(avatarFile)}
+                          alt="Avatar"
+                          width={96}
+                          height={96}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
                       {isEditing && (
-                        <Button
-                          danger
-                          size="small"
-                          shape="circle"
-                          className="absolute -top-2 -right-2"
-                          onClick={removeAvatar}
-                        >
-                          ×
-                        </Button>
+                        <div className="absolute -top-1 -right-1">
+                          <Button
+                            danger
+                            size="small"
+                            shape="circle"
+                            onClick={removeAvatar}
+                          >
+                            ×
+                          </Button>
+                        </div>
                       )}
                     </div>
                   ) : userData?.user.avatarUrl ? (
                     <div className="relative">
-                      <Avatar
-                        size={120}
-                        src={
-                          <Image
-                            src={userData.user.avatarUrl}
-                            alt="Avatar"
-                            width={120}
-                            height={120}
-                            className="rounded-full object-cover"
-                          />
-                        }
-                      />
+                      <div className="h-24 w-24 overflow-hidden rounded-full">
+                        <Image
+                          src={userData.user.avatarUrl}
+                          alt="Avatar"
+                          width={96}
+                          height={96}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
                       {isEditing && (
-                        <Upload
-                          beforeUpload={handleAvatarUpload}
-                          showUploadList={false}
-                        >
+                        <div className="absolute -top-1 -right-1">
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarUpload}
+                            className="hidden"
+                          />
                           <Button
                             size="small"
                             shape="circle"
-                            className="absolute -top-2 -right-2"
+                            className="hover:bg-primary-100 cursor-pointer"
+                            onClick={triggerFileInput}
                           >
-                            <Camera className="h-3 w-3" />
+                            <Camera size={10} />
                           </Button>
-                        </Upload>
+                        </div>
                       )}
                     </div>
                   ) : (
                     <div className="relative">
-                      <Avatar
-                        size={120}
-                        icon={<User />}
-                        className="bg-blue-500"
-                      />
+                      <div className="bg-primary-100 flex h-24 w-24 items-center justify-center rounded-full">
+                        <User size={32} className="text-primary-500" />
+                      </div>
                       {isEditing && (
-                        <Upload
-                          beforeUpload={handleAvatarUpload}
-                          showUploadList={false}
-                        >
+                        <div className="absolute -top-1 -right-1">
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarUpload}
+                            className="hidden"
+                          />
                           <Button
                             size="small"
                             shape="circle"
-                            className="absolute -top-2 -right-2"
+                            className="hover:bg-primary-100 cursor-pointer"
+                            onClick={triggerFileInput}
                           >
-                            <Camera className="h-3 w-3" />
+                            <Camera size={10} />
                           </Button>
-                        </Upload>
+                        </div>
                       )}
                     </div>
                   )}
                 </div>
 
-                <Title level={3} className="!mb-2 !text-xl !font-semibold">
-                  {userData?.user.fullName || "Chưa cập nhật"}
-                </Title>
-                <Text className="mb-4 block text-gray-600">
-                  {userData?.user.email}
-                </Text>
+                {isEditing && (
+                  <p className="mb-2 text-xs text-neutral-500">
+                    Nhấn vào biểu tượng camera
+                  </p>
+                )}
 
-                <Space direction="vertical" size="small" className="w-full">
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <Shield className="h-4 w-4" />
+                <h3 className="mb-1 text-lg font-semibold text-neutral-900">
+                  {userData?.user.fullName && userData.user.fullName !== "User"
+                    ? userData.user.fullName
+                    : "Chưa cập nhật"}
+                </h3>
+                <p className="mb-3 text-sm text-neutral-600">
+                  {userData?.user.email}
+                </p>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center gap-2 text-xs text-neutral-500">
+                    <Shield size={14} />
                     <span>
                       {userData?.user.role?.name === "Admin"
                         ? "Quản trị viên"
                         : "Người dùng"}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <Calendar className="h-4 w-4" />
+                  <div className="flex items-center justify-center gap-2 text-xs text-neutral-500">
+                    <Calendar size={14} />
                     <span>
                       Tham gia:{" "}
                       {new Date(userData?.user.createdAt).toLocaleDateString(
@@ -289,151 +412,210 @@ export default function Profile() {
                       )}
                     </span>
                   </div>
-                </Space>
+                </div>
               </div>
-            </Card>
-          </Col>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="mt-4 rounded-xl bg-white p-4 shadow-sm">
+              <h4 className="mb-3 text-sm font-semibold text-neutral-900">
+                Thống kê nhanh
+              </h4>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-neutral-600">Tài khoản</span>
+                  <span className="font-medium text-neutral-900">
+                    Hoạt động
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-neutral-600">Bảo mật</span>
+                  <span className="text-accent-600 font-medium">
+                    Đã xác thực
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-neutral-600">Cập nhật cuối</span>
+                  <span className="font-medium text-neutral-900">
+                    {new Date(userData?.user.updatedAt).toLocaleDateString(
+                      "vi-VN",
+                    )}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Profile Form */}
-          <Col xs={24} lg={16}>
-            <Card>
-              <Form
-                form={form}
-                layout="vertical"
-                onFinish={handleSubmit}
-                className="space-y-6"
-              >
+          <div className="lg:col-span-2">
+            {/* Additional Information */}
+            <div className="rounded-xl bg-white p-6 shadow-sm">
+              <div className="mb-4 flex items-center gap-3 border-b border-neutral-200 pb-2">
+                <Shield size={20} className="text-neutral-500" />
+                <h3 className="text-lg font-semibold text-neutral-900">
+                  Thông tin bổ sung
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-3">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-neutral-700">
+                      ID người dùng
+                    </label>
+                    <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-600">
+                      {userData?.user.id}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-neutral-700">
+                      Trạng thái tài khoản
+                    </label>
+                    <div className="border-accent-200 bg-accent-50 text-accent-700 rounded-lg border px-3 py-2 text-sm">
+                      Hoạt động
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-neutral-700">
+                      Ngày tạo
+                    </label>
+                    <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-600">
+                      {new Date(userData?.user.createdAt).toLocaleString(
+                        "vi-VN",
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-neutral-700">
+                      Cập nhật cuối
+                    </label>
+                    <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-600">
+                      {new Date(userData?.user.updatedAt).toLocaleString(
+                        "vi-VN",
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 rounded-xl bg-white p-6 shadow-sm">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Basic Information */}
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
-                    <User className="h-6 w-6 text-blue-600" />
-                    <Title
-                      level={3}
-                      className="!mb-0 !text-xl !font-semibold !text-gray-900"
-                    >
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 border-b border-neutral-200 pb-2">
+                    <User size={20} className="text-primary-500" />
+                    <h3 className="text-lg font-semibold text-neutral-900">
                       Thông tin cơ bản
-                    </Title>
+                    </h3>
                   </div>
 
-                  <Row gutter={[16, 16]}>
-                    <Col xs={24} md={12}>
-                      <Form.Item
-                        name="fullName"
-                        label={<Text className="font-medium">Họ và tên</Text>}
-                        rules={[
-                          {
-                            required: true,
-                            message: "Vui lòng nhập họ và tên!",
-                          },
-                        ]}
-                      >
-                        <Input
-                          placeholder="Nhập họ và tên..."
-                          size="large"
-                          className="rounded-lg"
-                          disabled={!isEditing}
-                        />
-                      </Form.Item>
-                    </Col>
-                    <Col xs={24} md={12}>
-                      <Form.Item
-                        name="email"
-                        label={<Text className="font-medium">Email</Text>}
-                        rules={[
-                          { required: true, message: "Vui lòng nhập email!" },
-                          { type: "email", message: "Email không hợp lệ!" },
-                        ]}
-                      >
-                        <Input
-                          placeholder="Nhập email..."
-                          size="large"
-                          className="rounded-lg"
-                          disabled={!isEditing}
-                        />
-                      </Form.Item>
-                    </Col>
-                  </Row>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-neutral-700">
+                        Họ và tên *
+                      </label>
+                      <Input
+                        placeholder="Nhập họ và tên..."
+                        size="large"
+                        value={formData.fullName}
+                        onChange={(e) =>
+                          handleInputChange("fullName", e.target.value)
+                        }
+                        disabled={!isEditing}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-neutral-700">
+                        Email *
+                      </label>
+                      <Input
+                        placeholder="Nhập email..."
+                        size="large"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) =>
+                          handleInputChange("email", e.target.value)
+                        }
+                        disabled={true}
+                        required
+                      />
+                    </div>
+                  </div>
 
-                  <Form.Item
-                    name="phone"
-                    label={<Text className="font-medium">Số điện thoại</Text>}
-                  >
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-neutral-700">
+                      Số điện thoại
+                    </label>
                     <Input
                       placeholder="Nhập số điện thoại..."
                       size="large"
-                      className="rounded-lg"
+                      value={formData.phone}
+                      onChange={(e) =>
+                        handleInputChange("phone", e.target.value)
+                      }
                       disabled={!isEditing}
                     />
-                  </Form.Item>
+                  </div>
                 </div>
 
-                <Divider />
+                <div className="pt-4">
+                  {/* Contact Information */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 border-b border-neutral-200 pb-2">
+                      <MapPin size={20} className="text-accent-500" />
+                      <h3 className="text-lg font-semibold text-neutral-900">
+                        Thông tin liên hệ
+                      </h3>
+                    </div>
 
-                {/* Contact Information */}
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
-                    <MapPin className="h-6 w-6 text-green-600" />
-                    <Title
-                      level={3}
-                      className="!mb-0 !text-xl !font-semibold !text-gray-900"
-                    >
-                      Thông tin liên hệ
-                    </Title>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-neutral-700">
+                        Địa chỉ
+                      </label>
+                      <Input
+                        placeholder="Nhập địa chỉ..."
+                        size="large"
+                        value={formData.address}
+                        onChange={(e) =>
+                          handleInputChange("address", e.target.value)
+                        }
+                        disabled={!isEditing}
+                      />
+                    </div>
                   </div>
-
-                  <Form.Item
-                    name="address"
-                    label={<Text className="font-medium">Địa chỉ</Text>}
-                  >
-                    <Input
-                      placeholder="Nhập địa chỉ..."
-                      size="large"
-                      className="rounded-lg"
-                      disabled={!isEditing}
-                    />
-                  </Form.Item>
                 </div>
 
                 {/* Submit Button */}
                 {isEditing && (
-                  <div className="flex justify-end space-x-4 border-t pt-6">
+                  <div className="flex justify-end gap-3 border-t pt-4">
                     <Button
                       type="default"
                       size="large"
-                      onClick={() => {
-                        setIsEditing(false);
-                        setAvatarFile(null);
-                        form.resetFields();
-                        if (userData?.user) {
-                          form.setFieldsValue({
-                            fullName: userData.user.fullName ?? "",
-                            email: userData.user.email ?? "",
-                            phone: userData.user.phone ?? "",
-                            address: userData.user.location ?? "",
-                            image: userData.user.avatarUrl ?? "",
-                          });
-                        }
-                      }}
-                      className="rounded-lg"
+                      onClick={resetForm}
+                      className="font-semibold"
                     >
                       Hủy
                     </Button>
                     <Button
                       type="primary"
                       htmlType="submit"
-                      icon={<Save className="h-4 w-4" />}
+                      icon={<Save size={16} />}
                       size="large"
                       loading={updating}
-                      className="rounded-lg bg-blue-600 hover:bg-blue-700"
+                      className="font-semibold"
                     >
                       Lưu thay đổi
                     </Button>
                   </div>
                 )}
-              </Form>
-            </Card>
-          </Col>
-        </Row>
+              </form>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

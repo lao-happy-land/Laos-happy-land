@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   description:
     "Website bất động sản Lào - Tìm nhà đất, căn hộ, dự án bất động sản tại Lào",
   keywords:
-    "bất động sản Lào, nhà đất Lào, căn hộ Lào, dự án Lào, đầu tư Lào, Laos real estate. Laohappyland.com, Laohappyland, Laohappyland.com, ",
+    "bất động sản Lào, nhà đất Lào, căn hộ Lào, dự án Lào, đầu tư Lào, Laos real estate. Laohappyland.com, Laohappyland, Laohappyland.com",
   authors: [{ name: "Laos Happy Land Team" }],
   creator: "Laos Happy Land",
   publisher: "Laos Happy Land",

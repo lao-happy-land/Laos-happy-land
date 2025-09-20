@@ -22,26 +22,42 @@ import PropertyCardSkeleton from "@/components/business/common/property-card-ske
 const { Title, Paragraph, Text } = Typography;
 
 const LandingPage = () => {
-  const { data: featuredPropertiesData, loading: featuredLoading } = useRequest(
+  const {
+    data: featuredPropertiesData,
+    loading: featuredLoading,
+    error: featuredError,
+  } = useRequest(
     () =>
       propertyService.getProperties({
         perPage: 4,
+        currency: "LAK",
         transaction: "sale",
       }),
     {
       refreshDeps: [],
+      onError: (error) => {
+        console.error("Error fetching featured properties:", error);
+      },
     },
   );
 
   // Fetch project properties
-  const { data: projectData, loading: projectLoading } = useRequest(
+  const {
+    data: projectData,
+    loading: projectLoading,
+    error: projectError,
+  } = useRequest(
     () =>
       propertyService.getProperties({
+        currency: "LAK",
         transaction: "project",
         perPage: 3,
       }),
     {
       refreshDeps: [],
+      onError: (error) => {
+        console.error("Error fetching project properties:", error);
+      },
     },
   );
 
@@ -104,7 +120,13 @@ const LandingPage = () => {
           </div>
 
           <Row gutter={[16, 16]}>
-            {featuredLoading ? (
+            {featuredError ? (
+              <Col span={24} className="py-8 text-center">
+                <Text type="danger">
+                  Có lỗi xảy ra khi tải dữ liệu bất động sản
+                </Text>
+              </Col>
+            ) : featuredLoading ? (
               // Loading skeleton
               Array.from({ length: 4 }).map((_, index) => (
                 <Col xs={24} sm={12} lg={6} key={index}>
@@ -153,7 +175,11 @@ const LandingPage = () => {
           </div>
 
           <Row gutter={[16, 16]}>
-            {projectLoading ? (
+            {projectError ? (
+              <Col span={24} className="py-8 text-center">
+                <Text type="danger">Có lỗi xảy ra khi tải dữ liệu dự án</Text>
+              </Col>
+            ) : projectLoading ? (
               // Loading skeleton
               Array.from({ length: 3 }).map((_, index) => (
                 <Col xs={24} md={8} key={index}>
@@ -324,13 +350,15 @@ const LandingPage = () => {
           </Row>
 
           <div className="mt-12 text-center">
-            <Button
-              type="default"
-              size="large"
-              className="border-primary-500 text-primary-500 hover:bg-primary-500 rounded-lg border-2 px-8 py-3 font-semibold transition-all duration-300 hover:text-white hover:shadow-lg"
-            >
-              Xem tất cả tin tức
-            </Button>
+            <Link href="/news">
+              <Button
+                type="default"
+                size="large"
+                className="border-primary-500 text-primary-500 hover:bg-primary-500 rounded-lg border-2 px-8 py-3 font-semibold transition-all duration-300 hover:text-white hover:shadow-lg"
+              >
+                Xem tất cả tin tức
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

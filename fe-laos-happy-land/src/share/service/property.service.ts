@@ -7,10 +7,12 @@ import type {
 import api from "./api.service";
 
 const propertyService = {
-  getProperties: async (params?: {
-    perPage?: number;
+  getProperties: async (query?: {
     page?: number;
+    perPage?: number;
     type?: string;
+    locationId?: string;
+    currency?: string;
     keyword?: string;
     minPrice?: number;
     maxPrice?: number;
@@ -21,26 +23,77 @@ const propertyService = {
     location?: string;
     transaction?: "rent" | "sale" | "project";
     isVerified?: boolean;
+    status?: "pending" | "approved" | "rejected";
   }): Promise<APIResponse<Property[]>> => {
-    const response = await api.propertyControllerGetAll(params);
-    return response.data as unknown as APIResponse<Property[]>;
+    try {
+      const response = await api.propertyControllerGetAll(query);
+      const data = response.data as unknown;
+
+      // Handle different response formats
+      if (data && typeof data === "object" && data !== null) {
+        // If the response has a data field, use it
+        if ("data" in data) {
+          return data as APIResponse<Property[]>;
+        }
+
+        // If the response is the APIResponse directly
+        if ("items" in data || "results" in data) {
+          return data as unknown as APIResponse<Property[]>;
+        }
+      }
+
+      // Fallback to direct casting
+      return response.data as unknown as APIResponse<Property[]>;
+    } catch (error) {
+      console.error("PropertyService: Error fetching properties:", error);
+      throw error;
+    }
   },
 
-  getPropertiesByUser: async (params?: {
+  getPropertiesByUser: async (query?: {
     page?: number;
     perPage?: number;
   }): Promise<APIResponse<Property[]>> => {
-    const response = await api.propertyControllerGetByUser(params);
+    const response = await api.propertyControllerGetByUser(query);
     return response.data as unknown as APIResponse<Property[]>;
   },
 
   getPropertyById: async (id: string): Promise<Property> => {
-    const response = await api.propertyControllerGet(id);
-    const data = response.data as unknown as {
-      property: Property;
-      message: string;
-    };
-    return data.property;
+    try {
+      const response = await api.propertyControllerGet(id);
+      const data = response.data as unknown;
+
+      // Handle different response formats
+      if (data && typeof data === "object" && data !== null) {
+        // If the response has a property field
+        if ("property" in data) {
+          return (data as { property: Property }).property;
+        }
+
+        // If the response is the Property directly
+        if ("id" in data && "title" in data) {
+          return data as Property;
+        }
+
+        // If the response has a data field containing the property
+        if ("data" in data) {
+          const nestedData = (data as { data: unknown }).data;
+          if (
+            nestedData &&
+            typeof nestedData === "object" &&
+            "id" in nestedData
+          ) {
+            return nestedData as Property;
+          }
+        }
+      }
+
+      // Fallback to direct casting
+      return data as Property;
+    } catch (error) {
+      console.error("PropertyService: Error fetching property:", error);
+      throw error;
+    }
   },
 
   createProperty: async (data: CreatePropertyDto): Promise<Property> => {

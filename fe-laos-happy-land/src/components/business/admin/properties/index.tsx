@@ -141,11 +141,13 @@ const AdminProperties = () => {
         location?: string;
         transaction?: "rent" | "sale" | "project";
         status?: "pending" | "approved" | "rejected";
+        currency?: string;
         page?: number;
         perPage?: number;
       } = {
         page: currentPage,
         perPage: pageSize,
+        currency: "LAK",
       };
 
       if (searchTerm.trim()) {
@@ -686,7 +688,7 @@ const AdminProperties = () => {
                       {title}
                     </div>
                     <div className="mt-1 text-sm text-gray-500">
-                      📍 {property.location ?? "Chưa có địa chỉ"}
+                      📍 {property.location?.address ?? "Chưa có địa chỉ"}
                     </div>
                   </div>
                 </div>

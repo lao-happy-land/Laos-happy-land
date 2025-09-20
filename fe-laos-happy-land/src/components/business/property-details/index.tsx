@@ -40,7 +40,15 @@ export default function PropertyDetails({ propertyId }: Props) {
   const [isFavorite, setIsFavorite] = useState(false);
 
   const allImages = [property?.mainImage, ...(property?.images ?? [])].filter(
-    (img): img is string => Boolean(img),
+    (img): img is string => {
+      if (!img || typeof img !== "string") return false;
+      try {
+        new URL(img);
+        return true;
+      } catch {
+        return img.startsWith("/");
+      }
+    },
   );
 
   const handleShare = () => {
@@ -79,7 +87,7 @@ export default function PropertyDetails({ propertyId }: Props) {
     <div className="container mx-auto my-4 px-4">
       <HeaderBar
         title={property.title ?? ""}
-        location={property.location ?? ""}
+        location={property.location?.address ?? ""}
         status={property.status ?? "pending"}
         transactionType={property.transactionType as TransactionEnum}
       />
@@ -88,7 +96,11 @@ export default function PropertyDetails({ propertyId }: Props) {
         <Col xs={24} lg={16}>
           {property.transactionType !== "project" && (
             <Gallery
-              images={allImages}
+              images={
+                allImages.length > 0
+                  ? allImages
+                  : ["/images/landingpage/apartment/apart-1.jpg"]
+              }
               title={property.title}
               isFavorite={isFavorite}
               onToggleFavorite={handleFavorite}
@@ -103,7 +115,7 @@ export default function PropertyDetails({ propertyId }: Props) {
           >
             <div className="mb-6">
               <PriceInfo
-                price={property.price as unknown as number | undefined}
+                price={property.price ? parseFloat(property.price) : undefined}
                 transactionType={property.transactionType as TransactionEnum}
                 createdAt={property.createdAt}
               />

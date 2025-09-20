@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/share/store/auth.store";
 import {
@@ -19,8 +19,6 @@ import {
 } from "antd";
 import {
   Building2,
-  MapPin,
-  DollarSign,
   Home,
   Bath,
   Bed,
@@ -34,14 +32,17 @@ import {
   Car,
   Snowflake,
   Tv,
+  MapPin,
   Wifi,
 } from "lucide-react";
 import type { UpdatePropertyDto } from "@/@types/gentype-axios";
-import type { PropertyType } from "@/@types/types";
+import type { PropertyType, LocationInfo } from "@/@types/types";
 import { useRequest } from "ahooks";
 import propertyService from "@/share/service/property.service";
 import propertyTypeService from "@/share/service/property-type.service";
+import locationInfoService from "@/share/service/location-info.service";
 import ProjectContentBuilder from "@/components/business/common/project-content-builder";
+import MapboxLocationSelector from "@/components/business/common/mapbox-location-selector";
 import Image from "next/image";
 
 const { TextArea } = Input;
@@ -56,11 +57,22 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
   const router = useRouter();
   const [form] = Form.useForm();
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
+  const [locationInfos, setLocationInfos] = useState<LocationInfo[]>([]);
+  const [selectedLocationInfoId, setSelectedLocationInfoId] =
+    useState<string>("");
   const [selectedTransactionType, setSelectedTransactionType] = useState<
     "rent" | "sale" | "project"
   >("sale");
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [locationData, setLocationData] = useState<{
+    latitude: number;
+    longitude: number;
+    address: string;
+    city?: string;
+    country?: string;
+  } | null>(null);
+  const initializedRef = useRef(false);
 
   const { data: property, loading: loadingProperty } = useRequest(async () => {
     const data = await propertyService.getPropertyById(propertyId);
@@ -84,8 +96,35 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
     },
   );
 
+  // Load location infos
+  const { loading: loadingLocations, run: fetchLocationInfos } = useRequest(
+    async () => {
+      const response = await locationInfoService.getAllLocationInfo();
+      return response;
+    },
+    {
+      manual: true,
+      onSuccess: (data) => {
+        if (Array.isArray(data)) {
+          setLocationInfos(data);
+        } else {
+          console.warn("Location infos data is not an array:", data);
+          setLocationInfos([]);
+        }
+      },
+      onError: (error) => {
+        console.error("Error loading location infos:", error);
+        message.error("Không thể tải danh sách địa điểm");
+        setLocationInfos([]);
+      },
+    },
+  );
+
   useEffect(() => {
-    fetchPropertyTypes();
+    if (selectedTransactionType) {
+      fetchPropertyTypes();
+    }
+    fetchLocationInfos();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTransactionType]);
 
@@ -96,32 +135,62 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
   }, [isAuthenticated, router]);
 
   useEffect(() => {
-    if (!property) return;
-    setSelectedTransactionType(property.transactionType);
-    form.setFieldsValue({
-      title: property.title,
-      description: property.description,
-      price: Number(property.price) || 0,
-      area: property.details?.area,
-      bedrooms: property.details?.bedrooms,
-      bathrooms: property.details?.bathrooms,
-      wifi: property.details?.wifi ?? false,
-      tv: property.details?.tv ?? false,
-      airConditioner: property.details?.airConditioner ?? false,
-      parking: property.details?.parking ?? false,
-      kitchen: property.details?.kitchen ?? false,
-      security: property.details?.security ?? false,
-      legalStatus: property.legalStatus ?? "",
-      location: property.location ?? "",
-      transactionType: property.transactionType,
-      typeId: property.type?.id,
-      content: property.details?.content,
-    });
+    if (!property || initializedRef.current) return;
+
+    initializedRef.current = true;
+
+    // Use setTimeout to defer state updates to avoid setState during render
+    setTimeout(() => {
+      setSelectedTransactionType(property.transactionType);
+
+      // Set location data if available
+      if (property.location) {
+        setLocationData({
+          latitude: property.location.latitude,
+          longitude: property.location.longitude,
+          address: property.location.address,
+          city: property.location.city,
+          country: property.location.country,
+        });
+      }
+
+      form.setFieldsValue({
+        title: property.title,
+        description: property.description,
+        price: property.price ? parseFloat(property.price) : undefined,
+        area: property.details?.area,
+        bedrooms: property.details?.bedrooms,
+        bathrooms: property.details?.bathrooms,
+        wifi: property.details?.wifi ?? false,
+        tv: property.details?.tv ?? false,
+        airConditioner: property.details?.airConditioner ?? false,
+        parking: property.details?.parking ?? false,
+        kitchen: property.details?.kitchen ?? false,
+        security: property.details?.security ?? false,
+        legalStatus: property.legalStatus ?? "",
+        location: property.location?.address ?? "",
+        transactionType: property.transactionType,
+        typeId: property.type?.id,
+        locationInfoId: property.locationInfo?.id ?? "",
+        content: property.details?.content,
+      });
+
+      // Set the selected location info ID state
+      setSelectedLocationInfoId(property.locationInfo?.id ?? "");
+    }, 0);
   }, [property, form]);
+
+  // Update selectedLocationInfoId when locationInfos are loaded (for proper Select initialization)
+  useEffect(() => {
+    if (property?.locationInfo?.id && locationInfos.length > 0) {
+      setSelectedLocationInfoId(property.locationInfo.id);
+    }
+  }, [property?.locationInfo?.id, locationInfos]);
 
   const { loading: submitting, run: submitForm } = useRequest(
     async (values: {
       typeId: string;
+      locationInfoId: string;
       title: string;
       description?: string;
       price?: number;
@@ -145,11 +214,12 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
     }) => {
       const formData: UpdatePropertyDto = {
         typeId: values.typeId,
+        locationInfoId: values.locationInfoId,
         title: values.title,
         description: values.description,
         price: values.price,
         legalStatus: values.legalStatus ?? "",
-        location: values.location,
+        location: locationData,
         transactionType: values.transactionType,
         details: {
           area: values.area,
@@ -184,6 +254,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
 
   const handleSubmit = (values: {
     typeId: string;
+    locationInfoId: string;
     title: string;
     description?: string;
     price?: number;
@@ -198,8 +269,21 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
     security: boolean;
     legalStatus?: string;
     location?: string;
+    locationText?: string;
     transactionType: "rent" | "sale" | "project";
   }) => {
+    if (selectedTransactionType !== "project" && !mainImageFile) {
+      message.error("Vui lòng tải lên ảnh chính");
+      return;
+    }
+    if (selectedTransactionType !== "project" && imageFiles.length < 3) {
+      message.error("Vui lòng tải lên ít nhất 3 ảnh phụ");
+      return;
+    }
+    if (!locationData) {
+      message.error("Vui lòng chọn vị trí trên bản đồ");
+      return;
+    }
     submitForm(values);
   };
 
@@ -258,6 +342,11 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
     );
   }
 
+  if (property?.status === "approved") {
+    message.error("Tin đăng đã được duyệt, không thể chỉnh sửa!");
+    return router.push("/dashboard");
+  }
+
   return (
     <div className="min-h-screen py-8">
       <div className="container mx-auto px-4">
@@ -284,7 +373,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
             }}
           >
             {/* Basic Information */}
-            <div className="space-y-6">
+            <div className="space-y-2">
               <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
                 <Building2 className="h-6 w-6 text-blue-600" />
                 <Title
@@ -295,19 +384,20 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                 </Title>
               </div>
 
-              <Form.Item
-                name="title"
-                label={<Text className="font-medium">Tiêu đề tin đăng</Text>}
-                rules={[{ required: true, message: "Vui lòng nhập tiêu đề!" }]}
-              >
-                <Input
-                  placeholder="Nhập tiêu đề tin đăng..."
-                  size="large"
-                  className="rounded-lg"
-                />
-              </Form.Item>
-
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+                <Form.Item
+                  name="title"
+                  label={<Text className="font-medium">Tiêu đề tin đăng</Text>}
+                  rules={[
+                    { required: true, message: "Vui lòng nhập tiêu đề!" },
+                  ]}
+                >
+                  <Input
+                    placeholder="Nhập tiêu đề tin đăng..."
+                    size="large"
+                    className="rounded-lg"
+                  />
+                </Form.Item>
                 <Form.Item
                   name="transactionType"
                   label={<Text className="font-medium">Loại giao dịch</Text>}
@@ -329,7 +419,6 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                     <Option value="project">Dự án</Option>
                   </Select>
                 </Form.Item>
-
                 <Form.Item
                   name="typeId"
                   label={<Text className="font-medium">Loại bất động sản</Text>}
@@ -350,79 +439,22 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                     ))}
                   </Select>
                 </Form.Item>
-              </div>
-              <Form.Item
-                name="description"
-                label={<Text className="font-medium">Mô tả chi tiết</Text>}
-                rules={[{ required: true, message: "Vui lòng nhập mô tả!" }]}
-              >
-                <TextArea
-                  rows={6}
-                  placeholder="Mô tả chi tiết về bất động sản..."
-                  className="rounded-lg"
-                />
-              </Form.Item>
 
-              {/* Project Content Builder */}
-              {selectedTransactionType === "project" && (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
-                    <Title
-                      level={3}
-                      className="!mb-0 !text-xl !font-semibold !text-gray-900"
-                    >
-                      Nội dung dự án
-                    </Title>
-                  </div>
-                  <ProjectContentBuilder
-                    form={form}
-                    name="content"
-                    textFieldName="value"
+                <Form.Item
+                  name="legalStatus"
+                  label={
+                    <Text className="font-medium">Tình trạng pháp lý</Text>
+                  }
+                >
+                  <Input
+                    placeholder="Nhập tình trạng pháp lý..."
+                    size="large"
+                    className="rounded-lg"
                   />
-                </div>
-              )}
-            </div>
-
-            {/* Location */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
-                <MapPin className="h-6 w-6 text-green-600" />
-                <Title
-                  level={3}
-                  className="!mb-0 !text-xl !font-semibold !text-gray-900"
-                >
-                  Vị trí
-                </Title>
+                </Form.Item>
               </div>
 
-              <Form.Item
-                name="location"
-                label={<Text className="font-medium">Địa chỉ chi tiết</Text>}
-                rules={[{ required: true, message: "Vui lòng nhập địa chỉ!" }]}
-              >
-                <Input
-                  placeholder="Nhập địa chỉ chi tiết..."
-                  size="large"
-                  className="rounded-lg"
-                />
-              </Form.Item>
-            </div>
-
-            {/* Price and Details */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
-                <DollarSign className="h-6 w-6 text-yellow-600" />
-                <Title
-                  level={3}
-                  className="!mb-0 !text-xl !font-semibold !text-gray-900"
-                >
-                  Giá và thông tin chi tiết
-                </Title>
-              </div>
-
-              <div
-                className={`grid grid-cols-2 gap-6 ${selectedTransactionType === "project" ? "md:grid-cols-3" : "md:grid-cols-5"}`}
-              >
+              <div className="grid grid-cols-1 gap-x-6 md:grid-cols-2">
                 <Form.Item
                   name="price"
                   label={<Text className="font-medium">Giá (LAK)</Text>}
@@ -460,20 +492,6 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                     placeholder="0"
                     size="large"
                     style={{ width: "100%" }}
-                  />
-                </Form.Item>
-
-                {/* Legal Status */}
-                <Form.Item
-                  name="legalStatus"
-                  label={
-                    <Text className="font-medium">Tình trạng pháp lý</Text>
-                  }
-                >
-                  <Input
-                    placeholder="Nhập tình trạng pháp lý..."
-                    size="large"
-                    className="rounded-lg"
                   />
                 </Form.Item>
 
@@ -516,10 +534,9 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                 )}
               </div>
 
-              {/* Amenities */}
               {selectedTransactionType !== "project" && (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
+                <>
+                  <div className="mb-2 flex items-center gap-3 border-b border-gray-200 pb-2">
                     <Title
                       level={3}
                       className="!mb-0 !text-xl !font-semibold !text-gray-900"
@@ -527,7 +544,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       Tiện ích
                     </Title>
                   </div>
-                  <div className="grid grid-cols-3 gap-4 md:grid-cols-6">
+                  <div className="grid grid-cols-3 justify-center gap-4 lg:grid-cols-6">
                     <Form.Item
                       name="wifi"
                       label={
@@ -595,11 +612,62 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       <Switch />
                     </Form.Item>
                   </div>
-                </div>
+                </>
               )}
+
+              <Form.Item
+                name="description"
+                label={<Text className="font-medium">Mô tả ngắn</Text>}
+                rules={[{ required: true, message: "Vui lòng nhập mô tả!" }]}
+              >
+                <TextArea
+                  rows={6}
+                  placeholder="Mô tả ngắn gọn về bất động sản, tiện ích xung quanh, hướng nhà, view..."
+                  className="rounded-lg"
+                />
+              </Form.Item>
+              {/* Project Content Builder */}
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
+                  <Title
+                    level={3}
+                    className="!mb-0 !text-xl !font-semibold !text-gray-900"
+                  >
+                    Nội dung dự án
+                  </Title>
+                </div>
+                <ProjectContentBuilder
+                  form={form}
+                  name="content"
+                  textFieldName="value"
+                />
+              </div>
             </div>
 
-            {/* Images (optional updates) */}
+            {/* Location */}
+            <div className="space-y-6">
+              <Form.Item>
+                <MapboxLocationSelector
+                  value={locationData}
+                  onChange={setLocationData}
+                  placeholder="Chọn vị trí trên bản đồ"
+                  initialSearchValue={property?.location?.address}
+                  locationInfos={locationInfos}
+                  selectedLocationInfoId={selectedLocationInfoId}
+                  onLocationInfoChange={(locationInfoId) => {
+                    setSelectedLocationInfoId(locationInfoId);
+                  }}
+                  loadingLocations={loadingLocations}
+                  mode="edit"
+                  hasExistingLocation={
+                    !!(property?.location && property?.locationInfo)
+                  }
+                />
+              </Form.Item>
+            </div>
+
+            {/* Images */}
             {selectedTransactionType !== "project" && (
               <div className="space-y-6">
                 <div className="flex items-center gap-3 border-b border-gray-200 pb-2">
@@ -608,11 +676,12 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                     level={3}
                     className="!mb-0 !text-xl !font-semibold !text-gray-900"
                   >
-                    Hình ảnh (tuỳ chọn cập nhật)
+                    Hình ảnh
                   </Title>
                 </div>
+                {/* Main Image */}
                 <div className="space-y-4">
-                  <Text className="font-medium">Ảnh chính</Text>
+                  <Text className="font-medium">Ảnh chính *</Text>
                   <div className="rounded-lg border-2 border-dashed border-gray-300 p-6 text-center transition-colors hover:border-blue-400">
                     {mainImageFile ? (
                       <div className="relative h-64 w-full">
@@ -652,6 +721,8 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                     )}
                   </div>
                 </div>
+
+                {/* Additional Images */}
                 <div className="space-y-4">
                   <Text className="font-medium">Ảnh phụ (tối đa 9 ảnh)</Text>
                   <div className="flex flex-wrap gap-6">
@@ -687,8 +758,8 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       </Upload>
                     )}
                   </div>
-                  <Divider />
                 </div>
+                <Divider />
               </div>
             )}
 

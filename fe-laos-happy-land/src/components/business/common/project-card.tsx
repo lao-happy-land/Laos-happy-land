@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { MapPin, Home, Eye } from "lucide-react";
 import type { Property } from "@/@types/types";
+import { numberToString } from "@/share/helper/number-to-string";
 
 interface ProjectCardProps {
   project: Property;
@@ -74,11 +75,23 @@ export default function ProjectCard({
         {/* Image Section */}
         <div className={`relative overflow-hidden ${getImageHeight()}`}>
           <Image
-            src={
-              project.mainImage ??
-              project.images?.[0] ??
-              "/images/landingpage/project/project-1.jpg"
-            }
+            src={(() => {
+              const mainImg = project.mainImage;
+              const fallback = "/images/landingpage/project/project-1.jpg";
+
+              if (mainImg && typeof mainImg === "string") {
+                try {
+                  new URL(mainImg);
+                  return mainImg;
+                } catch {
+                  if (mainImg.startsWith("/")) {
+                    return mainImg;
+                  }
+                }
+              }
+
+              return fallback;
+            })()}
             alt={project.title}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -157,15 +170,24 @@ export default function ProjectCard({
           {/* Price */}
           <div className="mb-4">
             <div className="text-lg font-bold text-red-500">
-              {project.price}
+              {project.price
+                ? numberToString(Number(project.price))
+                : "Liên hệ"}
             </div>
+            {project.price && (
+              <div className="text-sm text-gray-500">
+                {numberToString(Number(project.price))} LAK
+              </div>
+            )}
           </div>
 
           {/* Location */}
           <div className="mb-4 flex items-center gap-2 text-sm text-gray-600">
             <MapPin className="h-4 w-4 flex-shrink-0 text-gray-400" />
             <span className="truncate text-sm">
-              {project.location ?? "Chưa cập nhật"}
+              {typeof project.location === "string"
+                ? project.location
+                : (project.location?.address ?? "Chưa cập nhật")}
             </span>
           </div>
 

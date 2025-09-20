@@ -62,12 +62,6 @@ const NAV_ITEMS = [
     icon: <FileText className="h-4 w-4" />,
   },
   {
-    key: "wiki",
-    title: "Wiki BĐS",
-    href: "/wiki",
-    icon: <BookOpen className="h-4 w-4" />,
-  },
-  {
     key: "analysis",
     title: "Phân tích đánh giá",
     href: "/analysis",
@@ -76,7 +70,7 @@ const NAV_ITEMS = [
   {
     key: "directory",
     title: "Danh bạ",
-    href: "/directory",
+    href: "/brokers",
     icon: <Users className="h-4 w-4" />,
   },
 ];
