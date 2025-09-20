@@ -11,6 +11,8 @@ import { ImageModule } from './modules/image/image.module';
 import { SettingModule } from './modules/setting/setting.module';
 import { ExchangeRateModule } from './modules/exchange-rate/exchange-rate.module';
 import { LocationInfoModule } from './modules/location-info/location-info.module';
+import { NewsTypeModule } from './modules/news-type/news-type.module';
+import { NewsModule } from './modules/news/news.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
@@ -25,7 +27,9 @@ import { LocationInfoModule } from './modules/location-info/location-info.module
     ImageModule,
     SettingModule,
     ExchangeRateModule,
-    LocationInfoModule
+    LocationInfoModule,
+    NewsTypeModule,
+    NewsModule
   ],
 })
 export class AppModule {}

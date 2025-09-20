@@ -49,7 +49,7 @@ export class Property extends AbstractEntity {
   description: string;
 
   @Column({ type: 'jsonb', nullable: true })
-  price: Record<string, number>; // {USD: 100, VND: 2500000, LAK: 2000000}
+  price: Record<string, number>;
 
   @Column({ type: 'jsonb', nullable: true })
   priceHistory: PriceHistoryEntry[];
