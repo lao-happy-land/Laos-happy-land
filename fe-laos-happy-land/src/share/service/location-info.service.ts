@@ -31,6 +31,20 @@ class LocationInfoService {
   }
 
   /**
+   * Get trending locations
+   */
+  async getTrendingLocations(): Promise<APIResponse<LocationInfo[]>> {
+    try {
+      const response = await api.locationInfoControllerGetTrendingLocations();
+
+      return response.data as unknown as APIResponse<LocationInfo[]>;
+    } catch (error) {
+      console.error("Error fetching trending locations:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Get location info by ID
    */
   async getLocationInfoById(id: string): Promise<LocationInfo> {

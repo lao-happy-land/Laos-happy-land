@@ -21,7 +21,6 @@ import {
   Home,
   Building2,
   FileText,
-  BookOpen,
   BarChart3,
   Users,
   LogIn,

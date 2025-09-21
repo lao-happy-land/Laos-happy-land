@@ -112,7 +112,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                   className={`group relative flex items-center gap-3 rounded-xl px-3 py-3 transition-all duration-200 ${
                     item.active ? "text-white shadow-md" : "hover:bg-gray-100"
                   }`}
-                  style={item.active ? { backgroundColor: "#fc746f" } : {}}
+                  style={item.active ? { backgroundColor: "#dc2626" } : {}}
                   title={sidebarCollapsed ? item.label : undefined}
                 >
                   {item.active && (

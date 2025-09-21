@@ -325,7 +325,10 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
 
         return await propertyService.createProperty(createData);
       } else {
-        return await propertyService.updateProperty(propertyId!, formData);
+        return await propertyService.updateProperty(
+          propertyId!,
+          formData as UpdatePropertyDto,
+        );
       }
     },
     {
@@ -801,10 +804,6 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                 form={form}
                 value={locationData}
                 onChange={(newLocationData) => {
-                  console.log(
-                    "MapboxLocationSelector onChange:",
-                    newLocationData,
-                  );
                   setLocationData(newLocationData);
                   // Update the form field with the location address
                   if (newLocationData?.address) {

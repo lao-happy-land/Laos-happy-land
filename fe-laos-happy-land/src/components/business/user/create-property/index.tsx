@@ -374,6 +374,11 @@ export default function CreateProperty() {
                   label={<Text className="font-medium">Tiêu đề tin đăng</Text>}
                   rules={[
                     { required: true, message: "Vui lòng nhập tiêu đề!" },
+                    { min: 10, message: "Tiêu đề phải có ít nhất 10 ký tự!" },
+                    {
+                      max: 200,
+                      message: "Tiêu đề không được vượt quá 200 ký tự!",
+                    },
                   ]}
                 >
                   <Input
@@ -429,6 +434,21 @@ export default function CreateProperty() {
                   label={
                     <Text className="font-medium">Tình trạng pháp lý</Text>
                   }
+                  rules={[
+                    {
+                      required: true,
+                      message: "Vui lòng nhập tình trạng pháp lý!",
+                    },
+                    {
+                      min: 5,
+                      message: "Tình trạng pháp lý phải có ít nhất 5 ký tự!",
+                    },
+                    {
+                      max: 100,
+                      message:
+                        "Tình trạng pháp lý không được vượt quá 100 ký tự!",
+                    },
+                  ]}
                 >
                   <Input
                     placeholder="Nhập tình trạng pháp lý..."
@@ -441,8 +461,16 @@ export default function CreateProperty() {
               <div className="grid grid-cols-1 gap-x-6 md:grid-cols-2">
                 <Form.Item
                   name="price"
-                  label={<Text className="font-medium">Giá (LAK)</Text>}
-                  rules={[{ required: true, message: "Vui lòng nhập giá!" }]}
+                  label={<Text className="font-medium">Giá (USD$)</Text>}
+                  rules={[
+                    { required: true, message: "Vui lòng nhập giá!" },
+                    { type: "number", min: 1, message: "Giá phải lớn hơn 0!" },
+                    {
+                      type: "number",
+                      max: 10000000,
+                      message: "Giá không được vượt quá 10,000,000 USD!",
+                    },
+                  ]}
                 >
                   <InputNumber
                     placeholder="Nhập giá..."
@@ -469,6 +497,16 @@ export default function CreateProperty() {
                   }
                   rules={[
                     { required: true, message: "Vui lòng nhập diện tích!" },
+                    {
+                      type: "number",
+                      min: 1,
+                      message: "Diện tích phải lớn hơn 0!",
+                    },
+                    {
+                      type: "number",
+                      max: 10000,
+                      message: "Diện tích không được vượt quá 10,000 m²!",
+                    },
                   ]}
                 >
                   <InputNumber
@@ -489,6 +527,22 @@ export default function CreateProperty() {
                           Phòng ngủ
                         </span>
                       }
+                      rules={[
+                        {
+                          required: true,
+                          message: "Vui lòng nhập số phòng ngủ!",
+                        },
+                        {
+                          type: "number",
+                          min: 0,
+                          message: "Số phòng ngủ không được âm!",
+                        },
+                        {
+                          type: "number",
+                          max: 20,
+                          message: "Số phòng ngủ không được vượt quá 20!",
+                        },
+                      ]}
                     >
                       <InputNumber
                         min={0}
@@ -506,6 +560,22 @@ export default function CreateProperty() {
                           Phòng tắm
                         </span>
                       }
+                      rules={[
+                        {
+                          required: true,
+                          message: "Vui lòng nhập số phòng tắm!",
+                        },
+                        {
+                          type: "number",
+                          min: 0,
+                          message: "Số phòng tắm không được âm!",
+                        },
+                        {
+                          type: "number",
+                          max: 10,
+                          message: "Số phòng tắm không được vượt quá 10!",
+                        },
+                      ]}
                     >
                       <InputNumber
                         min={0}
@@ -602,7 +672,14 @@ export default function CreateProperty() {
               <Form.Item
                 name="description"
                 label={<Text className="font-medium">Mô tả ngắn</Text>}
-                rules={[{ required: true, message: "Vui lòng nhập mô tả!" }]}
+                rules={[
+                  { required: true, message: "Vui lòng nhập mô tả!" },
+                  { min: 20, message: "Mô tả phải có ít nhất 20 ký tự!" },
+                  {
+                    max: 2000,
+                    message: "Mô tả không được vượt quá 2000 ký tự!",
+                  },
+                ]}
               >
                 <TextArea
                   rows={6}
@@ -621,11 +698,36 @@ export default function CreateProperty() {
                     Nội dung bất động sản
                   </Title>
                 </div>
-                <ProjectContentBuilder
-                  form={form}
+                <Form.Item
                   name="content"
-                  textFieldName="value"
-                />
+                  rules={[
+                    {
+                      validator: (_: unknown, value: unknown) => {
+                        if (selectedTransactionType === "project") {
+                          if (!Array.isArray(value) || value.length === 0) {
+                            return Promise.reject(
+                              new Error(
+                                "Vui lòng thêm ít nhất 1 nội dung cho dự án!",
+                              ),
+                            );
+                          }
+                          if (value.length < 1) {
+                            return Promise.reject(
+                              new Error("Vui lòng thêm ít nhất 1 nội dung!"),
+                            );
+                          }
+                        }
+                        return Promise.resolve();
+                      },
+                    },
+                  ]}
+                >
+                  <ProjectContentBuilder
+                    form={form}
+                    name="content"
+                    textFieldName="value"
+                  />
+                </Form.Item>
               </div>
             </div>
 
