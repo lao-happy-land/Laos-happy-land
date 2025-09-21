@@ -45,6 +45,12 @@ export type LocationDto = {
   address: string;
   city?: string;
   country?: string;
+  buildingNumber?: string;
+  street?: string;
+  district?: string;
+  province?: string;
+  postalCode?: string;
+  neighborhood?: string;
 };
 
 export type LocationInfo = {
