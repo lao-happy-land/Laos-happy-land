@@ -231,11 +231,12 @@ export interface UpdatePropertyDto {
    */
   transactionType?: "rent" | "sale" | "project";
   /**
-   * Ảnh chính của bất động sản (URL)
+   * Ảnh chính của bất động sản
+   * @format binary
    */
-  mainImage?: string;
-  /** Danh sách ảnh phụ của bất động sản (URLs) */
-  images?: string[];
+  mainImage?: File;
+  /** Danh sách ảnh phụ của bất động sản */
+  images?: File[];
 }
 
 export interface RejectPropertyDto {
