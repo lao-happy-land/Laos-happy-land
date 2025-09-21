@@ -8,13 +8,10 @@ import {
   Heart,
   ChevronRight,
   Search,
-  Square,
   X,
-  Home,
   Building2,
   ArrowRight,
   CheckCircle,
-  List,
 } from "lucide-react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { numberToString } from "@/share/helper/number-to-string";
@@ -29,8 +26,6 @@ import {
   Empty,
   Pagination,
   App,
-  Tooltip,
-  Col,
 } from "antd";
 import { PRICE_RANGE_OPTIONS } from "@/share/constant/home-search";
 import propertyService from "@/share/service/property.service";
@@ -66,6 +61,9 @@ const Properties = ({ transaction }: PropertiesProps) => {
   );
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [locationInfos, setLocationInfos] = useState<LocationInfo[]>([]);
+  const [trendingLocations, setTrendingLocations] = useState<LocationInfo[]>(
+    [],
+  );
   const [keyword, setKeyword] = useState("");
   const [debouncedKeyword, setDebouncedKeyword] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -86,7 +84,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [total, setTotal] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const [layout, setLayout] = useState<"grid" | "list">("list");
+  const [layout] = useState<"grid" | "list">("list");
 
   const searchModalRef = useRef<HTMLDivElement>(null);
   const locationModalRef = useRef<HTMLDivElement>(null);
@@ -125,6 +123,23 @@ const Properties = ({ transaction }: PropertiesProps) => {
       onError: (error) => {
         console.error("Failed to fetch location infos:", error);
         message.error("Không thể tải danh sách khu vực");
+      },
+    },
+  );
+
+  // Fetch trending locations
+  const { loading: trendingLocationsLoading } = useRequest(
+    async () => {
+      const response = await locationInfoService.getTrendingLocations();
+      return response.data ?? [];
+    },
+    {
+      onSuccess: (data) => {
+        setTrendingLocations(data);
+      },
+      onError: (error) => {
+        console.error("Failed to fetch trending locations:", error);
+        message.error("Không thể tải danh sách khu vực trending");
       },
     },
   );
@@ -174,6 +189,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
         transaction: transaction,
         page: currentPage,
         perPage: pageSize,
+        currency: "LAK",
         ...params,
       };
 
@@ -302,18 +318,6 @@ const Properties = ({ transaction }: PropertiesProps) => {
       id: locationInfo.id,
       label: locationInfo.name,
     })),
-  ];
-
-  const districts = [
-    { id: "tay-ninh-city", name: "Thành phố Tây Ninh", searchCount: 1847 },
-    { id: "ben-cau", name: "Huyện Bến Cầu", searchCount: 523 },
-    { id: "chau-thanh", name: "Huyện Châu Thành", searchCount: 456 },
-    { id: "duong-minh-chau", name: "Huyện Dương Minh Châu", searchCount: 789 },
-    { id: "go-dau", name: "Huyện Gò Dầu", searchCount: 1209 },
-    { id: "hoa-thanh", name: "Huyện Hòa Thành", searchCount: 937 },
-    { id: "tan-bien", name: "Huyện Tân Biên", searchCount: 634 },
-    { id: "tan-chau", name: "Huyện Tân Châu", searchCount: 445 },
-    { id: "trang-bang", name: "Huyện Trảng Bàng", searchCount: 4083 },
   ];
 
   // Create popular cities from API data (first 5 locations)
@@ -627,15 +631,6 @@ const Properties = ({ transaction }: PropertiesProps) => {
     setPriceRangeOpen(false);
     setPropertyTypeOpen(false);
     setAreaOpen(false);
-  };
-
-  const handleDistrictSelect = (districtName: string) => {
-    setKeyword(districtName);
-    setSearchModalOpen(false);
-
-    updateSearchParams({
-      keyword: districtName || "",
-    });
   };
 
   const handleProvinceSelect = (id: string) => {
@@ -1325,106 +1320,112 @@ const Properties = ({ transaction }: PropertiesProps) => {
 
               <div className="max-h-[60vh] overflow-y-auto">
                 <div className="p-6">
-                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                    <div className="lg:col-span-1">
-                      <div className="mb-4 flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
-                          <MapPin className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900">
-                            Quận huyện
-                          </h4>
-                          <p className="text-sm text-gray-500">
-                            Chọn khu vực tìm kiếm
-                          </p>
-                        </div>
-                      </div>
-                      <div className="max-h-80 space-y-1 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-2">
-                        {districts.map((district) => (
-                          <div
-                            key={district.id}
-                            className="flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-all duration-200 hover:bg-white hover:shadow-sm"
-                            onClick={() => handleDistrictSelect(district.name)}
-                          >
-                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white">
-                              <MapPin className="h-3 w-3 text-gray-500" />
-                            </div>
-                            <span className="text-sm font-medium text-gray-700">
-                              {district.name}
-                            </span>
+                  <div className="grid grid-cols-1 gap-6">
+                    {/* Search Trends Panel */}
+                    <div className="space-y-6">
+                      {/* Trending Locations */}
+                      <div>
+                        <div className="mb-4 flex items-center gap-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-red-500 to-orange-500">
+                            <span className="text-sm">🔥</span>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Right Panel - Search Trends */}
-                    <div className="lg:col-span-2">
-                      <div className="mb-4 flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-red-500 to-orange-500">
-                          <span className="text-sm">🔥</span>
+                          <div>
+                            <h4 className="font-semibold text-gray-900">
+                              Khu vực trending
+                            </h4>
+                            <p className="text-sm text-gray-500">
+                              Các khu vực được tìm kiếm nhiều nhất
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900">
-                            Xu hướng tìm kiếm
-                          </h4>
-                          <p className="text-sm text-gray-500">
-                            Khu vực được tìm kiếm nhiều nhất
-                          </p>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        {districts
-                          .sort((a, b) => b.searchCount - a.searchCount)
-                          .slice(0, 5)
-                          .map((district, index) => (
-                            <div
-                              key={district.id}
-                              className="group flex cursor-pointer items-center justify-between rounded-xl border border-gray-200 bg-white p-4 transition-all duration-200 hover:border-red-300 hover:bg-red-50 hover:shadow-md"
-                              onClick={() =>
-                                handleDistrictSelect(district.name)
-                              }
-                            >
-                              <div className="flex items-center gap-4">
+                        <div className="space-y-2">
+                          {trendingLocationsLoading
+                            ? Array.from({ length: 5 }).map((_, index) => (
                                 <div
-                                  className={`flex h-8 w-8 items-center justify-center rounded-full font-semibold text-white ${
-                                    index === 0
-                                      ? "bg-gradient-to-r from-yellow-400 to-yellow-500"
-                                      : index === 1
-                                        ? "bg-gradient-to-r from-gray-400 to-gray-500"
-                                        : index === 2
-                                          ? "bg-gradient-to-r from-orange-400 to-orange-500"
-                                          : "bg-gradient-to-r from-blue-400 to-blue-500"
-                                  }`}
-                                >
-                                  <span className="text-sm">#{index + 1}</span>
-                                </div>
-                                <div>
-                                  <span className="font-medium text-gray-900">
-                                    {district.name}
-                                  </span>
-                                  <div className="mt-1 flex items-center gap-1">
-                                    <div className="h-1 w-16 rounded-full bg-gray-200">
+                                  key={index}
+                                  className="h-16 animate-pulse rounded-xl bg-gray-200"
+                                />
+                              ))
+                            : trendingLocations
+                                .slice(0, 5)
+                                .map((location, index) => (
+                                  <div
+                                    key={location.id}
+                                    className="group flex cursor-pointer items-center justify-between rounded-xl border border-gray-200 bg-white p-4 transition-all duration-200 hover:border-red-300 hover:bg-red-50 hover:shadow-md"
+                                    onClick={() =>
+                                      handleProvinceSelect(location.id)
+                                    }
+                                  >
+                                    <div className="flex items-center gap-4">
                                       <div
-                                        className="h-1 rounded-full bg-gradient-to-r from-red-500 to-orange-500"
-                                        style={{
-                                          width: `${(district.searchCount / Math.max(...districts.map((d) => d.searchCount))) * 100}%`,
-                                        }}
-                                      ></div>
+                                        className={`flex h-8 w-8 items-center justify-center rounded-full font-semibold text-white ${
+                                          index === 0
+                                            ? "bg-gradient-to-r from-yellow-400 to-yellow-500"
+                                            : index === 1
+                                              ? "bg-gradient-to-r from-gray-400 to-gray-500"
+                                              : index === 2
+                                                ? "bg-gradient-to-r from-orange-400 to-orange-500"
+                                                : "bg-gradient-to-r from-blue-400 to-blue-500"
+                                        }`}
+                                      >
+                                        <span className="text-sm">
+                                          #{index + 1}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <span className="font-medium text-gray-900">
+                                          {location.name}
+                                        </span>
+                                        <div className="mt-1 flex items-center gap-1">
+                                          <span className="text-xs text-gray-500">
+                                            {location.viewCount
+                                              ? `${location.viewCount.toLocaleString()} lượt xem`
+                                              : "Đang trending"}
+                                          </span>
+                                        </div>
+                                      </div>
                                     </div>
+                                    <ChevronRight className="h-4 w-4 text-gray-400 transition-transform duration-200 group-hover:translate-x-1" />
                                   </div>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <span className="text-sm font-semibold text-red-600">
-                                  {district.searchCount.toLocaleString()}
-                                </span>
-                                <p className="text-xs text-gray-500">
-                                  lượt tìm kiếm
-                                </p>
-                              </div>
-                            </div>
+                                ))}
+                        </div>
+                      </div>
+
+                      {/* Popular Search Terms */}
+                      <div>
+                        <div className="mb-4 flex items-center gap-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-green-500 to-teal-500">
+                            <Search className="h-4 w-4 text-white" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900">
+                              Từ khóa hot
+                            </h4>
+                            <p className="text-sm text-gray-500">
+                              Từ khóa tìm kiếm phổ biến
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            "Nhà phố",
+                            "Chung cư",
+                            "Biệt thự",
+                            "Đất nền",
+                            "Shophouse",
+                            "Penthouse",
+                            "Căn hộ",
+                            "Villa",
+                          ].map((keyword) => (
+                            <button
+                              key={keyword}
+                              className="group rounded-full border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-all duration-200 hover:border-green-300 hover:bg-green-50 hover:text-green-700"
+                              onClick={() => setKeyword(keyword)}
+                            >
+                              #{keyword}
+                            </button>
                           ))}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1477,45 +1478,55 @@ const Properties = ({ transaction }: PropertiesProps) => {
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
-                      {popularCities.map((city) => (
-                        <div
-                          key={city.id}
-                          className={`group relative h-32 overflow-hidden rounded-xl border-3 border-solid transition-all duration-200 hover:scale-105 hover:shadow-lg ${
-                            selectedLocation === city.id
-                              ? "border-red-400 hover:border-red-400"
-                              : "border-white hover:border-red-300"
-                          }`}
-                          onClick={() => handleProvinceSelect(city.id)}
-                        >
-                          <Image
-                            src={city.imageURL}
-                            alt={city.name}
-                            fill
-                            className="object-cover"
-                            priority
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/80"></div>
-                          <div className="absolute right-3 bottom-3 left-3">
-                            <span
-                              className={`text-sm font-semibold drop-shadow-lg ${
+                      {locationInfosLoading
+                        ? Array.from({ length: 5 }).map((_, index) => (
+                            <div
+                              key={index}
+                              className="h-16 animate-pulse rounded-xl bg-gray-200"
+                            />
+                          ))
+                        : popularCities.map((city) => (
+                            <div
+                              key={city.id}
+                              className={`group relative h-32 overflow-hidden rounded-xl border-3 border-solid transition-all duration-200 hover:scale-105 hover:shadow-lg ${
                                 selectedLocation === city.id
-                                  ? "rounded-full bg-white px-2 py-1 text-red-600"
-                                  : "text-white"
+                                  ? "border-red-400 hover:border-red-400"
+                                  : "border-white hover:border-red-300"
                               }`}
+                              onClick={() => handleProvinceSelect(city.id)}
                             >
-                              {city.name}
-                            </span>
-                          </div>
-                          {selectedLocation === city.id && (
-                            <div className="absolute top-2 right-2">
-                              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-lg">
-                                <CheckCircle className="h-4 w-4" />
+                              <Image
+                                src={
+                                  city.imageURL ??
+                                  "/images/landingpage/cities/default.jpg"
+                                }
+                                alt={city.name}
+                                fill
+                                className="object-cover"
+                                priority
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/80"></div>
+                              <div className="absolute right-3 bottom-3 left-3">
+                                <span
+                                  className={`text-sm font-semibold drop-shadow-lg ${
+                                    selectedLocation === city.id
+                                      ? "rounded-full bg-white px-2 py-1 text-red-600"
+                                      : "text-white"
+                                  }`}
+                                >
+                                  {city.name}
+                                </span>
                               </div>
+                              {selectedLocation === city.id && (
+                                <div className="absolute top-2 right-2">
+                                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-lg">
+                                    <CheckCircle className="h-4 w-4" />
+                                  </div>
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-black/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100"></div>
                             </div>
-                          )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-black/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100"></div>
-                        </div>
-                      ))}
+                          ))}
                     </div>
                   </div>
 
@@ -1536,28 +1547,35 @@ const Properties = ({ transaction }: PropertiesProps) => {
                     </div>
                     <div className="max-h-80 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-3">
                       <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
-                        {allProvinces.map((province) => (
-                          <button
-                            key={province}
-                            onClick={() => handleProvinceSelect(province)}
-                            className={`flex items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-medium transition-all duration-200 ${
-                              selectedLocation === province
-                                ? "bg-red-500 text-white shadow-md"
-                                : "bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 hover:shadow-sm"
-                            }`}
-                          >
-                            <span className="capitalize">
-                              {province === "all"
-                                ? "Tất cả khu vực"
-                                : (locationInfos.find(
-                                    (loc) => loc.id === province,
-                                  )?.name ?? province)}
-                            </span>
-                            {selectedLocation === province && (
-                              <CheckCircle className="h-4 w-4" />
-                            )}
-                          </button>
-                        ))}
+                        {locationInfosLoading
+                          ? Array.from({ length: 10 }).map((_, index) => (
+                              <div
+                                key={index}
+                                className="h-16 animate-pulse rounded-xl bg-gray-200"
+                              />
+                            ))
+                          : allProvinces.map((province) => (
+                              <button
+                                key={province}
+                                onClick={() => handleProvinceSelect(province)}
+                                className={`flex items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-medium transition-all duration-200 ${
+                                  selectedLocation === province
+                                    ? "bg-red-500 text-white shadow-md"
+                                    : "bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 hover:shadow-sm"
+                                }`}
+                              >
+                                <span className="capitalize">
+                                  {province === "all"
+                                    ? "Tất cả khu vực"
+                                    : (locationInfos.find(
+                                        (loc) => loc.id === province,
+                                      )?.name ?? province)}
+                                </span>
+                                {selectedLocation === province && (
+                                  <CheckCircle className="h-4 w-4" />
+                                )}
+                              </button>
+                            ))}
                       </div>
                     </div>
                   </div>
@@ -1575,9 +1593,11 @@ const Properties = ({ transaction }: PropertiesProps) => {
           {/* Left Content - Property Listing */}
           <div className="w-full">
             {propertiesLoading ? (
-              Array.from({ length: 10 }).map((_, index) => (
-                <PropertyCardSkeleton key={index} />
-              ))
+              <div className="grid grid-cols-1 gap-6">
+                {Array.from({ length: 10 }).map((_, index) => (
+                  <PropertyCardSkeleton key={index} />
+                ))}
+              </div>
             ) : (
               <>
                 {/* Property List */}

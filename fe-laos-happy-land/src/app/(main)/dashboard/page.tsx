@@ -47,6 +47,7 @@ export default function DashboardPage() {
       const res = await propertyService.getPropertiesByUser({
         page: 1,
         perPage: 6,
+        currency: "LAK",
       });
       return res.data || [];
     },

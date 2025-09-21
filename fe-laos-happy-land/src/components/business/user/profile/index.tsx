@@ -12,10 +12,6 @@ import {
   Edit3,
   Shield,
   Calendar,
-  ArrowLeft,
-  Mail,
-  Phone,
-  Home,
 } from "lucide-react";
 import { useRequest } from "ahooks";
 import { userService } from "@/share/service/user.service";

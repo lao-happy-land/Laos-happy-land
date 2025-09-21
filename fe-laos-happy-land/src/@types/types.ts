@@ -138,3 +138,54 @@ export type UploadImageResult = {
   url: string;
   message: string;
 };
+
+export interface NewsType {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+  updatedBy?: string;
+  deletedAt?: string;
+  deletedBy?: string;
+}
+
+export interface News {
+  id: string;
+  title: string;
+  details?: object;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+  updatedBy?: string;
+  deletedAt?: string;
+  deletedBy?: string;
+  newsType?: NewsType;
+  newsTypeId?: string;
+  type?: NewsType;
+}
+
+export interface NewsResponse {
+  data: News[];
+  total: number;
+  page: number;
+  perPage: number;
+}
+
+export interface NewsType {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+  updatedBy?: string;
+  deletedAt?: string;
+  deletedBy?: string;
+}
+
+export interface NewsTypeResponse {
+  data: NewsType[];
+  total: number;
+  page: number;
+  perPage: number;
+}
