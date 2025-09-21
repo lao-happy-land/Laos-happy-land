@@ -3,13 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useState, useRef } from "react";
 import { useClickAway, useEventListener } from "ahooks";
+import { useRequest } from "ahooks";
 import {
   Carousel,
   Tabs,
-  Row,
-  Col,
   Button,
-  Card,
   Space,
   Typography,
   App,
@@ -22,8 +20,6 @@ import {
   Home,
   Building2,
   Construction,
-  Flame,
-  Globe2,
   MapPin,
   CheckCircle,
   X,
@@ -41,6 +37,8 @@ import {
   AREA_RANGE_OPTIONS,
   PRICE_RANGE_OPTIONS,
 } from "@/share/constant/home-search";
+import locationInfoService from "@/share/service/location-info.service";
+import type { LocationInfo } from "@/@types/types";
 
 const { Title, Text } = Typography;
 
@@ -48,6 +46,14 @@ const SearchBox = () => {
   const { message } = App.useApp();
   const router = useRouter();
   const [searchType, setSearchType] = useState("sale");
+
+  // Fetch all locations
+  const { data: allLocationsData, loading: allLocationsLoading } = useRequest(
+    async () => {
+      const response = await locationInfoService.getAllLocationInfo();
+      return response.data ?? [];
+    },
+  );
 
   // Property search states
   const [keyword, setKeyword] = useState("");
@@ -131,47 +137,17 @@ const SearchBox = () => {
     "/images/landingpage/hero-slider/hero-banner-4.jpg",
   ];
 
-  const popularCities = [
-    {
-      id: "vientiane",
-      name: "Vientiane",
-      image: "/images/landingpage/cities/vientiane.jpg",
-    },
-    {
-      id: "luang-prabang",
-      name: "Luang Prabang",
-      image: "/images/landingpage/cities/luang-prabang.jpg",
-    },
-    {
-      id: "savannakhet",
-      name: "Savannakhet",
-      image: "/images/landingpage/cities/savannakhet.jpg",
-    },
-    {
-      id: "pakse",
-      name: "Pakse",
-      image: "/images/landingpage/cities/pakse.jpg",
-    },
-    {
-      id: "vang-vieng",
-      name: "Vang Vieng",
-      image: "/images/landingpage/cities/vang-vieng.jpg",
-    },
-    {
-      id: "thakhek",
-      name: "Thakhek",
-      image: "/images/landingpage/cities/thakhek.jpg",
-    },
-  ];
+  // Create popular cities from trending locations API data
+  const popularCities = allLocationsData?.slice(0, 5).map((locationInfo) => ({
+    id: locationInfo.id,
+    name: locationInfo.name,
+    imageURL: locationInfo.imageURL ?? "/images/landingpage/cities/default.jpg",
+  }));
 
+  // Create all locations from trending locations API data
   const allLocations = [
     "all",
-    "thakhek",
-    "vientiane",
-    "luang-prabang",
-    "savannakhet",
-    "pakse",
-    "vang-vieng",
+    ...(allLocationsData?.map((location: LocationInfo) => location.id) ?? []),
   ];
 
   const searchTabs = [
@@ -249,9 +225,9 @@ const SearchBox = () => {
       );
     }
     if (selectedLocation) {
-      searchParams.set("selectedLocation", selectedLocation);
+      searchParams.set("locationId", selectedLocation);
     } else {
-      searchParams.delete("selectedLocation");
+      searchParams.delete("locationId");
     }
     if (keyword) {
       searchParams.set("keyword", keyword);
@@ -271,14 +247,6 @@ const SearchBox = () => {
   const handleLocationSelect = (location: string) => {
     setSelectedLocation(location);
     setShowLocationPopup(false);
-  };
-
-  const getLocationDisplayName = () => {
-    if (!selectedLocation) return "Trên toàn quốc";
-    const popularCity = popularCities.find(
-      (city) => city.id === selectedLocation,
-    );
-    return popularCity ? popularCity.name : selectedLocation;
   };
 
   const handleToggleFilterModal = (type: string, event?: React.MouseEvent) => {
@@ -522,7 +490,9 @@ const SearchBox = () => {
                   <MapPin className="text-gray-600" size={16} />
                   <span className="text-xs font-medium text-gray-700 capitalize sm:text-sm">
                     {selectedLocation
-                      ? getLocationDisplayName()
+                      ? (allLocationsData?.find(
+                          (loc: LocationInfo) => loc.id === selectedLocation,
+                        )?.name ?? selectedLocation)
                       : "Trên toàn quốc"}
                   </span>
 
@@ -584,94 +554,125 @@ const SearchBox = () => {
                     />
                   </div>
 
-                  {/* Popular Cities */}
+                  {/* Trending Locations */}
                   <div className="mb-6 sm:mb-8">
                     <div className="mb-3 flex items-center gap-2 sm:mb-4">
-                      <Flame className="h-4 w-4 text-red-500 sm:h-5 sm:w-5" />
-                      <Text strong className="text-sm sm:text-base">
-                        Top tỉnh thành nổi bật
-                      </Text>
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-red-500 to-orange-500">
+                        <span className="text-sm">🔥</span>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-900">
+                          Khu vực trending
+                        </h4>
+                        <p className="text-sm text-gray-500">
+                          Các khu vực được tìm kiếm nhiều nhất
+                        </p>
+                      </div>
                     </div>
-                    <Row gutter={[8, 8]}>
-                      {popularCities.map((city) => (
-                        <Col span={12} sm={8} md={6} lg={4} key={city.id}>
-                          <Card
-                            hoverable
-                            onClick={() => handleLocationSelect(city.name)}
-                            className={`group relative h-20 overflow-hidden rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-lg sm:h-24 sm:rounded-xl ${
-                              selectedLocation === city.name
-                                ? "bg-red-50 ring-2 ring-red-500 ring-offset-2"
-                                : "hover:ring-2 hover:ring-red-300"
-                            }`}
-                          >
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+                    <div className="space-y-2">
+                      {allLocationsLoading
+                        ? // Loading skeleton for trending locations
+                          Array.from({ length: 5 }).map((_, index) => (
                             <div
-                              className={`absolute inset-0 ${
-                                selectedLocation === city.name
-                                  ? "bg-red-200"
-                                  : "bg-gray-300"
+                              key={index}
+                              className="h-16 animate-pulse rounded-xl bg-gray-200"
+                            />
+                          ))
+                        : popularCities?.map((city) => (
+                            <div
+                              key={city.id}
+                              className={`group relative h-32 overflow-hidden rounded-xl border-3 border-solid transition-all duration-200 hover:scale-105 hover:shadow-lg ${
+                                selectedLocation === city.id
+                                  ? "border-red-400 hover:border-red-400"
+                                  : "border-white hover:border-red-300"
                               }`}
-                            ></div>
-                            <div className="absolute right-3 bottom-3 left-3">
-                              <Text
-                                strong
-                                className={`text-sm drop-shadow-lg ${
-                                  selectedLocation === city.name
-                                    ? "text-red-800"
-                                    : "text-white"
-                                }`}
-                              >
-                                {city.name}
-                              </Text>
-                            </div>
-                            {selectedLocation === city.name && (
-                              <div className="absolute top-2 right-2">
-                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white">
-                                  <CheckCircle
-                                    className="text-white"
-                                    size={16}
-                                  />
-                                </div>
+                              onClick={() => handleLocationSelect(city.id)}
+                            >
+                              <Image
+                                src={
+                                  city.imageURL ??
+                                  "/images/landingpage/cities/default.jpg"
+                                }
+                                alt={city.name}
+                                fill
+                                className="object-cover"
+                                priority
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/80"></div>
+                              <div className="absolute right-3 bottom-3 left-3">
+                                <span
+                                  className={`text-sm font-semibold drop-shadow-lg ${
+                                    selectedLocation === city.id
+                                      ? "rounded-full bg-white px-2 py-1 text-red-600"
+                                      : "text-white"
+                                  }`}
+                                >
+                                  {city.name}
+                                </span>
                               </div>
-                            )}
-                          </Card>
-                        </Col>
-                      ))}
-                    </Row>
+                              {selectedLocation === city.id && (
+                                <div className="absolute top-2 right-2">
+                                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-lg">
+                                    <CheckCircle className="h-4 w-4" />
+                                  </div>
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-black/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100"></div>
+                            </div>
+                          ))}
+                    </div>
                   </div>
 
                   {/* All Locations */}
                   <div>
-                    <div className="mb-3 flex items-center gap-2 sm:mb-4">
-                      <Globe2 className="h-4 w-4 text-gray-500 sm:h-5 sm:w-5" />
-                      <Text strong className="text-sm sm:text-base">
-                        Tất cả tỉnh thành
-                      </Text>
+                    <div className="mb-4 flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-indigo-500">
+                        <span className="text-sm">🌍</span>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-900">
+                          Tất cả tỉnh thành
+                        </h4>
+                        <p className="text-sm text-gray-500">
+                          Chọn khu vực tìm kiếm
+                        </p>
+                      </div>
                     </div>
-                    <Row gutter={[8, 8]}>
-                      {allLocations.map((location) => (
-                        <Col span={12} sm={8} md={6} lg={4} key={location}>
-                          <Button
-                            type={
-                              selectedLocation === location
-                                ? "primary"
-                                : "default"
-                            }
-                            onClick={() => handleLocationSelect(location)}
-                            className={`w-full rounded-lg px-2 py-2 text-left text-xs font-medium transition-all duration-200 sm:px-3 sm:text-sm ${
-                              selectedLocation === location
-                                ? "border-red-500 bg-red-500 text-white shadow-md"
-                                : "text-gray-700 hover:border-red-300 hover:bg-red-50 hover:text-red-600"
-                            }`}
-                          >
-                            <label className="capitalize">{location}</label>
-                            {selectedLocation === location && (
-                              <CheckCircle className="text-white" size={14} />
-                            )}
-                          </Button>
-                        </Col>
-                      ))}
-                    </Row>
+                    <div className="max-h-80 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-3">
+                      <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
+                        {allLocationsLoading
+                          ? // Loading skeleton for all locations
+                            Array.from({ length: 12 }).map((_, index) => (
+                              <div
+                                key={index}
+                                className="h-12 animate-pulse rounded-lg bg-gray-200"
+                              />
+                            ))
+                          : allLocations.map((location) => (
+                              <button
+                                key={location}
+                                onClick={() => handleLocationSelect(location)}
+                                className={`flex items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-medium transition-all duration-200 ${
+                                  selectedLocation === location
+                                    ? "bg-red-500 text-white shadow-md"
+                                    : "bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 hover:shadow-sm"
+                                }`}
+                              >
+                                <span className="capitalize">
+                                  {location === "all"
+                                    ? "Tất cả khu vực"
+                                    : (allLocationsData?.find(
+                                        (loc: LocationInfo) =>
+                                          loc.id === location,
+                                      )?.name ?? location)}
+                                </span>
+                                {selectedLocation === location && (
+                                  <CheckCircle className="h-4 w-4" />
+                                )}
+                              </button>
+                            ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -277,7 +277,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
           security: values.security ?? false,
           content: values.content ?? [],
         },
-      } as UpdatePropertyDto;
+      } as unknown as UpdatePropertyDto;
 
       return await propertyService.updateProperty(propertyId, formData);
     },
@@ -948,10 +948,6 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                   form={form}
                   value={locationData}
                   onChange={(newLocationData) => {
-                    console.log(
-                      "MapboxLocationSelector onChange:",
-                      newLocationData,
-                    );
                     setLocationData(newLocationData);
                     // Update the form field with the location address
                     if (newLocationData?.address) {

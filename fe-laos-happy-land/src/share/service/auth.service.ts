@@ -209,8 +209,6 @@ export const authService = {
         if (window.location.hostname !== "localhost") {
           document.cookie = `${cookieValue}; domain=${window.location.hostname}`;
         }
-
-        console.log("Token set in localStorage and cookie");
       } catch (error) {
         console.error("Error setting auth token:", error);
       }
