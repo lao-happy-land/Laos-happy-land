@@ -90,6 +90,10 @@ export default function PropertyDetails({ propertyId }: Props) {
         location={property.location?.address ?? ""}
         status={property.status ?? "pending"}
         transactionType={property.transactionType as TransactionEnum}
+        coordinates={property.location ? {
+          latitude: property.location.latitude,
+          longitude: property.location.longitude,
+        } : null}
       />
 
       <Row gutter={[24, 24]}>
