@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { Breadcrumb, Tag, Button, Typography } from "antd";
 import { MapPin, Shield } from "lucide-react";
+import MapboxModal from "@/components/business/common/mapbox-modal";
 
 const { Text } = Typography;
 
@@ -11,6 +13,10 @@ type Props = {
   location?: string | null;
   status?: string | null;
   transactionType: "rent" | "sale" | "project";
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  } | null;
 };
 
 const getTransactionTypeColor = (type: string) => {
@@ -44,7 +50,10 @@ export default function HeaderBar({
   location,
   status,
   transactionType,
+  coordinates,
 }: Props) {
+  const [mapModalOpen, setMapModalOpen] = useState(false);
+
   return (
     <>
       <div className="mb-4">
@@ -94,8 +103,7 @@ export default function HeaderBar({
                 <Button
                   size="small"
                   type="link"
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`}
-                  target="_blank"
+                  onClick={() => setMapModalOpen(true)}
                   className="px-1"
                 >
                   Xem bản đồ
@@ -121,6 +129,14 @@ export default function HeaderBar({
           </div>
         </div>
       </div>
+
+      {/* Mapbox Modal */}
+      <MapboxModal
+        open={mapModalOpen}
+        onClose={() => setMapModalOpen(false)}
+        location={location}
+        coordinates={coordinates}
+      />
     </>
   );
 }
