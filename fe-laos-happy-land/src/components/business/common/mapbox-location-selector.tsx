@@ -65,6 +65,9 @@ interface MapboxLocationSelectorProps {
 interface MapboxFeature {
   center: [number, number];
   place_name: string;
+  text?: string; // label (street name, place name)
+  place_type?: string[]; // e.g. ["address"], ["place"], ["locality"]
+  properties?: { address?: string }; // house number when place_type includes "address"
   context?: Array<{
     id: string;
     text: string;
@@ -78,6 +81,156 @@ interface MapboxGeocodingResponse {
   attribution?: string;
 }
 
+/** Helper: Parse a Mapbox feature into our LocationData fields */
+function parseMapboxFeature(f: MapboxFeature) {
+  let buildingNumber = "";
+  let street = "";
+  let district = "";
+  let city = "";
+  let province = "";
+  let country = "";
+  let postalCode = "";
+  let neighborhood = "";
+
+  const placeType = f.place_type ?? [];
+  const ctx = f.context ?? [];
+
+  // Primary signals
+  if (placeType.includes("address")) {
+    if (f.text) street = f.text;
+    if (f.properties?.address) buildingNumber = String(f.properties.address);
+  } else if (placeType.includes("locality")) {
+    district = f.text ?? "";
+  } else if (placeType.includes("place")) {
+    const hasDistrictContext = ctx.some((item) =>
+      item.id?.includes("district"),
+    );
+    const hasLocalityContext = ctx.some((item) =>
+      item.id?.includes("locality"),
+    );
+    const hasRegionContext = ctx.some((item) => item.id?.includes("region"));
+
+    if (hasRegionContext) {
+      district = f.text ?? "";
+    } else if (hasDistrictContext) {
+      district = f.text ?? "";
+    } else if (hasLocalityContext) {
+      city = f.text ?? "";
+    } else {
+      district = f.text ?? "";
+    }
+  }
+
+  // Context fallbacks
+  for (const item of ctx) {
+    const id = item.id || "";
+    const txt = item.text || "";
+
+    if (id.includes("region")) {
+      province ||= txt;
+    } else if (id.includes("place") && !id.includes("region")) {
+      city ||= txt;
+    } else if (id.includes("locality")) {
+    } else if (id.includes("district")) {
+      district ||= txt;
+    } else if (id.includes("street") || id.includes("road")) {
+      street ||= txt;
+    } else if (id.includes("neighborhood")) {
+      neighborhood ||= txt;
+    } else if (id.includes("postcode")) {
+      postalCode ||= txt;
+    } else if (id.includes("country")) {
+      country ||= txt;
+    }
+  }
+
+  if (!district && f.place_name && placeType.includes("place")) {
+    district = f.text ?? "";
+  }
+
+  if (!street && f.place_name) {
+    const parts = f.place_name.split(",").map((s) => s.trim());
+    if (placeType.some((t) => t === "address") && parts[0]) {
+      street = parts[0];
+    }
+  }
+
+  // Postal code extraction - try multiple strategies
+  if (!postalCode) {
+    // Strategy 1: Look for postcode in context IDs (most reliable)
+    for (const item of ctx) {
+      const id = item.id || "";
+      const txt = item.text || "";
+      if (id.includes("postcode")) {
+        postalCode = txt;
+        break;
+      }
+    }
+
+    // Strategy 2: Extract from place_name (if available)
+    if (!postalCode && f.place_name) {
+      const regex = /\b(\d{4,6})\b/;
+      const m = regex.exec(f.place_name);
+      if (m) {
+        postalCode = m[1] ?? "";
+      }
+    }
+
+    // Strategy 3: Extract from context text
+    if (!postalCode) {
+      for (const item of ctx) {
+        const txt = item.text || "";
+        const regex = /\b(\d{4,6})\b/;
+        const m = regex.exec(txt);
+        if (m) {
+          postalCode = m[1] ?? "";
+          break;
+        }
+      }
+    }
+
+    // Strategy 4: Try different regex patterns
+    if (!postalCode) {
+      const patterns = [/\b(\d{5})\b/, /\b(\d{4})\b/, /\b(\d{6})\b/];
+
+      for (const pattern of patterns) {
+        if (f.place_name) {
+          const m = pattern.exec(f.place_name);
+          if (m) {
+            postalCode = m[1] ?? "";
+            break;
+          }
+        }
+
+        // Also check context
+        for (const item of ctx) {
+          const txt = item.text || "";
+          const m = pattern.exec(txt);
+          if (m) {
+            postalCode = m[1] ?? "";
+            break;
+          }
+        }
+
+        if (postalCode) break;
+      }
+    }
+  }
+
+  const result = {
+    buildingNumber,
+    street,
+    district,
+    city,
+    province,
+    country,
+    postalCode,
+    neighborhood,
+  };
+
+  return result;
+}
+
 export default function MapboxLocationSelector({
   form: _form,
   value,
@@ -87,7 +240,6 @@ export default function MapboxLocationSelector({
   initialSearchValue,
   locationInfos = [],
   selectedLocationInfoId,
-  onLocationInfoChange,
   loadingLocations = false,
   mode = "create",
   hasExistingLocation = false,
@@ -100,14 +252,11 @@ export default function MapboxLocationSelector({
   const [searchResults, setSearchResults] = useState<MapboxFeature[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(
-    null,
-  );
   const mapRef = useRef<MapRef>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const defaultCenter = {
-    longitude: mapLocation?.longitude ?? 102.6333,
+    longitude: mapLocation?.longitude ?? 102.6333, // Laos center-ish
     latitude: mapLocation?.latitude ?? 17.9757,
     zoom: 10,
   };
@@ -126,18 +275,14 @@ export default function MapboxLocationSelector({
 
   const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
-  // Function to search for nearby POIs and landmarks to get more detailed location info
+  // Function to search for nearby POIs/places for reference (Laos + Lao/EN)
   const searchNearbyPOIs = useCallback(
     async (lat: number, lng: number, _radius = 1000) => {
       if (!MAPBOX_TOKEN) return null;
-
       try {
-        const response = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}&language=en&country=la&types=place&limit=5&radius=${_radius}`,
-        );
-
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}&language=en&country=la&types=place&limit=5`;
+        const response = await fetch(url);
         if (!response.ok) return null;
-
         const data = (await response.json()) as MapboxGeocodingResponse;
         return data.features ?? [];
       } catch (error) {
@@ -148,7 +293,7 @@ export default function MapboxLocationSelector({
     [MAPBOX_TOKEN],
   );
 
-  // Handle clicking outside search container to hide dropdown
+  // Hide dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -158,26 +303,11 @@ export default function MapboxLocationSelector({
         setShowSearchResults(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (searchTimeout) {
-        clearTimeout(searchTimeout);
-      }
-    };
-  }, [searchTimeout]);
-
-  // Determine if location fields should be required based on mode and existing data
-  const isLocationRequired =
-    mode === "create" || (mode === "edit" && !hasExistingLocation);
-
+  // Initialize state from props
   useEffect(() => {
     if (initialSearchValue && initialSearchValue !== searchQuery) {
       setSearchQuery(initialSearchValue);
@@ -185,12 +315,12 @@ export default function MapboxLocationSelector({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Initialize with existing data
+  const isLocationRequired =
+    mode === "create" || (mode === "edit" && !hasExistingLocation);
+
   useEffect(() => {
     if (value && value !== mapLocation) {
       setMapLocation(value);
-
-      // Only update view state if coordinates are valid numbers
       if (
         typeof value.longitude === "number" &&
         typeof value.latitude === "number" &&
@@ -203,7 +333,6 @@ export default function MapboxLocationSelector({
           zoom: 15,
         });
       }
-
       if (
         value.address &&
         value.address !== searchQuery &&
@@ -215,7 +344,7 @@ export default function MapboxLocationSelector({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, mapLocation]);
 
-  // Initialize selected location info
+  // Sync selectedLocationInfoId → searchQuery
   useEffect(() => {
     if (selectedLocationInfoId && locationInfos.length > 0) {
       const selectedLocation = locationInfos.find(
@@ -227,256 +356,86 @@ export default function MapboxLocationSelector({
     }
   }, [selectedLocationInfoId, locationInfos]);
 
-  const handleLocationInfoChange = (locationInfoId: string) => {
-    const selectedLocation = locationInfos.find(
-      (loc) => loc.id === locationInfoId,
-    );
-    if (selectedLocation) {
-      setSearchQuery(selectedLocation.name);
-    }
-    onLocationInfoChange?.(locationInfoId);
-  };
-
+  // Reverse geocode with Laos-aware types & languages
   const reverseGeocode = useCallback(
     async (lat: number, lng: number): Promise<LocationData | null> => {
       if (!MAPBOX_TOKEN) {
         console.error("Mapbox token is not available for reverse geocoding");
         return null;
       }
-
       try {
-        // Try multiple reverse geocoding strategies with single types (required for limit parameter)
+        const common = `access_token=${MAPBOX_TOKEN}&language=en&country=la`;
+        const typesAll =
+          "&types=address,place,locality,neighborhood,district,region,postcode";
         const reverseStrategies = [
-          // Strategy 1: Try to get address-level data (Laos only)
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}&language=en&country=la&types=address&limit=5`,
-
-          // Strategy 2: Try to get place data
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}&language=en&country=la&types=place&limit=5`,
-
-          // Strategy 3: Try to get postcode data
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}&language=en&country=la&types=postcode&limit=5`,
-
-          // Strategy 4: Broader search without limit (fallback)
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}&language=en&country=la&types=address,place,locality,neighborhood,district,region,postcode`,
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?${common}&types=address&limit=10`,
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?${common}&types=place&limit=10`,
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?${common}${typesAll}`,
         ];
 
-        let response;
-        let data;
-
-        // Try each strategy until we get results
-        for (const url of reverseStrategies) {
-          response = await fetch(url);
-
-          if (!response.ok) {
-            continue; // Try next strategy
+        let best: MapboxGeocodingResponse | null = null;
+        for (let i = 0; i < reverseStrategies.length; i++) {
+          const url = reverseStrategies[i];
+          if (!url) continue;
+          const resp = await fetch(url);
+          if (!resp.ok) {
+            continue;
           }
+          const data = (await resp.json()) as MapboxGeocodingResponse;
 
-          data = (await response.json()) as MapboxGeocodingResponse;
-
-          // If we have results, break
-          if (data.features && data.features.length > 0) {
+          if (data.features?.length) {
+            best = data;
+            console.log(
+              `Using strategy ${i + 1} with features:`,
+              data.features.map((f) => ({
+                text: f.text,
+                place_type: f.place_type,
+                place_name: f.place_name,
+              })),
+            );
             break;
           }
         }
+        if (!best?.features?.length) return null;
 
-        if (!response?.ok) {
-          throw new Error(
-            `HTTP error! status: ${response?.status ?? "Unknown"}`,
-          );
+        const f = best.features[0];
+        if (!f) return null;
+
+        const parsed = parseMapboxFeature(f);
+
+        // If still no street/number, try nearby POI hint
+        if (!parsed.street && !parsed.buildingNumber) {
+          const nearby = await searchNearbyPOIs(lat, lng, 500);
+          const firstNearby = nearby?.[0];
+          if (firstNearby?.place_name) {
+            const hint = firstNearby.place_name.split(",")[0];
+            parsed.street = parsed.street || `Gần ${hint}`;
+          }
         }
 
-        if (data?.features && data.features.length > 0) {
-          const feature = data.features[0];
-          const context = feature?.context ?? [];
+        const parts = [
+          parsed.buildingNumber,
+          parsed.street,
+          parsed.district,
+          parsed.city,
+          parsed.province,
+          parsed.postalCode,
+          parsed.country,
+        ].filter(Boolean);
 
-          // Extract detailed information from context based on Mapbox feature types
-          let buildingNumber = "";
-          let street = "";
-          let district = "";
-          let province = "";
-          let postalCode = "";
-          let city = "";
-          let country = "";
-          let neighborhood = "";
+        const fullAddress =
+          parts.join(", ") ||
+          f?.place_name ||
+          `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
 
-          context.forEach((item) => {
-            const id = item.id;
-            const text = item.text || "";
-
-            // Address-level information (most specific)
-            if (id.includes("address")) {
-              // Individual residential or business addresses
-              buildingNumber = text;
-            } else if (id.includes("secondary_address")) {
-              // Sub-unit, suite, or lot (US only, but check anyway)
-              buildingNumber = text;
-            } else if (id.includes("street")) {
-              // Street features which host one or more addresses
-              street = text;
-            } else if (id.includes("block")) {
-              // Special feature type reserved for Japanese addresses
-              street = text;
-            }
-            // Administrative levels (less specific)
-            else if (id.includes("neighborhood")) {
-              // Colloquial sub-city features (may lack official boundaries)
-              neighborhood = text;
-            } else if (id.includes("locality")) {
-              // Official sub-city features (city districts, arrondissements)
-              district = text;
-            } else if (id.includes("district")) {
-              // Features smaller than top-level but larger than cities
-              district = text;
-            } else if (id.includes("place")) {
-              // Cities, villages, municipalities (postal addressing)
-              city = text;
-            } else if (id.includes("region")) {
-              // Top-level sub-national features (states, provinces)
-              province = text;
-            } else if (id.includes("country")) {
-              // Generally recognized countries
-              country = text;
-            } else if (id.includes("postcode")) {
-              // Postal codes
-              postalCode = text;
-            }
-          });
-
-          // Try to extract postal code from place_name if not found in context
-          if (!postalCode && feature?.place_name) {
-            // Look for postal code patterns in place_name
-            const postalCodePatterns = [
-              /\b(\d{5})\b/, // 5-digit postal code
-              /\b(\d{4})\b/, // 4-digit postal code
-              /\b(\d{6})\b/, // 6-digit postal code
-            ];
-
-            for (const pattern of postalCodePatterns) {
-              const match = feature.place_name.match(pattern);
-              if (match?.[1]) {
-                postalCode = match[1];
-
-                break;
-              }
-            }
-          }
-
-          // If no detailed context, try to parse from place_name
-          if (!buildingNumber && !street && !district) {
-            const placeNameParts = feature?.place_name?.split(", ") ?? [];
-
-            // Enhanced parsing for Laos address format
-            if (placeNameParts.length > 0) {
-              const firstPart = placeNameParts[0];
-              if (firstPart) {
-                // Check if it looks like a building number or street
-                if (
-                  /^\d+/.test(firstPart) ||
-                  firstPart.includes("Street") ||
-                  firstPart.includes("Road") ||
-                  firstPart.includes("Avenue") ||
-                  firstPart.includes("Lane") ||
-                  firstPart.includes("Boulevard")
-                ) {
-                  street = firstPart;
-                } else if (
-                  firstPart.includes("District") ||
-                  firstPart.includes("Ward") ||
-                  firstPart.includes("Village") ||
-                  firstPart.includes("Ban") ||
-                  firstPart.includes("Mueng")
-                ) {
-                  district = firstPart;
-                } else {
-                  // For Laos, the first part is often a district/neighborhood
-                  district = firstPart;
-                }
-              }
-            }
-
-            // Try to identify city from middle parts
-            if (placeNameParts.length > 1) {
-              const cityPart = placeNameParts[1];
-              if (cityPart && !city) {
-                city = cityPart;
-              }
-            }
-
-            // Try to identify province/country from last parts
-            if (placeNameParts.length > 2) {
-              const provincePart = placeNameParts[placeNameParts.length - 2];
-              const countryPart = placeNameParts[placeNameParts.length - 1];
-              if (provincePart && !province) {
-                province = provincePart;
-              }
-              if (countryPart && !country) {
-                country = countryPart;
-              }
-            }
-          }
-
-          // Additional parsing for Laos-specific patterns
-          if (!street && feature?.place_name) {
-            const placeName = feature.place_name;
-            // Look for common Laos street patterns
-            const streetPatterns = [
-              /(\d+\s+[A-Za-z\s]+(?:Street|Road|Avenue|Boulevard|Lane))/i,
-              /([A-Za-z\s]+(?:Street|Road|Avenue|Boulevard|Lane))/i,
-              /(\d+\s+[A-Za-z\s]+)/i, // Number followed by text
-            ];
-
-            for (const pattern of streetPatterns) {
-              const match = placeName.match(pattern);
-              if (match?.[1]) {
-                street = match[1].trim();
-                break;
-              }
-            }
-          }
-
-          // If still no detailed info, try to find nearby POIs for reference
-          if (!street && !buildingNumber) {
-            const nearbyPOIs = await searchNearbyPOIs(lat, lng, 500);
-            if (nearbyPOIs && nearbyPOIs.length > 0) {
-              // Use the closest POI as a reference point
-              const closestPOI = nearbyPOIs[0];
-              if (closestPOI?.place_name) {
-                // Add POI reference to the address
-                const poiName = closestPOI.place_name.split(",")[0];
-                street = `Gần ${poiName}`;
-              }
-            }
-          }
-
-          // Construct detailed address
-          const addressParts = [];
-          if (buildingNumber) addressParts.push(buildingNumber);
-          if (street) addressParts.push(street);
-          if (district) addressParts.push(district);
-          if (city) addressParts.push(city);
-          if (province) addressParts.push(province);
-          if (postalCode) addressParts.push(postalCode);
-          if (country) addressParts.push(country);
-
-          const fullAddress = addressParts.join(", ");
-
-          return {
-            latitude: lat,
-            longitude: lng,
-            address: fullAddress ?? feature?.place_name ?? "",
-            city,
-            country,
-            buildingNumber,
-            street,
-            district,
-            province,
-            postalCode,
-            neighborhood,
-          };
-        }
-        return null;
-      } catch (error) {
-        console.error("Reverse geocoding error:", error);
+        return {
+          longitude: lng,
+          latitude: lat,
+          address: fullAddress,
+          ...parsed,
+        };
+      } catch (err) {
+        console.error("Error during reverse geocoding", err);
         return null;
       }
     },
@@ -486,8 +445,6 @@ export default function MapboxLocationSelector({
   const handleMapClick = useCallback(
     (event: { lngLat: { lat: number; lng: number } }) => {
       const { lngLat } = event;
-
-      // Validate coordinates
       if (
         typeof lngLat.lat !== "number" ||
         typeof lngLat.lng !== "number" ||
@@ -497,13 +454,11 @@ export default function MapboxLocationSelector({
         console.error("Invalid coordinates from map click:", lngLat);
         return;
       }
-
       const newLocation: LocationData = {
         latitude: lngLat.lat,
         longitude: lngLat.lng,
         address: `${lngLat.lat?.toFixed(6) ?? "N/A"}, ${lngLat.lng?.toFixed(6) ?? "N/A"}`,
       };
-
       setMapLocation(newLocation);
       onChange?.(newLocation);
 
@@ -520,95 +475,75 @@ export default function MapboxLocationSelector({
     [reverseGeocode, onChange],
   );
 
-  const performSearch = async (query: string) => {
-    if (!query.trim()) return;
+  // ---- Forward Search ----
+  const performSearch = useCallback(
+    async (query: string) => {
+      if (!MAPBOX_TOKEN || !query.trim()) return;
 
-    setIsSearching(true);
-    try {
-      // Laos-only search with autocomplete
-      const searchStrategies = [
-        // Strategy 1: Laos-only search with autocomplete
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+      setIsSearching(true);
+      try {
+        const base = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
           query,
-        )}.json?access_token=${MAPBOX_TOKEN}&country=la&autocomplete=true&limit=40`,
+        )}.json`;
+        const params =
+          `access_token=${MAPBOX_TOKEN}` +
+          `&country=la` +
+          `&language=en` +
+          `&autocomplete=true` +
+          `&limit=20` +
+          `&types=address,place,locality,neighborhood,district,region,postcode`;
+        const proximity = `&proximity=102.6333,17.9757`;
 
-        // Strategy 2: Laos-only with proximity bias
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          query,
-        )}.json?access_token=${MAPBOX_TOKEN}&country=la&autocomplete=true&proximity=102.6333,17.9757&limit=40`,
+        const searchStrategies = [
+          `${base}?${params}`,
+          `${base}?${params}${proximity}`,
+          `${base}?${params}&types=address,place${proximity}`,
+        ];
 
-        // Strategy 3: Laos-only with language preference
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          query,
-        )}.json?access_token=${MAPBOX_TOKEN}&country=la&autocomplete=true&language=en&limit=40`,
-      ];
-
-      let response;
-      let data;
-      let success = false;
-
-      // Try each strategy until we get results
-      for (let i = 0; i < searchStrategies.length; i++) {
-        const searchUrl = searchStrategies[i];
-
-        try {
-          if (!searchUrl) {
-            console.error(`Strategy ${i + 1} - Invalid search URL`);
-            continue;
+        let data: MapboxGeocodingResponse | null = null;
+        for (const url of searchStrategies) {
+          const response = await fetch(url);
+          if (!response.ok) continue;
+          const tmp = (await response.json()) as MapboxGeocodingResponse;
+          if (tmp.features?.length) {
+            data = tmp;
+            break;
           }
-          response = await fetch(searchUrl);
-
-          if (response.ok) {
-            data = (await response.json()) as MapboxGeocodingResponse;
-
-            if (data?.features && data.features.length > 0) {
-              success = true;
-
-              break;
-            }
-          } else {
-            const errorText = await response.text();
-            console.error(`Strategy ${i + 1} failed:`, errorText);
-          }
-        } catch (strategyError) {
-          console.error(`Strategy ${i + 1} error:`, strategyError);
         }
-      }
 
-      if (success && data?.features) {
-        setSearchResults(data.features);
-        setShowSearchResults(true);
-      } else {
-        console.warn("All search strategies failed or returned no results");
+        if (data?.features?.length) {
+          setSearchResults(data.features);
+          setShowSearchResults(true);
+        } else {
+          setSearchResults([]);
+          setShowSearchResults(false);
+        }
+      } catch (error) {
+        console.error("Search error:", error);
         setSearchResults([]);
         setShowSearchResults(false);
+      } finally {
+        setIsSearching(false);
       }
-    } catch (error) {
-      console.error("Search error:", error);
+    },
+    [MAPBOX_TOKEN],
+  );
+
+  // Debounce search by 300ms
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setShowSearchResults(false);
       setSearchResults([]);
-    } finally {
-      setIsSearching(false);
+      return;
     }
-  };
-
-  const handleSearch = () => {
-    // Clear existing timeout
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
-    }
-
-    // Set new timeout for debounced search
-    const timeout = setTimeout(() => {
+    const t = setTimeout(() => {
       void performSearch(searchQuery);
-    }, 300); // 300ms delay
-
-    setSearchTimeout(timeout);
-  };
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchQuery, performSearch]);
 
   const handleSearchResultClick = (result: MapboxFeature) => {
     const [lng, lat] = result.center;
-
-    // Validate coordinates
     if (
       typeof lat !== "number" ||
       typeof lng !== "number" ||
@@ -619,179 +554,36 @@ export default function MapboxLocationSelector({
       return;
     }
 
-    // Extract detailed information from search result
-    const context = result.context ?? [];
-    let buildingNumber = "";
-    let street = "";
-    let district = "";
-    let province = "";
-    let postalCode = "";
-    let city = "";
-    let country = "";
-    let neighborhood = "";
+    // Parse fields (street, buildingNumber, district, city, etc.)
+    const parsed = parseMapboxFeature(result);
 
-    // Parse context information based on Mapbox feature types
-    context.forEach((item) => {
-      const id = item.id;
-      const text = item.text || "";
-
-      // Address-level information (most specific)
-      if (id.includes("address")) {
-        // Individual residential or business addresses
-        buildingNumber = text;
-      } else if (id.includes("secondary_address")) {
-        // Sub-unit, suite, or lot (US only, but check anyway)
-        buildingNumber = text;
-      } else if (id.includes("street")) {
-        // Street features which host one or more addresses
-        street = text;
-      } else if (id.includes("block")) {
-        // Special feature type reserved for Japanese addresses
-        street = text;
-      }
-      // Administrative levels (less specific)
-      else if (id.includes("neighborhood")) {
-        // Colloquial sub-city features (may lack official boundaries)
-        neighborhood = text;
-      } else if (id.includes("locality")) {
-        // Official sub-city features (city districts, arrondissements)
-        district = text;
-      } else if (id.includes("district")) {
-        // Features smaller than top-level but larger than cities
-        district = text;
-      } else if (id.includes("place")) {
-        // Cities, villages, municipalities (postal addressing)
-        city = text;
-      } else if (id.includes("region")) {
-        // Top-level sub-national features (states, provinces)
-        province = text;
-      } else if (id.includes("country")) {
-        // Generally recognized countries
-        country = text;
-      } else if (id.includes("postcode")) {
-        // Postal codes
-        postalCode = text;
-      }
-    });
-
-    // Try to extract postal code from place_name if not found in context
-    if (!postalCode && result.place_name) {
-      // Look for postal code patterns in place_name
-      const postalCodePatterns = [
-        /\b(\d{5})\b/, // 5-digit postal code
-        /\b(\d{4})\b/, // 4-digit postal code
-        /\b(\d{6})\b/, // 6-digit postal code
-      ];
-
-      for (const pattern of postalCodePatterns) {
-        const match = result.place_name.match(pattern);
-        if (match?.[1]) {
-          postalCode = match[1];
-          break;
-        }
-      }
-    }
-
-    // If no detailed context, try to parse from place_name
-    if (!buildingNumber && !street && !district) {
-      const placeNameParts = result.place_name?.split(", ") ?? [];
-
-      // Enhanced parsing for Laos address format
-      if (placeNameParts.length > 0) {
-        const firstPart = placeNameParts[0];
-        if (firstPart) {
-          // Check if it looks like a building number or street
-          if (
-            /^\d+/.test(firstPart) ||
-            firstPart.includes("Street") ||
-            firstPart.includes("Road") ||
-            firstPart.includes("Avenue") ||
-            firstPart.includes("Lane") ||
-            firstPart.includes("Boulevard")
-          ) {
-            street = firstPart;
-          } else if (
-            firstPart.includes("District") ||
-            firstPart.includes("Ward") ||
-            firstPart.includes("Village") ||
-            firstPart.includes("Ban") ||
-            firstPart.includes("Mueng")
-          ) {
-            district = firstPart;
-          } else {
-            // If it's a named place, it might be a district or neighborhood
-            district = firstPart;
-          }
-        }
-      }
-
-      // Try to identify city from middle parts
-      if (placeNameParts.length > 1) {
-        const cityPart = placeNameParts[1];
-        if (cityPart && !city) {
-          city = cityPart;
-        }
-      }
-
-      // Try to identify province/country from last parts
-      if (placeNameParts.length > 2) {
-        const provincePart = placeNameParts[placeNameParts.length - 2];
-        const countryPart = placeNameParts[placeNameParts.length - 1];
-        if (provincePart && !province) {
-          province = provincePart;
-        }
-        if (countryPart && !country) {
-          country = countryPart;
-        }
-      }
-    }
-
-    // Additional parsing for Laos-specific patterns
-    if (!street && result.place_name) {
-      const placeName = result.place_name;
-      // Look for common Laos street patterns
-      const streetPatterns = [
-        /(\d+\s+[A-Za-z\s]+(?:Street|Road|Avenue|Boulevard|Lane))/i,
-        /([A-Za-z\s]+(?:Street|Road|Avenue|Boulevard|Lane))/i,
-        /(\d+\s+[A-Za-z\s]+)/i, // Number followed by text
-      ];
-
-      for (const pattern of streetPatterns) {
-        const match = placeName.match(pattern);
-        if (match?.[1]) {
-          street = match[1].trim();
-          break;
-        }
-      }
-    }
-
-    // Construct detailed address
-    const addressParts = [];
-    if (buildingNumber) addressParts.push(buildingNumber);
-    if (street) addressParts.push(street);
-    if (district) addressParts.push(district);
-    if (city) addressParts.push(city);
-    if (province) addressParts.push(province);
-    if (postalCode) addressParts.push(postalCode);
-    if (country) addressParts.push(country);
+    const addressParts = [
+      parsed.buildingNumber,
+      parsed.street,
+      parsed.district,
+      parsed.city,
+      parsed.province,
+      parsed.postalCode,
+      parsed.country,
+    ].filter(Boolean);
 
     const fullAddress =
-      addressParts.join(", ") ??
-      result.place_name ??
+      addressParts.join(", ") ||
+      result.place_name ||
       `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
 
     const location: LocationData = {
       latitude: lat,
       longitude: lng,
       address: fullAddress,
-      city,
-      country,
-      buildingNumber,
-      street,
-      district,
-      province,
-      postalCode,
-      neighborhood,
+      city: parsed.city,
+      country: parsed.country,
+      buildingNumber: parsed.buildingNumber,
+      street: parsed.street,
+      district: parsed.district,
+      province: parsed.province,
+      postalCode: parsed.postalCode,
+      neighborhood: parsed.neighborhood,
     };
 
     setMapLocation(location);
@@ -801,19 +593,16 @@ export default function MapboxLocationSelector({
       zoom: 15,
     });
 
-    if (mapRef.current) {
-      try {
-        mapRef.current.flyTo({
-          center: [lng, lat],
-          zoom: 15,
-          duration: 1000,
-        });
-      } catch (error) {
-        console.error("Error flying to location:", error);
-      }
+    try {
+      mapRef.current?.flyTo({
+        center: [lng, lat],
+        zoom: 15,
+        duration: 1000,
+      });
+    } catch (error) {
+      console.error("Error flying to location:", error);
     }
 
-    // Clear search results and hide dropdown
     setSearchResults([]);
     setSearchQuery("");
     setShowSearchResults(false);
@@ -824,6 +613,7 @@ export default function MapboxLocationSelector({
     if (mapLocation) {
       onChange?.(mapLocation);
     }
+    console.log("mapLocation", mapLocation);
   };
 
   const handleClear = () => {
@@ -848,11 +638,8 @@ export default function MapboxLocationSelector({
                 <Input
                   placeholder="Tìm kiếm địa điểm..."
                   value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    handleSearch();
-                  }}
-                  onPressEnter={handleSearch}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onPressEnter={() => performSearch(searchQuery)}
                   onFocus={() => {
                     if (searchResults.length > 0) {
                       setShowSearchResults(true);
@@ -870,9 +657,7 @@ export default function MapboxLocationSelector({
                       <div
                         key={index}
                         className="cursor-pointer border-b border-neutral-100 p-3 transition-colors last:border-b-0 hover:bg-blue-50"
-                        onClick={() => {
-                          handleSearchResultClick(result);
-                        }}
+                        onClick={() => handleSearchResultClick(result)}
                       >
                         <div className="flex items-start gap-3">
                           <div className="mt-1 flex-shrink-0">
@@ -943,7 +728,6 @@ export default function MapboxLocationSelector({
                     loading={loadingLocations}
                     showSearch
                     className="w-full"
-                    onChange={handleLocationInfoChange}
                     filterOption={(input, option) => {
                       const text = option?.children as unknown as string;
                       return text.toLowerCase().includes(input.toLowerCase());
@@ -963,7 +747,7 @@ export default function MapboxLocationSelector({
 
                 <Button
                   type="primary"
-                  onClick={handleSearch}
+                  onClick={() => performSearch(searchQuery)}
                   loading={isSearching}
                   icon={<Search className="h-4 w-4" />}
                   disabled={disabled}
@@ -1025,7 +809,6 @@ export default function MapboxLocationSelector({
                       </Text>
                       {/* Enhanced location details display */}
                       <div className="mt-2 space-y-1">
-                        {/* Show available detailed information */}
                         {mapLocation.buildingNumber && (
                           <div className="text-xs text-neutral-600">
                             <strong>Số nhà:</strong>{" "}
@@ -1068,8 +851,6 @@ export default function MapboxLocationSelector({
                             {mapLocation.postalCode}
                           </div>
                         )}
-
-                        {/* Show helpful message when detailed info is limited */}
                         {!mapLocation.buildingNumber && !mapLocation.street && (
                           <div className="mt-2 rounded bg-blue-50 p-2">
                             <div className="text-xs text-blue-700">
