@@ -12,20 +12,12 @@ export class SettingController {
     constructor(private readonly settingService: SettingService) {}
 
     @Post()
-    @ApiConsumes('multipart/form-data')
     @ApiBody({ type: CreateSettingDto })
     @ApiResponse({ status: 200, description: 'Setting created successfully' })
-    @UseInterceptors(
-        FileFieldsInterceptor([
-            { name: 'banner', maxCount: 1 },
-            { name: 'images', maxCount: 10 },
-        ])
-    )
     async create(
         @Body() createSettingDto: CreateSettingDto,
-        @UploadedFiles() files: { banner?: Multer.File[]; images?: Multer.File[] },
     ) {
-        return this.settingService.create(createSettingDto, files.banner?.[0], files.images);
+        return this.settingService.create(createSettingDto);
     }
 
     @Get()
@@ -41,21 +33,13 @@ export class SettingController {
     }
 
     @Patch(':id')
-    @ApiConsumes('multipart/form-data')
     @ApiBody({ type: CreateSettingDto })
     @ApiResponse({ status: 200, description: 'Update setting by id' })
-    @UseInterceptors(
-        FileFieldsInterceptor([
-            { name: 'banner', maxCount: 1 },
-            { name: 'images', maxCount: 10 },
-        ])
-    )
     async update(
         @Param('id') id: string,
-        @Body() updateSettingDto: CreateSettingDto,
-        @UploadedFiles() files: { banner?: Multer.File[]; images?: Multer.File[] },
+        @Body() updateSettingDto: CreateSettingDto
     ) {
-        return this.settingService.update(id, updateSettingDto, files.banner?.[0], files.images);
+        return this.settingService.update(id, updateSettingDto);
     }
 
     @Delete(':id')
