@@ -12,6 +12,9 @@ import {
   Building2,
   ArrowRight,
   CheckCircle,
+  Map,
+  Grid3X3,
+  List,
 } from "lucide-react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { numberToString } from "@/share/helper/number-to-string";
@@ -40,6 +43,7 @@ import type {
 } from "@/@types/types";
 import PropertyCard from "./property-card";
 import PropertyCardSkeleton from "@/components/business/common/property-card-skeleton";
+import PropertiesMap from "@/components/business/common/properties-map";
 
 import Image from "next/image";
 
@@ -84,7 +88,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [total, setTotal] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const [layout] = useState<"grid" | "list">("list");
+  const [layout, setLayout] = useState<"grid" | "list" | "map">("list");
 
   const searchModalRef = useRef<HTMLDivElement>(null);
   const locationModalRef = useRef<HTMLDivElement>(null);
@@ -792,7 +796,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="relative min-h-screen">
       <div className="sticky top-[80px] right-0 left-0 z-50 container mx-auto px-4 py-4">
         <div className="relative rounded-2xl bg-white shadow-md ring-1 ring-gray-200/50 backdrop-blur-sm">
           {/* Search Form */}
@@ -803,7 +807,13 @@ const Properties = ({ transaction }: PropertiesProps) => {
                   Trang chủ
                 </span>
                 <ChevronRight className="h-4 w-4 text-gray-300" />
-                <span className="font-medium text-gray-900">Nhà đất bán</span>
+                <span className="font-medium text-gray-900">
+                  {transaction === "sale"
+                    ? "Nhà đất bán"
+                    : transaction === "rent"
+                      ? "Nhà đất cho thuê"
+                      : "Dự án"}
+                </span>
                 {getFilterDisplayText() && (
                   <>
                     <ChevronRight className="h-4 w-4 text-gray-300" />
@@ -1589,10 +1599,56 @@ const Properties = ({ transaction }: PropertiesProps) => {
 
       {/* Main content */}
       <div className="container mx-auto px-4 py-4">
+        {/* Layout Toggle */}
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">Hiển thị:</span>
+            <div className="flex rounded-lg border border-gray-200 bg-white p-1">
+              <Button
+                type={layout === "list" ? "primary" : "text"}
+                size="small"
+                icon={<List size={16} />}
+                onClick={() => setLayout("list")}
+                className="flex items-center gap-1"
+              >
+                Danh sách
+              </Button>
+              <Button
+                type={layout === "grid" ? "primary" : "text"}
+                size="small"
+                icon={<Grid3X3 size={16} />}
+                onClick={() => setLayout("grid")}
+                className="flex items-center gap-1"
+              >
+                Lưới
+              </Button>
+              <Button
+                type={layout === "map" ? "primary" : "text"}
+                size="small"
+                icon={<Map size={16} />}
+                onClick={() => setLayout("map")}
+                className="flex items-center gap-1"
+              >
+                Bản đồ
+              </Button>
+            </div>
+          </div>
+
+          <div className="text-sm text-gray-500">
+            {properties?.data?.length ?? 0} bất động sản
+          </div>
+        </div>
+
         <div className="flex flex-col justify-center gap-6 lg:flex-row">
           {/* Left Content - Property Listing */}
           <div className="w-full">
-            {propertiesLoading ? (
+            {layout === "map" ? (
+              <PropertiesMap
+                properties={properties?.data ?? []}
+                loading={propertiesLoading}
+                height="70vh"
+              />
+            ) : propertiesLoading ? (
               <div className="grid grid-cols-1 gap-6">
                 {Array.from({ length: 10 }).map((_, index) => (
                   <PropertyCardSkeleton key={index} />
@@ -1614,18 +1670,20 @@ const Properties = ({ transaction }: PropertiesProps) => {
                     {properties?.data.map((property) => (
                       <PropertyCard key={property.id} property={property} />
                     ))}
-                    <div className="col-span-full">
-                      <Pagination
-                        align="center"
-                        total={total}
-                        pageSize={pageSize}
-                        current={currentPage}
-                        onChange={(page, pageSize) => {
-                          setCurrentPage(page);
-                          setPageSize(pageSize);
-                        }}
-                      />
-                    </div>
+                    {layout === "list" || layout === "grid" ? (
+                      <div className="col-span-full">
+                        <Pagination
+                          align="center"
+                          total={total}
+                          pageSize={pageSize}
+                          current={currentPage}
+                          onChange={(page, pageSize) => {
+                            setCurrentPage(page);
+                            setPageSize(pageSize);
+                          }}
+                        />
+                      </div>
+                    ) : null}
                   </div>
                 )}
               </>

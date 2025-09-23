@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Modal, Button, Typography } from "antd";
+import { Modal, Button } from "antd";
 import { MapPin } from "lucide-react";
 import Map from "react-map-gl/mapbox";
 import { Marker, Popup } from "react-map-gl/mapbox";
@@ -9,44 +9,6 @@ import type { MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 // Custom styles for enhanced marker and popup
-const customStyles = `
-  .custom-popup .mapboxgl-popup-content {
-    padding: 0 !important;
-    border-radius: 12px !important;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
-  }
-  
-  .custom-popup .mapboxgl-popup-tip {
-    border-top-color: white !important;
-  }
-  
-  .marker-pulse {
-    animation: markerPulse 2s infinite;
-    transition: all 0.3s ease;
-  }
-  
-  .marker-pulse:hover {
-    transform: scale(1.1);
-    box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
-  }
-  
-  @keyframes markerPulse {
-    0% {
-      transform: scale(1);
-      opacity: 1;
-    }
-    50% {
-      transform: scale(1.05);
-      opacity: 0.8;
-    }
-    100% {
-      transform: scale(1);
-      opacity: 1;
-    }
-  }
-`;
-
-const { Text } = Typography;
 
 interface LocationData {
   latitude: number;
@@ -152,13 +114,11 @@ export default function MapboxModal({
             <div className="rounded-lg bg-blue-50 p-4">
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-blue-600" />
-                <Text className="text-sm font-medium text-blue-700">
+                <p className="text-sm font-medium text-blue-700">
                   Vị trí tài sản:
-                </Text>
+                </p>
               </div>
-              <Text className="mt-1 block text-sm text-blue-600">
-                {location}
-              </Text>
+              <p className="mt-1 block text-sm text-blue-600">{location}</p>
             </div>
           )}
 
@@ -235,17 +195,17 @@ export default function MapboxModal({
             <div className="rounded-lg bg-blue-50 p-4">
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-blue-600" />
-                <Text className="text-sm font-medium text-blue-700">
+                <p className="text-sm font-medium text-blue-700">
                   Vị trí đã chọn:
-                </Text>
+                </p>
               </div>
-              <Text className="mt-1 block text-sm text-blue-600">
+              <p className="mt-1 block text-sm text-blue-600">
                 {mapLocation.address}
-              </Text>
-              <Text className="mt-1 text-xs text-blue-500">
+              </p>
+              <p className="mt-1 text-xs text-blue-500">
                 Tọa độ: {mapLocation.latitude.toFixed(6)},{" "}
                 {mapLocation.longitude.toFixed(6)}
-              </Text>
+              </p>
             </div>
           )}
         </div>
