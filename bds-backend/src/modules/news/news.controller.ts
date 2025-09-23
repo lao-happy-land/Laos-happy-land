@@ -3,6 +3,7 @@ import { NewsService } from './news.service';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { CreateNewsDto } from './dto/create-news.dto';
 import { GetNewsDto } from './dto/get-news.dto';
+import { UpdateNewsDto } from './dto/update-news.dto';
 
 @Controller('news')
 export class NewsController {
@@ -32,7 +33,7 @@ export class NewsController {
     @Patch(':id')
     @ApiOperation({ summary: 'Update news by id' })
     @ApiResponse({ status: 200, description: 'Update news by id' })
-    async update(@Param('id') id: string, @Body() dto: CreateNewsDto) {
+    async update(@Param('id') id: string, @Body() dto: UpdateNewsDto) {
         return this.newsService.update(id, dto);
     }
 

@@ -13,6 +13,7 @@ import { ExchangeRateModule } from './modules/exchange-rate/exchange-rate.module
 import { LocationInfoModule } from './modules/location-info/location-info.module';
 import { NewsTypeModule } from './modules/news-type/news-type.module';
 import { NewsModule } from './modules/news/news.module';
+import { AboutUsModule } from './modules/about-us/about-us.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
@@ -29,7 +30,8 @@ import { NewsModule } from './modules/news/news.module';
     ExchangeRateModule,
     LocationInfoModule,
     NewsTypeModule,
-    NewsModule
+    NewsModule,
+    AboutUsModule
   ],
 })
 export class AppModule {}

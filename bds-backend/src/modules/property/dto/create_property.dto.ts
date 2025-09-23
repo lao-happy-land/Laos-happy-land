@@ -37,6 +37,36 @@ export class LocationDto {
   @IsOptional()
   @IsString()
   country?: string;
+
+  @ApiPropertyOptional({ example: '12A' })
+  @IsOptional()
+  @IsString()
+  buildingNumber?: string;
+
+  @ApiPropertyOptional({ example: 'Nguyễn Huệ' })
+  @IsOptional()
+  @IsString()
+  street?: string;
+
+  @ApiPropertyOptional({ example: 'Quận 1' })
+  @IsOptional()
+  @IsString()
+  district?: string;
+
+  @ApiPropertyOptional({ example: 'TP.HCM' })
+  @IsOptional()
+  @IsString()
+  province?: string;
+
+  @ApiPropertyOptional({ example: '700000' })
+  @IsOptional()
+  @IsString()
+  postalCode?: string;
+
+  @ApiPropertyOptional({ example: 'Bến Nghé' })
+  @IsOptional()
+  @IsString()
+  neighborhood?: string;
 }
 
 export class CreatePropertyDto {

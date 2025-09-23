@@ -25,6 +25,12 @@ export interface LocationData {
   address: string;
   city?: string;
   country?: string;
+  buildingNumber?: string;
+  street?: string;
+  district?: string;
+  province?: string;
+  postalCode?: string;
+  neighborhood?: string;
 }
 
 @Entity('properties')
