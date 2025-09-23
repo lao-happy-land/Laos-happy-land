@@ -159,7 +159,9 @@ export interface NewsType {
 export interface News {
   id: string;
   title: string;
-  details?: object;
+  description?: string;
+  details?: Content[];
+  viewsCount?: number;
   createdAt: string;
   updatedAt: string;
   createdBy?: string;
