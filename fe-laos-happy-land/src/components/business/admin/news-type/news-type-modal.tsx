@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { Modal, Form, Input, Button, message, Space } from "antd";
+import { Modal, Form, Input, Button, message } from "antd";
 import { useRequest } from "ahooks";
 import { newsTypeService } from "@/share/service/news-type.service";
 import type { NewsType } from "@/@types/types";
@@ -33,7 +33,7 @@ const NewsTypeModal: React.FC<NewsTypeModalProps> = ({
         message.success("Tạo loại tin tức thành công!");
         onSuccess();
       },
-      onError: (error: any) => {
+      onError: (error: Error) => {
         message.error("Tạo loại tin tức thất bại!");
         console.error("Create error:", error);
       },
@@ -49,7 +49,7 @@ const NewsTypeModal: React.FC<NewsTypeModalProps> = ({
         message.success("Cập nhật loại tin tức thành công!");
         onSuccess();
       },
-      onError: (error: any) => {
+      onError: (error: Error) => {
         message.error("Cập nhật loại tin tức thất bại!");
         console.error("Update error:", error);
       },
@@ -70,7 +70,7 @@ const NewsTypeModal: React.FC<NewsTypeModalProps> = ({
 
   const handleSubmit = async () => {
     try {
-      const values = await form.validateFields();
+      const values = (await form.validateFields()) as { name: string };
 
       if (mode === "create") {
         const data: CreateNewsTypeDto = {
