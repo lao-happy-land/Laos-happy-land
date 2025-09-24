@@ -60,6 +60,8 @@ export class NewsService {
         if (!news) {
             throw new Error('News not found');
         }
+        news.viewCount = (news.viewCount || 0) + 1;
+        await this.entityManager.save(news);
         return { news, message: 'Success' };
     }
 

@@ -24,4 +24,7 @@ export class News extends AbstractEntity {
   @ManyToOne(() => NewsType, (type) => type.news, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'type_id' })
   type: NewsType;
+
+  @Column({ type: 'int', default: 0 })
+  viewCount: number;
 }
