@@ -45,19 +45,43 @@ export class PropertyService {
       throw new BadRequestException('Property type not found');
     }
 
-    const locationInfo = await this.entityManager.findOneBy(LocationInfo, {
-      id: createPropertyDto.locationInfoId,
-    });
-    if (!locationInfo) {
-      throw new BadRequestException('Location info not found');
+    let locationData = null;
+    if (createPropertyDto.location) {
+      if (typeof createPropertyDto.location === 'string') {
+        try {
+          locationData = JSON.parse(createPropertyDto.location);
+        } catch {
+          throw new BadRequestException('Invalid location format');
+        }
+      } else {
+        locationData = createPropertyDto.location;
+      }
+    }
+    let locationInfo: LocationInfo = null;
+    if (locationData?.province && locationData?.district) {
+      let provinceInfo = await this.entityManager.findOne(LocationInfo, {
+        where: { name: locationData.province },
+      });
+
+      if (!provinceInfo) {
+        provinceInfo = this.entityManager.create(LocationInfo, {
+          name: locationData.province,
+          strict: [locationData.district],
+          viewCount: 0,
+        });
+        await this.entityManager.save(provinceInfo);
+      } else {
+        const strictList = provinceInfo.strict || [];
+        if (!strictList.includes(locationData.district)) {
+          provinceInfo.strict = [...strictList, locationData.district];
+          await this.entityManager.save(provinceInfo);
+        }
+      }
+
+      locationInfo = provinceInfo;
     }
 
-    const {
-      typeId,
-      locationInfoId,
-      price: usdPrice,
-      ...propertyData
-    } = createPropertyDto;
+    const { typeId, price: usdPrice, ...propertyData } = createPropertyDto;
 
     if (typeof propertyData.details === 'string') {
       try {
@@ -318,6 +342,41 @@ export class PropertyService {
     if (!property) {
       throw new NotFoundException('Property not found');
     }
+    let locationData = null;
+    if (updatePropertyDto.location) {
+      if (typeof updatePropertyDto.location === 'string') {
+        try {
+          locationData = JSON.parse(updatePropertyDto.location);
+        } catch {
+          throw new BadRequestException('Invalid location format');
+        }
+      } else {
+        locationData = updatePropertyDto.location;
+      }
+      property.location = locationData;
+    }
+    if (locationData?.province && locationData?.district) {
+      let provinceInfo = await this.entityManager.findOne(LocationInfo, {
+        where: { name: locationData.province },
+      });
+
+      if (!provinceInfo) {
+        provinceInfo = this.entityManager.create(LocationInfo, {
+          name: locationData.province,
+          strict: [locationData.district],
+          viewCount: 0,
+        });
+        await this.entityManager.save(provinceInfo);
+      } else {
+        const strictList = provinceInfo.strict || [];
+        if (!strictList.includes(locationData.district)) {
+          provinceInfo.strict = [...strictList, locationData.district];
+          await this.entityManager.save(provinceInfo);
+        }
+      }
+
+      property.locationInfo = provinceInfo;
+    }
 
     if (updatePropertyDto.typeId) {
       const propertyType = await this.entityManager.findOneBy(PropertyType, {
@@ -327,16 +386,6 @@ export class PropertyService {
         throw new BadRequestException('Property type not found');
       }
       property.type = propertyType;
-    }
-
-    if (updatePropertyDto.locationInfoId) {
-      const locationInfo = await this.entityManager.findOneBy(LocationInfo, {
-        id: updatePropertyDto.locationInfoId,
-      });
-      if (!locationInfo) {
-        throw new BadRequestException('Location info not found');
-      }
-      property.locationInfo = locationInfo;
     }
 
     if (updatePropertyDto.location) {

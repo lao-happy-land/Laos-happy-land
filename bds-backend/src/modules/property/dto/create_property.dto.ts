@@ -77,12 +77,12 @@ export class CreatePropertyDto {
   @IsUUID()
   typeId: string;
 
-  @ApiProperty({
-    description: 'ID của LocationInfo',
-    example: 'd7f6a6a0-1234-5678-9876-abcdefabcdef',
-  })
-  @IsUUID()
-  locationInfoId: string;
+  // @ApiProperty({
+  //   description: 'ID của LocationInfo',
+  //   example: 'd7f6a6a0-1234-5678-9876-abcdefabcdef',
+  // })
+  // @IsUUID()
+  // locationInfoId: string;
 
   @ApiProperty({
     description: 'Tiêu đề tin rao',

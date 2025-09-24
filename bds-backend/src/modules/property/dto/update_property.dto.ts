@@ -23,13 +23,13 @@ export class UpdatePropertyDto {
   @IsUUID()
   typeId?: string;
 
-  @ApiPropertyOptional({
-    description: 'ID của LocationInfo',
-    example: 'd7f6a6a0-1234-5678-9876-abcdefabcdef',
-  })
-  @IsOptional()
-  @IsUUID()
-  locationInfoId?: string;
+  // @ApiPropertyOptional({
+  //   description: 'ID của LocationInfo',
+  //   example: 'd7f6a6a0-1234-5678-9876-abcdefabcdef',
+  // })
+  // @IsOptional()
+  // @IsUUID()
+  // locationInfoId?: string;
 
   @ApiPropertyOptional({
     description: 'Tiêu đề tin rao',
