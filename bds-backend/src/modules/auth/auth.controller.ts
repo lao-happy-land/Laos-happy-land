@@ -1,10 +1,20 @@
-import { Controller, Post, Body, Get, UseGuards, Req, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  UseGuards,
+  Req,
+  Res,
+  BadRequestException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 import { log } from 'console';
 import { GoogleAuthGuard } from './guard/google.guard';
 import { ResetPasswordDto } from './dto/reset_pass.dto';
+import { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -41,8 +51,11 @@ export class AuthController {
   @Get('google/redirect')
   @ApiOperation({ summary: 'Google OAuth callback' })
   @UseGuards(GoogleAuthGuard)
-  async googleAuthRedirect(@Req() req) {
-    return { access_token: req.user.access_token };
+  async googleAuthRedirect(@Req() req, @Res() res: Response) {
+    const token = req.user.access_token;
+    const FE_URL = process.env.FRONTEND_URL;
+
+    return res.redirect(`${FE_URL}?token=${token}`);
   }
 
   @Post('reset-password')
