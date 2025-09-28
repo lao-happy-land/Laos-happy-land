@@ -32,6 +32,16 @@ export type User = {
   image: string | null;
   fromBank: string | null;
   password: string;
+  
+  // Broker-specific fields
+  propertyCount?: number;
+  experienceYears?: number;
+  ratingAverage?: number;
+  ratingCount?: number;
+  specialties?: string[];
+  languages?: string[];
+  certifications?: string[];
+  locationInfo?: LocationInfo | null;
 };
 
 export type Content =
