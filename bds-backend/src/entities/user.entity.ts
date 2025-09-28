@@ -56,7 +56,7 @@ export class User extends AbstractEntity {
 
   @Column({ type: 'int', default: 0 })
   propertyCount: number;
-  
+
   @Column({ type: 'int', default: 0 })
   experienceYears: number;
 
@@ -78,10 +78,11 @@ export class User extends AbstractEntity {
   @OneToMany(() => Property, (property) => property.owner)
   properties: Property[];
 
-  @AfterLoad()
-  updatePropertyCount() {
-    this.propertyCount = this.properties ? this.properties.length : 0;
-  }
+  @Column({ nullable: true })
+  company?: string;
+
+  @Column({ type: 'boolean', default: false })
+  verified: boolean;
 
   @OneToMany(() => UserFeedback, (fb) => fb.user)
   feedbacks: UserFeedback[];

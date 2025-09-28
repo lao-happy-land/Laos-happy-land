@@ -32,6 +32,16 @@ export type User = {
   image: string | null;
   fromBank: string | null;
   password: string;
+  
+  // Broker-specific fields
+  propertyCount?: number;
+  experienceYears?: number;
+  ratingAverage?: number;
+  ratingCount?: number;
+  specialties?: string[];
+  languages?: string[];
+  certifications?: string[];
+  locationInfo?: LocationInfo | null;
 };
 
 export type Content =
@@ -196,4 +206,18 @@ export interface NewsTypeResponse {
   total: number;
   page: number;
   perPage: number;
+}
+
+export interface UserFeedback {
+  id: string;
+  rating: number;
+  comment?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string | null;
+  updatedBy?: string | null;
+  deletedAt?: string | null;
+  deletedBy?: string | null;
+  user?: User; // The broker being reviewed
+  reviewer?: User; // The user who wrote the review
 }

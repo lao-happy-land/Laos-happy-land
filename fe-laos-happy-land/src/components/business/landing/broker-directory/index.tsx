@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Input, Select, Button, Pagination, Spin, App } from "antd";
+import { useRequest } from "ahooks";
+import { Input, Select, Pagination, Spin, App } from "antd";
 import { Search, MapPin, Star, Filter } from "lucide-react";
 import Image from "next/image";
+import { userService } from "@/share/service/user.service";
+import type { User } from "@/@types/types";
 
 const { Search: SearchInput } = Input;
-const { Option } = Select;
 
 interface Broker {
   id: string;
@@ -28,146 +30,87 @@ interface Broker {
 export default function BrokerDirectory() {
   const router = useRouter();
   const { message } = App.useApp();
-  const [brokers, setBrokers] = useState<Broker[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [searchInputValue, setSearchInputValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [locationFilter, setLocationFilter] = useState("");
-  const [specialtyFilter, setSpecialtyFilter] = useState("");
+
+  // TODO: no longer needed?
+  // const [locationFilter, setLocationFilter] = useState("");
+  // const [specialtyFilter, setSpecialtyFilter] = useState("");
+  
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 12;
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
 
-  // Mock data - replace with actual API call
-  const mockBrokers: Broker[] = useMemo(
-    () => [
-      {
-        id: "1",
-        name: "Nguyễn Văn Minh",
-        email: "minh.nguyen@example.com",
-        phone: "+856 20 1234 5678",
-        avatar: "/images/admin/avatar.png",
-        company: "Lao Real Estate Co.",
-        location: "Vientiane",
-        rating: 4.8,
-        reviewCount: 127,
-        specialties: ["Nhà phố", "Căn hộ", "Đất nền"],
-        experience: 8,
-        propertiesCount: 45,
-        verified: true,
+  // Fetch brokers from API
+  const {
+    data: brokersData = { data: [], meta: { itemCount: 0, pageCount: 0 } },
+    loading: brokersLoading,
+  } = useRequest(
+    async () => {
+      const response = await userService.getAllUsers({
+        search: searchTerm ?? undefined,
+        role: "Broker", // Filter only brokers
+        page: currentPage,
+        perPage: pageSize,
+      });
+      return response as unknown as {
+        data: User[];
+        meta: {
+          itemCount: number;
+          pageCount: number;
+          hasPreviousPage: boolean;
+          hasNextPage: boolean;
+        };
+      };
+    },
+    {
+      refreshDeps: [searchTerm, currentPage, pageSize],
+      onSuccess: (data) => {
+        setTotal(data.meta.itemCount ?? 0);
       },
-      {
-        id: "2",
-        name: "Somsak Phommachanh",
-        email: "somsak@example.com",
-        phone: "+856 20 2345 6789",
-        avatar: "/images/admin/avatar.png",
-        company: "Vientiane Properties",
-        location: "Vientiane",
-        rating: 4.6,
-        reviewCount: 89,
-        specialties: ["Biệt thự", "Nhà phố"],
-        experience: 6,
-        propertiesCount: 32,
-        verified: true,
+      onError: (error) => {
+        console.error("Error loading brokers:", error);
+        message.error("Không thể tải danh sách môi giới. Vui lòng thử lại.");
       },
-      {
-        id: "3",
-        name: "Khamla Vongsa",
-        email: "khamla@example.com",
-        phone: "+856 20 3456 7890",
-        avatar: "/images/admin/avatar.png",
-        company: "Luang Prabang Realty",
-        location: "Luang Prabang",
-        rating: 4.9,
-        reviewCount: 156,
-        specialties: ["Căn hộ", "Đất nền", "Nhà phố"],
-        experience: 10,
-        propertiesCount: 67,
-        verified: true,
-      },
-      {
-        id: "4",
-        name: "Bounmy Chanthavong",
-        email: "bounmy@example.com",
-        phone: "+856 20 4567 8901",
-        avatar: "/images/admin/avatar.png",
-        company: "Pakse Properties",
-        location: "Pakse",
-        rating: 4.7,
-        reviewCount: 73,
-        specialties: ["Biệt thự", "Đất nền"],
-        experience: 5,
-        propertiesCount: 28,
-        verified: false,
-      },
-      {
-        id: "5",
-        name: "Sengdao Keomany",
-        email: "sengdao@example.com",
-        phone: "+856 20 5678 9012",
-        avatar: "/images/admin/avatar.png",
-        company: "Savannakhet Real Estate",
-        location: "Savannakhet",
-        rating: 4.5,
-        reviewCount: 94,
-        specialties: ["Nhà phố", "Căn hộ"],
-        experience: 7,
-        propertiesCount: 41,
-        verified: true,
-      },
-      {
-        id: "6",
-        name: "Khamphone Sisouphanh",
-        email: "khamphone@example.com",
-        phone: "+856 20 6789 0123",
-        avatar: "/images/admin/avatar.png",
-        company: "Champasak Properties",
-        location: "Champasak",
-        rating: 4.8,
-        reviewCount: 112,
-        specialties: ["Biệt thự", "Nhà phố", "Đất nền"],
-        experience: 9,
-        propertiesCount: 53,
-        verified: true,
-      },
-    ],
-    [],
+    },
   );
 
-  useEffect(() => {
-    // Simulate API call
-    const fetchBrokers = async () => {
-      setLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setBrokers(mockBrokers);
-      setLoading(false);
-    };
+  const brokers = brokersData.data || [];
 
-    void fetchBrokers();
-  }, [mockBrokers]);
+  // Search functionality
+  const handleSearch = () => {
+    setSearchTerm(searchInputValue);
+    setCurrentPage(1);
+  };
 
-  const filteredBrokers = brokers.filter((broker) => {
-    const matchesSearch =
-      broker.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      broker.company?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesLocation =
-      !locationFilter || broker.location === locationFilter;
-    const matchesSpecialty =
-      !specialtyFilter || broker.specialties.includes(specialtyFilter);
+  const handleSearchChange = (value: string) => {
+    setSearchInputValue(value);
+  };
 
-    return matchesSearch && matchesLocation && matchesSpecialty;
-  });
+  // Pagination functionality
+  const handlePaginationChange = (page: number, size: number) => {
+    setCurrentPage(page);
+    setPageSize(size);
+  };
 
-  const paginatedBrokers = filteredBrokers.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize,
-  );
-
-  const locations = Array.from(
-    new Set(brokers.map((broker) => broker.location).filter(Boolean)),
-  );
-  const specialties = Array.from(
-    new Set(brokers.flatMap((broker) => broker.specialties)),
-  );
+  // Transform User data to Broker format for display
+  const transformedBrokers: Broker[] = brokers.map((user) => ({
+    id: user.id,
+    name: user.fullName,
+    email: user.email,
+    phone: user.phone,
+    avatar: user.avatarUrl ?? user.image ?? "/images/admin/avatar.png",
+    // TODO: Add company field to User API model
+    company: "Real Estate Company", // Default value since User doesn't have company
+    location: user.locationInfo?.name ?? user.location ?? "",
+    rating: user.ratingAverage ?? 0,
+    reviewCount: user.ratingCount ?? 0,
+    specialties: user.specialties ?? ["Nhà phố", "Căn hộ", "Đất nền"],
+    experience: user.experienceYears ?? 0,
+    propertiesCount: user.propertyCount ?? 0,
+    // TODO: Add verified field to User API model
+    verified: true, // Default verified status
+  }));
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -197,12 +140,14 @@ export default function BrokerDirectory() {
                 <SearchInput
                   placeholder="Nhập tên hoặc công ty môi giới..."
                   size="large"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  value={searchInputValue}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  onSearch={handleSearch}
                   prefix={<Search className="h-4 w-4 text-neutral-400" />}
                 />
               </div>
-              <div>
+              {/* TODO: Add filters when */}
+              {/* <div>
                 <label className="mb-2 block text-sm font-medium text-neutral-700">
                   Địa điểm
                 </label>
@@ -242,8 +187,8 @@ export default function BrokerDirectory() {
                     </Option>
                   ))}
                 </Select>
-              </div>
-            </div>
+              </div> */}
+            </div> 
           </div>
         </div>
 
@@ -252,7 +197,7 @@ export default function BrokerDirectory() {
           <p className="text-neutral-600">
             Tìm thấy{" "}
             <span className="text-primary-600 font-semibold">
-              {filteredBrokers.length}
+              {total}
             </span>{" "}
             môi giới
           </p>
@@ -265,13 +210,13 @@ export default function BrokerDirectory() {
         </div>
 
         {/* Brokers Grid */}
-        {loading ? (
+        {brokersLoading ? (
           <div className="flex justify-center py-12">
             <Spin size="large" />
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {paginatedBrokers.map((broker) => (
+            {transformedBrokers.map((broker) => (
               <div
                 key={broker.id}
                 className="group cursor-pointer rounded-xl bg-white shadow-sm transition-all duration-300 hover:shadow-lg"
@@ -309,13 +254,13 @@ export default function BrokerDirectory() {
                     {broker.name}
                   </h3>
                   <p className="mb-2 text-sm text-neutral-600">
-                    {broker.company}
+                    {broker.company ?? "Chưa cập nhật"}
                   </p>
 
                   {/* Location */}
                   <div className="mb-3 flex items-center justify-center gap-1 text-sm text-neutral-500">
                     <MapPin className="h-4 w-4" />
-                    {broker.location}
+                    {broker.location ?? "Chưa cập nhật"}
                   </div>
 
                   {/* Rating */}
@@ -360,8 +305,8 @@ export default function BrokerDirectory() {
                     </div>
                   </div>
 
-                  {/* Contact Button */}
-                  <Button
+                  {/* TODO: Contact Button */}
+                  {/* <Button
                     type="primary"
                     size="small"
                     className="w-full"
@@ -373,7 +318,7 @@ export default function BrokerDirectory() {
                     }}
                   >
                     Liên hệ
-                  </Button>
+                  </Button> */}
                 </div>
               </div>
             ))}
@@ -381,21 +326,19 @@ export default function BrokerDirectory() {
         )}
 
         {/* Pagination */}
-        {filteredBrokers.length > pageSize && (
-          <div className="mt-8 flex justify-center">
+        {total > pageSize && (
             <Pagination
+              align="center"
               current={currentPage}
-              total={filteredBrokers.length}
+              total={total}
               pageSize={pageSize}
-              onChange={setCurrentPage}
+              onChange={handlePaginationChange}
               showSizeChanger={false}
-              showQuickJumper
             />
-          </div>
         )}
 
         {/* Empty State */}
-        {!loading && filteredBrokers.length === 0 && (
+        {!brokersLoading && transformedBrokers.length === 0 && (
           <div className="py-12 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100">
               <Search className="h-8 w-8 text-neutral-400" />
