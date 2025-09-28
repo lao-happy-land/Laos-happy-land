@@ -104,6 +104,19 @@ export class UserService {
       );
     }
 
+    if (params.specialty) {
+      query.andWhere(
+        "COALESCE(CAST(user.specialties AS text), '') ILIKE :specialty",
+        { specialty: `%${params.specialty}%` },
+      );
+    }
+
+    if (params.locationInfoId) {
+      query.andWhere('user.location_info_id = :locationInfoId', {
+        locationInfoId: params.locationInfoId,
+      });
+    }
+
     const [result, total] = await query.getManyAndCount();
 
     const pageMetaDto = new PageMetaDto({
