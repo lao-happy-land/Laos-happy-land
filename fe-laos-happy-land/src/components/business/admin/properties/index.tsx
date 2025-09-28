@@ -135,7 +135,7 @@ const AdminProperties = () => {
     async () => {
       const params: {
         keyword?: string;
-        type?: string;
+        type?: string[];
         minPrice?: number;
         maxPrice?: number;
         location?: string;
@@ -155,7 +155,7 @@ const AdminProperties = () => {
       }
 
       if (selectedPropertyTypes.length > 0) {
-        params.type = selectedPropertyTypes.join(",");
+        params.type = selectedPropertyTypes;
       }
 
       if (selectedStatus !== "all") {
