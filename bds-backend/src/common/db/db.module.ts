@@ -15,10 +15,9 @@ import { PropertySubscriber } from 'src/entities/property.subscriber';
         password: configService.get('DB_PASSWORD'),
         entities: [__dirname + './../../entities/*{.ts,.js}'],
         synchronize: true,
-        // ssl: {
-        //   rejectUnauthorized: false,
-        // },
-        ssl: true,
+        ssl: {
+          rejectUnauthorized: false,
+        },
         subscribers: [PropertySubscriber],
       }),
       inject: [ConfigService],
