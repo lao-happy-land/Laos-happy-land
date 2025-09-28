@@ -102,4 +102,19 @@ export class UpdateUserDto {
   @IsArray()
   @IsString({ each: true })
   certifications?: string[];
+
+  @ApiPropertyOptional({
+    example: 'ABC Real Estate',
+    description: 'Company name of the user',
+  })
+  @IsOptional()
+  @IsString()
+  company?: string;
+
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Verified status of the user',
+  })
+  @IsOptional()
+  verified?: boolean;
 }
