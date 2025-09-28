@@ -1,9 +1,19 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional } from 'class-validator';
+import { IsArray, IsInt, IsOptional, IsString } from 'class-validator';
 import { RoleEnum } from 'src/common/enum/enum';
 import { Multer } from 'multer';
+import { Transform, Type } from 'class-transformer';
 
-
+export function ToArray() {
+  return Transform(({ value }) =>
+    typeof value === 'string'
+      ? value
+          .split(',')
+          .map((v) => v.trim())
+          .filter(Boolean)
+      : value,
+  );
+}
 export class UpdateUserDto {
   @ApiPropertyOptional({
     example: 'Nguyen Van A',
@@ -48,4 +58,48 @@ export class UpdateUserDto {
   })
   @IsOptional()
   image?: Multer.File;
+
+  @ApiPropertyOptional({
+    example: 2,
+    description: 'Years of experience (default 0)',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  experienceYears?: number;
+
+  @ApiPropertyOptional({
+    example: ['Apartment', 'Land'],
+    description: 'Specialties of the user',
+    type: [String],
+  })
+  @IsOptional()
+  @Type(() => String)
+  @ToArray()
+  @IsArray()
+  @IsString({ each: true })
+  specialties?: string[];
+
+  @ApiPropertyOptional({
+    example: ['Vietnamese', 'English'],
+    description: 'Languages the user can speak',
+    type: [String],
+  })
+  @IsOptional()
+  @Type(() => String)
+  @ToArray()
+  @IsArray()
+  @IsString({ each: true })
+  languages?: string[];
+
+  @ApiPropertyOptional({
+    example: ['Broker License', 'Real Estate Certificate'],
+    description: 'Certifications of the user',
+    type: [String],
+  })
+  @IsOptional()
+  @ToArray()
+  @IsArray()
+  @IsString({ each: true })
+  certifications?: string[];
 }
