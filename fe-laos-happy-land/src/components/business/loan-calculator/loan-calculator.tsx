@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 import {
   Card,
   Input,
-  Select,
-  Slider,
   Radio,
   Typography,
   Row,
@@ -13,21 +11,16 @@ import {
   Divider,
   Table,
   Space,
-  Button,
-  message,
   Pagination,
 } from "antd";
 import {
-  Calculator,
   DollarSign,
   Calendar,
   TrendingUp,
   FileText,
-  Download,
 } from "lucide-react";
 
 const { Title, Text } = Typography;
-const { Option } = Select;
 
 interface LoanCalculation {
   month: number;
@@ -110,7 +103,7 @@ const LoanCalculator = () => {
       }
       
       return {
-        monthlyPayment: schedule[0]?.totalPayment || 0,
+        monthlyPayment: schedule[0]?.totalPayment ?? 0,
         totalInterest,
         totalPayment: loanAmount + totalInterest,
         schedule,
@@ -126,38 +119,36 @@ const LoanCalculator = () => {
     }
 
     setResult(null);
-  }, [loanAmount, interestRate, loanTerm, calculationMethod, interestRateType]);
+  }, [loanAmount, interestRate, loanTerm, calculationMethod, interestRateType, calculateLoan]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN').format(amount);
   };
 
-  const handleExportSchedule = () => {
-    if (!result) return;
-    
-    const csvContent = [
-      ['Tháng', 'Gốc trả', 'Lãi trả', 'Tổng trả', 'Dư nợ còn lại'],
-      ...result.schedule.map(item => [
-        item.month,
-        formatCurrency(item.principalPayment),
-        formatCurrency(item.interestPayment),
-        formatCurrency(item.totalPayment),
-        formatCurrency(item.remainingBalance),
-      ])
-    ].map(row => row.join(',')).join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'loan_schedule.csv');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    message.success('Đã xuất lịch trả nợ thành công!');
-  };
+  // const handleExportSchedule = () => {
+  //   if (!result) return;
+  //   
+  //   const csvContent = [
+  //     ['Tháng', 'Gốc trả', 'Lãi trả', 'Tổng trả', 'Dư nợ còn lại'],
+  //     ...result.schedule.map(item => [
+  //       item.month,
+  //       formatCurrency(item.principalPayment),
+  //       formatCurrency(item.interestPayment),
+  //       formatCurrency(item.totalPayment),
+  //       formatCurrency(item.remainingBalance),
+  //     ])
+  //   ].map(row => row.join(',')).join('\n');
+  //   
+  //   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  //   const link = document.createElement('a');
+  //   const url = URL.createObjectURL(blob);
+  //   link.setAttribute('href', url);
+  //   link.setAttribute('download', 'loan_schedule.csv');
+  //   link.style.visibility = 'hidden';
+  //   document.body.appendChild(link);
+  //   link.click();
+  //   document.body.removeChild(link);
+  // };
 
   const columns = [
     {
@@ -260,7 +251,7 @@ const LoanCalculator = () => {
                   <Col span={12}>
                     <Radio.Group
                       value={interestRateType}
-                      onChange={(e) => setInterestRateType(e.target.value)}
+                      onChange={(e) => setInterestRateType(e.target.value as "yearly" | "monthly")}
                       className="w-full"
                     >
                       <Radio value="yearly">Năm</Radio>
@@ -297,7 +288,7 @@ const LoanCalculator = () => {
                 </Text>
                 <Radio.Group
                   value={calculationMethod}
-                  onChange={(e) => setCalculationMethod(e.target.value)}
+                  onChange={(e) => setCalculationMethod(e.target.value as "annuity" | "reducing")}
                   className="w-full"
                 >
                   <Space direction="vertical" className="w-full">
