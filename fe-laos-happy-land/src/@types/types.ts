@@ -207,3 +207,17 @@ export interface NewsTypeResponse {
   page: number;
   perPage: number;
 }
+
+export interface UserFeedback {
+  id: string;
+  rating: number;
+  comment?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string | null;
+  updatedBy?: string | null;
+  deletedAt?: string | null;
+  deletedBy?: string | null;
+  user?: User; // The broker being reviewed
+  reviewer?: User; // The user who wrote the review
+}

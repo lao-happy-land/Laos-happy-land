@@ -288,7 +288,9 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
         },
         legalStatus: values.legalStatus,
         location: locationData as LocationDto | undefined,
-        locationInfoId: currentLocationInfoId,
+
+        // TODO: backend changed, need to check
+        // locationInfoId: currentLocationInfoId,
         transactionType: values.transactionType,
       };
 
