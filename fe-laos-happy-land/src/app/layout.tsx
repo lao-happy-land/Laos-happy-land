@@ -8,6 +8,7 @@ import { App } from "antd";
 import { Suspense } from "react";
 import LoadingScreen from "@/components/common/loading-screen";
 import AuthProvider from "@/components/common/auth-provider";
+import TokenHandler from "@/components/common/token-handler";
 
 export const metadata: Metadata = {
   title: "Laos Happy Land - Bất động sản Lào",
@@ -68,6 +69,7 @@ export default function RootLayout({
           <AntdConfigProvider>
             <App>
               <AuthProvider>
+                <TokenHandler />
                 <Suspense
                   fallback={
                     <LoadingScreen
