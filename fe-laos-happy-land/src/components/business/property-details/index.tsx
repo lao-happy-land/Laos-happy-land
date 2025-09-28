@@ -10,6 +10,7 @@ import Amenities from "@/components/business/property-details/amenities";
 import ProjectContent from "@/components/business/property-details/project-content";
 import DetailsSection from "@/components/business/property-details/details-section";
 import ContactCard from "@/components/business/property-details/contact-card";
+import LoanCalculator from "@/components/common/loan-calculator";
 import { useState } from "react";
 import { useRequest } from "ahooks";
 import propertyService from "@/share/service/property.service";
@@ -158,6 +159,10 @@ export default function PropertyDetails({ propertyId }: Props) {
               createdAt={property?.createdAt}
               updatedAt={property.updatedAt}
             />
+
+            <Divider />
+
+            <LoanCalculator />
           </Card>
         </Col>
 
