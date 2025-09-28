@@ -62,7 +62,7 @@ export class UserFeedbackService {
     ]);
 
     user.ratingCount = count;
-    user.ratingAverage = parseFloat(avg ?? '0');
+    user.ratingAverage = parseFloat((parseFloat(avg ?? '0')).toFixed(2));
     await this.userRepository.save(user);
 
     const freshFeedback = await this.userFeedbackRepository.findOne({
