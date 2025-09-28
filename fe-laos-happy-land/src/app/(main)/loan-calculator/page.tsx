@@ -2,7 +2,7 @@
 
 import { Card, Typography, Row, Col } from "antd";
 import { Calculator, TrendingUp, DollarSign } from "lucide-react";
-import LoanCalculator from "@/components/common/loan-calculator";
+import LoanCalculator from "@/components/business/loan-calculator/loan-calculator";
 
 const { Title, Text } = Typography;
 
