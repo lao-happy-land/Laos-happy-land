@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Tabs, Spin, Input, App } from "antd";
+import { Button, Tabs, Spin, App, Pagination } from "antd";
 import {
   ArrowLeft,
   Phone,
@@ -16,41 +16,15 @@ import {
   Heart,
 } from "lucide-react";
 import Image from "next/image";
-import type { Property } from "@/@types/types";
+import type { Property, User, UserFeedback } from "@/@types/types";
+import { userService } from "@/share/service/user.service";
+import propertyService from "@/share/service/property.service";
+import { userFeedbackService } from "@/share/service/user-feedback.service";
+import FeedbackInput from "./broker-feedback-form";
 
-const { TextArea } = Input;
 const { TabPane } = Tabs;
 
-interface Broker {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  avatar?: string;
-  company?: string;
-  location?: string;
-  rating: number;
-  reviewCount: number;
-  specialties: string[];
-  experience: number;
-  propertiesCount: number;
-  verified: boolean;
-  bio?: string;
-  languages: string[];
-  certifications: string[];
-  workingHours: string;
-  responseTime: string;
-}
 
-interface Review {
-  id: string;
-  userName: string;
-  userAvatar?: string;
-  rating: number;
-  comment: string;
-  date: string;
-  propertyType: string;
-}
 
 type BrokerDetailProps = {
   brokerId: string;
@@ -59,10 +33,22 @@ type BrokerDetailProps = {
 export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
   const router = useRouter();
   const { message } = App.useApp();
-  const [broker, setBroker] = useState<Broker | null>(null);
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [broker, setBroker] = useState<User | null>(null);
+  const [reviews, setReviews] = useState<UserFeedback[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
+  const [propertiesLoading, setPropertiesLoading] = useState(false);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [propertiesPagination, setPropertiesPagination] = useState({
+    current: 1,
+    pageSize: 6,
+    total: 0,
+  });
+  const [reviewsPagination, setReviewsPagination] = useState({
+    current: 1,
+    pageSize: 5,
+    total: 0,
+  });
   const [contactForm, setContactForm] = useState({
     name: "",
     email: "",
@@ -70,172 +56,69 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
     message: "",
   });
 
-  // Mock data - replace with actual API calls
-  const mockBroker: Broker = useMemo(
-    () => ({
-      id: brokerId,
-      name: "Nguyễn Văn Minh",
-      email: "minh.nguyen@example.com",
-      phone: "+856 20 1234 5678",
-      avatar: "/images/admin/avatar.png",
-      company: "Lao Real Estate Co.",
-      location: "Vientiane, Laos",
-      rating: 4.8,
-      reviewCount: 127,
-      specialties: ["Nhà phố", "Căn hộ", "Đất nền", "Biệt thự"],
-      experience: 8,
-      propertiesCount: 45,
-      verified: true,
-      bio: "Với hơn 8 năm kinh nghiệm trong lĩnh vực bất động sản tại Lào, tôi cam kết mang đến cho khách hàng những dịch vụ tốt nhất và những cơ hội đầu tư sinh lời cao. Chuyên về các dự án nhà phố, căn hộ cao cấp và đất nền tại Vientiane.",
-      languages: ["Tiếng Việt", "Tiếng Anh", "Tiếng Lào"],
-      certifications: [
-        "Chứng chỉ môi giới bất động sản",
-        "Chứng chỉ định giá BĐS",
-      ],
-      workingHours: "Thứ 2 - Thứ 6: 8:00 - 18:00",
-      responseTime: "Trong vòng 2 giờ",
-    }),
-    [brokerId],
-  );
+  // Fetch broker data
+  const fetchBrokerData = async () => {
+    try {
+      setLoading(true);
+      const response = await userService.getUserById(brokerId);
+      setBroker(response.user);
+    } catch (error) {
+      console.error("Error fetching broker:", error);
+      message.error("Không thể tải thông tin môi giới");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const mockReviews: Review[] = useMemo(
-    () => [
-      {
-        id: "1",
-        userName: "Trần Thị Lan",
-        userAvatar: "/images/admin/avatar.png",
-        rating: 5,
-        comment:
-          "Anh Minh rất chuyên nghiệp và nhiệt tình. Đã giúp tôi tìm được căn nhà phù hợp trong thời gian ngắn. Rất hài lòng với dịch vụ!",
-        date: "2024-01-15",
-        propertyType: "Nhà phố",
-      },
-      {
-        id: "2",
-        userName: "Phạm Văn Hùng",
-        userAvatar: "/images/admin/avatar.png",
-        rating: 5,
-        comment:
-          "Dịch vụ tuyệt vời! Anh Minh có kiến thức sâu về thị trường bất động sản và luôn đưa ra những lời khuyên hữu ích.",
-        date: "2024-01-10",
-        propertyType: "Căn hộ",
-      },
-      {
-        id: "3",
-        userName: "Nguyễn Thị Mai",
-        userAvatar: "/images/admin/avatar.png",
-        rating: 4,
-        comment:
-          "Rất hài lòng với dịch vụ. Anh Minh phản hồi nhanh và hỗ trợ tận tình trong suốt quá trình giao dịch.",
-        date: "2024-01-05",
-        propertyType: "Đất nền",
-      },
-    ],
-    [],
-  );
+  // Fetch properties data
+  const fetchProperties = async (page = 1) => {
+    try {
+      setPropertiesLoading(true);
+      const response = await propertyService.getPropertiesByUser({
+        page,
+        perPage: propertiesPagination.pageSize,
+      });
+      setProperties(response.data);
+      setPropertiesPagination(prev => ({
+        ...prev,
+        current: page,
+        total: response.meta.itemCount,
+      }));
+    } catch (error) {
+      console.error("Error fetching properties:", error);
+      message.error("Không thể tải danh sách bất động sản");
+    } finally {
+      setPropertiesLoading(false);
+    }
+  };
 
-  const mockProperties: Property[] = useMemo(
-    () => [
-      {
-        id: "1",
-        title: "Nhà phố 3 tầng tại trung tâm Vientiane",
-        description: "Nhà phố đẹp với thiết kế hiện đại",
-        price: "2500000000",
-        priceHistory: [],
-        status: "approved" as const,
-        details: {
-          area: 120,
-          bedrooms: 4,
-          bathrooms: 3,
-        },
-        viewsCount: 15,
-        legalStatus: "Đầy đủ giấy tờ",
-        location: {
-          address: "Vientiane, Laos",
-          latitude: 17.9757,
-          longitude: 102.6331,
-        },
-        priority: 0,
-        transactionType: "sale" as const,
-        images: ["/images/landingpage/apartment/apartment-1.jpg"],
-        mainImage: "/images/landingpage/apartment/apartment-1.jpg",
-        owner: null,
-        type: {
-          id: "1",
-          name: "Nhà phố",
-          transactionType: "sale" as const,
-          createdAt: "",
-          createdBy: null,
-          updatedAt: "",
-          updatedBy: null,
-          deletedAt: null,
-          deletedBy: null,
-        },
-        createdAt: "",
-        createdBy: null,
-        updatedAt: "",
-        updatedBy: null,
-        deletedAt: null,
-        deletedBy: null,
-      },
-      {
-        id: "2",
-        title: "Căn hộ cao cấp với view sông Mekong",
-        description: "Căn hộ sang trọng với view đẹp",
-        price: "1800000000",
-        priceHistory: [],
-        status: "approved" as const,
-        details: {
-          area: 85,
-          bedrooms: 2,
-          bathrooms: 2,
-        },
-        viewsCount: 22,
-        legalStatus: "Đầy đủ giấy tờ",
-        location: {
-          address: "Vientiane, Laos",
-          latitude: 17.9757,
-          longitude: 102.6331,
-        },
-        priority: 0,
-        transactionType: "sale" as const,
-        images: ["/images/landingpage/apartment/apartment-2.jpg"],
-        mainImage: "/images/landingpage/apartment/apartment-2.jpg",
-        owner: null,
-        type: {
-          id: "2",
-          name: "Căn hộ",
-          transactionType: "sale" as const,
-          createdAt: "",
-          createdBy: null,
-          updatedAt: "",
-          updatedBy: null,
-          deletedAt: null,
-          deletedBy: null,
-        },
-        createdAt: "",
-        createdBy: null,
-        updatedAt: "",
-        updatedBy: null,
-        deletedAt: null,
-        deletedBy: null,
-      },
-    ],
-    [],
-  );
+  // Fetch reviews data
+  const fetchReviews = async (page = 1) => {
+    try {
+      setReviewsLoading(true);
+      const response = await userFeedbackService.getFeedbackByUserId(brokerId, {
+        page,
+        perPage: reviewsPagination.pageSize,
+      });
+      setReviews(response.data);
+      setReviewsPagination(prev => ({
+        ...prev,
+        current: page,
+        total: response.meta.itemCount,
+      }));
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+      message.error("Không thể tải danh sách đánh giá");
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchBrokerDetail = async () => {
-      setLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setBroker(mockBroker);
-      setReviews(mockReviews);
-      setProperties(mockProperties);
-      setLoading(false);
-    };
-
-    void fetchBrokerDetail();
-  }, [brokerId, mockBroker, mockReviews, mockProperties]);
+    void fetchBrokerData();
+    void fetchProperties(1);
+    void fetchReviews(1);
+  }, [brokerId, fetchBrokerData, fetchProperties, fetchReviews]);
 
   const handleContactSubmit = () => {
     if (!contactForm.name || !contactForm.email || !contactForm.message) {
@@ -244,6 +127,14 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
     }
     message.success("Tin nhắn đã được gửi thành công!");
     setContactForm({ name: "", email: "", phone: "", message: "" });
+  };
+
+  const handlePropertiesPageChange = (page: number) => {
+    void fetchProperties(page);
+  };
+
+  const handleReviewsPageChange = (page: number) => {
+    void fetchReviews(page);
   };
 
   const formatPrice = (price: number) => {
@@ -303,13 +194,13 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
               <div className="flex items-start gap-6">
                 <div className="relative">
                   <Image
-                    src={broker.avatar ?? "/images/admin/avatar.png"}
-                    alt={broker.name}
+                    src={broker.image ?? broker.avatarUrl ?? "/images/admin/avatar.png"}
+                    alt={broker.fullName}
                     className="h-24 w-24 rounded-full object-cover"
                     width={96}
                     height={96}
                   />
-                  {broker.verified && (
+                  {broker.role?.name === "broker" && (
                     <div className="bg-primary-500 absolute -right-1 -bottom-1 rounded-full p-1">
                       <svg
                         className="h-4 w-4 text-white"
@@ -327,23 +218,23 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
                 </div>
                 <div className="flex-1">
                   <h1 className="mb-2 text-3xl font-bold text-neutral-900">
-                    {broker.name}
+                    {broker.fullName}
                   </h1>
                   <p className="mb-2 text-lg text-neutral-600">
-                    {broker.company}
+                    {broker.role?.name === "broker" ? "Môi giới bất động sản" : broker.role?.name}
                   </p>
                   <div className="mb-4 flex items-center gap-1 text-neutral-500">
                     <MapPin className="h-4 w-4" />
-                    {broker.location}
+                    {broker.location ?? "Chưa cập nhật"}
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1">
                       <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                       <span className="text-lg font-semibold text-neutral-900">
-                        {broker.rating}
+                        {broker.ratingAverage ?? 0}
                       </span>
                       <span className="text-neutral-500">
-                        ({broker.reviewCount} đánh giá)
+                        ({broker.ratingCount ?? 0} đánh giá)
                       </span>
                     </div>
                     <div className="flex gap-2">
@@ -407,11 +298,11 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
                 <div className="mt-4 space-y-2 text-sm text-neutral-600">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
-                    {broker.workingHours}
+                    Thứ 2 - Thứ 6: 8:00 - 18:00
                   </div>
                   <div className="flex items-center gap-2">
                     <Award className="h-4 w-4" />
-                    Phản hồi: {broker.responseTime}
+                    Phản hồi: Trong vòng 2 giờ
                   </div>
                 </div>
               </div>
@@ -429,156 +320,190 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
                   <h3 className="mb-3 text-xl font-semibold text-gray-900">
                     Giới thiệu
                   </h3>
-                  <p className="leading-relaxed text-gray-700">{broker.bio}</p>
+                  <p className="leading-relaxed text-gray-700">
+                    {broker.role?.name === "broker" 
+                      ? "Môi giới bất động sản chuyên nghiệp với nhiều năm kinh nghiệm trong lĩnh vực bất động sản."
+                      : "Thông tin người dùng"}
+                  </p>
                 </div>
 
                 {/* Stats */}
                 <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-blue-600">
-                      {broker.experience}
+                      {broker.experienceYears ?? 0}
                     </div>
                     <div className="text-sm text-gray-600">Năm kinh nghiệm</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-green-600">
-                      {broker.propertiesCount}
+                      {broker.propertyCount ?? 0}
                     </div>
                     <div className="text-sm text-gray-600">Bất động sản</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-yellow-600">
-                      {broker.rating}
+                      {broker.ratingAverage ?? 0}
                     </div>
                     <div className="text-sm text-gray-600">Đánh giá</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-purple-600">
-                      {broker.reviewCount}
+                      {broker.ratingCount ?? 0}
                     </div>
                     <div className="text-sm text-gray-600">Đánh giá</div>
                   </div>
                 </div>
 
                 {/* Specialties */}
-                <div>
-                  <h3 className="mb-3 text-xl font-semibold text-gray-900">
-                    Chuyên môn
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {broker.specialties.map((specialty) => (
-                      <span
-                        key={specialty}
-                        className="rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-700"
-                      >
-                        {specialty}
-                      </span>
-                    ))}
+                {broker.specialties && broker.specialties.length > 0 && (
+                  <div>
+                    <h3 className="mb-3 text-xl font-semibold text-gray-900">
+                      Chuyên môn
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {broker.specialties.map((specialty) => (
+                        <span
+                          key={specialty}
+                          className="rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-700"
+                        >
+                          {specialty}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Languages */}
-                <div>
-                  <h3 className="mb-3 text-xl font-semibold text-gray-900">
-                    Ngôn ngữ
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {broker.languages.map((language) => (
-                      <span
-                        key={language}
-                        className="rounded-full bg-green-100 px-3 py-1 text-sm text-green-700"
-                      >
-                        {language}
-                      </span>
-                    ))}
+                {broker.languages && broker.languages.length > 0 && (
+                  <div>
+                    <h3 className="mb-3 text-xl font-semibold text-gray-900">
+                      Ngôn ngữ
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {broker.languages.map((language) => (
+                        <span
+                          key={language}
+                          className="rounded-full bg-green-100 px-3 py-1 text-sm text-green-700"
+                        >
+                          {language}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Certifications */}
-                <div>
-                  <h3 className="mb-3 text-xl font-semibold text-gray-900">
-                    Chứng chỉ
-                  </h3>
-                  <ul className="space-y-2">
-                    {broker.certifications.map((cert, index) => (
-                      <li
-                        key={index}
-                        className="flex items-center gap-2 text-gray-700"
-                      >
-                        <Award className="h-4 w-4 text-yellow-500" />
-                        {cert}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                {broker.certifications && broker.certifications.length > 0 && (
+                  <div>
+                    <h3 className="mb-3 text-xl font-semibold text-gray-900">
+                      Chứng chỉ
+                    </h3>
+                    <ul className="space-y-2">
+                      {broker.certifications.map((cert, index) => (
+                        <li
+                          key={index}
+                          className="flex items-center gap-2 text-gray-700"
+                        >
+                          <Award className="h-4 w-4 text-yellow-500" />
+                          {cert}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </TabPane>
 
             <TabPane tab="Bất động sản" key="properties">
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {properties.map((property) => (
-                  <div
-                    key={property.id}
-                    className="cursor-pointer rounded-2xl border border-gray-100 bg-white shadow-lg transition-all duration-300 hover:-translate-y-2 hover:border-blue-200 hover:shadow-2xl"
-                    onClick={() => router.push(`/property/${property.id}`)}
-                  >
-                    <div className="relative h-48 w-full">
-                      <Image
-                        src={
-                          property.mainImage ??
-                          property.images?.[0] ??
-                          "/images/landingpage/apartment/apart-1.jpg"
-                        }
-                        alt={property.title}
-                        className="rounded-lg object-cover"
-                        fill
-                      />
-                      <div className="absolute top-2 left-2 rounded-full bg-blue-600 px-2 py-1 text-xs text-white">
-                        {property.type?.name}
+              <Spin spinning={propertiesLoading}>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {properties.map((property) => (
+                    <div
+                      key={property.id}
+                      className="cursor-pointer rounded-2xl border border-gray-100 bg-white shadow-lg transition-all duration-300 hover:-translate-y-2 hover:border-blue-200 hover:shadow-2xl"
+                      onClick={() => router.push(`/property/${property.id}`)}
+                    >
+                      <div className="relative h-48 w-full">
+                        <Image
+                          src={
+                            property.mainImage ??
+                            property.images?.[0] ??
+                            "/images/landingpage/apartment/apart-1.jpg"
+                          }
+                          alt={property.title}
+                          className="rounded-lg object-cover"
+                          fill
+                        />
+                        <div className="absolute top-2 left-2 rounded-full bg-blue-600 px-2 py-1 text-xs text-white">
+                          {property.type?.name}
+                        </div>
+                      </div>
+                      <div className="mt-4">
+                        <h3 className="mb-2 line-clamp-2 text-lg font-semibold text-gray-900">
+                          {property.title}
+                        </h3>
+                        <div className="mb-2 flex items-center gap-1 text-gray-500">
+                          <MapPin className="h-4 w-4" />
+                          {property?.location?.address ?? "Chưa cập nhật"}
+                        </div>
+                        <div className="mb-3 text-xl font-bold text-blue-600">
+                          {property.price
+                            ? formatPrice(Number(property.price))
+                            : "Liên hệ"}
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <span>{property.details?.area} m²</span>
+                          {property.details?.bedrooms && (
+                            <span>{property.details?.bedrooms} PN</span>
+                          )}
+                          {property.details?.bathrooms && (
+                            <span>{property.details?.bathrooms} WC</span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <div className="mt-4">
-                      <h3 className="mb-2 line-clamp-2 text-lg font-semibold text-gray-900">
-                        {property.title}
-                      </h3>
-                      <div className="mb-2 flex items-center gap-1 text-gray-500">
-                        <MapPin className="h-4 w-4" />
-                        {property?.location?.address ?? "Chưa cập nhật"}
-                      </div>
-                      <div className="mb-3 text-xl font-bold text-blue-600">
-                        {property.price
-                          ? formatPrice(Number(property.price))
-                          : "Liên hệ"}
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <span>{property.details?.area} m²</span>
-                        {property.details?.bedrooms && (
-                          <span>{property.details?.bedrooms} PN</span>
-                        )}
-                        {property.details?.bathrooms && (
-                          <span>{property.details?.bathrooms} WC</span>
-                        )}
-                      </div>
-                    </div>
+                  ))}
+                </div>
+                {properties.length > 0 && (
+                  <div className="mt-8 flex justify-center">
+                    <Pagination
+                      current={propertiesPagination.current}
+                      total={propertiesPagination.total}
+                      pageSize={propertiesPagination.pageSize}
+                      onChange={handlePropertiesPageChange}
+                      showSizeChanger={false}
+                      showTotal={(total, range) =>
+                        `${range[0]}-${range[1]} của ${total} bất động sản`
+                      }
+                    />
                   </div>
-                ))}
-              </div>
+                )}
+              </Spin>
             </TabPane>
 
             <TabPane tab="Đánh giá" key="reviews">
               <div className="space-y-6">
+                {/* Feedback Input */}
+                <FeedbackInput 
+                  brokerId={brokerId}
+                  onSuccess={() => {
+                    void fetchReviews(reviewsPagination.current);
+                  }}
+                />
+
                 {/* Review Summary */}
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <div className="text-center">
                     <div className="text-4xl font-bold text-gray-900">
-                      {broker.rating}
+                      {broker.ratingAverage ?? 0}
                     </div>
                     <div className="mb-2 flex items-center gap-1">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <Star
                           key={star}
                           className={`h-5 w-5 ${
-                            star <= broker.rating
+                            star <= (broker.ratingAverage ?? 0)
                               ? "fill-yellow-400 text-yellow-400"
                               : "text-gray-300"
                           }`}
@@ -586,7 +511,7 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
                       ))}
                     </div>
                     <div className="text-gray-600">
-                      Dựa trên {broker.reviewCount} đánh giá
+                      Dựa trên {broker.ratingCount ?? 0} đánh giá
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -602,6 +527,7 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
                           />
                         </div>
                         <span className="text-sm text-gray-600">
+                          {/* TODO */}
                           {Math.floor(Math.random() * 50)}
                         </span>
                       </div>
@@ -610,54 +536,78 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
                 </div>
 
                 {/* Reviews List */}
-                <div className="space-y-4">
-                  {reviews.map((review) => (
-                    <div
-                      key={review.id}
-                      className="rounded-2xl border border-gray-100 bg-gray-50 p-6"
-                    >
-                      <div className="flex items-start gap-4">
-                        <Image
-                          src={review.userAvatar ?? "/images/admin/avatar.png"}
-                          alt={review.userName}
-                          className="h-10 w-10 rounded-full object-cover"
-                          width={40}
-                          height={40}
-                        />
-                        <div className="flex-1">
-                          <div className="mb-2 flex items-center gap-2">
-                            <h4 className="font-semibold text-gray-900">
-                              {review.userName}
-                            </h4>
-                            <div className="flex items-center gap-1">
-                              {[1, 2, 3, 4, 5].map((star) => (
-                                <Star
-                                  key={star}
-                                  className={`h-4 w-4 ${
-                                    star <= review.rating
-                                      ? "fill-yellow-400 text-yellow-400"
-                                      : "text-gray-300"
-                                  }`}
-                                />
-                              ))}
+                <Spin spinning={reviewsLoading}>
+                  <div className="space-y-4">
+                    {reviews.length > 0 ? (
+                      reviews.map((review) => (
+                        <div
+                          key={review.id}
+                          className="rounded-2xl border border-gray-100 bg-gray-50 p-6"
+                        >
+                          <div className="flex items-start gap-4">
+                            <Image
+                              src={review.reviewer?.avatarUrl ?? review.reviewer?.image ?? "/images/admin/avatar.png"}
+                              alt={review.reviewer?.fullName ?? "Anonymous"}
+                              className="h-10 w-10 rounded-full object-cover"
+                              width={40}
+                              height={40}
+                            />
+                            <div className="flex-1">
+                              <div className="mb-2 flex items-center gap-2">
+                                <h4 className="font-semibold text-gray-900">
+                                  {review.reviewer?.fullName ?? "Anonymous"}
+                                </h4>
+                                <div className="flex items-center gap-1">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <Star
+                                      key={star}
+                                      className={`h-4 w-4 ${
+                                        star <= review.rating
+                                          ? "fill-yellow-400 text-yellow-400"
+                                          : "text-gray-300"
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                                <span className="text-sm text-gray-500">
+                                  {new Date(review.createdAt).toLocaleDateString('vi-VN')}
+                                </span>
+                              </div>
+                              {review.comment && (
+                                <p className="mb-2 text-gray-700">{review.comment}</p>
+                              )}
                             </div>
-                            <span className="text-sm text-gray-500">
-                              {review.date}
-                            </span>
                           </div>
-                          <p className="mb-2 text-gray-700">{review.comment}</p>
-                          <span className="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-700">
-                            {review.propertyType}
-                          </span>
                         </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        Chưa có đánh giá nào
                       </div>
+                    )}
+                  </div>
+                  
+                  {/* Reviews Pagination */}
+                  {reviews.length > 0 && reviewsPagination.total > reviewsPagination.pageSize && (
+                    <div className="mt-6 flex justify-center">
+                      <Pagination
+                        current={reviewsPagination.current}
+                        total={reviewsPagination.total}
+                        pageSize={reviewsPagination.pageSize}
+                        onChange={handleReviewsPageChange}
+                        showSizeChanger={false}
+                        showTotal={(total, range) =>
+                          `${range[0]}-${range[1]} của ${total} đánh giá`
+                        }
+                      />
                     </div>
-                  ))}
-                </div>
+                  )}
+                </Spin>
               </div>
             </TabPane>
 
-            <TabPane tab="Liên hệ" key="contact">
+            {/* No longer needed */}
+            {/* <TabPane tab="Liên hệ" key="contact">
               <div className="max-w-2xl">
                 <h3 className="mb-4 text-xl font-semibold text-gray-900">
                   Gửi tin nhắn cho {broker.name}
@@ -714,7 +664,7 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
                   </Button>
                 </div>
               </div>
-            </TabPane>
+            </TabPane> */}
           </Tabs>
         </div>
       </div>
