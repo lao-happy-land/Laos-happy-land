@@ -1,16 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useRequest } from "ahooks";
-import { Input, Select, Button, Pagination, Spin, App } from "antd";
+import { Input, Select, Pagination, Spin, App } from "antd";
 import { Search, MapPin, Star, Filter } from "lucide-react";
 import Image from "next/image";
 import { userService } from "@/share/service/user.service";
 import type { User } from "@/@types/types";
 
 const { Search: SearchInput } = Input;
-const { Option } = Select;
 
 interface Broker {
   id: string;
@@ -33,8 +32,11 @@ export default function BrokerDirectory() {
   const { message } = App.useApp();
   const [searchInputValue, setSearchInputValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [locationFilter, setLocationFilter] = useState("");
-  const [specialtyFilter, setSpecialtyFilter] = useState("");
+
+  // TODO: no longer needed?
+  // const [locationFilter, setLocationFilter] = useState("");
+  // const [specialtyFilter, setSpecialtyFilter] = useState("");
+  
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
@@ -43,11 +45,10 @@ export default function BrokerDirectory() {
   const {
     data: brokersData = { data: [], meta: { itemCount: 0, pageCount: 0 } },
     loading: brokersLoading,
-    refresh: refreshBrokers,
   } = useRequest(
     async () => {
       const response = await userService.getAllUsers({
-        search: searchTerm || undefined,
+        search: searchTerm ?? undefined,
         role: "Broker", // Filter only brokers
         page: currentPage,
         perPage: pageSize,
@@ -98,15 +99,15 @@ export default function BrokerDirectory() {
     name: user.fullName,
     email: user.email,
     phone: user.phone,
-    avatar: user.avatarUrl || user.image || "/images/admin/avatar.png",
+    avatar: user.avatarUrl ?? user.image ?? "/images/admin/avatar.png",
     // TODO: Add company field to User API model
     company: "Real Estate Company", // Default value since User doesn't have company
-    location: user.locationInfo?.name || user.location || "",
-    rating: user.ratingAverage ? Math.round(user.ratingAverage * 10) / 10 : 4.5,
-    reviewCount: user.ratingCount || 0,
-    specialties: user.specialties || ["Nhà phố", "Căn hộ", "Đất nền"],
-    experience: user.experienceYears || 0,
-    propertiesCount: user.propertyCount || 0,
+    location: user.locationInfo?.name ?? user.location ?? "",
+    rating: user.ratingAverage ?? 0,
+    reviewCount: user.ratingCount ?? 0,
+    specialties: user.specialties ?? ["Nhà phố", "Căn hộ", "Đất nền"],
+    experience: user.experienceYears ?? 0,
+    propertiesCount: user.propertyCount ?? 0,
     // TODO: Add verified field to User API model
     verified: true, // Default verified status
   }));
@@ -253,13 +254,13 @@ export default function BrokerDirectory() {
                     {broker.name}
                   </h3>
                   <p className="mb-2 text-sm text-neutral-600">
-                    {broker.company}
+                    {broker.company ?? "Chưa cập nhật"}
                   </p>
 
                   {/* Location */}
                   <div className="mb-3 flex items-center justify-center gap-1 text-sm text-neutral-500">
                     <MapPin className="h-4 w-4" />
-                    {broker.location}
+                    {broker.location ?? "Chưa cập nhật"}
                   </div>
 
                   {/* Rating */}
@@ -304,8 +305,8 @@ export default function BrokerDirectory() {
                     </div>
                   </div>
 
-                  {/* Contact Button */}
-                  <Button
+                  {/* TODO: Contact Button */}
+                  {/* <Button
                     type="primary"
                     size="small"
                     className="w-full"
@@ -317,7 +318,7 @@ export default function BrokerDirectory() {
                     }}
                   >
                     Liên hệ
-                  </Button>
+                  </Button> */}
                 </div>
               </div>
             ))}

@@ -28,6 +28,7 @@ import {
   Plus,
   ChevronDown,
   MoreHorizontal,
+  Calculator,
 } from "lucide-react";
 import type { User } from "@/share/service/auth.service";
 import { useRouter } from "next/navigation";
@@ -71,6 +72,12 @@ const NAV_ITEMS = [
     title: "Danh bạ",
     href: "/brokers",
     icon: <Users className="h-4 w-4" />,
+  },
+  {
+    key: "loan-calculator",
+    title: "Tính khoản vay",
+    href: "/loan-calculator",
+    icon: <Calculator className="h-4 w-4" />,
   },
 ];
 
