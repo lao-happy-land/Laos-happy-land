@@ -40,12 +40,12 @@ interface LoanResult {
 const LoanCalculator = () => {
   const [loanAmount, setLoanAmount] = useState<number>(0);
   const [interestRate, setInterestRate] = useState<number>(0);
-  const [loanTerm, setLoanTerm] = useState<number>(120); // 120 months (10 years)
+  const [loanTerm, setLoanTerm] = useState<number>(12); // 12 months (1 year)
   const [calculationMethod, setCalculationMethod] = useState<"annuity" | "reducing">("annuity");
   const [interestRateType, setInterestRateType] = useState<"yearly" | "monthly">("yearly");
   const [result, setResult] = useState<LoanResult | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(12);
 
 
   const calculateLoan = (): LoanResult => {
