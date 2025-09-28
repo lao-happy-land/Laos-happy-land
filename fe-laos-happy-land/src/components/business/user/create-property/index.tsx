@@ -177,7 +177,10 @@ export default function CreateProperty() {
 
       const formData: CreatePropertyDto = {
         typeId: values.typeId,
-        locationInfoId: values.locationInfoId,
+
+        // TODO: backend changed, need to check
+        // locationInfoId: values.locationInfoId,
+        
         title: values.title,
         description: values.description,
         price: values.price,
