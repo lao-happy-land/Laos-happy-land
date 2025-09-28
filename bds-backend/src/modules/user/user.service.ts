@@ -48,11 +48,14 @@ export class UserService {
     });
     if (!role) throw new BadRequestException('Role not found');
 
-    const locationInfo = await this.entityManager.findOneBy(LocationInfo, {
-      id: createUserDto.locationInfoId,
-    });
-    if (!locationInfo) {
-      throw new BadRequestException('Location info not found');
+    let locationInfo: LocationInfo | null = null;
+    if (createUserDto.locationInfoId) {
+      locationInfo = await this.entityManager.findOneBy(LocationInfo, {
+        id: createUserDto.locationInfoId,
+      });
+      if (!locationInfo) {
+        throw new BadRequestException('Location info not found');
+      }
     }
 
     let avatarUrl: string | null = null;
@@ -169,6 +172,19 @@ export class UserService {
         const salt = crypto.randomBytes(16).toString('hex');
         const hashedPassword = this.hashPassword(updateUserDto.password, salt);
         user.password = hashedPassword;
+      }
+
+      if (updateUserDto.experienceYears !== undefined) {
+        user.experienceYears = updateUserDto.experienceYears;
+      }
+      if (updateUserDto.specialties) {
+        user.specialties = updateUserDto.specialties;
+      }
+      if (updateUserDto.languages) {
+        user.languages = updateUserDto.languages;
+      }
+      if (updateUserDto.certifications) {
+        user.certifications = updateUserDto.certifications;
       }
     }
     return await this.entityManager.save(user);

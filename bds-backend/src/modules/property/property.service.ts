@@ -36,6 +36,7 @@ export class PropertyService {
 
   async create(createPropertyDto: CreatePropertyDto, user?: any) {
     const isAdmin = !!user?.role && user.role.toString() === 'Admin';
+    const isBroker = !!user?.role && user.role.toString() === 'Broker';
     const owner = await this.entityManager.findOneBy(User, { id: user.sub });
 
     const propertyType = await this.entityManager.findOneBy(PropertyType, {
@@ -118,7 +119,7 @@ export class PropertyService {
       owner,
       locationInfo: locationInfo,
       type: propertyType,
-      status: isAdmin
+      status: (isAdmin || isBroker)
         ? PropertyStatusEnum.APPROVED
         : PropertyStatusEnum.PENDING,
     });

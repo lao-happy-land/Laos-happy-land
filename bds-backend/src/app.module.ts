@@ -14,6 +14,7 @@ import { LocationInfoModule } from './modules/location-info/location-info.module
 import { NewsTypeModule } from './modules/news-type/news-type.module';
 import { NewsModule } from './modules/news/news.module';
 import { AboutUsModule } from './modules/about-us/about-us.module';
+import { UserFeedbackModule } from './modules/user-feedback/user-feedback.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
@@ -31,7 +32,8 @@ import { AboutUsModule } from './modules/about-us/about-us.module';
     LocationInfoModule,
     NewsTypeModule,
     NewsModule,
-    AboutUsModule
+    AboutUsModule,
+    UserFeedbackModule
   ],
 })
 export class AppModule {}
