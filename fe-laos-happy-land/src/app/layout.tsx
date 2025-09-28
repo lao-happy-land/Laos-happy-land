@@ -69,7 +69,6 @@ export default function RootLayout({
           <AntdConfigProvider>
             <App>
               <AuthProvider>
-                <TokenHandler />
                 <Suspense
                   fallback={
                     <LoadingScreen
@@ -81,6 +80,7 @@ export default function RootLayout({
                     />
                   }
                 >
+                  <TokenHandler />
                   {children}
                 </Suspense>
               </AuthProvider>
