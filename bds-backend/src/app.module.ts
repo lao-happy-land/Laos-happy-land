@@ -15,6 +15,7 @@ import { NewsTypeModule } from './modules/news-type/news-type.module';
 import { NewsModule } from './modules/news/news.module';
 import { AboutUsModule } from './modules/about-us/about-us.module';
 import { UserFeedbackModule } from './modules/user-feedback/user-feedback.module';
+import { BankModule } from './modules/bank/bank.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
@@ -33,7 +34,8 @@ import { UserFeedbackModule } from './modules/user-feedback/user-feedback.module
     NewsTypeModule,
     NewsModule,
     AboutUsModule,
-    UserFeedbackModule
+    UserFeedbackModule,
+    BankModule
   ],
 })
 export class AppModule {}
