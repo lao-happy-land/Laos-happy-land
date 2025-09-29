@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useRequest } from "ahooks";
 import { Modal, Form, Input, Select, Button, message, Spin } from "antd";
 import { Save } from "lucide-react";
 import propertyTypeService from "@/share/service/property-type.service";
 import type { PropertyType } from "@/@types/types";
+import { useTranslations } from "next-intl";
 
 const { Option } = Select;
 
@@ -24,8 +25,8 @@ export default function PropertyTypeModal({
   onCancel,
   onSuccess,
 }: PropertyTypeModalProps) {
+  const t = useTranslations();
   const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (visible && propertyType && mode === "update") {
@@ -58,8 +59,8 @@ export default function PropertyTypeModal({
       onSuccess: () => {
         message.success(
           mode === "create"
-            ? "Tạo loại bất động sản thành công!"
-            : "Cập nhật loại bất động sản thành công!",
+            ? t("admin.createPropertyTypeSuccess")
+            : t("admin.updatePropertyTypeSuccess"),
         );
         onSuccess();
       },
@@ -67,8 +68,8 @@ export default function PropertyTypeModal({
         console.error("Failed to submit property type:", error);
         message.error(
           mode === "create"
-            ? "Không thể tạo loại bất động sản"
-            : "Không thể cập nhật loại bất động sản",
+            ? t("admin.createPropertyTypeFailed")
+            : t("admin.updatePropertyTypeFailed"),
         );
       },
     },
@@ -95,14 +96,14 @@ export default function PropertyTypeModal({
     <Modal
       title={
         mode === "create"
-          ? "Thêm loại bất động sản"
-          : "Chỉnh sửa loại bất động sản"
+          ? t("admin.addPropertyType")
+          : t("admin.editPropertyType")
       }
       open={visible}
       onCancel={handleCancel}
       footer={[
         <Button key="cancel" onClick={handleCancel}>
-          Hủy
+          {t("admin.cancel")}
         </Button>,
         <Button
           key="submit"
@@ -112,39 +113,42 @@ export default function PropertyTypeModal({
           onClick={handleSubmit}
           className="border-blue-600 bg-blue-600 hover:border-blue-700 hover:bg-blue-700"
         >
-          {mode === "create" ? "Tạo" : "Cập nhật"}
+          {mode === "create" ? t("admin.create") : t("admin.update")}
         </Button>,
       ]}
       width={600}
       destroyOnClose
     >
-      <Spin spinning={loading}>
+      <Spin spinning={submitting}>
         <Form form={form} layout="vertical" className="mt-4">
           <Form.Item
             name="name"
-            label="Tên loại bất động sản"
+            label={t("admin.propertyName")}
             rules={[
               {
                 required: true,
-                message: "Vui lòng nhập tên loại bất động sản!",
+                message: t("admin.pleaseEnterPropertyName"),
               },
-              { min: 2, message: "Tên phải có ít nhất 2 ký tự!" },
+              { min: 2, message: t("admin.propertyNameMinLength") },
             ]}
           >
-            <Input placeholder="Nhập tên loại bất động sản..." size="large" />
+            <Input placeholder={t("admin.enterPropertyName")} size="large" />
           </Form.Item>
 
           <Form.Item
             name="transactionType"
-            label="Hình thức giao dịch"
+            label={t("admin.transactionType")}
             rules={[
-              { required: true, message: "Vui lòng chọn hình thức giao dịch!" },
+              {
+                required: true,
+                message: t("admin.pleaseSelectTransactionType"),
+              },
             ]}
           >
-            <Select placeholder="Chọn hình thức giao dịch" size="large">
-              <Option value="sale">Bán</Option>
-              <Option value="rent">Cho thuê</Option>
-              <Option value="project">Dự án</Option>
+            <Select placeholder={t("admin.selectTransactionType")} size="large">
+              <Option value="sale">{t("admin.sale")}</Option>
+              <Option value="rent">{t("admin.rent")}</Option>
+              <Option value="project">{t("admin.project")}</Option>
             </Select>
           </Form.Item>
         </Form>

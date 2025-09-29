@@ -1,5 +1,5 @@
 import Properties from "@/components/business/landing/properties";
 
-export default function HomePage() {
+export default function PropertiesForSalePage() {
   return <Properties transaction="sale" />;
 }

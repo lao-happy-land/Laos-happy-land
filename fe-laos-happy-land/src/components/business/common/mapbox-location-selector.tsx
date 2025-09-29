@@ -15,6 +15,7 @@ import Map from "react-map-gl/mapbox";
 import { Marker, Popup } from "react-map-gl/mapbox";
 import type { MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
+import { useTranslations } from "next-intl";
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -235,7 +236,6 @@ export default function MapboxLocationSelector({
   form: _form,
   value,
   onChange,
-  placeholder: _placeholder = "Chọn vị trí trên bản đồ",
   disabled = false,
   initialSearchValue,
   locationInfos = [],
@@ -244,6 +244,7 @@ export default function MapboxLocationSelector({
   mode = "create",
   hasExistingLocation = false,
 }: MapboxLocationSelectorProps) {
+  const t = useTranslations();
   const [mapLocation, setMapLocation] = useState<LocationData | null>(
     value ?? null,
   );
@@ -636,7 +637,7 @@ export default function MapboxLocationSelector({
                 ref={searchContainerRef}
               >
                 <Input
-                  placeholder="Tìm kiếm địa điểm..."
+                  placeholder={t("map.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onPressEnter={() => performSearch(searchQuery)}
@@ -719,12 +720,12 @@ export default function MapboxLocationSelector({
                   rules={[
                     {
                       required: isLocationRequired,
-                      message: "Vui lòng chọn khu vực!",
+                      message: t("map.selectAreaMessage"),
                     },
                   ]}
                 >
                   <Select
-                    placeholder="Chọn khu vực"
+                    placeholder={t("map.selectArea")}
                     loading={loadingLocations}
                     showSearch
                     className="w-full"
@@ -879,14 +880,13 @@ export default function MapboxLocationSelector({
 
           <div className="flex flex-col items-center justify-between gap-2 lg:flex-row">
             <Text className="text-sm text-neutral-600">
-              💡 <strong>Hướng dẫn:</strong> Nhấp vào bản đồ để chọn vị trí hoặc
-              sử dụng thanh tìm kiếm để tìm địa điểm cụ thể. Thử tìm kiếm với
-              tên tòa nhà, địa chỉ cụ thể để có thông tin chi tiết hơn.
+              💡 <strong>{t("map.instructions")}:</strong>{" "}
+              {t("map.instructionsText")}
             </Text>
             <div className="flex justify-end gap-2">
               {mapLocation && (
                 <Button onClick={handleClear} disabled={disabled}>
-                  Xóa
+                  {t("common.clear")}
                 </Button>
               )}
               <Button
@@ -895,7 +895,7 @@ export default function MapboxLocationSelector({
                 disabled={!mapLocation || disabled}
                 icon={<Check className="h-4 w-4" />}
               >
-                Xác nhận
+                {t("common.confirm")}
               </Button>
             </div>
           </div>
@@ -904,7 +904,8 @@ export default function MapboxLocationSelector({
               <MapPin className="h-4 w-4" />
             </div>
             <p className="text-sm text-neutral-600">
-              Địa chỉ: {mapLocation?.address ?? "Chưa cập nhật"}
+              {t("property.location")}:{" "}
+              {mapLocation?.address ?? t("common.notUpdated")}
             </p>
           </div>
         </div>

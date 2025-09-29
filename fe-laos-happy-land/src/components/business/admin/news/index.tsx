@@ -21,11 +21,13 @@ import { newsService } from "@/share/service/news.service";
 import { newsTypeService } from "@/share/service/news-type.service";
 import type { News, NewsType } from "@/@types/types";
 import NewsModal from "./news-modal";
+import { useTranslations } from "next-intl";
 
 const { Title } = Typography;
 const { Option } = Select;
 
 const NewsAdmin: React.FC = () => {
+  const t = useTranslations();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedNewsType, setSelectedNewsType] = useState<string>("");
   const [modalVisible, setModalVisible] = useState(false);
@@ -55,11 +57,11 @@ const NewsAdmin: React.FC = () => {
     {
       manual: true,
       onSuccess: () => {
-        message.success("Xóa tin tức thành công!");
+        message.success(t("admin.deleteNewsSuccess"));
         refresh();
       },
       onError: (error: unknown) => {
-        message.error("Xóa tin tức thất bại!");
+        message.error(t("admin.deleteNewsFailed"));
         console.error("Delete error:", error);
       },
     },
@@ -103,7 +105,7 @@ const NewsAdmin: React.FC = () => {
 
   const columns = [
     {
-      title: "Tiêu đề",
+      title: t("admin.title"),
       dataIndex: "title",
       key: "title",
       render: (text: string) => (
@@ -111,21 +113,21 @@ const NewsAdmin: React.FC = () => {
       ),
     },
     {
-      title: "Loại tin tức",
+      title: t("admin.newsType"),
       dataIndex: "type",
       key: "type",
       render: (type: NewsType) => (
-        <Tag color="blue">{type?.name || "Không xác định"}</Tag>
+        <Tag color="blue">{type?.name || t("admin.unknown")}</Tag>
       ),
     },
     {
-      title: "Ngày tạo",
+      title: t("admin.createdAt"),
       dataIndex: "createdAt",
       key: "createdAt",
       render: (date: string) => new Date(date).toLocaleDateString("vi-VN"),
     },
     {
-      title: "Thao tác",
+      title: t("admin.actions"),
       key: "actions",
       render: (_: unknown, record: News) => (
         <Space size="middle">
@@ -135,14 +137,14 @@ const NewsAdmin: React.FC = () => {
             size="small"
             onClick={() => handleEdit(record)}
           >
-            Sửa
+            {t("admin.edit")}
           </Button>
           <Popconfirm
-            title="Xóa tin tức"
-            description="Bạn có chắc chắn muốn xóa tin tức này?"
+            title={t("admin.deleteNews")}
+            description={t("admin.deleteNewsConfirm")}
             onConfirm={() => handleDelete(record.id)}
-            okText="Xóa"
-            cancelText="Hủy"
+            okText={t("admin.delete")}
+            cancelText={t("admin.cancel")}
           >
             <Button
               type="primary"
@@ -151,7 +153,7 @@ const NewsAdmin: React.FC = () => {
               size="small"
               loading={deleteLoading}
             >
-              Xóa
+              {t("admin.delete")}
             </Button>
           </Popconfirm>
         </Space>
@@ -165,7 +167,7 @@ const NewsAdmin: React.FC = () => {
         <Row justify="space-between" align="middle" className="mb-6">
           <Col>
             <Title level={2} className="!mb-0">
-              Quản lý tin tức
+              {t("admin.manageNews")}
             </Title>
           </Col>
           <Col>
@@ -175,7 +177,7 @@ const NewsAdmin: React.FC = () => {
               onClick={handleCreate}
               size="large"
             >
-              Thêm tin tức
+              {t("admin.addNews")}
             </Button>
           </Col>
         </Row>
@@ -183,7 +185,7 @@ const NewsAdmin: React.FC = () => {
         <Row gutter={16} className="mb-4">
           <Col span={8}>
             <Input
-              placeholder="Tìm kiếm tin tức..."
+              placeholder={t("admin.searchNews")}
               prefix={<Search size={16} />}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -192,7 +194,7 @@ const NewsAdmin: React.FC = () => {
           </Col>
           <Col span={8}>
             <Select
-              placeholder="Lọc theo loại tin tức"
+              placeholder={t("admin.filterNewsByType")}
               value={selectedNewsType}
               onChange={setSelectedNewsType}
               allowClear
@@ -219,7 +221,7 @@ const NewsAdmin: React.FC = () => {
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total, range) =>
-              `${range[0]}-${range[1]} của ${total} tin tức`,
+              `${range[0]}-${range[1]} ${t("admin.of")} ${total} ${t("admin.news")}`,
           }}
         />
       </Card>

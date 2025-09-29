@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 interface Activity {
   id: number;
@@ -21,6 +22,7 @@ interface Stats {
 }
 
 const AdminDashboard = () => {
+  const t = useTranslations();
   const [stats, setStats] = useState<Stats>({
     totalProperties: 0,
     pendingProperties: 0,
@@ -42,38 +44,36 @@ const AdminDashboard = () => {
         {
           id: 1,
           type: "property",
-          message: "Tin đăng mới: Căn hộ 2PN tại Vientiane",
-          time: "5 phút trước",
-          user: "Nguyễn Văn A",
+          message: t("admin.newProperty"),
+          time: `5 ${t("admin.minutesAgo")}`,
+          user: t("admin.sampleUser1"),
         },
         {
           id: 2,
           type: "user",
-          message: "Người dùng mới đăng ký: john@example.com",
-          time: "15 phút trước",
-          user: "System",
+          message: t("admin.newUser"),
+          time: `15 ${t("admin.minutesAgo")}`,
+          user: t("admin.systemUser"),
         },
         {
           id: 3,
           type: "project",
-          message: "Dự án mới được thêm: Vinhomes Smart City",
-          time: "30 phút trước",
-          user: "Admin",
+          message: t("admin.newProject"),
+          time: `30 ${t("admin.minutesAgo")}`,
+          user: t("admin.adminUser"),
         },
       ],
     });
-  }, []);
+  }, [t]);
 
   return (
     <div className="space-y-8">
       {/* Page Header */}
       <div className="rounded-2xl border border-green-100 bg-gradient-to-r from-green-50 to-emerald-50 p-6">
         <h1 className="mb-2 text-3xl font-bold text-gray-900">
-          Chào mừng trở lại! 👋
+          {t("admin.welcomeBack")}
         </h1>
-        <p className="text-lg text-gray-600">
-          Tổng quan hoạt động hệ thống ngày hôm nay
-        </p>
+        <p className="text-lg text-gray-600">{t("admin.systemOverview")}</p>
       </div>
 
       {/* Stats Cards */}
@@ -83,7 +83,7 @@ const AdminDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="mb-1 text-sm font-medium text-gray-600">
-                Tổng tin đăng
+                {t("admin.totalProperties")}
               </p>
               <p className="mb-2 text-3xl font-bold text-gray-900">
                 {stats.totalProperties.toString()}
@@ -104,7 +104,7 @@ const AdminDashboard = () => {
                 </svg>
                 <span className="text-sm font-medium text-green-600">+12%</span>
                 <span className="text-sm text-gray-500">
-                  so với tháng trước
+                  {t("admin.comparedToLastMonth")}
                 </span>
               </div>
             </div>
@@ -131,7 +131,7 @@ const AdminDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="mb-1 text-sm font-medium text-gray-600">
-                Chờ duyệt
+                {t("admin.pendingApproval")}
               </p>
               <p className="mb-2 text-3xl font-bold text-gray-900">
                 {stats.pendingProperties}
@@ -139,7 +139,7 @@ const AdminDashboard = () => {
               <div className="flex items-center gap-1">
                 <div className="h-2 w-2 animate-pulse rounded-full bg-yellow-500"></div>
                 <span className="text-sm font-medium text-yellow-600">
-                  Cần xử lý
+                  {t("admin.needsProcessing")}
                 </span>
               </div>
             </div>
@@ -166,7 +166,7 @@ const AdminDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="mb-1 text-sm font-medium text-gray-600">
-                Người dùng
+                {t("admin.users")}
               </p>
               <p className="mb-2 text-3xl font-bold text-gray-900">
                 {stats.totalUsers.toString()}
@@ -187,7 +187,7 @@ const AdminDashboard = () => {
                 </svg>
                 <span className="text-sm font-medium text-green-600">+8%</span>
                 <span className="text-sm text-gray-500">
-                  so với tháng trước
+                  {t("admin.comparedToLastMonth")}
                 </span>
               </div>
             </div>
@@ -214,7 +214,7 @@ const AdminDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="mb-1 text-sm font-medium text-gray-600">
-                Doanh thu tháng
+                {t("admin.monthlyRevenue")}
               </p>
               <p className="mb-2 text-3xl font-bold text-gray-900">
                 {(stats.monthlyRevenue / 1000000).toFixed(1)}M LAK
@@ -235,7 +235,7 @@ const AdminDashboard = () => {
                 </svg>
                 <span className="text-sm font-medium text-green-600">+15%</span>
                 <span className="text-sm text-gray-500">
-                  so với tháng trước
+                  {t("admin.comparedToLastMonth")}
                 </span>
               </div>
             </div>
@@ -275,7 +275,7 @@ const AdminDashboard = () => {
                   d="M13 10V3L4 14h7v7l9-11h-7z"
                 />
               </svg>
-              Thao tác nhanh
+              {t("admin.quickActions")}
             </h2>
             <div className="grid grid-cols-1 gap-3">
               <button className="group flex items-center gap-4 rounded-xl border border-gray-200 p-4 transition-all duration-200 hover:border-blue-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100">
@@ -296,9 +296,11 @@ const AdminDashboard = () => {
                 </div>
                 <div className="text-left">
                   <span className="text-sm font-semibold text-gray-900">
-                    Thêm tin đăng
+                    {t("admin.addProperty")}
                   </span>
-                  <p className="text-xs text-gray-500">Đăng tin bán/cho thuê</p>
+                  <p className="text-xs text-gray-500">
+                    {t("admin.postSaleRent")}
+                  </p>
                 </div>
               </button>
 
@@ -320,9 +322,11 @@ const AdminDashboard = () => {
                 </div>
                 <div className="text-left">
                   <span className="text-sm font-semibold text-gray-900">
-                    Thêm dự án
+                    {t("admin.addProject")}
                   </span>
-                  <p className="text-xs text-gray-500">Tạo dự án mới</p>
+                  <p className="text-xs text-gray-500">
+                    {t("admin.createNewProject")}
+                  </p>
                 </div>
               </button>
 
@@ -344,9 +348,11 @@ const AdminDashboard = () => {
                 </div>
                 <div className="text-left">
                   <span className="text-sm font-semibold text-gray-900">
-                    Thêm người dùng
+                    {t("admin.addUser")}
                   </span>
-                  <p className="text-xs text-gray-500">Quản lý tài khoản</p>
+                  <p className="text-xs text-gray-500">
+                    {t("admin.manageAccounts")}
+                  </p>
                 </div>
               </button>
 
@@ -368,9 +374,11 @@ const AdminDashboard = () => {
                 </div>
                 <div className="text-left">
                   <span className="text-sm font-semibold text-gray-900">
-                    Xem báo cáo
+                    {t("admin.viewReports")}
                   </span>
-                  <p className="text-xs text-gray-500">Thống kê chi tiết</p>
+                  <p className="text-xs text-gray-500">
+                    {t("admin.detailedStatistics")}
+                  </p>
                 </div>
               </button>
             </div>
@@ -394,7 +402,7 @@ const AdminDashboard = () => {
                   d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              Hoạt động gần đây
+              {t("admin.recentActivity")}
             </h2>
             <div className="space-y-4">
               {stats.recentActivities.map((activity) => (
@@ -450,7 +458,7 @@ const AdminDashboard = () => {
               ))}
             </div>
             <button className="mt-6 w-full rounded-xl px-4 py-2 text-center text-sm font-medium text-green-600 transition-colors hover:bg-green-50 hover:text-green-700">
-              Xem tất cả hoạt động
+              {t("admin.viewAllActivity")}
             </button>
           </div>
         </div>
@@ -474,13 +482,13 @@ const AdminDashboard = () => {
                   d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                 />
               </svg>
-              Tin đăng mới nhất
+              {t("admin.latestProperties")}
             </h2>
             <Link
               href="/admin/properties"
               className="flex items-center gap-1 text-sm font-medium text-green-600 hover:text-green-700"
             >
-              Xem tất cả
+              {t("admin.viewAll")}
               <svg
                 className="h-4 w-4"
                 fill="none"
@@ -502,22 +510,22 @@ const AdminDashboard = () => {
             <thead className="border-b border-gray-200 bg-gray-50">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
-                  Tiêu đề
+                  {t("admin.title")}
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
-                  Loại
+                  {t("admin.type")}
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
-                  Giá
+                  {t("admin.price")}
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
-                  Trạng thái
+                  {t("admin.status")}
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
-                  Ngày đăng
+                  {t("admin.postedDate")}
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
-                  Thao tác
+                  {t("admin.actions")}
                 </th>
               </tr>
             </thead>
@@ -539,7 +547,7 @@ const AdminDashboard = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                      Căn hộ
+                      {t("admin.apartment")}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm font-semibold whitespace-nowrap text-gray-900">
@@ -547,7 +555,7 @@ const AdminDashboard = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
-                      Chờ duyệt
+                      {t("admin.pending")}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
@@ -556,13 +564,13 @@ const AdminDashboard = () => {
                   <td className="px-6 py-4 text-sm whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       <button className="rounded px-2 py-1 text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-900">
-                        Xem
+                        {t("admin.view")}
                       </button>
                       <button className="rounded px-2 py-1 text-green-600 transition-colors hover:bg-green-50 hover:text-green-900">
-                        Duyệt
+                        {t("admin.approve")}
                       </button>
                       <button className="rounded px-2 py-1 text-orange-600 transition-colors hover:bg-orange-50 hover:text-orange-900">
-                        Từ chối
+                        {t("admin.reject")}
                       </button>
                     </div>
                   </td>

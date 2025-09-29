@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useUrlLocale } from "@/utils/locale";
+import { useTranslations } from "next-intl";
 
 interface ProjectItem {
   id: string;
@@ -19,11 +21,13 @@ interface ProjectItem {
 
 const ProjectPage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const locale = useUrlLocale();
+  const t = useTranslations();
   const [filters, setFilters] = useState({
-    area: "Toàn quốc",
-    type: "Tất cả",
-    price: "Tất cả",
-    status: "Tất cả",
+    area: t("project.all"),
+    type: t("project.all"),
+    price: t("project.all"),
+    status: t("project.all"),
   });
 
   const backgroundImages = [
@@ -297,7 +301,7 @@ const ProjectPage = () => {
                     }
                     className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   >
-                    <option>Toàn quốc</option>
+                    <option>{t("project.all")}</option>
                     <option>Hà Nội</option>
                     <option>TP.HCM</option>
                     <option>Đà Nẵng</option>
@@ -314,7 +318,7 @@ const ProjectPage = () => {
                     }
                     className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   >
-                    <option>Tất cả</option>
+                    <option>{t("project.all")}</option>
                     <option>Căn hộ chung cư</option>
                     <option>Biệt thự, liền kề</option>
                     <option>Shophouse</option>
@@ -331,7 +335,7 @@ const ProjectPage = () => {
                     }
                     className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   >
-                    <option>Tất cả</option>
+                    <option>{t("project.all")}</option>
                     <option>Dưới 1 tỷ</option>
                     <option>1-3 tỷ</option>
                     <option>3-5 tỷ</option>
@@ -649,10 +653,7 @@ const ProjectPage = () => {
             </div>
           </div>
           <div className="mt-8 border-t border-gray-800 pt-8 text-center text-sm text-gray-400">
-            <p>
-              Ghi rõ nguồn &quot;Batdongsan.com.vn&quot; khi phát hành lại thông
-              tin từ website này.
-            </p>
+            <p>{t("project.source")} &quot;lapshappyland.com&quot;</p>
           </div>
         </div>
       </footer>

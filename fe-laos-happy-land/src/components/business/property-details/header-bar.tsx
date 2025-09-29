@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Breadcrumb, Tag, Button, Typography } from "antd";
 import { MapPin, Shield } from "lucide-react";
 import MapboxModal from "@/components/business/common/mapbox-modal";
@@ -32,14 +33,14 @@ const getTransactionTypeColor = (type: string) => {
   }
 };
 
-const getTransactionTypeText = (type: string) => {
+const getTransactionTypeText = (type: string, t: (key: string) => string) => {
   switch (type) {
     case "rent":
-      return "Cho thuê";
+      return t("property.forRent");
     case "sale":
-      return "Bán";
+      return t("property.forSale");
     case "project":
-      return "Dự án";
+      return t("navigation.projects");
     default:
       return type;
   }
@@ -52,6 +53,7 @@ export default function HeaderBar({
   transactionType,
   coordinates,
 }: Props) {
+  const t = useTranslations();
   const [mapModalOpen, setMapModalOpen] = useState(false);
 
   return (
@@ -63,7 +65,7 @@ export default function HeaderBar({
               title: (
                 <Link href="/">
                   <span className="inline-flex items-center gap-1">
-                    Trang chủ
+                    {t("navigation.home")}
                   </span>
                 </Link>
               ),
@@ -79,11 +81,15 @@ export default function HeaderBar({
                         : "/properties-for-sale"
                   }
                 >
-                  Bất động sản
+                  {t("navigation.properties")}
                 </Link>
               ),
             },
-            { title: <span className="text-gray-700">Chi tiết</span> },
+            {
+              title: (
+                <span className="text-gray-700">{t("common.details")}</span>
+              ),
+            },
           ]}
         />
       </div>
@@ -106,7 +112,7 @@ export default function HeaderBar({
                   onClick={() => setMapModalOpen(true)}
                   className="px-1"
                 >
-                  Xem bản đồ
+                  {t("map.viewMap")}
                 </Button>
               </div>
             )}
@@ -116,7 +122,7 @@ export default function HeaderBar({
                 className="flex items-center gap-1 text-sm font-medium text-green-700"
               >
                 <span className="flex items-center gap-1 text-sm font-medium text-green-700">
-                  <Shield size={14} /> Đã xác minh
+                  <Shield size={14} /> {t("property.verified")}
                 </span>
               </Tag>
             )}
@@ -124,7 +130,7 @@ export default function HeaderBar({
               color={getTransactionTypeColor(transactionType)}
               className="text-sm font-medium"
             >
-              {getTransactionTypeText(transactionType)}
+              {getTransactionTypeText(transactionType, t)}
             </Tag>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { Button } from "antd";
 import { FcGoogle } from "react-icons/fc";
 import { useRequest } from "ahooks";
 import { useAuthStore } from "@/share/store/auth.store";
+import { useTranslations } from "next-intl";
 
 interface GoogleLoginButtonProps {
   onSuccess?: () => void;
@@ -25,6 +26,7 @@ export default function GoogleLoginButton({
   redirectUrl,
 }: GoogleLoginButtonProps) {
   const { googleLogin } = useAuthStore();
+  const t = useTranslations();
 
   const { run: handleGoogleLogin, loading: isGoogleLoading } = useRequest(
     async () => {
@@ -37,9 +39,7 @@ export default function GoogleLoginButton({
       },
       onError: (error: Error) => {
         console.error("Google login error:", error);
-        onError?.(
-          error.message || "Đăng nhập Google thất bại. Vui lòng thử lại.",
-        );
+        onError?.(error.message || t("auth.googleLoginFailed"));
       },
     },
   );
@@ -56,7 +56,7 @@ export default function GoogleLoginButton({
       disabled={disabled || isLoading}
       icon={<FcGoogle className="text-xl" />}
     >
-      {children ?? "Đăng nhập với Google"}
+      {children ?? t("auth.googleLogin")}
     </Button>
   );
 }

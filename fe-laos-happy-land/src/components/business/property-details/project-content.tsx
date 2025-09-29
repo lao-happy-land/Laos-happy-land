@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { Typography } from "antd";
+import { useTranslations } from "next-intl";
 
 const { Title, Paragraph } = Typography;
 
@@ -26,16 +27,17 @@ export default function ProjectContent({
   fallbackDescription,
   transactionType,
 }: Props) {
+  const t = useTranslations();
   return (
     <div className="mb-8">
       <Title level={3} className="mb-4 text-xl font-semibold">
         {content && content.length > 0
           ? transactionType === "project"
-            ? "Nội dung dự án"
+            ? t("property.projectContent")
             : transactionType === "sale"
-              ? "Chi tiết bán"
-              : "Chi tiết cho thuê"
-          : "Mô tả chi tiết"}
+              ? t("property.saleDetails")
+              : t("property.rentalDetails")
+          : t("property.detailedDescription")}
       </Title>
       <div className="space-y-4">
         {content && content.length > 0 ? (
@@ -67,7 +69,9 @@ export default function ProjectContent({
                   <div className="relative h-[240px] w-full md:h-[360px]">
                     <Image
                       src={block.url}
-                      alt={block.caption ?? `Hình ảnh ${index + 1}`}
+                      alt={
+                        block.caption ?? `${t("property.image")} ${index + 1}`
+                      }
                       fill
                       sizes="(max-width: 768px) 100vw, (max-width: 1280px) 100vw, 100vw"
                       className="object-contain"
@@ -86,7 +90,7 @@ export default function ProjectContent({
         ) : (
           <div className="rounded-lg bg-gray-50 p-6">
             <Paragraph className="mb-0 leading-relaxed text-gray-700">
-              {fallbackDescription ?? "Chưa có mô tả chi tiết."}
+              {fallbackDescription ?? t("property.noDetailedDescription")}
             </Paragraph>
           </div>
         )}

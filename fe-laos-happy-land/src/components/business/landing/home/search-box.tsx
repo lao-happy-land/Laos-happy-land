@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useUrlLocale } from "@/utils/locale";
 import { useState, useRef } from "react";
 import { useClickAway, useEventListener } from "ahooks";
 import { useRequest } from "ahooks";
@@ -39,13 +40,16 @@ import {
 } from "@/share/constant/home-search";
 import locationInfoService from "@/share/service/location-info.service";
 import type { LocationInfo } from "@/@types/types";
+import { useTranslations } from "next-intl";
 
 const { Title, Text } = Typography;
 
 const SearchBox = () => {
   const { message } = App.useApp();
   const router = useRouter();
+  const locale = useUrlLocale();
   const [searchType, setSearchType] = useState("sale");
+  const t = useTranslations();
 
   // Fetch all locations
   const { data: allLocationsData, loading: allLocationsLoading } = useRequest(
@@ -153,17 +157,17 @@ const SearchBox = () => {
   const searchTabs = [
     {
       id: "sale",
-      label: "Nhà đất bán",
+      label: t("navigation.propertiesForSale"),
       icon: <Home size={16} />,
     },
     {
       id: "rent",
-      label: "Nhà đất cho thuê",
+      label: t("navigation.propertiesForRent"),
       icon: <Building2 size={16} />,
     },
     {
       id: "project",
-      label: "Dự án",
+      label: t("navigation.projects"),
       icon: <Construction size={16} />,
     },
   ];
@@ -171,31 +175,39 @@ const SearchBox = () => {
   const propertyTypeOptions = [
     {
       id: "apartment",
-      name: "Căn hộ chung cư",
+      name: t("search.propertyTypes.apartment"),
       icon: <Building2 className="h-4 w-4" />,
     },
     {
       id: "mini-apartment",
-      name: "Chung cư mini, căn hộ dịch vụ",
+      name: t("search.propertyTypes.miniApartment"),
       icon: <Building2 className="h-4 w-4" />,
     },
-    { id: "house", name: "Nhà riêng", icon: <Home className="h-4 w-4" /> },
+    {
+      id: "house",
+      name: t("search.propertyTypes.house"),
+      icon: <Home className="h-4 w-4" />,
+    },
     {
       id: "villa",
-      name: "Nhà biệt thự, liền kề",
+      name: t("search.propertyTypes.villa"),
       icon: <Home className="h-4 w-4" />,
     },
     {
       id: "street-house",
-      name: "Nhà mặt phố",
+      name: t("search.propertyTypes.streetHouse"),
       icon: <Home className="h-4 w-4" />,
     },
     {
       id: "shophouse",
-      name: "Shophouse, nhà phố thương mại",
+      name: t("search.propertyTypes.shopHouse"),
       icon: <Building2 className="h-4 w-4" />,
     },
-    { id: "land", name: "Đất nền", icon: <Square className="h-4 w-4" /> },
+    {
+      id: "land",
+      name: t("search.propertyTypes.land"),
+      icon: <Square className="h-4 w-4" />,
+    },
   ];
 
   const priceRanges = PRICE_RANGE_OPTIONS;
@@ -235,13 +247,15 @@ const SearchBox = () => {
       searchParams.delete("keyword");
     }
     if (searchType === "sale") {
-      router.push(`/properties-for-sale?${searchParams.toString()}`);
+      router.push(`/${locale}/properties-for-sale?${searchParams.toString()}`);
     } else if (searchType === "rent") {
-      router.push(`/properties-for-rent?${searchParams.toString()}`);
+      router.push(`/${locale}/properties-for-rent?${searchParams.toString()}`);
     } else if (searchType === "project") {
-      router.push(`/properties-for-project?${searchParams.toString()}`);
+      router.push(
+        `/${locale}/properties-for-project?${searchParams.toString()}`,
+      );
     }
-    message.success("Đang tìm kiếm...");
+    message.success(t("search.searching"));
   };
 
   const handleLocationSelect = (location: string) => {
@@ -493,7 +507,7 @@ const SearchBox = () => {
                       ? (allLocationsData?.find(
                           (loc: LocationInfo) => loc.id === selectedLocation,
                         )?.name ?? selectedLocation)
-                      : "Trên toàn quốc"}
+                      : t("search.nationwide")}
                   </span>
 
                   <ChevronDown
@@ -512,7 +526,7 @@ const SearchBox = () => {
                   <Search className="text-gray-600" size={16} />
                   <input
                     type="text"
-                    placeholder="Nhập tối đa 5 địa điểm, dự án..."
+                    placeholder={t("search.locationPlaceholder")}
                     value={keyword}
                     onChange={(e) => setKeyword(e.target.value)}
                     className="flex-1 border-0 bg-transparent text-xs font-medium text-gray-700 placeholder-gray-500 outline-none sm:text-sm"
@@ -660,7 +674,7 @@ const SearchBox = () => {
                               >
                                 <span className="capitalize">
                                   {location === "all"
-                                    ? "Tất cả khu vực"
+                                    ? t("search.allAreas")
                                     : (allLocationsData?.find(
                                         (loc: LocationInfo) =>
                                           loc.id === location,
@@ -695,7 +709,7 @@ const SearchBox = () => {
                   }`}
                 >
                   <span className="text-sm font-medium sm:text-base">
-                    Loại BĐS
+                    {t("search.propertyType")}
                   </span>
                   <ChevronDown
                     size={16}
@@ -789,7 +803,7 @@ const SearchBox = () => {
                 >
                   <span className="text-sm font-medium sm:text-base">
                     {selectedPriceRange === "all"
-                      ? "Mức giá"
+                      ? t("search.priceRange")
                       : `${numberToString(priceRange[0])} - ${numberToString(priceRange[1])}`}
                   </span>
                   <ChevronDown
@@ -830,7 +844,7 @@ const SearchBox = () => {
                               Từ: {numberToString(priceRange[0])}
                             </Text>
                             <Input
-                              placeholder="Từ"
+                              placeholder={t("search.from")}
                               className="rounded-lg"
                               value={priceRange[0]}
                               onChange={(e) =>
@@ -848,7 +862,7 @@ const SearchBox = () => {
                               Đến: {numberToString(priceRange[1])}
                             </Text>
                             <Input
-                              placeholder="Đến"
+                              placeholder={t("search.to")}
                               className="rounded-lg"
                               value={priceRange[1]}
                               onChange={(e) =>
@@ -936,7 +950,7 @@ const SearchBox = () => {
                 >
                   <span className="text-sm font-medium sm:text-base">
                     {selectedAreaRange === "all"
-                      ? "Diện tích"
+                      ? t("search.area")
                       : `${numberToString(areaRange[0])} - ${numberToString(areaRange[1])}`}
                   </span>
                   <ChevronDown
@@ -977,7 +991,7 @@ const SearchBox = () => {
                               Diện tích nhỏ nhất
                             </Text>
                             <Input
-                              placeholder="Từ"
+                              placeholder={t("search.from")}
                               className="rounded-lg"
                               suffix="m²"
                               value={areaRange[0]}
@@ -996,7 +1010,7 @@ const SearchBox = () => {
                               Diện tích lớn nhất
                             </Text>
                             <Input
-                              placeholder="Đến"
+                              placeholder={t("search.to")}
                               className="rounded-lg"
                               suffix="m²"
                               value={areaRange[1]}
@@ -1048,14 +1062,14 @@ const SearchBox = () => {
                         }}
                         className="text-gray-500 hover:text-red-500"
                       >
-                        Đặt lại
+                        {t("common.reset")}
                       </Button>
                       <Button
                         type="primary"
                         onClick={() => setAreaOpen(false)}
                         className="border-0 bg-red-500 hover:bg-red-600"
                       >
-                        Áp dụng
+                        {t("common.apply")}
                       </Button>
                     </div>
                   </div>

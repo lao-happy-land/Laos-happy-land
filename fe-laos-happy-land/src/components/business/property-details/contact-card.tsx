@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, Typography, Space, Button, Divider } from "antd";
+import { useTranslations } from "next-intl";
 import { Mail, Phone, Star, Heart, Share2, Building } from "lucide-react";
 
 const { Title, Text } = Typography;
@@ -28,11 +29,12 @@ export default function ContactCard({
   onCall,
   onEmail,
 }: Props) {
+  const t = useTranslations();
   return (
     <div className="sticky top-[100px] z-10">
       <Card>
         <Title level={4} className="mb-6 text-xl font-semibold">
-          Liên hệ chủ sở hữu
+          {t("property.contactOwner")}
         </Title>
 
         {owner && (
@@ -48,11 +50,11 @@ export default function ContactCard({
                   {owner.fullName}
                 </div>
                 <Text className="text-sm text-gray-600">
-                  Chủ sở hữu bất động sản
+                  {t("property.propertyOwner")}
                 </Text>
                 <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
                   <Star size={12} className="fill-yellow-400 text-yellow-400" />
-                  <span>4.8 (120 đánh giá)</span>
+                  <span>4.8 (120 {t("property.reviews")})</span>
                 </div>
               </div>
             </div>
@@ -66,7 +68,7 @@ export default function ContactCard({
                   className="h-12 w-full text-base font-medium shadow-md transition-all duration-200 hover:shadow-lg"
                   size="large"
                 >
-                  Gọi điện: {owner.phone}
+                  {t("property.callPhone")}: {owner.phone}
                 </Button>
               )}
 
@@ -77,7 +79,7 @@ export default function ContactCard({
                   className="h-12 w-full text-base font-medium shadow-sm transition-all duration-200 hover:shadow-md"
                   size="large"
                 >
-                  Gửi email
+                  {t("property.sendEmail")}
                 </Button>
               )}
             </Space>
@@ -88,7 +90,7 @@ export default function ContactCard({
 
         <div>
           <Title level={5} className="mb-4 text-lg font-semibold">
-            Hành động nhanh
+            {t("property.quickActions")}
           </Title>
           <Space direction="vertical" className="w-full" size="middle">
             <Button
@@ -102,14 +104,16 @@ export default function ContactCard({
                 isFavorite ? "bg-red-50 text-red-600 hover:bg-red-100" : ""
               }`}
             >
-              {isFavorite ? "Đã yêu thích" : "Thêm vào yêu thích"}
+              {isFavorite
+                ? t("property.favorited")
+                : t("property.addToFavorites")}
             </Button>
             <Button
               icon={<Share2 size={16} />}
               onClick={onShare}
               className="h-12 w-full text-base font-medium shadow-sm transition-all duration-200 hover:shadow-md"
             >
-              Chia sẻ
+              {t("property.share")}
             </Button>
           </Space>
         </div>
@@ -117,14 +121,18 @@ export default function ContactCard({
 
       <Card style={{ marginTop: 10 }}>
         <Title level={4} className="mb-4 text-xl font-semibold">
-          Bất động sản tương tự
+          {t("property.similarProperties")}
         </Title>
         <div className="rounded-lg bg-gray-50 p-8 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
             <Building size={24} className="text-blue-600" />
           </div>
-          <Text className="text-gray-600">Tính năng đang được phát triển</Text>
-          <Text className="text-sm text-gray-500">Sẽ có sớm!</Text>
+          <Text className="text-gray-600">
+            {t("property.featureInDevelopment")}
+          </Text>
+          <Text className="text-sm text-gray-500">
+            {t("property.comingSoon")}
+          </Text>
         </div>
       </Card>
     </div>

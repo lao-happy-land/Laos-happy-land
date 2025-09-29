@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Card, Carousel, Button, Tooltip } from "antd";
+import { useTranslations } from "next-intl";
 import type { CarouselRef } from "antd/es/carousel";
 import Image from "next/image";
 import { Heart, Share2 } from "lucide-react";
@@ -21,6 +22,7 @@ export default function Gallery({
   onToggleFavorite,
   onShare,
 }: Props) {
+  const t = useTranslations();
   const carouselRef = useRef<CarouselRef>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -54,7 +56,7 @@ export default function Gallery({
             >
               <Image
                 src={image}
-                alt={`${title} - Image ${index + 1}`}
+                alt={`${title} - ${t("property.image")} ${index + 1}`}
                 fill
                 sizes="(max-width: 768px) 100vw, (max-width: 1280px) 100vw, 100vw"
                 className="object-cover"
@@ -71,7 +73,7 @@ export default function Gallery({
         )}
 
         <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
-          <Tooltip title="Thêm vào yêu thích">
+          <Tooltip title={t("property.addToFavorites")}>
             <Button
               type="primary"
               shape="circle"
@@ -86,7 +88,7 @@ export default function Gallery({
               }`}
             />
           </Tooltip>
-          <Tooltip title="Chia sẻ">
+          <Tooltip title={t("property.share")}>
             <Button
               type="primary"
               shape="circle"
@@ -113,7 +115,7 @@ export default function Gallery({
               >
                 <Image
                   src={image}
-                  alt={`Thumbnail ${index + 1}`}
+                  alt={`${t("property.thumbnail")} ${index + 1}`}
                   fill
                   sizes="(max-width: 768px) 64px, (max-width: 1280px) 80px, 96px"
                   className="object-cover"
@@ -125,7 +127,7 @@ export default function Gallery({
       )}
       {images.length === 0 && (
         <div className="border-t border-gray-100 bg-white p-8">
-          Không có hình ảnh
+          {t("property.noImages")}
         </div>
       )}
     </Card>
