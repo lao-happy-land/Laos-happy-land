@@ -1,6 +1,7 @@
 "use client";
 
 import { Typography } from "antd";
+import { useTranslations } from "next-intl";
 import { Clock } from "lucide-react";
 import { numberToString } from "@/share/helper/number-to-string";
 
@@ -17,6 +18,7 @@ export default function PriceInfo({
   transactionType,
   createdAt,
 }: Props) {
+  const t = useTranslations();
   return (
     <div className="mb-6 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 p-6">
       <div className="flex flex-col items-center gap-2 text-center sm:flex-row sm:justify-between">
@@ -25,12 +27,17 @@ export default function PriceInfo({
             {numberToString(Number(price))} LAK
           </div>
           <Text className="text-sm text-gray-600">
-            {transactionType === "rent" ? "Giá thuê/tháng" : "Giá bán"}
+            {transactionType === "rent"
+              ? t("property.rentalPrice")
+              : t("property.salePrice")}
           </Text>
         </div>
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <Clock size={16} />
-          <span>Đăng {new Date(createdAt).toLocaleDateString("vi-VN")}</span>
+          <span>
+            {t("property.posted")}{" "}
+            {new Date(createdAt).toLocaleDateString("vi-VN")}
+          </span>
         </div>
       </div>
     </div>

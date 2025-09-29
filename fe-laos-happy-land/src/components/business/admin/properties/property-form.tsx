@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useUrlLocale } from "@/utils/locale";
+import { useTranslations } from "next-intl";
 import {
   Form,
   Input,
@@ -71,8 +73,10 @@ interface LocationData {
 }
 
 const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
+  const t = useTranslations();
   const { message } = App.useApp();
   const router = useRouter();
+  const locale = useUrlLocale();
   const [form] = Form.useForm();
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -108,7 +112,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
       },
       onError: (error) => {
         console.error("Failed to fetch property types:", error);
-        message.error("Không thể tải danh sách loại bất động sản");
+        message.error(t("admin.cannotLoadPropertyTypes"));
       },
     },
   );
@@ -130,7 +134,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
       },
       onError: (error) => {
         console.error("Error loading location infos:", error);
-        message.error("Không thể tải danh sách địa điểm");
+        message.error(t("admin.cannotLoadLocations"));
         setLocationInfos([]);
       },
     },
@@ -160,7 +164,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
       },
       onError: (error) => {
         console.error("Failed to fetch property:", error);
-        message.error("Không thể tải thông tin bất động sản");
+        message.error(t("admin.cannotLoadProperty"));
       },
     },
   );
@@ -295,10 +299,10 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
       // Use already uploaded image URLs
       if (mode === "create") {
         if (!mainImageUrl && mainImageFile) {
-          throw new Error("Ảnh chính chưa được tải lên thành công");
+          throw new Error(t("admin.mainImageUploadError"));
         }
         if (imageUrls.length !== imageFiles.length) {
-          throw new Error("Một số ảnh phụ chưa được tải lên thành công");
+          throw new Error(t("admin.additionalImagesUploadError"));
         }
       }
 
@@ -336,17 +340,17 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
       onSuccess: () => {
         message.success(
           mode === "create"
-            ? "Tạo tin đăng thành công!"
-            : "Cập nhật tin đăng thành công!",
+            ? t("admin.createPropertySuccess")
+            : t("admin.updatePropertySuccess"),
         );
-        router.push("/admin/properties");
+        router.push(`/${locale}/admin/properties`);
       },
       onError: (error) => {
         console.error("Failed to submit form:", error);
         message.error(
           mode === "create"
-            ? "Không thể tạo tin đăng"
-            : "Không thể cập nhật tin đăng",
+            ? t("admin.createPropertyError")
+            : t("admin.updatePropertyError"),
         );
       },
     },
@@ -375,21 +379,21 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
       // Check main image - either new upload or existing image
       const hasMainImage = mainImageFile ?? mainImageUrl ?? existingMainImage;
       if (!hasMainImage) {
-        message.error("Vui lòng tải lên ảnh chính");
+        message.error(t("admin.pleaseUploadMainImage"));
         return;
       }
 
       // Check additional images - count existing images + new uploads
       const totalImages = existingImages.length + imageUrls.length;
       if (totalImages < 3) {
-        message.error("Vui lòng tải lên ít nhất 3 ảnh phụ");
+        message.error(t("admin.pleaseUploadAtLeast3Images"));
         return;
       }
     }
 
     // Check location from form field
     if (!values.location) {
-      message.error("Vui lòng chọn vị trí trên bản đồ");
+      message.error(t("admin.pleaseSelectLocationOnMap"));
       return;
     }
 
@@ -397,7 +401,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
     const currentLocationInfoId =
       values.locationInfoId ?? selectedLocationInfoId;
     if (!currentLocationInfoId) {
-      message.error("Vui lòng chọn khu vực");
+      message.error(t("admin.pleaseSelectArea"));
       return;
     }
 
@@ -407,12 +411,12 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
   const handleMainImageUpload = async (file: File) => {
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
-      message.error("Chỉ có thể tải lên file hình ảnh!");
+      message.error(t("admin.onlyImageFilesAllowed"));
       return false;
     }
     const isLt5M = file.size / 1024 / 1024 < 5;
     if (!isLt5M) {
-      message.error("Hình ảnh phải nhỏ hơn 5MB!");
+      message.error(t("admin.imageMustBeLessThan5MB"));
       return false;
     }
 
@@ -422,10 +426,10 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
     try {
       const result = await uploadService.uploadImage(file);
       setMainImageUrl(result.url);
-      message.success("Tải lên ảnh chính thành công!");
+      message.success(t("admin.mainImageUploadedSuccessfully"));
     } catch (error) {
       console.error("Failed to upload main image:", error);
-      message.error("Không thể tải lên ảnh chính");
+      message.error(t("admin.cannotUploadMainImage"));
       setMainImageFile(null);
     } finally {
       setUploadingMainImage(false);
@@ -437,16 +441,16 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
   const handleImagesUpload = async (file: File) => {
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
-      message.error("Chỉ có thể tải lên file hình ảnh!");
+      message.error(t("admin.onlyImageFilesAllowed"));
       return false;
     }
     const isLt5M = file.size / 1024 / 1024 < 5;
     if (!isLt5M) {
-      message.error("Hình ảnh phải nhỏ hơn 5MB!");
+      message.error(t("admin.imageMustBeLessThan5MB"));
       return false;
     }
     if (imageFiles.length >= 9) {
-      message.error("Chỉ có thể tải lên tối đa 9 ảnh phụ!");
+      message.error(t("admin.maximum9AdditionalImages"));
       return false;
     }
 
@@ -497,12 +501,14 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
     <div className="min-h-screen">
       <div className="bg-primary-100 border-primary-300 mb-4 rounded-2xl border p-6 shadow-md">
         <h2 className="!text-primary-600 !mb-2 !text-3xl !font-bold">
-          {mode === "create" ? "Thêm tin đăng mới" : "Chỉnh sửa tin đăng"}
+          {mode === "create"
+            ? t("admin.addNewProperty")
+            : t("admin.editProperty")}
         </h2>
         <p className="text-primary-600 text-md">
           {mode === "create"
-            ? "Tạo tin đăng bất động sản mới"
-            : "Cập nhết thông tin tin đăng"}
+            ? t("admin.createNewPropertyListing")
+            : t("admin.updatePropertyInformation")}
         </p>
       </div>
       <Card>
@@ -523,50 +529,67 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                 level={3}
                 className="!mb-0 !text-xl !font-semibold !text-gray-900"
               >
-                Thông tin cơ bản
+                {t("admin.basicInfo")}
               </Title>
             </div>
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
               <Form.Item
                 name="title"
-                label={<Text className="font-medium">Tiêu đề tin đăng</Text>}
-                rules={[{ required: true, message: "Vui lòng nhập tiêu đề!" }]}
+                label={
+                  <Text className="font-medium">
+                    {t("admin.propertyTitle")}
+                  </Text>
+                }
+                rules={[
+                  { required: true, message: t("admin.pleaseEnterTitle") },
+                ]}
               >
                 <Input
-                  placeholder="Nhập tiêu đề tin đăng..."
+                  placeholder={t("admin.enterPropertyTitle")}
                   size="large"
                   className="rounded-lg"
                 />
               </Form.Item>
               <Form.Item
                 name="transactionType"
-                label={<Text className="font-medium">Loại giao dịch</Text>}
+                label={
+                  <Text className="font-medium">
+                    {t("admin.transactionType")}
+                  </Text>
+                }
                 rules={[
                   {
                     required: true,
-                    message: "Vui lòng chọn loại giao dịch!",
+                    message: t("admin.pleaseSelectTransactionType"),
                   },
                 ]}
               >
                 <Select
-                  placeholder="Chọn loại giao dịch"
+                  placeholder={t("admin.selectTransactionType")}
                   size="large"
                   className="rounded-lg"
                   onChange={handleTransactionTypeChange}
                 >
-                  <Option value="sale">Bán</Option>
-                  <Option value="rent">Cho thuê</Option>
-                  <Option value="project">Dự án</Option>
+                  <Option value="sale">{t("admin.sale")}</Option>
+                  <Option value="rent">{t("admin.rent")}</Option>
+                  <Option value="project">{t("admin.project")}</Option>
                 </Select>
               </Form.Item>
               <Form.Item
                 name="typeId"
-                label={<Text className="font-medium">Loại bất động sản</Text>}
-                rules={[{ required: true, message: "Vui lòng chọn loại BĐS!" }]}
+                label={
+                  <Text className="font-medium">{t("admin.propertyType")}</Text>
+                }
+                rules={[
+                  {
+                    required: true,
+                    message: t("admin.pleaseSelectPropertyType"),
+                  },
+                ]}
               >
                 <Select
-                  placeholder="Chọn loại bất động sản"
+                  placeholder={t("admin.selectPropertyType")}
                   size="large"
                   className="rounded-lg"
                   loading={propertyTypesLoading}
@@ -581,10 +604,12 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
 
               <Form.Item
                 name="legalStatus"
-                label={<Text className="font-medium">Tình trạng pháp lý</Text>}
+                label={
+                  <Text className="font-medium">{t("admin.legalStatus")}</Text>
+                }
               >
                 <Input
-                  placeholder="Nhập tình trạng pháp lý..."
+                  placeholder={t("admin.enterLegalStatus")}
                   size="large"
                   className="rounded-lg"
                 />
@@ -594,11 +619,15 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
             <div className="grid grid-cols-1 gap-x-6 md:grid-cols-2">
               <Form.Item
                 name="price"
-                label={<Text className="font-medium">Giá (USD$)</Text>}
-                rules={[{ required: true, message: "Vui lòng nhập giá!" }]}
+                label={
+                  <Text className="font-medium">{t("admin.price")} (USD$)</Text>
+                }
+                rules={[
+                  { required: true, message: t("admin.pleaseEnterPrice") },
+                ]}
               >
                 <InputNumber
-                  placeholder="Nhập giá..."
+                  placeholder={t("admin.enterPrice")}
                   formatter={(value) =>
                     `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                   }
@@ -617,11 +646,11 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                 label={
                   <span className="flex items-center gap-1 font-medium">
                     <Home className="h-4 w-4" />
-                    Diện tích (m²)
+                    {t("admin.area")} (m²)
                   </span>
                 }
                 rules={[
-                  { required: true, message: "Vui lòng nhập diện tích!" },
+                  { required: true, message: t("admin.pleaseEnterArea") },
                 ]}
               >
                 <InputNumber
@@ -639,7 +668,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     label={
                       <span className="flex items-center gap-1 font-medium">
                         <Bed className="h-4 w-4" />
-                        Phòng ngủ
+                        {t("admin.bedrooms")}
                       </span>
                     }
                   >
@@ -656,7 +685,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     label={
                       <span className="flex items-center gap-1 font-medium">
                         <Bath className="h-4 w-4" />
-                        Phòng tắm
+                        {t("admin.bathrooms")}
                       </span>
                     }
                   >
@@ -678,7 +707,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     level={3}
                     className="!mb-0 !text-xl !font-semibold !text-gray-900"
                   >
-                    Tiện ích
+                    {t("admin.amenities")}
                   </Title>
                 </div>
                 <div className="grid grid-cols-3 justify-center gap-4 lg:grid-cols-6">
@@ -686,7 +715,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     name="wifi"
                     label={
                       <p className="flex items-center gap-1 font-medium text-green-600">
-                        <Wifi className="h-4 w-4" /> WiFi
+                        <Wifi className="h-4 w-4" /> {t("admin.wifi")}
                       </p>
                     }
                     valuePropName="checked"
@@ -697,7 +726,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     name="tv"
                     label={
                       <p className="flex items-center gap-1 font-medium text-red-600">
-                        <Tv className="h-4 w-4" /> TV
+                        <Tv className="h-4 w-4" /> {t("admin.tv")}
                       </p>
                     }
                     valuePropName="checked"
@@ -708,7 +737,8 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     name="airConditioner"
                     label={
                       <p className="flex items-center gap-1 font-medium text-blue-600">
-                        <Snowflake className="h-4 w-4" /> Điều hòa
+                        <Snowflake className="h-4 w-4" />{" "}
+                        {t("admin.airConditioner")}
                       </p>
                     }
                     valuePropName="checked"
@@ -719,7 +749,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     name="parking"
                     label={
                       <p className="flex items-center gap-1 font-medium text-orange-600">
-                        <Car className="h-4 w-4" /> Bãi đỗ xe
+                        <Car className="h-4 w-4" /> {t("admin.parking")}
                       </p>
                     }
                     valuePropName="checked"
@@ -730,7 +760,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     name="kitchen"
                     label={
                       <p className="flex items-center gap-1 font-medium text-pink-600">
-                        <Utensils className="h-4 w-4" /> Nhà bếp
+                        <Utensils className="h-4 w-4" /> {t("admin.kitchen")}
                       </p>
                     }
                     valuePropName="checked"
@@ -741,7 +771,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     name="security"
                     label={
                       <p className="flex items-center gap-1 font-medium text-green-600">
-                        <Shield className="h-4 w-4" /> An ninh
+                        <Shield className="h-4 w-4" /> {t("admin.security")}
                       </p>
                     }
                     valuePropName="checked"
@@ -754,12 +784,16 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
 
             <Form.Item
               name="description"
-              label={<Text className="font-medium">Mô tả ngắn</Text>}
-              rules={[{ required: true, message: "Vui lòng nhập mô tả!" }]}
+              label={
+                <Text className="font-medium">{t("admin.description")}</Text>
+              }
+              rules={[
+                { required: true, message: t("admin.pleaseEnterDescription") },
+              ]}
             >
               <TextArea
                 rows={6}
-                placeholder="Mô tả ngắn gọn về bất động sản, tiện ích xung quanh, hướng nhà, view..."
+                placeholder={t("admin.enterDescription")}
                 className="rounded-lg"
               />
             </Form.Item>
@@ -772,10 +806,10 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                   className="!mb-0 !text-xl !font-semibold !text-gray-900"
                 >
                   {selectedTransactionType === "project"
-                    ? "Nội dung dự án"
+                    ? t("admin.projectContent")
                     : selectedTransactionType === "sale"
-                      ? "Chi tiết bán"
-                      : "Chi tiết cho thuê"}
+                      ? t("admin.saleDetails")
+                      : t("admin.rentalDetails")}
                 </Title>
               </div>
               <ProjectContentBuilder
@@ -799,7 +833,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
             </Form.Item>
 
             <div className="space-y-2">
-              <Text className="font-medium">Vị trí trên bản đồ *</Text>
+              <Text className="font-medium">{t("admin.location")} *</Text>
               <MapboxLocationSelector
                 form={form}
                 value={locationData}
@@ -810,7 +844,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     form.setFieldValue("location", newLocationData.address);
                   }
                 }}
-                placeholder="Chọn vị trí trên bản đồ"
+                placeholder={t("admin.selectLocation")}
                 initialSearchValue={currentProperty?.location?.address}
                 locationInfos={locationInfos}
                 selectedLocationInfoId={selectedLocationInfoId}
@@ -836,15 +870,15 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                   level={3}
                   className="!mb-0 !text-xl !font-semibold !text-gray-900"
                 >
-                  Hình ảnh
+                  {t("admin.images")}
                 </Title>
               </div>
               {/* Main Image */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
-                  <Text className="font-medium">Ảnh chính *</Text>
+                  <Text className="font-medium">{t("admin.mainImage")} *</Text>
                   {(mainImageUrl ?? existingMainImage) && (
-                    <Tooltip title="Ảnh đã sẵn sàng">
+                    <Tooltip title={t("admin.imageReady")}>
                       <CheckCircle className="h-4 w-4 text-green-500" />
                     </Tooltip>
                   )}
@@ -863,13 +897,15 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                         <div className="bg-opacity-50 absolute inset-0 flex items-center justify-center rounded-lg bg-black">
                           <div className="text-center text-white">
                             <Spin size="large" />
-                            <div className="mt-2 text-sm">Đang tải lên...</div>
+                            <div className="mt-2 text-sm">
+                              {t("admin.uploading")}
+                            </div>
                           </div>
                         </div>
                       )}
                       {mainImageUrl && !uploadingMainImage && (
                         <div className="absolute top-2 right-2">
-                          <Tooltip title="Tải lên thành công">
+                          <Tooltip title={t("admin.uploadSuccess")}>
                             <CheckCircle className="h-6 w-6 rounded-full bg-white text-green-500" />
                           </Tooltip>
                         </div>
@@ -896,10 +932,10 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                         height={128}
                       />
                       <div className="absolute top-2 right-2">
-                        <Tooltip title="Ảnh hiện có">
+                        <Tooltip title={t("admin.existingImage")}>
                           <div className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-1">
                             <span className="text-xs text-blue-600">
-                              Hiện có
+                              {t("admin.existing")}
                             </span>
                           </div>
                         </Tooltip>
@@ -929,14 +965,14 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                         )}
                         <Text className="block text-gray-600">
                           {uploadingMainImage
-                            ? "Đang tải lên..."
-                            : "Tải lên ảnh chính"}
+                            ? t("admin.uploading")
+                            : t("admin.uploadMainImage")}
                         </Text>
                         <Text className="block text-sm text-gray-500">
-                          JPG, PNG, GIF tối đa 5MB
+                          {t("admin.imageFormats")}
                         </Text>
                         <Text className="block text-xs text-gray-400">
-                          Kéo thả hoặc click để chọn
+                          {t("admin.dragAndDrop")}
                         </Text>
                       </div>
                     </Upload>
@@ -948,10 +984,12 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Text className="font-medium">Ảnh phụ (tối đa 9 ảnh)</Text>
+                    <Text className="font-medium">
+                      {t("admin.additionalImages")} (tối đa 9 ảnh)
+                    </Text>
                     {imageUrls.length > 0 && (
                       <Tooltip
-                        title={`${imageUrls.length} ảnh mới đã tải lên thành công`}
+                        title={`${imageUrls.length} ${t("admin.newImagesUploadedSuccessfully")}`}
                       >
                         <div className="flex items-center gap-1 rounded-full bg-green-100 px-2 py-1">
                           <CheckCircle className="h-3 w-3 text-green-600" />
@@ -962,7 +1000,9 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                       </Tooltip>
                     )}
                     {existingImages.length > 0 && (
-                      <Tooltip title={`${existingImages.length} ảnh hiện có`}>
+                      <Tooltip
+                        title={`${existingImages.length} ${t("admin.existingImages")}`}
+                      >
                         <div className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-1">
                           <span className="text-xs text-blue-600">
                             {existingImages.length}
@@ -972,7 +1012,8 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     )}
                   </div>
                   <Text className="text-sm text-gray-500">
-                    {existingImages.length + imageFiles.length}/9 ảnh
+                    {existingImages.length + imageFiles.length}/
+                    {t("admin.maximum9AdditionalImages")}
                   </Text>
                 </div>
                 <div className="flex flex-wrap gap-4">
@@ -990,10 +1031,10 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                         height={100}
                       />
                       <div className="absolute top-1 right-1">
-                        <Tooltip title="Ảnh hiện có">
+                        <Tooltip title={t("admin.existingImage")}>
                           <div className="flex items-center gap-1 rounded-full bg-blue-100 px-1 py-0.5">
                             <span className="text-xs text-blue-600">
-                              Hiện có
+                              {t("admin.existing")}
                             </span>
                           </div>
                         </Tooltip>
@@ -1037,7 +1078,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                       )}
                       {imageUrls[index] && !uploadingImages[index] && (
                         <div className="absolute top-1 right-1">
-                          <Tooltip title="Tải lên thành công">
+                          <Tooltip title={t("admin.uploadSuccess")}>
                             <CheckCircle className="h-4 w-4 rounded-full bg-white text-green-500" />
                           </Tooltip>
                         </div>
@@ -1103,7 +1144,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
             <Button
               type="default"
               size="large"
-              onClick={() => router.push("/admin/properties")}
+              onClick={() => router.push(`/${locale}/admin/properties`)}
               className="rounded-lg"
             >
               Hủy
@@ -1116,7 +1157,9 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
               loading={submitting}
               className="rounded-lg bg-blue-600 hover:bg-blue-700"
             >
-              {mode === "create" ? "Tạo tin đăng" : "Cập nhật"}
+              {mode === "create"
+                ? t("admin.createProperty")
+                : t("admin.update")}
             </Button>
           </div>
         </Form>

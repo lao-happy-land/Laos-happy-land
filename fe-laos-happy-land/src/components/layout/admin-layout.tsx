@@ -9,7 +9,9 @@ import { useAuthStore } from "@/share/store/auth.store";
 import { LogOut, User, Settings } from "lucide-react";
 import { Button, Dropdown, App } from "antd";
 import LoadingScreen from "@/components/common/loading-screen";
-import UnauthorizedPage from "@/app/unauthorized/page";
+import UnauthorizedPage from "@/app/[locale]/unauthorized/page";
+import { useUrlLocale } from "@/utils/locale";
+import { useTranslations } from "next-intl";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -18,15 +20,17 @@ interface AdminLayoutProps {
 const AdminLayout = ({ children }: AdminLayoutProps) => {
   const { modal } = App.useApp();
   const pathname = usePathname();
+  const locale = useUrlLocale();
   const { user, isAuthenticated, isInitialized, logout } = useAuthStore();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const t = useTranslations();
 
   // Show loading while auth is being initialized
   if (!isInitialized) {
     return (
       <LoadingScreen
         variant="primary"
-        message="Đang tải trang..."
+        message={t("common.loading")}
         size="lg"
         showProgress
         duration={3}
@@ -45,16 +49,14 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         <div className="text-center">
           <div className="mb-4 text-6xl">🚫</div>
           <h1 className="mb-2 text-2xl font-bold text-gray-900">
-            Không có quyền truy cập
+            {t("admin.noAccess")}
           </h1>
-          <p className="mb-6 text-gray-600">
-            Bạn không có quyền truy cập trang quản trị
-          </p>
+          <p className="mb-6 text-gray-600">{t("admin.noAccessMessage")}</p>
           <Link
-            href="/"
+            href={`/${locale}`}
             className="inline-flex items-center gap-2 rounded-lg bg-gray-600 px-6 py-3 text-white transition-colors hover:bg-gray-700"
           >
-            Về trang chủ
+            {t("navigation.home")}
           </Link>
         </div>
       </div>
@@ -71,10 +73,10 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const getBreadcrumbs = () => {
     const currentItem = menuItems.find((item) => item.active);
     return [
-      { label: "Admin", href: "/admin" },
+      { label: "Admin", href: `/${locale}/admin` },
       {
         label: currentItem?.label ?? "Dashboard",
-        href: currentItem?.href ?? "/admin",
+        href: currentItem?.href ?? `/${locale}/admin`,
       },
     ];
   };
@@ -108,7 +110,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             {menuItems.map((item) => (
               <li key={item.id}>
                 <Link
-                  href={item.href}
+                  href={`/${locale}${item.href}`}
                   className={`group relative flex items-center gap-3 rounded-xl px-3 py-3 transition-all duration-200 ${
                     item.active ? "text-white shadow-md" : "hover:bg-gray-100"
                   }`}
@@ -225,12 +227,18 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                     {
                       key: "profile",
                       icon: <User className="h-4 w-4" />,
-                      label: <Link href="/admin/profile">Hồ sơ cá nhân</Link>,
+                      label: (
+                        <Link href={`/${locale}/admin/profile`}>
+                          Hồ sơ cá nhân
+                        </Link>
+                      ),
                     },
                     {
                       key: "settings",
                       icon: <Settings className="h-4 w-4" />,
-                      label: <Link href="/admin/settings">Cài đặt</Link>,
+                      label: (
+                        <Link href={`/${locale}/admin/settings`}>Cài đặt</Link>
+                      ),
                     },
                     {
                       type: "divider",
@@ -239,13 +247,13 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                       key: "logout",
                       icon: <LogOut className="h-4 w-4" />,
                       danger: true,
-                      label: "Đăng xuất",
+                      label: t("auth.logout"),
                       onClick: () => {
                         modal.confirm({
-                          title: "Xác nhận đăng xuất",
-                          content: "Bạn có chắc chắn muốn đăng xuất?",
-                          okText: "Đăng xuất",
-                          cancelText: "Hủy",
+                          title: t("admin.confirmLogout"),
+                          content: t("admin.confirmLogoutMessage"),
+                          okText: t("auth.logout"),
+                          cancelText: t("common.cancel"),
                           okType: "danger",
                           onOk: () => {
                             logout();

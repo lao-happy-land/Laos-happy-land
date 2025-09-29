@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useUrlLocale } from "@/utils/locale";
 import { useRequest } from "ahooks";
 import { Alert, Spin } from "antd";
 import { useAuthStore } from "@/share/store/auth.store";
@@ -9,6 +10,7 @@ import { useAuthStore } from "@/share/store/auth.store";
 export default function GoogleCallbackPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const locale = useUrlLocale();
   const { handleGoogleCallback } = useAuthStore();
   const [error, setError] = useState<string>("");
 
@@ -57,7 +59,7 @@ export default function GoogleCallbackPage() {
             showIcon
             action={
               <button
-                onClick={() => router.push("/login")}
+                onClick={() => router.push(`/${locale}/login`)}
                 className="text-blue-600 underline hover:text-blue-800"
               >
                 Thử lại

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useUrlLocale } from "@/utils/locale";
 import { Button, Tabs, Spin, Input, App } from "antd";
 import {
   ArrowLeft,
@@ -58,6 +59,7 @@ type BrokerDetailProps = {
 
 export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
   const router = useRouter();
+  const locale = useUrlLocale();
   const { message } = App.useApp();
   const [broker, setBroker] = useState<Broker | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -272,7 +274,7 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
             </h1>
             <Button
               type="primary"
-              onClick={() => router.push("/brokers")}
+              onClick={() => router.push(`/${locale}/brokers`)}
               className="mt-4"
             >
               Quay lại danh sách
@@ -289,7 +291,7 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
         {/* Back Button */}
         <Button
           icon={<ArrowLeft />}
-          onClick={() => router.push("/brokers")}
+          onClick={() => router.push(`/${locale}/brokers`)}
           className="mb-6"
         >
           Quay lại danh sách
@@ -520,7 +522,9 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
                   <div
                     key={property.id}
                     className="cursor-pointer rounded-2xl border border-gray-100 bg-white shadow-lg transition-all duration-300 hover:-translate-y-2 hover:border-blue-200 hover:shadow-2xl"
-                    onClick={() => router.push(`/property/${property.id}`)}
+                    onClick={() =>
+                      router.push(`/${locale}/property/${property.id}`)
+                    }
                   >
                     <div className="relative h-48 w-full">
                       <Image

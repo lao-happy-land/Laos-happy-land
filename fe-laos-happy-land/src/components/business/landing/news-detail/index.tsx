@@ -16,6 +16,8 @@ import {
   Linkedin,
   Clock,
 } from "lucide-react";
+import { useUrlLocale } from "@/utils/locale";
+import { useTranslations } from "next-intl";
 
 interface NewsItem {
   id: string;
@@ -32,6 +34,8 @@ interface NewsItem {
 }
 
 const NewsDetailPage = () => {
+  const locale = useUrlLocale();
+  const t = useTranslations();
   // Mock data - in real app, this would come from API based on the ID from URL params
   const newsData: NewsItem = {
     id: "1",
@@ -131,7 +135,7 @@ const NewsDetailPage = () => {
     {
       title: (
         <Link
-          href="/"
+          href={`/${locale}`}
           className="hover:text-primary-500 text-neutral-600 transition-colors"
         >
           Trang chủ
@@ -141,7 +145,7 @@ const NewsDetailPage = () => {
     {
       title: (
         <Link
-          href="/news"
+          href={`/${locale}/news`}
           className="hover:text-primary-500 text-neutral-600 transition-colors"
         >
           Tin tức
@@ -316,14 +320,14 @@ const NewsDetailPage = () => {
                             <span>{news.views}</span>
                           </div>
                         </div>
-                        <Link href={`/news/${news.id}`}>
+                        <Link href={`/${locale}/news/${news.id}`}>
                           <Button
                             type="link"
                             size="small"
                             icon={<ArrowRight size={12} />}
                             className="text-primary-500 hover:text-primary-600 p-0 font-semibold"
                           >
-                            Đọc
+                            {t("news.readMore")}
                           </Button>
                         </Link>
                       </div>
@@ -338,7 +342,7 @@ const NewsDetailPage = () => {
           <div className="lg:col-span-1">
             {/* Back to News */}
             <div className="mb-6 rounded-xl bg-white p-6 shadow-sm">
-              <Link href="/news">
+              <Link href={`/${locale}/news`}>
                 <Button
                   type="default"
                   icon={<ArrowLeft size={16} />}
@@ -346,7 +350,7 @@ const NewsDetailPage = () => {
                   size="large"
                   className="font-semibold"
                 >
-                  Quay lại
+                  {t("news.backToNews")}
                 </Button>
               </Link>
             </div>
@@ -354,7 +358,7 @@ const NewsDetailPage = () => {
             {/* Author Info */}
             <div className="mb-6 rounded-xl bg-white p-6 text-center shadow-sm">
               <h3 className="mb-4 text-lg font-semibold text-neutral-900">
-                Tác giả
+                {t("news.author")}
               </h3>
               <div>
                 <div className="mb-4 flex justify-center">
@@ -366,11 +370,10 @@ const NewsDetailPage = () => {
                   {newsData.author}
                 </h5>
                 <p className="mb-4 text-sm text-neutral-600">
-                  Chuyên gia phân tích thị trường bất động sản với hơn 10 năm
-                  kinh nghiệm
+                  {t("news.expertInRealEstateAnalysis")}
                 </p>
                 <Button type="link" size="small" className="text-xs">
-                  Xem thêm bài viết
+                  {t("news.viewMoreArticles")}
                 </Button>
               </div>
             </div>
@@ -378,7 +381,7 @@ const NewsDetailPage = () => {
             {/* Popular Tags */}
             <div className="mb-6 rounded-xl bg-white p-6 shadow-sm">
               <h3 className="mb-4 text-lg font-semibold text-neutral-900">
-                Tags phổ biến
+                {t("news.popularTags")}
               </h3>
               <div className="flex flex-wrap gap-2">
                 {[
@@ -404,7 +407,7 @@ const NewsDetailPage = () => {
             {/* Recent News */}
             <div className="mb-6 rounded-xl bg-white p-6 shadow-sm">
               <h3 className="mb-4 text-lg font-semibold text-neutral-900">
-                Tin gần đây
+                {t("news.recentNews")}
               </h3>
               <div className="space-y-4">
                 {relatedNews.map((news) => (
@@ -420,7 +423,7 @@ const NewsDetailPage = () => {
                         />
                       </div>
                       <div className="flex-1">
-                        <Link href={`/news/${news.id}`}>
+                        <Link href={`/${locale}/news/${news.id}`}>
                           <h4 className="group-hover:text-primary-500 line-clamp-2 text-sm leading-tight font-medium text-neutral-900 transition-colors">
                             {news.title}
                           </h4>
@@ -438,16 +441,16 @@ const NewsDetailPage = () => {
             {/* Newsletter */}
             <div className="rounded-xl bg-white p-6 shadow-sm">
               <h3 className="mb-4 text-lg font-semibold text-neutral-900">
-                Đăng ký nhận tin
+                {t("news.subscribe")}
               </h3>
               <div className="space-y-4">
                 <p className="text-sm text-neutral-600">
-                  Nhận tin tức mới nhất về bất động sản Lào
+                  {t("news.subscribeToOurNewsletter")}
                 </p>
                 <div className="space-y-2">
                   <input
                     type="email"
-                    placeholder="Email của bạn"
+                    placeholder={t("news.enterYourEmail")}
                     className="focus:border-primary-500 w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm transition-colors focus:outline-none"
                   />
                   <Button
@@ -456,7 +459,7 @@ const NewsDetailPage = () => {
                     size="large"
                     className="font-semibold"
                   >
-                    Đăng ký
+                    {t("news.subscribe")}
                   </Button>
                 </div>
               </div>

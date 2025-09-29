@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
+import { useUrlLocale } from "@/utils/locale";
 import { useAuthStore } from "@/share/store/auth.store";
 import { Button, Input, Breadcrumb } from "antd";
 import {
@@ -21,6 +22,7 @@ import Link from "next/link";
 export default function Profile() {
   const { isAuthenticated, user: extendedUser } = useAuthStore();
   const router = useRouter();
+  const locale = useUrlLocale();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -39,7 +41,7 @@ export default function Profile() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push("/login?redirect=/profile");
+      router.push(`/${locale}/login?redirect=/${locale}/profile`);
     }
   }, [isAuthenticated, router]);
 

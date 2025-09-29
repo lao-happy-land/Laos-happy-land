@@ -6,6 +6,7 @@ import { useRequest } from "ahooks";
 import { newsTypeService } from "@/share/service/news-type.service";
 import type { NewsType } from "@/@types/types";
 import type { CreateNewsTypeDto } from "@/@types/gentype-axios";
+import { useTranslations } from "next-intl";
 
 interface NewsTypeModalProps {
   visible: boolean;
@@ -23,18 +24,18 @@ const NewsTypeModal: React.FC<NewsTypeModalProps> = ({
   onSuccess,
 }) => {
   const [form] = Form.useForm();
-
+  const t = useTranslations();
   // Create news type
   const { run: createNewsType, loading: createLoading } = useRequest(
     newsTypeService.createNewsType,
     {
       manual: true,
       onSuccess: () => {
-        message.success("Tạo loại tin tức thành công!");
+        message.success(t("admin.createNewsTypeSuccess"));
         onSuccess();
       },
       onError: (error: Error) => {
-        message.error("Tạo loại tin tức thất bại!");
+        message.error(t("admin.createNewsTypeFailed"));
         console.error("Create error:", error);
       },
     },
@@ -46,11 +47,11 @@ const NewsTypeModal: React.FC<NewsTypeModalProps> = ({
     {
       manual: true,
       onSuccess: () => {
-        message.success("Cập nhật loại tin tức thành công!");
+        message.success(t("admin.updateNewsTypeSuccess"));
         onSuccess();
       },
       onError: (error: Error) => {
-        message.error("Cập nhật loại tin tức thất bại!");
+        message.error(t("admin.updateNewsTypeFailed"));
         console.error("Update error:", error);
       },
     },
@@ -92,12 +93,14 @@ const NewsTypeModal: React.FC<NewsTypeModalProps> = ({
 
   return (
     <Modal
-      title={mode === "create" ? "Thêm loại tin tức" : "Sửa loại tin tức"}
+      title={
+        mode === "create" ? t("admin.addNewsType") : t("admin.editNewsType")
+      }
       open={visible}
       onCancel={onClose}
       footer={[
         <Button key="cancel" onClick={onClose} disabled={isLoading}>
-          Hủy
+          {t("admin.cancel")}
         </Button>,
         <Button
           key="submit"
@@ -105,7 +108,7 @@ const NewsTypeModal: React.FC<NewsTypeModalProps> = ({
           loading={isLoading}
           onClick={handleSubmit}
         >
-          {mode === "create" ? "Tạo" : "Cập nhật"}
+          {mode === "create" ? t("admin.create") : t("admin.update")}
         </Button>,
       ]}
       width={600}
@@ -113,14 +116,14 @@ const NewsTypeModal: React.FC<NewsTypeModalProps> = ({
       <Form form={form} layout="vertical" requiredMark={false}>
         <Form.Item
           name="name"
-          label="Tên loại tin tức"
+          label={t("admin.newsTypeName")}
           rules={[
-            { required: true, message: "Vui lòng nhập tên loại tin tức!" },
-            { min: 2, message: "Tên loại tin tức phải có ít nhất 2 ký tự!" },
-            { max: 100, message: "Tên loại tin tức không được quá 100 ký tự!" },
+            { required: true, message: t("admin.pleaseEnterNewsTypeName") },
+            { min: 2, message: t("admin.newsTypeNameMinLength") },
+            { max: 100, message: t("admin.newsTypeNameMaxLength") },
           ]}
         >
-          <Input placeholder="Nhập tên loại tin tức..." size="large" />
+          <Input placeholder={t("admin.enterNewsTypeName")} size="large" />
         </Form.Item>
       </Form>
     </Modal>

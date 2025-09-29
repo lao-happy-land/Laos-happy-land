@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useUrlLocale } from "@/utils/locale";
 import {
   Button,
   Tag,
@@ -25,6 +26,7 @@ import { useRequest } from "ahooks";
 import { newsService } from "@/share/service/news.service";
 import { newsTypeService } from "@/share/service/news-type.service";
 import type { News, NewsType } from "@/@types/types";
+import { useTranslations } from "next-intl";
 
 const { Search } = Input;
 const { Option } = Select;
@@ -32,6 +34,8 @@ const { Option } = Select;
 const NewsPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const locale = useUrlLocale();
+  const t = useTranslations();
 
   const [filters, setFilters] = useState({
     category: searchParams.get("category") ?? "all",
@@ -53,9 +57,9 @@ const NewsPage = () => {
 
       const queryString = params.toString();
       const newURL = queryString ? `?${queryString}` : "";
-      router.push(`/news${newURL}`, { scroll: false });
+      router.push(`/${locale}/news${newURL}`, { scroll: false });
     },
-    [router],
+    [router, locale],
   );
 
   // Fetch news data from API with pagination
@@ -133,7 +137,7 @@ const NewsPage = () => {
 
   // Create categories from API data
   const categories = [
-    { value: "all", label: "Tất cả" },
+    { value: "all", label: t("news.all") },
     ...(newsTypesData?.data ?? []).map((type: NewsType) => ({
       value: type.id,
       label: type.name,
@@ -158,12 +162,12 @@ const NewsPage = () => {
           href="/"
           className="hover:text-primary-500 text-neutral-600 transition-colors"
         >
-          Trang chủ
+          {t("news.home")}
         </Link>
       ),
     },
     {
-      title: "Tin tức",
+      title: t("news.title"),
     },
   ];
 
@@ -173,13 +177,11 @@ const NewsPage = () => {
       <div className="flex min-h-screen items-center justify-center bg-neutral-50">
         <div className="text-center">
           <h2 className="mb-4 text-2xl font-semibold text-neutral-900">
-            Có lỗi xảy ra
+            {t("news.errorOccurred")}
           </h2>
-          <p className="mb-4 text-neutral-600">
-            Không thể tải dữ liệu tin tức. Vui lòng thử lại sau.
-          </p>
+          <p className="mb-4 text-neutral-600">{t("news.cannotLoadData")}</p>
           <Button type="primary" onClick={refreshNews}>
-            Thử lại
+            {t("news.tryAgain")}
           </Button>
         </div>
       </div>
@@ -200,10 +202,10 @@ const NewsPage = () => {
         <div className="bg-white py-16">
           <div className="mx-auto max-w-7xl px-6 text-center">
             <h1 className="mb-4 text-5xl font-bold text-neutral-900">
-              Tin tức bất động sản
+              {t("news.realEstateNews")}
             </h1>
             <p className="text-xl text-neutral-600">
-              Cập nhật thông tin mới nhất về thị trường bất động sản Lào
+              {t("news.latestMarketInfo")}
             </p>
           </div>
         </div>
@@ -214,14 +216,14 @@ const NewsPage = () => {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex-1">
                 <Search
-                  placeholder="Tìm kiếm tin tức..."
+                  placeholder={t("news.searchNews")}
                   allowClear
                   size="large"
                   value={searchValue}
                   onChange={(e) => setSearchValue(e.target.value)}
                   onSearch={handleSearch}
                   onClear={handleClearSearch}
-                  enterButton="Tìm kiếm"
+                  enterButton={t("news.search")}
                   loading={newsLoading}
                   prefix={<SearchIcon size={16} />}
                   className="max-w-md"
@@ -247,9 +249,9 @@ const NewsPage = () => {
                   size="large"
                   className="w-40"
                 >
-                  <Option value="newest">Mới nhất</Option>
-                  <Option value="popular">Phổ biến</Option>
-                  <Option value="views">Lượt xem</Option>
+                  <Option value="newest">{t("news.newest")}</Option>
+                  <Option value="popular">{t("news.popular")}</Option>
+                  <Option value="views">{t("news.views")}</Option>
                 </Select>
               </div>
             </div>
@@ -269,7 +271,7 @@ const NewsPage = () => {
                 {featuredNews && (
                   <div className="mb-12">
                     <h2 className="mb-6 text-2xl font-semibold text-neutral-900">
-                      Tin nổi bật
+                      {t("news.featuredNews")}
                     </h2>
                     <div className="overflow-hidden rounded-2xl bg-white shadow-lg transition-shadow duration-300 hover:shadow-xl">
                       <div className="relative h-96 overflow-hidden">
@@ -283,7 +285,7 @@ const NewsPage = () => {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
                         <div className="absolute bottom-4 left-4">
                           <Tag color="red" className="px-3 py-1 text-sm">
-                            {featuredNews.type?.name ?? "Tin tức"}
+                            {featuredNews.type?.name ?? t("news.title")}
                           </Tag>
                         </div>
                       </div>
@@ -307,7 +309,8 @@ const NewsPage = () => {
                             <div className="flex items-center gap-2">
                               <Eye size={16} />
                               <span>
-                                {featuredNews.viewsCount ?? 0} lượt xem
+                                {featuredNews.viewsCount ?? 0}{" "}
+                                {t("news.readCount")}
                               </span>
                             </div>
                           </div>
@@ -318,7 +321,7 @@ const NewsPage = () => {
                               icon={<ArrowRight size={16} />}
                               className="font-semibold"
                             >
-                              Đọc tiếp
+                              {t("news.readMore")}
                             </Button>
                           </Link>
                         </div>
@@ -330,12 +333,12 @@ const NewsPage = () => {
                 {/* Regular News Grid */}
                 <div className="mb-6">
                   <h2 className="mb-6 text-2xl font-semibold text-neutral-900">
-                    Tin tức mới nhất
+                    {t("news.latestNews")}
                   </h2>
                 </div>
 
                 {processedNews.length === 0 ? (
-                  <Empty description="Chưa có tin tức nào" className="py-12" />
+                  <Empty description={t("news.noNewsYet")} className="py-12" />
                 ) : (
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {regularNews.map((news: News) => (
@@ -354,7 +357,7 @@ const NewsPage = () => {
                           <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
                           <div className="absolute top-3 left-3">
                             <Tag color="blue" className="px-2 py-1 text-xs">
-                              {news.type?.name ?? "Tin tức"}
+                              {news.type?.name ?? t("news.title")}
                             </Tag>
                           </div>
                         </div>
@@ -387,7 +390,7 @@ const NewsPage = () => {
                                 icon={<ArrowRight size={12} />}
                                 className="text-primary-500 hover:text-primary-600 p-0 font-semibold"
                               >
-                                Đọc
+                                {t("news.readMore")}
                               </Button>
                             </Link>
                           </div>
@@ -407,7 +410,7 @@ const NewsPage = () => {
                       showSizeChanger={false}
                       showQuickJumper
                       showTotal={(total, range) =>
-                        `${range[0]}-${range[1]} của ${total} tin tức`
+                        `${range[0]}-${range[1]} ${t("news.paginationText")} ${total} ${t("news.title")}`
                       }
                       onChange={handlePageChange}
                       className="news-pagination"
@@ -421,18 +424,18 @@ const NewsPage = () => {
                 {/* Popular Tags */}
                 <div className="mb-6 rounded-xl bg-white p-6 shadow-sm">
                   <h3 className="mb-4 text-lg font-semibold text-neutral-900">
-                    Tags phổ biến
+                    {t("news.popularTags")}
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {[
-                      "BDS Lào",
-                      "Thị trường",
-                      "Đầu tư",
-                      "Pháp lý",
-                      "Vientiane",
-                      "Luang Prabang",
-                      "Mua nhà",
-                      "Cho thuê",
+                      t("news.tags.realEstate"),
+                      t("news.tags.market"),
+                      t("news.tags.investment"),
+                      t("news.tags.legal"),
+                      t("news.tags.vientiane"),
+                      t("news.tags.luangPrabang"),
+                      t("news.tags.buyHouse"),
+                      t("news.tags.rent"),
                     ].map((tag) => (
                       <Tag
                         key={tag}
@@ -447,7 +450,7 @@ const NewsPage = () => {
                 {/* Recent News */}
                 <div className="mb-6 rounded-xl bg-white p-6 shadow-sm">
                   <h3 className="mb-4 text-lg font-semibold text-neutral-900">
-                    Tin gần đây
+                    {t("news.recentNews")}
                   </h3>
                   <div className="space-y-4">
                     {processedNews.slice(0, 5).map((news: News) => (
@@ -481,20 +484,20 @@ const NewsPage = () => {
                 {/* Newsletter */}
                 <div className="rounded-xl bg-white p-6 shadow-sm">
                   <h3 className="mb-4 text-lg font-semibold text-neutral-900">
-                    Đăng ký nhận tin
+                    {t("news.subscribeNewsletter")}
                   </h3>
                   <div className="space-y-4">
                     <p className="text-sm text-neutral-600">
-                      Nhận tin tức mới nhất về bất động sản Lào
+                      {t("news.getLatestNews")}
                     </p>
-                    <Input placeholder="Email của bạn" size="large" />
+                    <Input placeholder={t("news.yourEmail")} size="large" />
                     <Button
                       type="primary"
                       block
                       size="large"
                       className="font-semibold"
                     >
-                      Đăng ký
+                      {t("news.subscribe")}
                     </Button>
                   </div>
                 </div>

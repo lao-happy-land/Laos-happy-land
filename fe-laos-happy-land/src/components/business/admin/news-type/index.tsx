@@ -47,7 +47,7 @@ const NewsTypeAdmin: React.FC = () => {
     {
       manual: true,
       onSuccess: () => {
-        message.success("Xóa loại tin tức thành công!");
+        message.success(t("admin.deleteNewsTypeSuccess"));
         refresh();
       },
       onError: (error: unknown) => {
@@ -90,7 +90,7 @@ const NewsTypeAdmin: React.FC = () => {
 
   const columns = [
     {
-      title: "Tên loại tin tức",
+      title: t("admin.newsTypeName"),
       dataIndex: "name",
       key: "name",
       render: (text: string) => (
@@ -98,13 +98,13 @@ const NewsTypeAdmin: React.FC = () => {
       ),
     },
     {
-      title: "Ngày tạo",
+      title: t("admin.createdAt"),
       dataIndex: "createdAt",
       key: "createdAt",
       render: (date: string) => new Date(date).toLocaleDateString("vi-VN"),
     },
     {
-      title: "Thao tác",
+      title: t("admin.actions"),
       key: "actions",
       render: (_: unknown, record: NewsType) => (
         <Space size="middle">
@@ -114,14 +114,14 @@ const NewsTypeAdmin: React.FC = () => {
             size="small"
             onClick={() => handleEdit(record)}
           >
-            Sửa
+            {t("admin.edit")}
           </Button>
           <Popconfirm
-            title="Xóa loại tin tức"
-            description="Bạn có chắc chắn muốn xóa loại tin tức này?"
+            title={t("admin.deleteNewsType")}
+            description={t("admin.deleteNewsTypeConfirm")}
             onConfirm={() => handleDelete(record.id)}
-            okText="Xóa"
-            cancelText="Hủy"
+            okText={t("admin.delete")}
+            cancelText={t("admin.cancel")}
           >
             <Button
               type="primary"
@@ -130,7 +130,7 @@ const NewsTypeAdmin: React.FC = () => {
               size="small"
               loading={deleteLoading}
             >
-              Xóa
+              {t("admin.delete")}
             </Button>
           </Popconfirm>
         </Space>
@@ -144,7 +144,7 @@ const NewsTypeAdmin: React.FC = () => {
         <Row justify="space-between" align="middle" className="mb-6">
           <Col>
             <Title level={2} className="!mb-0">
-              Quản lý loại tin tức
+              {t("admin.manageNewsTypes")}
             </Title>
           </Col>
           <Col>
@@ -154,7 +154,7 @@ const NewsTypeAdmin: React.FC = () => {
               onClick={handleCreate}
               size="large"
             >
-              Thêm loại tin tức
+              {t("admin.addNewsType")}
             </Button>
           </Col>
         </Row>
@@ -162,7 +162,7 @@ const NewsTypeAdmin: React.FC = () => {
         <Row className="mb-4">
           <Col span={8}>
             <Input
-              placeholder="Tìm kiếm loại tin tức..."
+              placeholder={t("admin.searchNewsTypes")}
               prefix={<Search size={16} />}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -182,7 +182,7 @@ const NewsTypeAdmin: React.FC = () => {
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total, range) =>
-              `${range[0]}-${range[1]} của ${total} loại tin tức`,
+              `${range[0]}-${range[1]} ${t("admin.of")} ${total} ${t("admin.newsTypes")}`,
           }}
         />
       </Card>

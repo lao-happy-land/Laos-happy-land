@@ -22,6 +22,7 @@ import { userService } from "@/share/service/user.service";
 import UserModal from "./user-modal";
 import { useUserRoles } from "@/share/hook/useUserRoles";
 import { getColumns } from "./user-columns";
+import { useTranslations } from "next-intl";
 
 const { Title, Text } = Typography;
 
@@ -42,6 +43,7 @@ interface User {
 }
 
 export default function Users() {
+  const t = useTranslations();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -106,7 +108,7 @@ export default function Users() {
       },
       onError: (error) => {
         console.error("Error loading users:", error);
-        message.error("Không thể tải danh sách người dùng. Vui lòng thử lại.");
+        message.error(t("admin.cannotLoadUsers"));
       },
     },
   );
@@ -122,12 +124,12 @@ export default function Users() {
     {
       manual: true,
       onSuccess: () => {
-        message.success("Xóa người dùng thành công!");
+        message.success(t("admin.userDeletedSuccessfully"));
         refreshUsers();
       },
       onError: (error) => {
         console.error("Error deleting user:", error);
-        message.error("Không thể xóa người dùng. Vui lòng thử lại.");
+        message.error(t("admin.cannotDeleteUser"));
       },
     },
   );
@@ -197,11 +199,9 @@ export default function Users() {
         <Row justify="space-between" align="middle">
           <Col>
             <Title level={2} style={{ margin: 0 }}>
-              Quản lý người dùng
+              {t("admin.manageUsers")}
             </Title>
-            <Text type="secondary">
-              Quản lý tài khoản người dùng trong hệ thống
-            </Text>
+            <Text type="secondary">{t("admin.manageUsersDescription")}</Text>
           </Col>
           <Col>
             <Button
@@ -210,7 +210,7 @@ export default function Users() {
               onClick={() => handleOpenModal("create")}
               size="large"
             >
-              Thêm người dùng
+              {t("admin.addUser")}
             </Button>
           </Col>
         </Row>
@@ -221,7 +221,7 @@ export default function Users() {
         <Row gutter={16} align="middle">
           <Col flex="auto">
             <AntInput
-              placeholder="Tìm kiếm theo tên, email hoặc số điện thoại..."
+              placeholder={t("admin.searchUsers")}
               value={searchInputValue}
               onChange={(e) => handleSearchChange(e.target.value)}
               onPressEnter={handleSearch}
@@ -234,22 +234,24 @@ export default function Users() {
               icon={<Search size={16} />}
               onClick={handleSearch}
             >
-              Tìm kiếm
+              {t("admin.search")}
             </Button>
           </Col>
           <Col>
             <Select
-              placeholder="Tất cả vai trò"
+              placeholder={t("admin.allRoles")}
               value={filterRole || "all"}
               onChange={handleRoleChange}
               style={{ width: 200 }}
             >
               <Select.Option key="all" value="all">
-                Tất cả vai trò
+                {t("admin.allRoles")}
               </Select.Option>
               {userRoles.map((role) => (
                 <Select.Option key={role.id} value={role.name}>
-                  {typeof role.name === "string" ? role.name : "Unknown Role"}
+                  {typeof role.name === "string"
+                    ? role.name
+                    : t("admin.unknownRole")}
                 </Select.Option>
               ))}
             </Select>
@@ -260,7 +262,12 @@ export default function Users() {
       {/* Users Table */}
       <Card>
         <Table
-          columns={getColumns(handleEditUser, handleDeleteUser, deletingUser)}
+          columns={getColumns(
+            handleEditUser,
+            handleDeleteUser,
+            deletingUser,
+            t,
+          )}
           dataSource={users}
           rowKey="id"
           pagination={false}
@@ -269,8 +276,8 @@ export default function Users() {
               <Empty
                 description={
                   searchTerm || filterRole
-                    ? "Không tìm thấy người dùng phù hợp với bộ lọc."
-                    : "Bắt đầu bằng cách thêm người dùng đầu tiên."
+                    ? t("admin.noUsersFound")
+                    : t("admin.startByAddingFirstUser")
                 }
               />
             ),

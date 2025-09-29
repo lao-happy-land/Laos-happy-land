@@ -1,6 +1,7 @@
 "use client";
 
 import { Typography } from "antd";
+import { useTranslations } from "next-intl";
 import { Wifi, Tv, Snowflake, Car, Utensils, Shield } from "lucide-react";
 
 const { Title } = Typography;
@@ -15,6 +16,7 @@ type AmenitiesProps = {
 };
 
 export default function Amenities(details: AmenitiesProps) {
+  const t = useTranslations();
   const hasAny =
     (details.wifi ?? false) ||
     (details.tv ?? false) ||
@@ -28,7 +30,7 @@ export default function Amenities(details: AmenitiesProps) {
   return (
     <div className="mb-8">
       <Title level={3} className="mb-4 text-xl font-semibold">
-        Tiện ích
+        {t("property.amenities")}
       </Title>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {details.wifi && (
@@ -46,25 +48,33 @@ export default function Amenities(details: AmenitiesProps) {
         {details.airConditioner && (
           <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 transition-all duration-200 hover:bg-gray-100">
             <Snowflake size={20} className="text-cyan-600" />
-            <span className="text-sm font-medium text-gray-700">Điều hòa</span>
+            <span className="text-sm font-medium text-gray-700">
+              {t("property.airConditioner")}
+            </span>
           </div>
         )}
         {details.parking && (
           <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 transition-all duration-200 hover:bg-gray-100">
             <Car size={20} className="text-orange-600" />
-            <span className="text-sm font-medium text-gray-700">Bãi đỗ xe</span>
+            <span className="text-sm font-medium text-gray-700">
+              {t("property.parking")}
+            </span>
           </div>
         )}
         {details.kitchen && (
           <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 transition-all duration-200 hover:bg-gray-100">
             <Utensils size={20} className="text-pink-600" />
-            <span className="text-sm font-medium text-gray-700">Nhà bếp</span>
+            <span className="text-sm font-medium text-gray-700">
+              {t("property.kitchen")}
+            </span>
           </div>
         )}
         {details.security && (
           <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 transition-all duration-200 hover:bg-gray-100">
             <Shield size={20} className="text-green-600" />
-            <span className="text-sm font-medium text-gray-700">An ninh</span>
+            <span className="text-sm font-medium text-gray-700">
+              {t("property.security")}
+            </span>
           </div>
         )}
       </div>

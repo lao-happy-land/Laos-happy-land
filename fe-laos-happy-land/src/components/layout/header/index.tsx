@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -33,43 +33,46 @@ import type { User } from "@/share/service/auth.service";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/share/store/auth.store";
 import Image from "next/image";
+import LanguageSwitcher from "@/components/business/common/language-switcher";
+import { useUrlLocale } from "@/utils/locale";
+import { useTranslations } from "next-intl";
 const { Text } = Typography;
 
-const NAV_ITEMS = [
+const getNavItems = (locale: string, t: (key: string) => string) => [
   {
     key: "properties-for-sale",
-    title: "Nhà đất bán",
-    href: "/properties-for-sale",
+    title: t("navigation.propertiesForSale"),
+    href: `/${locale}/properties-for-sale`,
     icon: <Building2 className="h-4 w-4" />,
   },
   {
     key: "properties-for-rent",
-    title: "Nhà đất cho thuê",
-    href: "/properties-for-rent",
+    title: t("navigation.propertiesForRent"),
+    href: `/${locale}/properties-for-rent`,
     icon: <Home className="h-4 w-4" />,
   },
   {
     key: "properties-for-project",
-    title: "Dự án",
-    href: "/properties-for-project",
+    title: t("navigation.projects"),
+    href: `/${locale}/properties-for-project`,
     icon: <Building2 className="h-4 w-4" />,
   },
   {
     key: "news",
-    title: "Tin tức",
-    href: "/news",
+    title: t("navigation.news"),
+    href: `/${locale}/news`,
     icon: <FileText className="h-4 w-4" />,
   },
   {
     key: "analysis",
-    title: "Phân tích đánh giá",
-    href: "/analysis",
+    title: t("navigation.analysis"),
+    href: `/${locale}/analysis`,
     icon: <BarChart3 className="h-4 w-4" />,
   },
   {
     key: "directory",
-    title: "Danh bạ",
-    href: "/brokers",
+    title: t("navigation.directory"),
+    href: `/${locale}/brokers`,
     icon: <Users className="h-4 w-4" />,
   },
 ];
@@ -81,9 +84,12 @@ export default function Header({
 }) {
   const { user, logout } = useAuthStore();
   const [drawerVisible, setDrawerVisible] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const locale = useUrlLocale();
+  const t = useTranslations();
+
+  const NAV_ITEMS = getNavItems(locale, t);
 
   const getSelectedKeys = () => {
     if (pathname === "/") return [];
@@ -91,15 +97,6 @@ export default function Header({
     const activeItem = NAV_ITEMS.find((item) => pathname.startsWith(item.href));
     return activeItem ? [activeItem.key] : [];
   };
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrolled = window.scrollY > 20;
-      setIsScrolled((prev) => (prev !== scrolled ? scrolled : prev));
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const getDisplayName = (user: User | null): string => {
     if (!user) return "User";
@@ -121,12 +118,16 @@ export default function Header({
     {
       key: "dashboard",
       icon: <LayoutDashboard className="h-4 w-4" />,
-      label: <Link href="/dashboard">Dashboard</Link>,
+      label: (
+        <Link href={`/${locale}/dashboard`}>{t("navigation.dashboard")}</Link>
+      ),
     },
     {
       key: "profile",
       icon: <UserIcon className="h-4 w-4" />,
-      label: <Link href="/profile">Thông tin cá nhân</Link>,
+      label: (
+        <Link href={`/${locale}/profile`}>{t("navigation.personalInfo")}</Link>
+      ),
     },
     {
       type: "divider" as const,
@@ -134,7 +135,7 @@ export default function Header({
     {
       key: "logout",
       icon: <LogOut className="h-4 w-4" />,
-      label: "Đăng xuất",
+      label: t("navigation.logout"),
       onClick: logout,
       danger: true,
     },
@@ -155,7 +156,7 @@ export default function Header({
           <div className="mx-auto flex h-full items-center justify-between px-4 lg:px-6">
             <div className="flex items-center">
               <Link
-                href="/"
+                href={`/${locale}`}
                 className="group flex items-center space-x-3 transition-transform duration-200 hover:scale-105"
               >
                 <div className={`flex items-center ${"h-12 w-12"}`}>
@@ -239,7 +240,7 @@ export default function Header({
                     trigger={["click"]}
                     placement="bottom"
                   >
-                    <Tooltip placement="right" title="Thêm">
+                    <Tooltip placement="right" title={t("navigation.more")}>
                       <Button type="text">
                         <MoreHorizontal className="h-4 w-4 text-neutral-500" />
                       </Button>
@@ -259,6 +260,7 @@ export default function Header({
               </div>
 
               <div className="hidden items-center space-x-3 lg:flex">
+                <LanguageSwitcher />
                 {isAuthenticated && user ? (
                   <Dropdown
                     menu={{ items: userMenuItems }}
@@ -288,21 +290,21 @@ export default function Header({
                       type="text"
                       icon={<LogIn className="h-4 w-4" />}
                       onClick={() => {
-                        router.push("/login");
+                        router.push(`/${locale}/login`);
                       }}
                       className="flex items-center gap-1"
                     >
-                      Đăng nhập
+                      {t("navigation.login")}
                     </Button>
                     <Button
                       type="primary"
                       icon={<UserPlus className="h-4 w-4" />}
                       onClick={() => {
-                        router.push("/register");
+                        router.push(`/${locale}/register`);
                       }}
                       className="flex items-center gap-1"
                     >
-                      Đăng ký
+                      {t("navigation.register")}
                     </Button>
                   </Space>
                 )}
@@ -313,13 +315,15 @@ export default function Header({
                   className="flex items-center gap-1"
                   onClick={() => {
                     if (isAuthenticated) {
-                      router.push("/create-property");
+                      router.push(`/${locale}/create-property`);
                     } else {
-                      router.push("/login?redirect=/create-property");
+                      router.push(
+                        `/${locale}/login?redirect=/${locale}/create-property`,
+                      );
                     }
                   }}
                 >
-                  Đăng tin
+                  {t("navigation.postAd")}
                 </Button>
               </div>
             </div>
@@ -340,6 +344,9 @@ export default function Header({
         width={320}
       >
         <div className="flex flex-col space-y-6">
+          <div className="flex justify-center">
+            <LanguageSwitcher />
+          </div>
           {isAuthenticated && user ? (
             <div className="space-y-4">
               <div className="flex items-center space-x-3 rounded-lg bg-orange-50 p-4">
@@ -367,10 +374,10 @@ export default function Header({
                   block
                   onClick={() => {
                     setDrawerVisible(false);
-                    router.push("/dashboard");
+                    router.push(`/${locale}/dashboard`);
                   }}
                 >
-                  Dashboard
+                  {t("navigation.dashboard")}
                 </Button>
                 <Button
                   type="default"
@@ -378,10 +385,10 @@ export default function Header({
                   block
                   onClick={() => {
                     setDrawerVisible(false);
-                    router.push("/profile");
+                    router.push(`/${locale}/profile`);
                   }}
                 >
-                  Thông tin cá nhân
+                  {t("navigation.personalInfo")}
                 </Button>
                 <Button
                   type="text"
@@ -393,7 +400,7 @@ export default function Header({
                     logout();
                   }}
                 >
-                  Đăng xuất
+                  {t("navigation.logout")}
                 </Button>
               </div>
             </div>
@@ -404,20 +411,20 @@ export default function Header({
                 icon={<LogIn className="h-4 w-4" />}
                 block
                 onClick={() => {
-                  router.push("/login");
+                  router.push(`/${locale}/login`);
                 }}
               >
-                Đăng nhập
+                {t("navigation.login")}
               </Button>
               <Button
                 type="primary"
                 icon={<UserPlus className="h-4 w-4" />}
                 block
                 onClick={() => {
-                  router.push("/register");
+                  router.push(`/${locale}/register`);
                 }}
               >
-                Đăng ký
+                {t("navigation.register")}
               </Button>
               <Button
                 type="default"
@@ -425,14 +432,14 @@ export default function Header({
                 block
                 onClick={() => setDrawerVisible(false)}
               >
-                Đăng tin
+                {t("navigation.postAd")}
               </Button>
             </div>
           )}
 
           <div>
             <Text className="mb-3 block text-sm font-medium text-gray-500">
-              Danh mục
+              {t("navigation.categories")}
             </Text>
             <Menu
               mode="inline"

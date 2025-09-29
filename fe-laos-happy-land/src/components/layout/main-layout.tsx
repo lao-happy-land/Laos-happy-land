@@ -5,6 +5,7 @@ import Header from "./header";
 import Footer from "./footer";
 import { useEffect, useState } from "react";
 import LoadingScreen from "../common/loading-screen";
+import { useTranslations } from "next-intl";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -13,6 +14,7 @@ interface MainLayoutProps {
 const MainLayout = ({ children }: MainLayoutProps) => {
   const { isAuthenticated, initialize } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
+  const t = useTranslations();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -27,7 +29,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     return (
       <LoadingScreen
         variant="primary"
-        message="Đang tải trang..."
+        message={t("common.loading")}
         size="lg"
         showProgress
         duration={3}

@@ -8,6 +8,9 @@ import { App } from "antd";
 import { Suspense } from "react";
 import LoadingScreen from "@/components/common/loading-screen";
 import AuthProvider from "@/components/common/auth-provider";
+import { NextIntlClientProvider, useTranslations } from "next-intl";
+import { getMessages } from "next-intl/server";
+import { useUrlLocale } from "@/utils/locale";
 
 export const metadata: Metadata = {
   title: "Laos Happy Land - Bất động sản Lào",
@@ -61,27 +64,33 @@ const beVietnamPro = Be_Vietnam_Pro({
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const t = useTranslations();
+  const messages = getMessages();
+  const locale = useUrlLocale();
+
   return (
-    <html lang="vi" className={`${beVietnamPro.variable}`}>
+    <html lang={locale} className={`${beVietnamPro.variable}`}>
       <body className="antialiased">
         <AntdRegistry>
           <AntdConfigProvider>
             <App>
-              <AuthProvider>
-                <Suspense
-                  fallback={
-                    <LoadingScreen
-                      variant="primary"
-                      message="Đang tải trang..."
-                      size="lg"
-                      showProgress
-                      duration={3}
-                    />
-                  }
-                >
-                  {children}
-                </Suspense>
-              </AuthProvider>
+              <NextIntlClientProvider locale={locale} messages={messages}>
+                <AuthProvider>
+                  <Suspense
+                    fallback={
+                      <LoadingScreen
+                        variant="primary"
+                        message={t("common.loading")}
+                        size="lg"
+                        showProgress
+                        duration={3}
+                      />
+                    }
+                  >
+                    {children}
+                  </Suspense>
+                </AuthProvider>
+              </NextIntlClientProvider>
             </App>
           </AntdConfigProvider>
         </AntdRegistry>
