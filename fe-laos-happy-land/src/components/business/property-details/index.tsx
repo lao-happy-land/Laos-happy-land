@@ -1,7 +1,7 @@
 "use client";
 
 import { Row, Col, Card, Divider, Spin } from "antd";
-import type { Content } from "@/@types/types";
+import type { Content, PropertyPrice } from "@/@types/types";
 import HeaderBar from "@/components/business/property-details/header-bar";
 import Gallery from "@/components/business/property-details/gallery";
 import PriceInfo from "@/components/business/property-details/price-info";
@@ -91,10 +91,14 @@ export default function PropertyDetails({ propertyId }: Props) {
         location={property.location?.address ?? ""}
         status={property.status ?? "pending"}
         transactionType={property.transactionType as TransactionEnum}
-        coordinates={property.location ? {
-          latitude: property.location.latitude,
-          longitude: property.location.longitude,
-        } : null}
+        coordinates={
+          property.location
+            ? {
+                latitude: property.location.latitude,
+                longitude: property.location.longitude,
+              }
+            : null
+        }
       />
 
       <Row gutter={[24, 24]}>
@@ -120,11 +124,7 @@ export default function PropertyDetails({ propertyId }: Props) {
           >
             <div className="mb-6">
               <PriceInfo
-                price={
-                  (property.price as string)
-                    ? parseFloat(property.price as string)
-                    : undefined
-                }
+                price={(property.price as PropertyPrice) ?? null}
                 transactionType={property.transactionType as TransactionEnum}
                 createdAt={property.createdAt}
               />

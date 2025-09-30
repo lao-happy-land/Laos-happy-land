@@ -7,11 +7,15 @@ import Link from "next/link";
 import { Alert } from "antd";
 import LoginForm from "@/components/business/auth/login/login-form";
 import { ArrowLeft, Building2 } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useUrlLocale } from "@/utils/locale";
 
 export default function Login() {
   const [loginError, setLoginError] = useState<string>("");
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get("redirect") ?? undefined;
+  const t = useTranslations();
+  const locale = useUrlLocale();
 
   return (
     <div className="from-primary-50 to-secondary-50 min-h-screen bg-gradient-to-br via-white">
@@ -32,22 +36,22 @@ export default function Login() {
                 <Building2 className="h-8 w-8 text-white" />
               </div>
             </div>
-            <h1 className="mb-4 text-4xl font-bold">Chào mừng trở lại!</h1>
+            <h1 className="mb-4 text-4xl font-bold">{t("auth.welcomeBack")}</h1>
             <p className="mb-8 text-xl text-orange-100">
-              Khám phá những cơ hội bất động sản tuyệt vời tại Lào
+              {t("auth.discoverOpportunities")}
             </p>
             <div className="flex items-center justify-center space-x-8 text-orange-100">
               <div className="text-center">
                 <div className="text-2xl font-bold">1000+</div>
-                <div className="text-sm">Bất động sản</div>
+                <div className="text-sm">{t("auth.properties")}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold">500+</div>
-                <div className="text-sm">Khách hàng</div>
+                <div className="text-sm">{t("auth.customers")}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold">50+</div>
-                <div className="text-sm">Dự án</div>
+                <div className="text-sm">{t("auth.projects")}</div>
               </div>
             </div>
           </div>
@@ -63,7 +67,7 @@ export default function Login() {
                 className="mb-6 inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[#fc746f]"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Về trang chủ
+                {t("auth.backToHome")}
               </Link>
 
               <div className="mb-6 flex items-center justify-center lg:hidden">
@@ -72,16 +76,18 @@ export default function Login() {
                 </div>
               </div>
 
-              <h2 className="text-3xl font-bold text-gray-900">Đăng nhập</h2>
+              <h2 className="text-3xl font-bold text-gray-900">
+                {t("auth.login")}
+              </h2>
               <p className="mt-2 text-gray-600">
-                Chào mừng trở lại! Vui lòng đăng nhập vào tài khoản của bạn.
+                {t("auth.welcomeBackMessage")}
               </p>
             </div>
 
             {/* Login Form */}
             {loginError && (
               <Alert
-                message="Lỗi đăng nhập"
+                message={t("auth.loginError")}
                 description={loginError}
                 type="error"
                 showIcon
@@ -101,25 +107,31 @@ export default function Login() {
             {/* Footer */}
             <div className="mt-8 text-center">
               <p className="text-sm text-gray-600">
-                Chưa có tài khoản?{" "}
+                {t("auth.dontHaveAccount")}{" "}
                 <Link
-                  href="/register"
+                  href={`/${locale}/register`}
                   className="font-semibold text-[#fc746f] transition-colors hover:text-[#ff8a80]"
                 >
-                  Đăng ký ngay
+                  {t("auth.registerNow")}
                 </Link>
               </p>
             </div>
 
             <div className="mt-8 text-center">
               <p className="text-xs text-gray-500">
-                Bằng cách đăng nhập, bạn đồng ý với{" "}
-                <Link href="#" className="text-[#fc746f] hover:text-[#ff8a80]">
-                  Điều khoản sử dụng
+                {t("auth.byLoggingIn")}{" "}
+                <Link
+                  href={`/${locale}/terms-of-use`}
+                  className="text-[#fc746f] hover:text-[#ff8a80]"
+                >
+                  {t("auth.termsOfUse")}
                 </Link>{" "}
-                và{" "}
-                <Link href="#" className="text-[#fc746f] hover:text-[#ff8a80]">
-                  Chính sách bảo mật
+                {t("auth.and")}{" "}
+                <Link
+                  href={`/${locale}/privacy-policy`}
+                  className="text-[#fc746f] hover:text-[#ff8a80]"
+                >
+                  {t("auth.privacyPolicy")}
                 </Link>
               </p>
             </div>

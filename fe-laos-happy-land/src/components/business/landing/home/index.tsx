@@ -18,21 +18,32 @@ import type { Property } from "@/@types/types";
 import PropertyCard from "@/components/business/common/property-card";
 import ProjectCard from "@/components/business/common/project-card";
 import PropertyCardSkeleton from "@/components/business/common/property-card-skeleton";
+import { useUrlLocale } from "@/utils/locale";
+import {
+  getPropertyParamsByLocale,
+  getValidLocale,
+} from "@/share/helper/locale.helper";
+import { useTranslations } from "next-intl";
+import { newsService } from "@/share/service/news.service";
+import type { News } from "@/@types/types";
 
 const { Title, Paragraph, Text } = Typography;
 
 const LandingPage = () => {
+  const locale = useUrlLocale();
+  const t = useTranslations();
   const {
     data: featuredPropertiesData,
     loading: featuredLoading,
     error: featuredError,
   } = useRequest(
     () =>
-      propertyService.getProperties({
-        perPage: 4,
-        currency: "LAK",
-        transaction: "sale",
-      }),
+      propertyService.getProperties(
+        getPropertyParamsByLocale(getValidLocale(locale), {
+          perPage: 4,
+          transaction: "sale",
+        }),
+      ),
     {
       refreshDeps: [],
       onError: (error) => {
@@ -48,11 +59,12 @@ const LandingPage = () => {
     error: projectError,
   } = useRequest(
     () =>
-      propertyService.getProperties({
-        currency: "LAK",
-        transaction: "project",
-        perPage: 3,
-      }),
+      propertyService.getProperties(
+        getPropertyParamsByLocale(getValidLocale(locale), {
+          transaction: "project",
+          perPage: 3,
+        }),
+      ),
     {
       refreshDeps: [],
       onError: (error) => {
@@ -73,35 +85,27 @@ const LandingPage = () => {
     0,
   );
 
-  const newsItems = [
+  // Fetch news data from API
+  const {
+    data: newsData,
+    loading: newsLoading,
+    error: newsError,
+  } = useRequest(
+    () =>
+      newsService.getAllNews({
+        page: 1,
+        perPage: 3,
+      }),
     {
-      id: 1,
-      image: "/images/landingpage/market-news/market-news-1.jpg",
-      title: "Thị trường bất động sản Lào tăng trưởng mạnh trong Q3/2025",
-      excerpt:
-        "Theo báo cáo mới nhất, thị trường BDS Lào đạt mức tăng trưởng 15% so với cùng kỳ năm trước...",
-      date: "8 tháng 8, 2025",
-      category: "Thị trường",
+      refreshDeps: [],
+      onError: (error) => {
+        console.error("Error fetching news:", error);
+      },
     },
-    {
-      id: 2,
-      image: "/images/landingpage/market-news/market-news-2.jpg",
-      title: "Xu hướng đầu tư BDS tại khu vực Mekong",
-      excerpt:
-        "Các chuyên gia dự báo khu vực ven sông Mekong sẽ là điểm nóng trong thời gian tới...",
-      date: "5 tháng 8, 2025",
-      category: "Đầu tư",
-    },
-    {
-      id: 3,
-      image: "/images/landingpage/market-news/market-news-3.jpg",
-      title: "Chính sách mới về sở hữu BDS cho người nước ngoài",
-      excerpt:
-        "Chính phủ Lào công bố những điều chỉnh quan trọng trong quy định sở hữu bất động sản...",
-      date: "2 tháng 8, 2025",
-      category: "Pháp lý",
-    },
-  ];
+  );
+
+  // Extract news items from API response
+  const newsItems = newsData?.data ?? [];
 
   return (
     <div className="min-h-screen bg-white">
@@ -112,19 +116,17 @@ const LandingPage = () => {
         <div className="container mx-auto px-4">
           <div className="mb-12 text-center">
             <Title level={2} className="mb-4 text-neutral-900">
-              Bất động sản dành cho bạn
+              {t("home.featuredProperties")}
             </Title>
             <Paragraph type="secondary" className="text-lg">
-              Khám phá những căn hộ, nhà đất chất lượng tại các khu vực nổi bật
+              {t("home.featuredPropertiesDescription")}
             </Paragraph>
           </div>
 
           <Row gutter={[16, 16]}>
             {featuredError ? (
               <Col span={24} className="py-8 text-center">
-                <Text type="danger">
-                  Có lỗi xảy ra khi tải dữ liệu bất động sản
-                </Text>
+                <Text type="danger">{t("home.propertiesLoadError")}</Text>
               </Col>
             ) : featuredLoading ? (
               // Loading skeleton
@@ -141,21 +143,19 @@ const LandingPage = () => {
               ))
             ) : (
               <Col span={24} className="py-8 text-center">
-                <Text type="secondary">
-                  Không có bất động sản nào được tìm thấy
-                </Text>
+                <Text type="secondary">{t("home.noPropertiesFound")}</Text>
               </Col>
             )}
           </Row>
 
           <div className="mt-12 text-center">
-            <Link href="/properties-for-sale">
+            <Link href={`/${locale}/properties-for-sale`}>
               <Button
                 type="default"
                 size="large"
                 className="border-primary-500 text-primary-500 hover:bg-primary-500 rounded-lg border-2 px-8 py-3 font-semibold transition-all duration-300 hover:text-white hover:shadow-lg"
               >
-                Xem thêm
+                {t("home.viewMore")}
               </Button>
             </Link>
           </div>
@@ -167,17 +167,17 @@ const LandingPage = () => {
         <div className="container mx-auto px-4">
           <div className="mb-12 text-center">
             <Title level={2} className="mb-4 text-neutral-900">
-              Dự án bất động sản
+              {t("home.realEstateProjects")}
             </Title>
             <Paragraph type="secondary" className="text-lg">
-              Khám phá các dự án đang mở bán với tiềm năng đầu tư cao
+              {t("home.realEstateProjectsDescription")}
             </Paragraph>
           </div>
 
           <Row gutter={[16, 16]}>
             {projectError ? (
               <Col span={24} className="py-8 text-center">
-                <Text type="danger">Có lỗi xảy ra khi tải dữ liệu dự án</Text>
+                <Text type="danger">{t("home.projectsLoadError")}</Text>
               </Col>
             ) : projectLoading ? (
               // Loading skeleton
@@ -194,19 +194,19 @@ const LandingPage = () => {
               ))
             ) : (
               <Col span={24} className="py-8 text-center">
-                <Text type="secondary">Không có dự án nào được tìm thấy</Text>
+                <Text type="secondary">{t("home.noProjectsFound")}</Text>
               </Col>
             )}
           </Row>
 
           <div className="mt-12 text-center">
-            <Link href="/properties-for-project">
+            <Link href={`/${locale}/properties-for-project`}>
               <Button
                 type="default"
                 size="large"
                 className="border-primary-500 text-primary-500 hover:bg-primary-500 rounded-lg border-2 px-8 py-3 font-semibold transition-all duration-300 hover:text-white hover:shadow-lg"
               >
-                Xem tất cả dự án
+                {t("home.viewAllProjects")}
               </Button>
             </Link>
           </div>
@@ -218,10 +218,10 @@ const LandingPage = () => {
         <div className="container mx-auto px-4">
           <div className="mb-8 text-center">
             <h2 className="mb-4 text-3xl font-bold text-white">
-              Thống kê nổi bật
+              {t("home.outstandingStats")}
             </h2>
             <p className="text-primary-100 text-lg">
-              Những con số ấn tượng về nền tảng của chúng tôi
+              {t("home.outstandingStatsDescription")}
             </p>
           </div>
 
@@ -235,7 +235,7 @@ const LandingPage = () => {
                   {totalProperties}
                 </div>
                 <div className="text-primary-100 text-sm font-medium">
-                  Tổng tin đăng
+                  {t("home.totalListings")}
                 </div>
               </div>
             </div>
@@ -248,7 +248,7 @@ const LandingPage = () => {
                   {totalProjects}
                 </div>
                 <div className="text-primary-100 text-sm font-medium">
-                  Tổng dự án
+                  {t("home.totalProjects")}
                 </div>
               </div>
             </div>
@@ -261,7 +261,7 @@ const LandingPage = () => {
                   {totalViews}
                 </div>
                 <div className="text-primary-100 text-sm font-medium">
-                  Tổng lượt xem
+                  {t("home.totalViews")}
                 </div>
               </div>
             </div>
@@ -272,7 +272,7 @@ const LandingPage = () => {
               <div>
                 <div className="text-3xl font-bold text-white">500+</div>
                 <div className="text-primary-100 text-sm font-medium">
-                  Môi giới
+                  {t("home.brokers")}
                 </div>
               </div>
             </div>
@@ -285,78 +285,105 @@ const LandingPage = () => {
         <div className="container mx-auto px-4">
           <div className="mb-12 text-center">
             <h2 className="mb-4 text-3xl font-bold text-neutral-900">
-              Tin tức thị trường
+              {t("home.marketNews")}
             </h2>
             <p className="text-lg text-neutral-900">
-              Cập nhật thông tin mới nhất về bất động sản và xu hướng đầu tư
+              {t("home.marketNewsDescription")}
             </p>
           </div>
 
           <Row gutter={[16, 16]}>
-            {newsItems.map((news) => (
-              <Col xs={24} md={8} key={news.id}>
-                <Card
-                  hoverable
-                  className="h-full overflow-hidden rounded-xl border-0 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-                  styles={{
-                    body: { padding: "20px" },
-                  }}
-                  cover={
-                    <div className="relative h-48 w-full overflow-hidden">
-                      <Image
-                        src={news.image}
-                        alt={news.title}
-                        fill
-                        className="object-cover transition-transform duration-300 hover:scale-105"
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-                    </div>
-                  }
-                >
-                  <div className="mb-3">
-                    <Space>
-                      <Tag color="primary">{news.category}</Tag>
-                      <Text type="secondary" className="text-xs">
-                        {news.date}
-                      </Text>
-                    </Space>
-                  </div>
-                  <Title
-                    level={5}
-                    className="hover:text-primary-500 mb-3 line-clamp-2 text-base font-semibold text-neutral-900 transition-colors"
-                  >
-                    {news.title}
-                  </Title>
-                  <Paragraph
-                    type="secondary"
-                    className="mb-4 line-clamp-2 text-sm leading-relaxed"
-                  >
-                    {news.excerpt}
-                  </Paragraph>
-                  <Link href={`/news/${news.id}`}>
-                    <Button
-                      type="link"
-                      size="small"
-                      icon={<ArrowRight className="h-4 w-4" />}
-                      className="text-primary-500 hover:text-primary-600 flex h-auto items-center gap-2 p-0 text-sm font-semibold"
-                    >
-                      Đọc thêm
-                    </Button>
-                  </Link>
-                </Card>
+            {newsError ? (
+              <Col span={24} className="py-8 text-center">
+                <Text type="danger">{t("home.newsLoadError")}</Text>
               </Col>
-            ))}
+            ) : newsLoading ? (
+              // Loading skeleton
+              Array.from({ length: 3 }).map((_, index) => (
+                <Col xs={24} md={8} key={index}>
+                  <Card loading className="h-80" />
+                </Col>
+              ))
+            ) : newsItems.length > 0 ? (
+              newsItems.map((news: News) => (
+                <Col xs={24} md={8} key={news.id}>
+                  <Card
+                    hoverable
+                    className="h-full overflow-hidden rounded-xl border-0 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                    styles={{
+                      body: { padding: "20px" },
+                    }}
+                    cover={
+                      <div className="relative h-48 w-full overflow-hidden">
+                        <Image
+                          src="/images/landingpage/market-news/market-news-1.jpg" // Default fallback image
+                          alt={news.title}
+                          fill
+                          className="object-cover transition-transform duration-300 hover:scale-105"
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+                      </div>
+                    }
+                  >
+                    <div className="mb-3">
+                      <Space>
+                        <Tag color="primary">
+                          {news.newsType?.name ??
+                            news.type?.name ??
+                            t("home.news")}
+                        </Tag>
+                        <Text type="secondary" className="text-xs">
+                          {new Date(news.createdAt).toLocaleDateString(
+                            locale === "vn"
+                              ? "vi-VN"
+                              : locale === "la"
+                                ? "lo-LA"
+                                : "en-US",
+                          )}
+                        </Text>
+                      </Space>
+                    </div>
+                    <Title
+                      level={5}
+                      className="hover:text-primary-500 mb-3 line-clamp-2 text-base font-semibold text-neutral-900 transition-colors"
+                    >
+                      {news.title}
+                    </Title>
+                    <Paragraph
+                      type="secondary"
+                      className="mb-4 line-clamp-2 text-sm leading-relaxed"
+                    >
+                      {news.description ?? t("home.noDescription")}
+                    </Paragraph>
+                    <Link href={`/${locale}/news/${news.id}`}>
+                      <Button
+                        type="link"
+                        size="small"
+                        icon={<ArrowRight className="h-4 w-4" />}
+                        className="text-primary-500 hover:text-primary-600 flex h-auto items-center gap-2 p-0 text-sm font-semibold"
+                      >
+                        {t("home.readMore")}
+                      </Button>
+                    </Link>
+                  </Card>
+                </Col>
+              ))
+            ) : (
+              <Col span={24} className="py-8 text-center">
+                <Text type="secondary">{t("home.noNewsAvailable")}</Text>
+              </Col>
+            )}
           </Row>
 
           <div className="mt-12 text-center">
-            <Link href="/news">
+            <Link href={`/${locale}/news`}>
               <Button
                 type="default"
                 size="large"
                 className="border-primary-500 text-primary-500 hover:bg-primary-500 rounded-lg border-2 px-8 py-3 font-semibold transition-all duration-300 hover:text-white hover:shadow-lg"
               >
-                Xem tất cả tin tức
+                {t("home.viewAllNews")}
               </Button>
             </Link>
           </div>
@@ -368,10 +395,10 @@ const LandingPage = () => {
         <div className="container mx-auto px-4">
           <div className="mb-12 text-center">
             <Title level={2} className="mb-4 text-neutral-900">
-              Tại sao chọn Laos Happy Land?
+              {t("home.whyChooseUs")}
             </Title>
             <Paragraph type="secondary" className="text-lg">
-              Chúng tôi cam kết mang đến dịch vụ tốt nhất cho khách hàng
+              {t("home.whyChooseUsDescription")}
             </Paragraph>
           </div>
 
@@ -382,14 +409,13 @@ const LandingPage = () => {
                   <CheckCircle className="text-primary-500 h-10 w-10" />
                 </div>
                 <Title level={4} className="mb-3 text-neutral-900">
-                  Tin cậy & Minh bạch
+                  {t("home.trustworthy")}
                 </Title>
                 <Paragraph
                   type="secondary"
                   className="text-base leading-relaxed"
                 >
-                  Thông tin chính xác, pháp lý rõ ràng, đảm bảo quyền lợi khách
-                  hàng
+                  {t("home.trustworthyDescription")}
                 </Paragraph>
               </div>
             </Col>
@@ -400,14 +426,13 @@ const LandingPage = () => {
                   <Clock className="text-accent-500 h-10 w-10" />
                 </div>
                 <Title level={4} className="mb-3 text-neutral-900">
-                  Nhanh chóng & Tiện lợi
+                  {t("home.fastConvenient")}
                 </Title>
                 <Paragraph
                   type="secondary"
                   className="text-base leading-relaxed"
                 >
-                  Tìm kiếm và đăng tin dễ dàng, giao diện thân thiện với người
-                  dùng
+                  {t("home.fastConvenientDescription")}
                 </Paragraph>
               </div>
             </Col>
@@ -418,13 +443,13 @@ const LandingPage = () => {
                   <User className="text-secondary-500 h-10 w-10" />
                 </div>
                 <Title level={4} className="mb-3 text-neutral-900">
-                  Hỗ trợ 24/7
+                  {t("home.support247")}
                 </Title>
                 <Paragraph
                   type="secondary"
                   className="text-base leading-relaxed"
                 >
-                  Đội ngũ tư vấn chuyên nghiệp, luôn sẵn sàng hỗ trợ khách hàng
+                  {t("home.support247Description")}
                 </Paragraph>
               </div>
             </Col>
@@ -437,22 +462,22 @@ const LandingPage = () => {
         <div className="container mx-auto px-4 text-center">
           <div className="mx-auto max-w-4xl">
             <h2 className="mb-6 text-3xl font-bold text-white md:text-4xl">
-              Bạn đang có bất động sản cần bán/cho thuê?
+              {t("home.havePropertyToSell")}
             </h2>
             <p className="text-primary-100 mb-8 text-xl">
-              Đăng tin miễn phí - Tiếp cận hàng triệu khách hàng tiềm năng
+              {t("home.postFreeDescription")}
             </p>
             <Space
               size="large"
               className="flex flex-col sm:flex-row sm:justify-center"
             >
-              <Link href="/create-property">
+              <Link href={`/${locale}/create-property`}>
                 <Button
                   type="primary"
                   size="large"
                   className="text-primary-500 rounded-lg bg-white px-8 py-4 text-lg font-semibold transition-all duration-300 hover:bg-neutral-100 hover:shadow-xl"
                 >
-                  Đăng tin miễn phí
+                  {t("home.postForFree")}
                 </Button>
               </Link>
               <Button
@@ -460,7 +485,7 @@ const LandingPage = () => {
                 size="large"
                 className="hover:text-primary-500 rounded-lg border-2 border-white px-8 py-4 text-lg font-semibold text-white transition-all duration-300 hover:bg-white hover:shadow-xl"
               >
-                Tư vấn miễn phí
+                {t("home.freeConsultation")}
               </Button>
             </Space>
           </div>

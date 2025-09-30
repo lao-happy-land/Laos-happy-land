@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useRequest } from "ahooks";
+import { useTranslations } from "next-intl";
 import {
   Table,
   Button,
@@ -15,7 +16,7 @@ import {
   Image,
   Tag,
 } from "antd";
-import { Plus, Search, Trash2, Eye, Edit, MapPin } from "lucide-react";
+import { Plus, Search, Trash2, Edit, MapPin } from "lucide-react";
 import locationInfoService from "@/share/service/location-info.service";
 import type { LocationInfo } from "@/share/service/location-info.service";
 import LocationInfoModal from "./location-info-modal";
@@ -23,6 +24,7 @@ import LocationInfoModal from "./location-info-modal";
 const { Title, Text } = Typography;
 
 const AdminLocationInfo = () => {
+  const t = useTranslations();
   const { modal, message } = App.useApp();
 
   const [locationInfos, setLocationInfos] = useState<LocationInfo[]>([]);
@@ -44,7 +46,7 @@ const AdminLocationInfo = () => {
       },
       onError: (error) => {
         console.error("Error fetching location infos:", error);
-        message.error("Không thể tải danh sách khu vực!");
+        message.error(t("admin.cannotLoadLocations"));
       },
     },
   );
@@ -57,12 +59,12 @@ const AdminLocationInfo = () => {
     {
       manual: true,
       onSuccess: () => {
-        message.success("Xóa khu vực thành công!");
+        message.success(t("admin.deleteLocationSuccess"));
         fetchLocationInfos();
       },
       onError: (error) => {
         console.error("Error deleting location info:", error);
-        message.error("Không thể xóa khu vực!");
+        message.error(t("admin.cannotDeleteLocation"));
       },
     },
   );
@@ -84,10 +86,12 @@ const AdminLocationInfo = () => {
   // Handle delete
   const handleDelete = (locationInfo: LocationInfo) => {
     modal.confirm({
-      title: "Xác nhận xóa",
-      content: `Bạn có chắc chắn muốn xóa khu vực "${locationInfo.name}"?`,
-      okText: "Xóa",
-      cancelText: "Hủy",
+      title: t("admin.confirmDeleteLocation"),
+      content: t("admin.confirmDeleteLocationContent", {
+        name: locationInfo.name,
+      }),
+      okText: t("admin.delete"),
+      cancelText: t("admin.cancel"),
       okType: "danger",
       onOk: () => {
         deleteLocationInfo(locationInfo.id);
@@ -115,7 +119,7 @@ const AdminLocationInfo = () => {
   // Table columns
   const columns = [
     {
-      title: "Ảnh đại diện",
+      title: t("admin.avatar"),
       dataIndex: "imageURL",
       key: "imageURL",
       width: 100,
@@ -139,7 +143,7 @@ const AdminLocationInfo = () => {
       ),
     },
     {
-      title: "Tên khu vực",
+      title: t("admin.locationName"),
       dataIndex: "name",
       key: "name",
       render: (name: string) => (
@@ -147,7 +151,7 @@ const AdminLocationInfo = () => {
       ),
     },
     {
-      title: "Các khu vực con",
+      title: t("admin.subAreas"),
       dataIndex: "strict",
       key: "strict",
       render: (strict: string[]) => (
@@ -159,7 +163,9 @@ const AdminLocationInfo = () => {
               </Tag>
             ))
           ) : (
-            <Text className="text-sm text-gray-400">Chưa có</Text>
+            <Text className="text-sm text-gray-400">
+              {t("common.notAvailable")}
+            </Text>
           )}
           {strict && strict.length > 3 && (
             <Tag color="default" className="text-xs">
@@ -170,7 +176,7 @@ const AdminLocationInfo = () => {
       ),
     },
     {
-      title: "Ngày tạo",
+      title: t("property.createdAt"),
       dataIndex: "createdAt",
       key: "createdAt",
       render: (createdAt: string) => (
@@ -180,12 +186,12 @@ const AdminLocationInfo = () => {
       ),
     },
     {
-      title: "Thao tác",
+      title: t("admin.actions"),
       key: "actions",
       width: 150,
       render: (_: unknown, record: LocationInfo) => (
         <Space size="small">
-          <Tooltip title="Chỉnh sửa">
+          <Tooltip title={t("common.edit")}>
             <Button
               type="text"
               icon={<Edit className="h-4 w-4" />}
@@ -193,7 +199,7 @@ const AdminLocationInfo = () => {
               className="text-blue-600 hover:text-blue-700"
             />
           </Tooltip>
-          <Tooltip title="Xóa">
+          <Tooltip title={t("common.delete")}>
             <Button
               type="text"
               icon={<Trash2 className="h-4 w-4" />}
@@ -216,10 +222,10 @@ const AdminLocationInfo = () => {
       <div className="flex items-center justify-between">
         <div>
           <Title level={2} className="!mb-2">
-            Quản lý khu vực
+            {t("admin.manageLocations")}
           </Title>
           <Text className="text-gray-600">
-            Quản lý các khu vực và địa điểm trong hệ thống
+            {t("admin.manageLocationsDescription")}
           </Text>
         </div>
         <Button
@@ -228,7 +234,7 @@ const AdminLocationInfo = () => {
           onClick={handleCreate}
           size="large"
         >
-          Thêm khu vực
+          {t("admin.addLocation")}
         </Button>
       </div>
 
@@ -236,7 +242,7 @@ const AdminLocationInfo = () => {
       <Card>
         <div className="flex items-center gap-4">
           <Input
-            placeholder="Tìm kiếm khu vực..."
+            placeholder={t("admin.searchLocations")}
             prefix={<Search className="h-4 w-4 text-gray-400" />}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -258,12 +264,16 @@ const AdminLocationInfo = () => {
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total, range) =>
-              `${range[0]}-${range[1]} của ${total} khu vực`,
+              t("admin.locationsPagination", {
+                start: range[0],
+                end: range[1],
+                total,
+              }),
           }}
           locale={{
             emptyText: (
               <Empty
-                description="Không có khu vực nào"
+                description={t("admin.noLocations")}
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
               />
             ),

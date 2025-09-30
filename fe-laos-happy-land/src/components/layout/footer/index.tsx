@@ -88,7 +88,7 @@ const Footer = () => {
             <ul className="space-y-2">
               <li>
                 <Link
-                  href="/mua-ban"
+                  href="/"
                   className="text-gray-300 transition-colors hover:text-blue-400"
                 >
                   Mua bán BDS
@@ -96,7 +96,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  href="/cho-thue"
+                  href="/"
                   className="text-gray-300 transition-colors hover:text-blue-400"
                 >
                   Cho thuê BDS
@@ -104,7 +104,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  href="/du-an"
+                  href="/"
                   className="text-gray-300 transition-colors hover:text-blue-400"
                 >
                   Dự án BDS
@@ -112,7 +112,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  href="/tin-tuc"
+                  href="/"
                   className="text-gray-300 transition-colors hover:text-blue-400"
                 >
                   Tin tức thị trường
@@ -120,7 +120,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  href="/dang-tin"
+                  href="/"
                   className="text-gray-300 transition-colors hover:text-blue-400"
                 >
                   Đăng tin miễn phí
@@ -134,7 +134,7 @@ const Footer = () => {
             <ul className="space-y-2">
               <li>
                 <Link
-                  href="/can-ho"
+                  href="/"
                   className="text-gray-300 transition-colors hover:text-blue-400"
                 >
                   Căn hộ/Chung cư
@@ -142,7 +142,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  href="/nha-o"
+                  href="/"
                   className="text-gray-300 transition-colors hover:text-blue-400"
                 >
                   Nhà ở
@@ -150,7 +150,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  href="/dat"
+                  href="/"
                   className="text-gray-300 transition-colors hover:text-blue-400"
                 >
                   Đất
@@ -158,7 +158,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  href="/van-phong"
+                  href="/"
                   className="text-gray-300 transition-colors hover:text-blue-400"
                 >
                   Văn phòng
@@ -166,7 +166,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  href="/mat-bang"
+                  href="/"
                   className="text-gray-300 transition-colors hover:text-blue-400"
                 >
                   Mặt bằng kinh doanh

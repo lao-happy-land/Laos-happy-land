@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useUrlLocale } from "@/utils/locale";
 import { useAuthStore } from "@/share/store/auth.store";
+import { useTranslations } from "next-intl";
 import {
   Card,
   Form,
@@ -39,13 +41,12 @@ import {
   Loader2,
 } from "lucide-react";
 import type { CreatePropertyDto } from "@/@types/gentype-axios";
-import type { PropertyType, LocationInfo } from "@/@types/types";
+import type { PropertyType } from "@/@types/types";
 import { useRequest } from "ahooks";
 import ProjectContentBuilder from "@/components/business/common/project-content-builder";
 import MapboxLocationSelector from "@/components/business/common/mapbox-location-selector";
 import propertyService from "@/share/service/property.service";
 import propertyTypeService from "@/share/service/property-type.service";
-import locationInfoService from "@/share/service/location-info.service";
 import uploadService from "@/share/service/upload.service";
 import Image from "next/image";
 
@@ -54,12 +55,13 @@ const { Option } = Select;
 const { Title, Text } = Typography;
 
 export default function CreateProperty() {
+  const t = useTranslations();
   const { message } = App.useApp();
   const { isAuthenticated, user } = useAuthStore();
   const router = useRouter();
+  const locale = useUrlLocale();
   const [form] = Form.useForm();
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
-  const [locationInfos, setLocationInfos] = useState<LocationInfo[]>([]);
   const [selectedTransactionType, setSelectedTransactionType] = useState<
     "rent" | "sale" | "project"
   >("sale");
@@ -91,51 +93,28 @@ export default function CreateProperty() {
         setPropertyTypes(data);
       },
       onError: () => {
-        message.error("Không thể tải danh sách loại bất động sản");
+        message.error(t("admin.cannotLoadPropertyTypes"));
       },
     },
   );
 
   // Load location infos
-  const { loading: loadingLocations, run: fetchLocationInfos } = useRequest(
-    async () => {
-      const response = await locationInfoService.getAllLocationInfo();
-      return response.data;
-    },
-    {
-      manual: true,
-      onSuccess: (data) => {
-        if (Array.isArray(data)) {
-          setLocationInfos(data);
-        } else {
-          console.warn("Location infos data is not an array:", data);
-          setLocationInfos([]);
-        }
-      },
-      onError: (error) => {
-        console.error("Error loading location infos:", error);
-        message.error("Không thể tải danh sách địa điểm");
-        setLocationInfos([]);
-      },
-    },
-  );
 
   useEffect(() => {
     fetchPropertyTypes();
-    fetchLocationInfos();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTransactionType]);
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push("/login?redirect=/create-property");
+      router.push(`/${locale}/login?redirect=/${locale}/create-property`);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, router]);
 
   const { loading: submitting, run: submitForm } = useRequest(
     async (values: {
       typeId: string;
-      locationInfoId: string;
       title: string;
       description?: string;
       price?: number;
@@ -157,35 +136,46 @@ export default function CreateProperty() {
         | { type: "image"; url: string; caption?: string }
       )[];
     }) => {
-      if (!mainImageFile) {
-        throw new Error("Vui lòng tải lên ảnh chính");
+      if (!mainImageFile && selectedTransactionType !== "project") {
+        throw new Error(t("admin.pleaseUploadMainImage"));
       }
 
       const userId = user?.id;
       if (!userId) {
-        throw new Error("User ID not found. Please log in again.");
+        throw new Error(t("errors.userIdNotFound"));
       }
 
       // Use already uploaded image URLs
-      if (!mainImageUrl && mainImageFile) {
-        throw new Error("Ảnh chính chưa được tải lên thành công");
+      if (
+        !mainImageUrl &&
+        mainImageFile &&
+        selectedTransactionType !== "project"
+      ) {
+        throw new Error(t("admin.mainImageNotUploadedSuccessfully"));
       }
 
-      if (imageUrls.length !== imageFiles.length) {
-        throw new Error("Một số ảnh phụ chưa được tải lên thành công");
+      if (
+        imageUrls.length !== imageFiles.length &&
+        selectedTransactionType !== "project"
+      ) {
+        throw new Error(t("admin.someAdditionalImagesNotUploadedSuccessfully"));
       }
 
       const formData: CreatePropertyDto = {
         typeId: values.typeId,
-
-        // TODO: backend changed, need to check
-        // locationInfoId: values.locationInfoId,
-        
         title: values.title,
         description: values.description,
         price: values.price,
         legalStatus: values.legalStatus,
-        location: locationData ?? undefined,
+        location: locationData
+          ? {
+              latitude: locationData.latitude,
+              longitude: locationData.longitude,
+              address: locationData.address,
+              city: locationData.city,
+              country: locationData.country,
+            }
+          : undefined,
         transactionType: values.transactionType,
         details: {
           area: values.area,
@@ -208,19 +198,18 @@ export default function CreateProperty() {
     {
       manual: true,
       onSuccess: () => {
-        message.success("Tạo tin đăng thành công!");
-        router.push("/dashboard");
+        message.success(t("admin.createPropertySuccess"));
+        router.push(`/${locale}/dashboard`);
       },
       onError: (error) => {
         console.error("Failed to submit form:", error);
-        message.error("Không thể tạo tin đăng");
+        message.error(t("admin.createPropertyError"));
       },
     },
   );
 
   const handleSubmit = (values: {
     typeId: string;
-    locationInfoId: string;
     title: string;
     description?: string;
     price?: number;
@@ -239,15 +228,15 @@ export default function CreateProperty() {
     transactionType: "rent" | "sale" | "project";
   }) => {
     if (selectedTransactionType !== "project" && !mainImageUrl) {
-      message.error("Vui lòng tải lên ảnh chính");
+      message.error(t("admin.pleaseUploadMainImage"));
       return;
     }
     if (selectedTransactionType !== "project" && imageUrls.length < 3) {
-      message.error("Vui lòng tải lên ít nhất 3 ảnh phụ");
+      message.error(t("admin.pleaseUploadAtLeast3Images"));
       return;
     }
     if (!locationData) {
-      message.error("Vui lòng chọn vị trí trên bản đồ");
+      message.error(t("admin.pleaseSelectLocationOnMap"));
       return;
     }
     submitForm(values);
@@ -256,12 +245,12 @@ export default function CreateProperty() {
   const handleMainImageUpload = async (file: File) => {
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
-      message.error("Chỉ có thể tải lên file hình ảnh!");
+      message.error(t("admin.onlyImagesAllowed"));
       return false;
     }
     const isLt5M = file.size / 1024 / 1024 < 5;
     if (!isLt5M) {
-      message.error("Hình ảnh phải nhỏ hơn 5MB!");
+      message.error(t("admin.imageSizeLimit"));
       return false;
     }
 
@@ -271,10 +260,10 @@ export default function CreateProperty() {
     try {
       const result = await uploadService.uploadImage(file);
       setMainImageUrl(result.url);
-      message.success("Tải lên ảnh chính thành công!");
+      message.success(t("admin.mainImageUploadedSuccessfully"));
     } catch (error) {
       console.error("Failed to upload main image:", error);
-      message.error("Không thể tải lên ảnh chính");
+      message.error(t("admin.cannotUploadMainImage"));
       setMainImageFile(null);
     } finally {
       setUploadingMainImage(false);
@@ -286,16 +275,16 @@ export default function CreateProperty() {
   const handleImagesUpload = async (file: File) => {
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
-      message.error("Chỉ có thể tải lên file hình ảnh!");
+      message.error(t("admin.onlyImagesAllowed"));
       return false;
     }
     const isLt5M = file.size / 1024 / 1024 < 5;
     if (!isLt5M) {
-      message.error("Hình ảnh phải nhỏ hơn 5MB!");
+      message.error(t("admin.imageSizeLimit"));
       return false;
     }
     if (imageFiles.length >= 9) {
-      message.error("Chỉ có thể tải lên tối đa 9 ảnh phụ!");
+      message.error(t("admin.max9Images"));
       return false;
     }
 
@@ -306,10 +295,10 @@ export default function CreateProperty() {
     try {
       const result = await uploadService.uploadImage(file);
       setImageUrls([...imageUrls, result.url]);
-      message.success(`Tải lên ảnh ${newIndex + 1} thành công!`);
+      message.success(t("admin.imageUploadedSuccessfully"));
     } catch (error) {
       console.error("Failed to upload image:", error);
-      message.error(`Không thể tải lên ảnh ${newIndex + 1}`);
+      message.error(t("admin.cannotUploadImage"));
       // Remove the failed file
       setImageFiles(imageFiles.filter((_, i) => i !== newIndex));
     } finally {
@@ -331,7 +320,6 @@ export default function CreateProperty() {
 
   const handleTransactionTypeChange = (value: "rent" | "sale" | "project") => {
     setSelectedTransactionType(value);
-    form.setFieldsValue({ typeId: undefined });
   };
 
   return (
@@ -342,10 +330,10 @@ export default function CreateProperty() {
             level={1}
             className="!mb-2 !text-3xl !font-bold !text-gray-900"
           >
-            Đăng tin bất động sản
+            {t("property.createProperty")}
           </Title>
           <Text className="text-lg text-gray-600">
-            Chia sẻ thông tin bất động sản của bạn với cộng đồng
+            {t("property.sharePropertyInformation")}
           </Text>
         </div>
 
@@ -367,59 +355,74 @@ export default function CreateProperty() {
                   level={3}
                   className="!mb-0 !text-xl !font-semibold !text-gray-900"
                 >
-                  Thông tin cơ bản
+                  {t("admin.basicInformation")}
                 </Title>
               </div>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <Form.Item
                   name="title"
-                  label={<Text className="font-medium">Tiêu đề tin đăng</Text>}
+                  label={
+                    <Text className="font-medium">
+                      {t("property.propertyTitle")}
+                    </Text>
+                  }
                   rules={[
-                    { required: true, message: "Vui lòng nhập tiêu đề!" },
-                    { min: 10, message: "Tiêu đề phải có ít nhất 10 ký tự!" },
+                    { required: true, message: t("property.pleaseEnterTitle") },
+                    { min: 10, message: t("admin.titleMinLength") },
                     {
                       max: 200,
-                      message: "Tiêu đề không được vượt quá 200 ký tự!",
+                      message: t("property.titleMaxLength"),
                     },
                   ]}
                 >
                   <Input
-                    placeholder="Nhập tiêu đề tin đăng..."
+                    placeholder={t("property.enterPropertyTitle")}
                     size="large"
                     className="rounded-lg"
                   />
                 </Form.Item>
                 <Form.Item
                   name="transactionType"
-                  label={<Text className="font-medium">Loại giao dịch</Text>}
+                  label={
+                    <Text className="font-medium">
+                      {t("property.transactionType")}
+                    </Text>
+                  }
                   rules={[
                     {
                       required: true,
-                      message: "Vui lòng chọn loại giao dịch!",
+                      message: t("property.pleaseSelectTransactionType"),
                     },
                   ]}
                 >
                   <Select
-                    placeholder="Chọn loại giao dịch"
+                    placeholder={t("property.selectTransactionType")}
                     size="large"
                     className="rounded-lg"
                     onChange={handleTransactionTypeChange}
                   >
-                    <Option value="sale">Bán</Option>
-                    <Option value="rent">Cho thuê</Option>
-                    <Option value="project">Dự án</Option>
+                    <Option value="sale">{t("property.sale")}</Option>
+                    <Option value="rent">{t("property.rent")}</Option>
+                    <Option value="project">{t("property.project")}</Option>
                   </Select>
                 </Form.Item>
                 <Form.Item
                   name="typeId"
-                  label={<Text className="font-medium">Loại bất động sản</Text>}
+                  label={
+                    <Text className="font-medium">
+                      {t("property.propertyType")}
+                    </Text>
+                  }
                   rules={[
-                    { required: true, message: "Vui lòng chọn loại BĐS!" },
+                    {
+                      required: true,
+                      message: t("property.pleaseSelectPropertyType"),
+                    },
                   ]}
                 >
                   <Select
-                    placeholder="Chọn loại bất động sản"
+                    placeholder={t("property.selectPropertyType")}
                     size="large"
                     className="rounded-lg"
                     loading={loadingTypes}
@@ -435,26 +438,27 @@ export default function CreateProperty() {
                 <Form.Item
                   name="legalStatus"
                   label={
-                    <Text className="font-medium">Tình trạng pháp lý</Text>
+                    <Text className="font-medium">
+                      {t("property.legalStatus")}
+                    </Text>
                   }
                   rules={[
                     {
                       required: true,
-                      message: "Vui lòng nhập tình trạng pháp lý!",
+                      message: t("property.pleaseEnterLegalStatus"),
                     },
                     {
                       min: 5,
-                      message: "Tình trạng pháp lý phải có ít nhất 5 ký tự!",
+                      message: t("property.legalStatusMinLength"),
                     },
                     {
                       max: 100,
-                      message:
-                        "Tình trạng pháp lý không được vượt quá 100 ký tự!",
+                      message: t("property.legalStatusMaxLength"),
                     },
                   ]}
                 >
                   <Input
-                    placeholder="Nhập tình trạng pháp lý..."
+                    placeholder={t("property.enterLegalStatus")}
                     size="large"
                     className="rounded-lg"
                   />
@@ -464,19 +468,23 @@ export default function CreateProperty() {
               <div className="grid grid-cols-1 gap-x-6 md:grid-cols-2">
                 <Form.Item
                   name="price"
-                  label={<Text className="font-medium">Giá (USD$)</Text>}
+                  label={
+                    <Text className="font-medium">
+                      {t("property.price")} (USD$)
+                    </Text>
+                  }
                   rules={[
-                    { required: true, message: "Vui lòng nhập giá!" },
-                    { type: "number", min: 1, message: "Giá phải lớn hơn 0!" },
+                    { required: true, message: t("property.pleaseEnterPrice") },
+                    { type: "number", min: 1, message: t("admin.priceMin") },
                     {
                       type: "number",
-                      max: 10000000,
-                      message: "Giá không được vượt quá 10,000,000 USD!",
+                      max: 1000000000,
+                      message: t("property.priceMax"),
                     },
                   ]}
                 >
                   <InputNumber
-                    placeholder="Nhập giá..."
+                    placeholder={t("property.enterPrice")}
                     formatter={(value) =>
                       `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                     }
@@ -495,26 +503,26 @@ export default function CreateProperty() {
                   label={
                     <span className="flex items-center gap-1 font-medium">
                       <Home className="h-4 w-4" />
-                      Diện tích (m²)
+                      {t("property.area")} (m²)
                     </span>
                   }
                   rules={[
-                    { required: true, message: "Vui lòng nhập diện tích!" },
+                    { required: true, message: t("property.pleaseEnterArea") },
                     {
                       type: "number",
                       min: 1,
-                      message: "Diện tích phải lớn hơn 0!",
+                      message: t("property.areaMin"),
                     },
                     {
                       type: "number",
-                      max: 10000,
-                      message: "Diện tích không được vượt quá 10,000 m²!",
+                      max: 10000000,
+                      message: t("property.areaMax"),
                     },
                   ]}
                 >
                   <InputNumber
                     min={0}
-                    placeholder="0"
+                    placeholder={t("property.enterArea")}
                     size="large"
                     style={{ width: "100%" }}
                   />
@@ -527,29 +535,29 @@ export default function CreateProperty() {
                       label={
                         <span className="flex items-center gap-1 font-medium">
                           <Bed className="h-4 w-4" />
-                          Phòng ngủ
+                          {t("property.bedrooms")}
                         </span>
                       }
                       rules={[
                         {
                           required: true,
-                          message: "Vui lòng nhập số phòng ngủ!",
+                          message: t("property.pleaseEnterBedrooms"),
                         },
                         {
                           type: "number",
                           min: 0,
-                          message: "Số phòng ngủ không được âm!",
+                          message: t("property.bedroomsMin"),
                         },
                         {
                           type: "number",
                           max: 20,
-                          message: "Số phòng ngủ không được vượt quá 20!",
+                          message: t("property.bedroomsMax"),
                         },
                       ]}
                     >
                       <InputNumber
                         min={0}
-                        placeholder="0"
+                        placeholder={t("property.enterBedrooms")}
                         size="large"
                         style={{ width: "100%" }}
                       />
@@ -560,29 +568,29 @@ export default function CreateProperty() {
                       label={
                         <span className="flex items-center gap-1 font-medium">
                           <Bath className="h-4 w-4" />
-                          Phòng tắm
+                          {t("property.bathrooms")}
                         </span>
                       }
                       rules={[
                         {
                           required: true,
-                          message: "Vui lòng nhập số phòng tắm!",
+                          message: t("property.pleaseEnterBathrooms"),
                         },
                         {
                           type: "number",
                           min: 0,
-                          message: "Số phòng tắm không được âm!",
+                          message: t("property.bathroomsMin"),
                         },
                         {
                           type: "number",
                           max: 10,
-                          message: "Số phòng tắm không được vượt quá 10!",
+                          message: t("property.bathroomsMax"),
                         },
                       ]}
                     >
                       <InputNumber
                         min={0}
-                        placeholder="0"
+                        placeholder={t("property.enterBathrooms")}
                         size="large"
                         style={{ width: "100%" }}
                       />
@@ -598,7 +606,7 @@ export default function CreateProperty() {
                       level={3}
                       className="!mb-0 !text-xl !font-semibold !text-gray-900"
                     >
-                      Tiện ích
+                      {t("property.amenities")}
                     </Title>
                   </div>
                   <div className="grid grid-cols-3 justify-center gap-4 lg:grid-cols-6">
@@ -606,7 +614,7 @@ export default function CreateProperty() {
                       name="wifi"
                       label={
                         <p className="flex items-center gap-1 font-medium text-green-600">
-                          <Wifi className="h-4 w-4" /> WiFi
+                          <Wifi className="h-4 w-4" /> {t("property.wifi")}
                         </p>
                       }
                       valuePropName="checked"
@@ -617,7 +625,7 @@ export default function CreateProperty() {
                       name="tv"
                       label={
                         <p className="flex items-center gap-1 font-medium text-red-600">
-                          <Tv className="h-4 w-4" /> TV
+                          <Tv className="h-4 w-4" /> {t("property.tv")}
                         </p>
                       }
                       valuePropName="checked"
@@ -628,7 +636,8 @@ export default function CreateProperty() {
                       name="airConditioner"
                       label={
                         <p className="flex items-center gap-1 font-medium text-blue-600">
-                          <Snowflake className="h-4 w-4" /> Điều hòa
+                          <Snowflake className="h-4 w-4" />{" "}
+                          {t("property.airConditioner")}
                         </p>
                       }
                       valuePropName="checked"
@@ -639,7 +648,7 @@ export default function CreateProperty() {
                       name="parking"
                       label={
                         <p className="flex items-center gap-1 font-medium text-orange-600">
-                          <Car className="h-4 w-4" /> Bãi đỗ xe
+                          <Car className="h-4 w-4" /> {t("property.parking")}
                         </p>
                       }
                       valuePropName="checked"
@@ -650,7 +659,8 @@ export default function CreateProperty() {
                       name="kitchen"
                       label={
                         <p className="flex items-center gap-1 font-medium text-pink-600">
-                          <Utensils className="h-4 w-4" /> Nhà bếp
+                          <Utensils className="h-4 w-4" />{" "}
+                          {t("property.kitchen")}
                         </p>
                       }
                       valuePropName="checked"
@@ -661,7 +671,8 @@ export default function CreateProperty() {
                       name="security"
                       label={
                         <p className="flex items-center gap-1 font-medium text-green-600">
-                          <Shield className="h-4 w-4" /> An ninh
+                          <Shield className="h-4 w-4" />{" "}
+                          {t("property.security")}
                         </p>
                       }
                       valuePropName="checked"
@@ -674,19 +685,26 @@ export default function CreateProperty() {
 
               <Form.Item
                 name="description"
-                label={<Text className="font-medium">Mô tả ngắn</Text>}
+                label={
+                  <Text className="font-medium">
+                    {t("property.description")}
+                  </Text>
+                }
                 rules={[
-                  { required: true, message: "Vui lòng nhập mô tả!" },
-                  { min: 20, message: "Mô tả phải có ít nhất 20 ký tự!" },
+                  {
+                    required: true,
+                    message: t("property.pleaseEnterDescription"),
+                  },
+                  { min: 20, message: t("admin.descriptionMinLength") },
                   {
                     max: 2000,
-                    message: "Mô tả không được vượt quá 2000 ký tự!",
+                    message: t("property.descriptionMaxLength"),
                   },
                 ]}
               >
                 <TextArea
                   rows={6}
-                  placeholder="Mô tả ngắn gọn về bất động sản, tiện ích xung quanh, hướng nhà, view..."
+                  placeholder={t("property.enterDescription")}
                   className="rounded-lg"
                 />
               </Form.Item>
@@ -698,7 +716,7 @@ export default function CreateProperty() {
                     level={3}
                     className="!mb-0 !text-xl !font-semibold !text-gray-900"
                   >
-                    Nội dung bất động sản
+                    {t("property.propertyContent")}
                   </Title>
                 </div>
                 <Form.Item
@@ -710,13 +728,15 @@ export default function CreateProperty() {
                           if (!Array.isArray(value) || value.length === 0) {
                             return Promise.reject(
                               new Error(
-                                "Vui lòng thêm ít nhất 1 nội dung cho dự án!",
+                                t(
+                                  "property.pleaseAddAtLeast1ContentForProject",
+                                ),
                               ),
                             );
                           }
                           if (value.length < 1) {
                             return Promise.reject(
-                              new Error("Vui lòng thêm ít nhất 1 nội dung!"),
+                              new Error(t("property.pleaseAddAtLeast1Content")),
                             );
                           }
                         }
@@ -737,22 +757,26 @@ export default function CreateProperty() {
             {/* Location */}
             <div className="space-y-6">
               <Form.Item
-                label={<Text className="font-medium">Vị trí trên bản đồ</Text>}
+                label={
+                  <Text className="font-medium">
+                    {t("property.locationOnMap")}
+                  </Text>
+                }
                 rules={[
                   {
                     required: true,
-                    message: "Vui lòng chọn khu vực và vị trí trên bản đồ!",
+                    message: t("property.pleaseSelectLocationOnMap"),
                   },
                   {
                     validator: (_, value) => {
                       if (!value) {
                         return Promise.reject(
-                          new Error("Vui lòng chọn khu vực!"),
+                          new Error(t("property.pleaseSelectLocation")),
                         );
                       }
                       if (!locationData) {
                         return Promise.reject(
-                          new Error("Vui lòng chọn vị trí trên bản đồ!"),
+                          new Error(t("property.pleaseSelectLocationOnMap")),
                         );
                       }
                       return Promise.resolve();
@@ -761,20 +785,9 @@ export default function CreateProperty() {
                 ]}
               >
                 <MapboxLocationSelector
-                  form={form}
                   value={locationData ?? undefined}
                   onChange={setLocationData}
-                  placeholder="Chọn vị trí trên bản đồ"
-                  locationInfos={locationInfos}
-                  selectedLocationInfoId={
-                    form.getFieldValue("locationInfoId") as string
-                  }
-                  onLocationInfoChange={(locationInfoId) => {
-                    form.setFieldValue("locationInfoId", locationInfoId);
-                  }}
-                  loadingLocations={loadingLocations}
-                  mode="create"
-                  hasExistingLocation={false}
+                  placeholder={t("property.selectLocationOnMap")}
                 />
               </Form.Item>
             </div>
@@ -788,15 +801,17 @@ export default function CreateProperty() {
                     level={3}
                     className="!mb-0 !text-xl !font-semibold !text-gray-900"
                   >
-                    Hình ảnh
+                    {t("property.images")}
                   </Title>
                 </div>
                 {/* Main Image */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
-                    <Text className="font-medium">Ảnh chính *</Text>
+                    <Text className="font-medium">
+                      {t("property.mainImage")} *
+                    </Text>
                     {mainImageUrl && (
-                      <Tooltip title="Ảnh đã tải lên thành công">
+                      <Tooltip title={t("property.imageUploadedSuccessfully")}>
                         <CheckCircle className="h-4 w-4 text-green-500" />
                       </Tooltip>
                     )}
@@ -816,14 +831,14 @@ export default function CreateProperty() {
                             <div className="text-center text-white">
                               <Spin size="large" />
                               <div className="mt-2 text-sm">
-                                Đang tải lên...
+                                {t("property.uploadingMainImage")}
                               </div>
                             </div>
                           </div>
                         )}
                         {mainImageUrl && !uploadingMainImage && (
                           <div className="absolute top-2 right-2">
-                            <Tooltip title="Tải lên thành công">
+                            <Tooltip title={t("admin.uploadSuccess")}>
                               <CheckCircle className="h-6 w-6 rounded-full bg-white text-green-500" />
                             </Tooltip>
                           </div>
@@ -854,14 +869,14 @@ export default function CreateProperty() {
                           )}
                           <Text className="block text-gray-600">
                             {uploadingMainImage
-                              ? "Đang tải lên..."
-                              : "Tải lên ảnh chính"}
+                              ? t("property.uploadingMainImage")
+                              : t("property.uploadingMainImage")}
                           </Text>
                           <Text className="block text-sm text-gray-500">
-                            JPG, PNG, GIF tối đa 5MB
+                            {t("property.imageFormat")}
                           </Text>
                           <Text className="block text-xs text-gray-400">
-                            Kéo thả hoặc click để chọn
+                            {t("property.dragAndDropOrClickToSelect")}
                           </Text>
                         </div>
                       </Upload>
@@ -874,11 +889,12 @@ export default function CreateProperty() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Text className="font-medium">
-                        Ảnh phụ (tối đa 9 ảnh)
+                        {t("property.additionalImages")} (
+                        {t("property.max9Images")})
                       </Text>
                       {imageUrls.length > 0 && (
                         <Tooltip
-                          title={`${imageUrls.length} ảnh đã tải lên thành công`}
+                          title={`${imageUrls.length} ${t("admin.imagesUploadedSuccessfully")}`}
                         >
                           <div className="flex items-center gap-1 rounded-full bg-green-100 px-2 py-1">
                             <CheckCircle className="h-3 w-3 text-green-600" />
@@ -890,7 +906,8 @@ export default function CreateProperty() {
                       )}
                     </div>
                     <Text className="text-sm text-gray-500">
-                      {imageFiles.length}/9 ảnh
+                      {imageFiles.length}/{t("admin.max9Images")}{" "}
+                      {t("admin.images")}
                     </Text>
                   </div>
                   <div className="flex flex-wrap gap-4">
@@ -910,7 +927,7 @@ export default function CreateProperty() {
                         )}
                         {imageUrls[index] && !uploadingImages[index] && (
                           <div className="absolute top-1 right-1">
-                            <Tooltip title="Tải lên thành công">
+                            <Tooltip title={t("admin.uploadSuccess")}>
                               <CheckCircle className="h-4 w-4 rounded-full bg-white text-green-500" />
                             </Tooltip>
                           </div>
@@ -962,7 +979,8 @@ export default function CreateProperty() {
                         showInfo={false}
                       />
                       <Text className="mt-1 block text-xs text-gray-500">
-                        {imageUrls.length}/{imageFiles.length} ảnh đã tải lên
+                        {imageUrls.length}/{imageFiles.length}{" "}
+                        {t("admin.imagesUploadedSuccessfully")}
                       </Text>
                     </div>
                   )}
@@ -976,10 +994,10 @@ export default function CreateProperty() {
               <Button
                 type="default"
                 size="large"
-                onClick={() => router.push("/dashboard")}
+                onClick={() => router.push(`/${locale}/dashboard`)}
                 className="rounded-lg"
               >
-                Hủy
+                {t("admin.cancel")}
               </Button>
               <Button
                 type="primary"
@@ -989,7 +1007,7 @@ export default function CreateProperty() {
                 loading={submitting}
                 className="rounded-lg bg-blue-600 hover:bg-blue-700"
               >
-                Đăng tin
+                {t("admin.createProperty")}
               </Button>
             </div>
           </Form>

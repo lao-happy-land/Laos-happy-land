@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useUrlLocale } from "@/utils/locale";
 import Image from "next/image";
 import Link from "next/link";
 import { Alert } from "antd";
@@ -14,9 +15,12 @@ import {
   Users,
   Award,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export default function Register() {
   const router = useRouter();
+  const locale = useUrlLocale();
+  const t = useTranslations();
   const [registerError, setRegisterError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
 
@@ -39,11 +43,9 @@ export default function Register() {
                 <Building2 className="h-8 w-8 text-white" />
               </div>
             </div>
-            <h1 className="mb-4 text-4xl font-bold">
-              Tham gia cùng chúng tôi!
-            </h1>
+            <h1 className="mb-4 text-4xl font-bold">{t("auth.joinUs")}</h1>
             <p className="mb-8 text-xl text-orange-100">
-              Bắt đầu hành trình đầu tư bất động sản thông minh tại Lào
+              {t("auth.startInvestmentJourney")}
             </p>
 
             {/* Features */}
@@ -51,27 +53,33 @@ export default function Register() {
               <div className="flex items-center space-x-4">
                 <Shield className="h-8 w-8 text-orange-200" />
                 <div className="text-left">
-                  <div className="font-semibold">Bảo mật tuyệt đối</div>
+                  <div className="font-semibold">
+                    {t("auth.absoluteSecurity")}
+                  </div>
                   <div className="text-sm text-orange-100">
-                    Thông tin được mã hóa và bảo vệ
+                    {t("auth.encryptedInfo")}
                   </div>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
                 <Users className="h-8 w-8 text-orange-200" />
                 <div className="text-left">
-                  <div className="font-semibold">Cộng đồng đầu tư</div>
+                  <div className="font-semibold">
+                    {t("auth.investmentCommunity")}
+                  </div>
                   <div className="text-sm text-orange-100">
-                    Kết nối với các nhà đầu tư khác
+                    {t("auth.connectInvestors")}
                   </div>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
                 <Award className="h-8 w-8 text-orange-200" />
                 <div className="text-left">
-                  <div className="font-semibold">Ưu đãi độc quyền</div>
+                  <div className="font-semibold">
+                    {t("auth.exclusiveBenefits")}
+                  </div>
                   <div className="text-sm text-orange-100">
-                    Truy cập sớm các dự án mới
+                    {t("auth.earlyAccess")}
                   </div>
                 </div>
               </div>
@@ -85,11 +93,11 @@ export default function Register() {
             {/* Header */}
             <div className="mb-8 text-center">
               <Link
-                href="/"
+                href={`/${locale}`}
                 className="mb-6 inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[#fc746f]"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Về trang chủ
+                {t("auth.backToHome")}
               </Link>
 
               <div className="mb-6 flex items-center justify-center lg:hidden">
@@ -99,18 +107,17 @@ export default function Register() {
               </div>
 
               <h2 className="text-3xl font-bold text-gray-900">
-                Tạo tài khoản
+                {t("auth.createAccount")}
               </h2>
               <p className="mt-2 text-gray-600">
-                Tham gia Laos Happy Land để khám phá những cơ hội đầu tư tuyệt
-                vời
+                {t("auth.joinLaosHappyLand")}
               </p>
             </div>
 
             {/* Register Form */}
             {registerError && (
               <Alert
-                message="Lỗi đăng ký"
+                message={t("auth.registrationError")}
                 description={registerError}
                 type="error"
                 showIcon
@@ -122,7 +129,7 @@ export default function Register() {
 
             {successMessage && (
               <Alert
-                message="Đăng ký thành công!"
+                message={t("auth.registrationSuccess")}
                 description={successMessage}
                 type="success"
                 showIcon
@@ -135,9 +142,9 @@ export default function Register() {
             <RegisterForm
               onSuccess={() => {
                 setRegisterError("");
-                setSuccessMessage("Đăng ký thành công! Vui lòng đăng nhập.");
+                setSuccessMessage(t("auth.registrationSuccessMessage"));
                 setTimeout(() => {
-                  router.push("/login");
+                  router.push(`/${locale}/login`);
                 }, 2000);
               }}
               onError={(error) => {
@@ -149,25 +156,31 @@ export default function Register() {
             {/* Footer */}
             <div className="mt-8 text-center">
               <p className="text-sm text-gray-600">
-                Đã có tài khoản?{" "}
+                {t("auth.alreadyHaveAccount")}{" "}
                 <Link
-                  href="/login"
+                  href={`/${locale}/login`}
                   className="font-semibold text-[#fc746f] transition-colors hover:text-[#ff8a80]"
                 >
-                  Đăng nhập ngay
+                  {t("auth.loginNow")}
                 </Link>
               </p>
             </div>
 
             <div className="mt-8 text-center">
               <p className="text-xs text-gray-500">
-                Bằng cách đăng ký, bạn đồng ý với{" "}
-                <Link href="#" className="text-[#fc746f] hover:text-[#ff8a80]">
-                  Điều khoản sử dụng
+                {t("auth.byRegistering")}{" "}
+                <Link
+                  href={`/${locale}/terms-of-use`}
+                  className="text-[#fc746f] hover:text-[#ff8a80]"
+                >
+                  {t("auth.termsOfUse")}
                 </Link>{" "}
-                và{" "}
-                <Link href="#" className="text-[#fc746f] hover:text-[#ff8a80]">
-                  Chính sách bảo mật
+                {t("auth.and")}{" "}
+                <Link
+                  href={`/${locale}/privacy-policy`}
+                  className="text-[#fc746f] hover:text-[#ff8a80]"
+                >
+                  {t("auth.privacyPolicy")}
                 </Link>
               </p>
             </div>

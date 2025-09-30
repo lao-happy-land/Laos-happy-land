@@ -8,6 +8,7 @@ import type { UploadFile } from "antd";
 import locationInfoService from "@/share/service/location-info.service";
 import type { LocationInfo } from "@/share/service/location-info.service";
 import type { CreateLocationInfoDto } from "@/@types/gentype-axios";
+import { useTranslations } from "next-intl";
 
 const { Text } = Typography;
 
@@ -26,6 +27,7 @@ const LocationInfoModal = ({
   onClose,
   onSuccess,
 }: LocationInfoModalProps) => {
+  const t = useTranslations();
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
@@ -41,12 +43,12 @@ const LocationInfoModal = ({
     {
       manual: true,
       onSuccess: () => {
-        message.success("Tạo khu vực thành công!");
+        message.success(t("admin.locationCreatedSuccessfully"));
         onSuccess();
       },
       onError: (error) => {
         console.error("Error creating location info:", error);
-        message.error("Không thể tạo khu vực!");
+        message.error(t("admin.cannotCreateLocation"));
       },
     },
   );
@@ -59,12 +61,12 @@ const LocationInfoModal = ({
     {
       manual: true,
       onSuccess: () => {
-        message.success("Cập nhật khu vực thành công!");
+        message.success(t("admin.locationUpdatedSuccessfully"));
         onSuccess();
       },
       onError: (error) => {
         console.error("Error updating location info:", error);
-        message.error("Không thể cập nhật khu vực!");
+        message.error(t("admin.cannotUpdateLocation"));
       },
     },
   );
@@ -77,9 +79,9 @@ const LocationInfoModal = ({
 
       // Check if name field is empty before validation
       if (!currentValues.name || currentValues.name.trim().length === 0) {
-        message.error("Vui lòng nhập tên khu vực!");
+        message.error(t("admin.pleaseEnterLocationName"));
         form.setFields([
-          { name: "name", errors: ["Vui lòng nhập tên khu vực!"] },
+          { name: "name", errors: [t("admin.pleaseEnterLocationName")] },
         ]);
         return;
       }
@@ -89,13 +91,13 @@ const LocationInfoModal = ({
 
       // Double-check validation: ensure name is not empty or just whitespace
       if (!values.name || values.name.trim().length === 0) {
-        message.error("Vui lòng nhập tên khu vực!");
+        message.error(t("admin.pleaseEnterLocationName"));
         return;
       }
 
       // Ensure minimum length
       if (values.name.trim().length < 2) {
-        message.error("Tên khu vực phải có ít nhất 2 ký tự!");
+        message.error(t("admin.locationNameMinLength"));
         return;
       }
 
@@ -120,7 +122,7 @@ const LocationInfoModal = ({
       }
     } catch (error) {
       console.error("Form validation error:", error);
-      message.error("Vui lòng kiểm tra lại thông tin đã nhập!");
+      message.error(t("admin.pleaseCheckTheInformationYouEntered"));
     }
   };
 
@@ -193,7 +195,9 @@ const LocationInfoModal = ({
         <div className="flex items-center gap-2">
           <MapPin className="h-5 w-5 text-blue-600" />
           <span>
-            {mode === "create" ? "Thêm khu vực mới" : "Chỉnh sửa khu vực"}
+            {mode === "create"
+              ? t("admin.addNewLocation")
+              : t("admin.editLocation")}
           </span>
         </div>
       }
@@ -202,7 +206,7 @@ const LocationInfoModal = ({
       width={600}
       footer={[
         <Button key="cancel" onClick={onClose} disabled={isLoading}>
-          Hủy
+          {t("admin.cancel")}
         </Button>,
         <Button
           key="submit"
@@ -211,7 +215,9 @@ const LocationInfoModal = ({
           loading={isLoading}
           disabled={!isFormValid || isLoading}
         >
-          {mode === "create" ? "Tạo khu vực" : "Cập nhật"}
+          {mode === "create"
+            ? t("admin.createLocation")
+            : t("admin.updateLocation")}
         </Button>,
       ]}
     >
@@ -226,30 +232,30 @@ const LocationInfoModal = ({
         {/* Name */}
         <Form.Item
           name="name"
-          label={<Text className="font-medium">Tên khu vực</Text>}
+          label={<Text className="font-medium">{t("admin.locationName")}</Text>}
           rules={[
             {
               required: true,
-              message: "Vui lòng nhập tên khu vực!",
+              message: t("admin.pleaseEnterLocationName"),
             },
             {
               min: 2,
-              message: "Tên khu vực phải có ít nhất 2 ký tự!",
+              message: t("admin.locationNameMinLength"),
             },
             {
               max: 100,
-              message: "Tên khu vực không được vượt quá 100 ký tự!",
+              message: t("admin.locationNameMaxLength"),
             },
             {
               validator: (_, value: string) => {
                 if (!value || value.trim().length === 0) {
                   return Promise.reject(
-                    new Error("Tên khu vực không được để trống!"),
+                    new Error(t("admin.pleaseEnterLocationName")),
                   );
                 }
                 if (value.trim().length < 2) {
                   return Promise.reject(
-                    new Error("Tên khu vực phải có ít nhất 2 ký tự!"),
+                    new Error(t("admin.locationNameMinLength")),
                   );
                 }
                 return Promise.resolve();
@@ -258,14 +264,20 @@ const LocationInfoModal = ({
           ]}
         >
           <Input
-            placeholder="Nhập tên khu vực..."
+            placeholder={t("admin.enterLocationName")}
             size="large"
             className="rounded-lg"
           />
         </Form.Item>
 
         {/* Image Upload */}
-        <Form.Item label={<Text className="font-medium">Ảnh đại diện</Text>}>
+        <Form.Item
+          label={
+            <Text className="font-medium">
+              {t("admin.representativeImage")}
+            </Text>
+          }
+        >
           <Upload
             listType="picture-card"
             fileList={fileList}
@@ -278,21 +290,26 @@ const LocationInfoModal = ({
             {fileList.length >= 1 ? null : (
               <div className="text-center">
                 <UploadIcon className="mx-auto mb-2 h-8 w-8 text-gray-400" />
-                <div className="text-sm text-gray-600">Tải lên ảnh</div>
+                <div className="text-sm text-gray-600">
+                  {t("admin.uploadImage")}
+                </div>
               </div>
             )}
           </Upload>
           <Text className="mt-2 block text-xs text-gray-500">
-            Hỗ trợ định dạng: JPG, PNG, GIF. Kích thước tối đa: 5MB
+            {t("admin.supportedFormats")}: {t("admin.jpg")}, {t("admin.png")},{" "}
+            {t("admin.gif")}. {t("admin.maxSize")}: 5MB
           </Text>
         </Form.Item>
 
         {/* Strict Areas */}
-        <Form.Item label={<Text className="font-medium">Các khu vực con</Text>}>
+        <Form.Item
+          label={<Text className="font-medium">{t("admin.subAreas")}</Text>}
+        >
           <div className="space-y-3">
             <div className="flex gap-2">
               <Input
-                placeholder="Nhập tên khu vực con..."
+                placeholder={t("admin.enterSubAreaName")}
                 value={strictInput}
                 onChange={(e) => setStrictInput(e.target.value)}
                 onPressEnter={handleStrictAdd}
@@ -305,14 +322,14 @@ const LocationInfoModal = ({
                 onClick={handleStrictAdd}
                 disabled={!strictInput.trim()}
               >
-                Thêm
+                {t("admin.add")}
               </Button>
             </div>
 
             {strictList.length > 0 && (
               <div className="space-y-2">
                 <Text className="text-sm text-gray-600">
-                  Các khu vực con ({strictList.length}):
+                  {t("admin.subAreas")} ({strictList.length}):
                 </Text>
                 <div className="flex flex-wrap gap-2">
                   {strictList.map((item, index) => (
@@ -331,8 +348,8 @@ const LocationInfoModal = ({
             )}
           </div>
           <Text className="mt-2 block text-xs text-gray-500">
-            Thêm các khu vực con thuộc về khu vực này (ví dụ: quận, huyện,
-            phường)
+            {t("admin.addSubAreas")} ({t("admin.example")}:{" "}
+            {t("admin.district")}, {t("admin.county")},{t("admin.ward")})
           </Text>
         </Form.Item>
       </Form>

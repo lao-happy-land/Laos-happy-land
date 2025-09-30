@@ -5,6 +5,8 @@ import Link from "next/link";
 import { MapPin, Heart, Home, Bed, Bath, Eye } from "lucide-react";
 import type { Property } from "@/@types/types";
 import { numberToString } from "@/share/helper/number-to-string";
+import { useUrlLocale } from "@/utils/locale";
+import { useTranslations } from "next-intl";
 
 interface PropertyCardProps {
   property: Property;
@@ -21,6 +23,8 @@ export default function PropertyCard({
   size = "medium",
   showDescription = false,
 }: PropertyCardProps) {
+  const locale = useUrlLocale();
+  const t = useTranslations();
   const getCardPadding = () => {
     switch (size) {
       case "small":
@@ -55,7 +59,7 @@ export default function PropertyCard({
   };
 
   return (
-    <Link href={`/property/${property.id}`} className="block h-full">
+    <Link href={`/${locale}/property/${property.id}`} className="block h-full">
       <div
         className={`group relative flex h-full flex-col overflow-hidden rounded-xl bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${className}`}
       >
@@ -106,7 +110,7 @@ export default function PropertyCard({
           {property.priority > 0 && (
             <div className="absolute top-3 left-3">
               <span className="bg-primary-500 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold text-white shadow-md">
-                ⭐ Nổi bật
+                ⭐ {t("property.featured")}
               </span>
             </div>
           )}
@@ -173,7 +177,7 @@ export default function PropertyCard({
             <div className="text-lg font-bold text-red-500">
               {property.price
                 ? numberToString(Number(property.price))
-                : "Liên hệ"}
+                : t("property.contactForPrice")}
             </div>
             {property.price && (
               <div className="text-sm text-gray-500">
@@ -187,7 +191,7 @@ export default function PropertyCard({
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <MapPin className="h-4 w-4 flex-shrink-0 text-gray-400" />
               <span className="truncate text-sm">
-                {property.location?.address ?? "Chưa cập nhật"}
+                {property.location?.address ?? t("property.notUpdated")}
               </span>
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -195,7 +199,7 @@ export default function PropertyCard({
               <span className="text-sm">
                 {property.details?.area
                   ? `${property.details.area} m²`
-                  : "Chưa cập nhật"}
+                  : t("property.notUpdated")}
               </span>
             </div>
           </div>
@@ -206,7 +210,7 @@ export default function PropertyCard({
               <div className="flex items-center gap-1 text-sm text-gray-600">
                 <Bed className="h-4 w-4 flex-shrink-0 text-gray-400" />
                 <span className="text-sm font-medium">
-                  {property.details.bedrooms} PN
+                  {property.details.bedrooms} {t("property.bedroomsShort")}
                 </span>
               </div>
             )}
@@ -214,7 +218,7 @@ export default function PropertyCard({
               <div className="flex items-center gap-1 text-sm text-gray-600">
                 <Bath className="h-4 w-4 flex-shrink-0 text-gray-400" />
                 <span className="text-sm font-medium">
-                  {property.details.bathrooms} WC
+                  {property.details.bathrooms} {t("property.bathroomsShort")}
                 </span>
               </div>
             )}

@@ -62,6 +62,16 @@ export interface CreateUserDto {
    * @example ["Broker License","Real Estate Certificate"]
    */
   certifications?: string[];
+  /**
+   * Company name of the user
+   * @example "ABC Real Estate"
+   */
+  company?: string;
+  /**
+   * Verified status of the user
+   * @example true
+   */
+  verified?: boolean;
 }
 
 export interface UpdateUserDto {
@@ -120,6 +130,16 @@ export interface UpdateUserDto {
    * @example ["Broker License","Real Estate Certificate"]
    */
   certifications?: string[];
+  /**
+   * Company name of the user
+   * @example "ABC Real Estate"
+   */
+  company?: string;
+  /**
+   * Verified status of the user
+   * @example true
+   */
+  verified?: boolean;
 }
 
 export interface RegisterDto {
@@ -447,12 +467,52 @@ export interface CreateUserFeedbackDto {
   comment?: string;
 }
 
-import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, HeadersDefaults, ResponseType } from "axios";
+export interface TermRateDto {
+  /**
+   * Kỳ hạn gửi
+   * @example "3 tháng"
+   */
+  term: string;
+  /**
+   * Lãi suất (%) tương ứng với kỳ hạn
+   * @example 0.5
+   */
+  interestRate: number;
+}
+
+export interface CreateBankDto {
+  /**
+   * Tên ngân hàng
+   * @example "Banque pour le Commerce Extérieur Lao (BCEL)"
+   */
+  name: string;
+  /** Danh sách kỳ hạn và lãi suất */
+  termRates: TermRateDto[];
+}
+
+export interface UpdateBankDto {
+  /**
+   * Tên ngân hàng
+   * @example "Banque pour le Commerce Extérieur Lao (BCEL)"
+   */
+  name?: string;
+  /** Danh sách kỳ hạn và lãi suất */
+  termRates?: TermRateDto[];
+}
+
+import type {
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+  HeadersDefaults,
+  ResponseType,
+} from "axios";
 import axios from "axios";
 
 export type QueryParamsType = Record<string | number, any>;
 
-export interface FullRequestParams extends Omit<AxiosRequestConfig, "data" | "params" | "url" | "responseType"> {
+export interface FullRequestParams
+  extends Omit<AxiosRequestConfig, "data" | "params" | "url" | "responseType"> {
   /** set parameter to `true` for call `securityWorker` for this request */
   secure?: boolean;
   /** request path */
@@ -467,9 +527,13 @@ export interface FullRequestParams extends Omit<AxiosRequestConfig, "data" | "pa
   body?: unknown;
 }
 
-export type RequestParams = Omit<FullRequestParams, "body" | "method" | "query" | "path">;
+export type RequestParams = Omit<
+  FullRequestParams,
+  "body" | "method" | "query" | "path"
+>;
 
-export interface ApiConfig<SecurityDataType = unknown> extends Omit<AxiosRequestConfig, "data" | "cancelToken"> {
+export interface ApiConfig<SecurityDataType = unknown>
+  extends Omit<AxiosRequestConfig, "data" | "cancelToken"> {
   securityWorker?: (
     securityData: SecurityDataType | null,
   ) => Promise<AxiosRequestConfig | void> | AxiosRequestConfig | void;
@@ -503,7 +567,9 @@ export class HttpClient<SecurityDataType = unknown> {
     injectHeaders,
     ...axiosConfig
   }: ApiConfig<SecurityDataType> = {}) {
-    this.instance = instance ?? axios.create({ ...axiosConfig, baseURL: axiosConfig.baseURL || "" });
+    this.instance =
+      instance ??
+      axios.create({ ...axiosConfig, baseURL: axiosConfig.baseURL || "" });
     this.secure = secure;
     this.format = format;
     this.securityWorker = securityWorker;
@@ -514,7 +580,10 @@ export class HttpClient<SecurityDataType = unknown> {
     this.securityData = data;
   };
 
-  protected mergeRequestParams(params1: AxiosRequestConfig, params2?: AxiosRequestConfig): AxiosRequestConfig {
+  protected mergeRequestParams(
+    params1: AxiosRequestConfig,
+    params2?: AxiosRequestConfig,
+  ): AxiosRequestConfig {
     const method = params1.method || (params2 && params2.method);
 
     return {
@@ -522,7 +591,11 @@ export class HttpClient<SecurityDataType = unknown> {
       ...params1,
       ...(params2 || {}),
       headers: {
-        ...((method && this.instance.defaults.headers[method.toLowerCase() as keyof HeadersDefaults]) || {}),
+        ...((method &&
+          this.instance.defaults.headers[
+            method.toLowerCase() as keyof HeadersDefaults
+          ]) ||
+          {}),
         ...(params1.headers || {}),
         ...((params2 && params2.headers) || {}),
       },
@@ -540,11 +613,15 @@ export class HttpClient<SecurityDataType = unknown> {
   protected createFormData(input: Record<string, unknown>): FormData {
     return Object.keys(input || {}).reduce((formData, key) => {
       const property = input[key];
-      const propertyContent: any[] = property instanceof Array ? property : [property];
+      const propertyContent: any[] =
+        property instanceof Array ? property : [property];
 
       for (const formItem of propertyContent) {
         const isFileType = formItem instanceof Blob || formItem instanceof File;
-        formData.append(key, isFileType ? formItem : this.stringifyFormItem(formItem));
+        formData.append(
+          key,
+          isFileType ? formItem : this.stringifyFormItem(formItem),
+        );
       }
 
       return formData;
@@ -568,17 +645,29 @@ export class HttpClient<SecurityDataType = unknown> {
     const requestParams = this.mergeRequestParams(params, secureParams);
     const responseFormat = format || this.format || undefined;
 
-    if (type === ContentType.FormData && body && body !== null && typeof body === "object") {
+    if (
+      type === ContentType.FormData &&
+      body &&
+      body !== null &&
+      typeof body === "object"
+    ) {
       body = this.createFormData(body as Record<string, unknown>);
     }
 
-    if (type === ContentType.Text && body && body !== null && typeof body !== "string") {
+    if (
+      type === ContentType.Text &&
+      body &&
+      body !== null &&
+      typeof body !== "string"
+    ) {
       body = JSON.stringify(body);
     }
 
     let headers = {
       ...(requestParams.headers || {}),
-      ...(type && type !== ContentType.FormData ? { "Content-Type": type } : {}),
+      ...(type && type !== ContentType.FormData
+        ? { "Content-Type": type }
+        : {}),
     };
 
     if (this.injectHeaders) {
@@ -603,7 +692,9 @@ export class HttpClient<SecurityDataType = unknown> {
  *
  * API cho website bất động sản
  */
-export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDataType> {
+export class Api<
+  SecurityDataType extends unknown,
+> extends HttpClient<SecurityDataType> {
   api = {
     /**
      * No description
@@ -636,6 +727,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         search?: string;
         /** Role of the user */
         role?: string;
+        /** Filter by specialty */
+        specialty?: string;
+        /** Filter by location info ID */
+        locationInfoId?: string;
       },
       params: RequestParams = {},
     ) =>
@@ -661,6 +756,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         search?: string;
         /** Role of the user */
         role?: string;
+        /** Filter by specialty */
+        specialty?: string;
+        /** Filter by location info ID */
+        locationInfoId?: string;
         fullName?: string;
         take?: number;
         skip?: number;
@@ -695,7 +794,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @name UserControllerUpdate
      * @request PATCH:/api/user/{id}
      */
-    userControllerUpdate: (id: string, data: UpdateUserDto, params: RequestParams = {}) =>
+    userControllerUpdate: (
+      id: string,
+      data: UpdateUserDto,
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/user/${id}`,
         method: "PATCH",
@@ -838,7 +941,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Reset user password
      * @request POST:/api/auth/reset-password
      */
-    authControllerResetPassword: (data: ResetPasswordDto, params: RequestParams = {}) =>
+    authControllerResetPassword: (
+      data: ResetPasswordDto,
+      params: RequestParams = {},
+    ) =>
       this.request<void, void>({
         path: `/api/auth/reset-password`,
         method: "POST",
@@ -855,7 +961,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @request POST:/api/property
      * @secure
      */
-    propertyControllerCreate: (data: CreatePropertyDto, params: RequestParams = {}) =>
+    propertyControllerCreate: (
+      data: CreatePropertyDto,
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/property`,
         method: "POST",
@@ -941,6 +1050,28 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * No description
      *
      * @tags Property
+     * @name PropertyControllerGetByUserId
+     * @request GET:/api/property/user/{userId}
+     */
+    propertyControllerGetByUserId: (
+      userId: string,
+      query?: {
+        page?: number;
+        perPage?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/property/user/${userId}`,
+        method: "GET",
+        query: query,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Property
      * @name PropertyControllerGet
      * @request GET:/api/property/{id}
      */
@@ -959,7 +1090,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @request PATCH:/api/property/{id}
      * @secure
      */
-    propertyControllerUpdate: (id: string, data: UpdatePropertyDto, params: RequestParams = {}) =>
+    propertyControllerUpdate: (
+      id: string,
+      data: UpdatePropertyDto,
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/property/${id}`,
         method: "PATCH",
@@ -1011,7 +1146,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @request PATCH:/api/property/{id}/reject
      * @secure
      */
-    propertyControllerReject: (id: string, data: RejectPropertyDto, params: RequestParams = {}) =>
+    propertyControllerReject: (
+      id: string,
+      data: RejectPropertyDto,
+      params: RequestParams = {},
+    ) =>
       this.request<void, void>({
         path: `/api/property/${id}/reject`,
         method: "PATCH",
@@ -1029,7 +1168,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Create a new property type
      * @request POST:/api/property-type
      */
-    propertyTypeControllerCreate: (data: CreatePropertyTypeDto, params: RequestParams = {}) =>
+    propertyTypeControllerCreate: (
+      data: CreatePropertyTypeDto,
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/property-type`,
         method: "POST",
@@ -1087,7 +1229,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Update a property type by ID
      * @request PATCH:/api/property-type/{id}
      */
-    propertyTypeControllerUpdate: (id: string, data: CreatePropertyTypeDto, params: RequestParams = {}) =>
+    propertyTypeControllerUpdate: (
+      id: string,
+      data: CreatePropertyTypeDto,
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/property-type/${id}`,
         method: "PATCH",
@@ -1119,7 +1265,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Create user role
      * @request POST:/api/user-role
      */
-    userRoleControllerCreate: (data: CreateUserRoleDto, params: RequestParams = {}) =>
+    userRoleControllerCreate: (
+      data: CreateUserRoleDto,
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/user-role`,
         method: "POST",
@@ -1194,7 +1343,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @name SettingControllerCreate
      * @request POST:/api/setting
      */
-    settingControllerCreate: (data: CreateSettingDto, params: RequestParams = {}) =>
+    settingControllerCreate: (
+      data: CreateSettingDto,
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/setting`,
         method: "POST",
@@ -1245,7 +1397,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @name SettingControllerUpdate
      * @request PATCH:/api/setting/{id}
      */
-    settingControllerUpdate: (id: string, data: CreateSettingDto, params: RequestParams = {}) =>
+    settingControllerUpdate: (
+      id: string,
+      data: CreateSettingDto,
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/setting/${id}`,
         method: "PATCH",
@@ -1276,7 +1432,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Create exchange rate
      * @request POST:/api/exchange-rate
      */
-    exchangeRateControllerCreate: (data: CreateExchangeRateDto, params: RequestParams = {}) =>
+    exchangeRateControllerCreate: (
+      data: CreateExchangeRateDto,
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/exchange-rate`,
         method: "POST",
@@ -1330,7 +1489,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Update exchange rate by id
      * @request PATCH:/api/exchange-rate/{id}
      */
-    exchangeRateControllerUpdate: (id: string, data: UpdateExchangeRateDto, params: RequestParams = {}) =>
+    exchangeRateControllerUpdate: (
+      id: string,
+      data: UpdateExchangeRateDto,
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/exchange-rate/${id}`,
         method: "PATCH",
@@ -1361,7 +1524,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @name LocationInfoControllerCreate
      * @request POST:/api/location-info
      */
-    locationInfoControllerCreate: (data: CreateLocationInfoDto, params: RequestParams = {}) =>
+    locationInfoControllerCreate: (
+      data: CreateLocationInfoDto,
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/location-info`,
         method: "POST",
@@ -1419,7 +1585,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @name LocationInfoControllerUpdate
      * @request PATCH:/api/location-info/{id}
      */
-    locationInfoControllerUpdate: (id: string, data: CreateLocationInfoDto, params: RequestParams = {}) =>
+    locationInfoControllerUpdate: (
+      id: string,
+      data: CreateLocationInfoDto,
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/location-info/${id}`,
         method: "PATCH",
@@ -1450,7 +1620,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Create news type
      * @request POST:/api/news-type
      */
-    newsTypeControllerCreateNewsType: (data: CreateNewsTypeDto, params: RequestParams = {}) =>
+    newsTypeControllerCreateNewsType: (
+      data: CreateNewsTypeDto,
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/news-type`,
         method: "POST",
@@ -1504,7 +1677,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Update news type by id
      * @request PATCH:/api/news-type/{id}
      */
-    newsTypeControllerUpdate: (id: string, data: CreateNewsTypeDto, params: RequestParams = {}) =>
+    newsTypeControllerUpdate: (
+      id: string,
+      data: CreateNewsTypeDto,
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/news-type/${id}`,
         method: "PATCH",
@@ -1594,7 +1771,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Update news by id
      * @request PATCH:/api/news/{id}
      */
-    newsControllerUpdate: (id: string, data: UpdateNewsDto, params: RequestParams = {}) =>
+    newsControllerUpdate: (
+      id: string,
+      data: UpdateNewsDto,
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/news/${id}`,
         method: "PATCH",
@@ -1626,7 +1807,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Create about us
      * @request POST:/api/about-us
      */
-    aboutUsControllerCreate: (data: CreateAboutUsDto, params: RequestParams = {}) =>
+    aboutUsControllerCreate: (
+      data: CreateAboutUsDto,
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/about-us`,
         method: "POST",
@@ -1682,7 +1866,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Update about us by id
      * @request PATCH:/api/about-us/{id}
      */
-    aboutUsControllerUpdate: (id: string, data: UpdateAboutUsDto, params: RequestParams = {}) =>
+    aboutUsControllerUpdate: (
+      id: string,
+      data: UpdateAboutUsDto,
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/about-us/${id}`,
         method: "PATCH",
@@ -1715,7 +1903,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @request POST:/api/user-feedback
      * @secure
      */
-    userFeedbackControllerCreate: (data: CreateUserFeedbackDto, params: RequestParams = {}) =>
+    userFeedbackControllerCreate: (
+      data: CreateUserFeedbackDto,
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/user-feedback`,
         method: "POST",
@@ -1760,6 +1951,101 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       this.request<void, any>({
         path: `/api/user-feedback/${id}`,
         method: "GET",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Bank
+     * @name BankControllerCreateBank
+     * @summary Create bank
+     * @request POST:/api/bank
+     */
+    bankControllerCreateBank: (
+      data: CreateBankDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/bank`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Bank
+     * @name BankControllerGetAll
+     * @summary Get all bank
+     * @request GET:/api/bank
+     */
+    bankControllerGetAll: (
+      query?: {
+        page?: number;
+        perPage?: number;
+        /** Search of the bank */
+        search?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/bank`,
+        method: "GET",
+        query: query,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Bank
+     * @name BankControllerGet
+     * @summary Get bank by id
+     * @request GET:/api/bank/{id}
+     */
+    bankControllerGet: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/bank/${id}`,
+        method: "GET",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Bank
+     * @name BankControllerUpdate
+     * @summary Update bank by id
+     * @request PATCH:/api/bank/{id}
+     */
+    bankControllerUpdate: (
+      id: string,
+      data: UpdateBankDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/bank/${id}`,
+        method: "PATCH",
+        body: data,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Bank
+     * @name BankControllerRemove
+     * @summary Delete bank by id
+     * @request DELETE:/api/bank/{id}
+     */
+    bankControllerRemove: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/bank/${id}`,
+        method: "DELETE",
         ...params,
       }),
   };

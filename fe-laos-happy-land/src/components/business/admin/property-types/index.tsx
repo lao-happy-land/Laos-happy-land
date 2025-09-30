@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRequest } from "ahooks";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   Table,
   Button,
@@ -27,6 +28,7 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 export default function PropertyTypes() {
+  const t = useTranslations();
   const { message, modal } = App.useApp();
   const router = useRouter();
   const pathname = usePathname();
@@ -102,7 +104,7 @@ export default function PropertyTypes() {
       },
       onError: (error) => {
         console.error("Failed to fetch property types:", error);
-        message.error("Không thể tải danh sách loại bất động sản");
+        message.error(t("admin.cannotLoadPropertyTypes"));
       },
     },
   );
@@ -114,12 +116,12 @@ export default function PropertyTypes() {
     {
       manual: true,
       onSuccess: () => {
-        message.success("Xóa loại bất động sản thành công!");
+        message.success(t("admin.propertyTypeDeletedSuccessfully"));
         refreshPropertyTypes();
       },
       onError: (error) => {
         console.error("Failed to delete property type:", error);
-        message.error("Không thể xóa loại bất động sản");
+        message.error(t("admin.cannotDeletePropertyType"));
       },
     },
   );
@@ -166,11 +168,13 @@ export default function PropertyTypes() {
 
   const handleDelete = (propertyType: PropertyType) => {
     modal.confirm({
-      title: "Xác nhận xóa",
-      content: `Bạn có chắc chắn muốn xóa loại bất động sản "${propertyType.name}"?`,
-      okText: "Xóa",
+      title: t("admin.confirmDelete"),
+      content: t("admin.confirmDeletePropertyType", {
+        name: propertyType.name,
+      }),
+      okText: t("common.delete"),
       okType: "danger",
-      cancelText: "Hủy",
+      cancelText: t("common.cancel"),
       onOk() {
         deletePropertyType(propertyType.id);
       },
@@ -198,11 +202,11 @@ export default function PropertyTypes() {
   const getTransactionTypeText = (transactionType: string) => {
     switch (transactionType) {
       case "sale":
-        return "Bán";
+        return t("property.forSale");
       case "rent":
-        return "Cho thuê";
+        return t("property.forRent");
       case "project":
-        return "Dự án";
+        return t("navigation.projects");
       default:
         return transactionType;
     }
@@ -221,13 +225,13 @@ export default function PropertyTypes() {
 
   const columns = [
     {
-      title: "Tên loại bất động sản",
+      title: t("admin.propertyTypeName"),
       dataIndex: "name",
       key: "name",
       render: (name: string) => <Text strong>{name}</Text>,
     },
     {
-      title: "Hình thức giao dịch",
+      title: t("admin.transactionType"),
       dataIndex: "transactionType",
       key: "transactionType",
       render: (transactionType: string) => (
@@ -237,7 +241,7 @@ export default function PropertyTypes() {
       ),
     },
     {
-      title: "Ngày tạo",
+      title: t("property.createdAt"),
       dataIndex: "createdAt",
       key: "createdAt",
       render: (date: string) => {
@@ -248,16 +252,16 @@ export default function PropertyTypes() {
             day: "2-digit",
           });
         } catch {
-          return "Invalid date";
+          return t("common.invalidDate");
         }
       },
     },
     {
-      title: "Thao tác",
+      title: t("admin.actions"),
       key: "actions",
       render: (_: unknown, record: PropertyType) => (
         <Space size="small">
-          <Tooltip title="Chỉnh sửa">
+          <Tooltip title={t("common.edit")}>
             <Button
               type="text"
               icon={<Edit className="h-4 w-4" />}
@@ -265,7 +269,7 @@ export default function PropertyTypes() {
               className="text-blue-500 hover:text-blue-700"
             />
           </Tooltip>
-          <Tooltip title="Xóa">
+          <Tooltip title={t("common.delete")}>
             <Button
               type="text"
               icon={<Trash2 className="h-4 w-4" />}
@@ -285,10 +289,10 @@ export default function PropertyTypes() {
         <Row justify="space-between" align="middle">
           <Col>
             <Title level={2} className="mb-2 text-gray-900">
-              Quản lý loại bất động sản
+              {t("admin.managePropertyTypes")}
             </Title>
             <Text className="text-lg text-gray-600">
-              Quản lý tất cả loại bất động sản trên hệ thống
+              {t("admin.managePropertyTypesDescription")}
             </Text>
           </Col>
           <Col>
@@ -299,7 +303,7 @@ export default function PropertyTypes() {
               onClick={handleCreate}
               className="border-blue-600 bg-blue-600 hover:border-blue-700 hover:bg-blue-700"
             >
-              Thêm loại bất động sản
+              {t("admin.addPropertyType")}
             </Button>
           </Col>
         </Row>
@@ -309,7 +313,7 @@ export default function PropertyTypes() {
         <Row gutter={[16, 16]} className="mb-6">
           <Col xs={24} md={8}>
             <AntInput
-              placeholder="Tìm kiếm loại bất động sản..."
+              placeholder={t("admin.searchPropertyTypes")}
               value={searchInputValue}
               onChange={(e) => setSearchInputValue(e.target.value)}
               onPressEnter={handleSearch}
@@ -320,7 +324,7 @@ export default function PropertyTypes() {
           </Col>
           <Col xs={24} md={8}>
             <Select
-              placeholder="Lọc theo hình thức giao dịch"
+              placeholder={t("admin.filterByTransactionType")}
               value={filterTransaction || undefined}
               onChange={(value) => {
                 handleTransactionTypeChange(value);
@@ -331,18 +335,20 @@ export default function PropertyTypes() {
               }}
               style={{ width: "100%" }}
             >
-              <Option value="all">Tất cả</Option>
-              <Option value="sale">Bán</Option>
-              <Option value="rent">Cho thuê</Option>
-              <Option value="project">Dự án</Option>
+              <Option value="all">{t("common.all")}</Option>
+              <Option value="sale">{t("property.forSale")}</Option>
+              <Option value="rent">{t("property.forRent")}</Option>
+              <Option value="project">{t("navigation.projects")}</Option>
             </Select>
           </Col>
           <Col xs={24} md={8}>
             <Space>
               <Button type="primary" onClick={handleSearch}>
-                Tìm kiếm
+                {t("common.search")}
               </Button>
-              <Button onClick={handleClearSearch}>Xóa bộ lọc</Button>
+              <Button onClick={handleClearSearch}>
+                {t("admin.clearFilters")}
+              </Button>
             </Space>
           </Col>
         </Row>
@@ -359,13 +365,17 @@ export default function PropertyTypes() {
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total, range) =>
-              `${range[0]}-${range[1]} của ${total} loại bất động sản`,
+              t("admin.propertyTypesPagination", {
+                start: range[0],
+                end: range[1],
+                total,
+              }),
             onChange: handlePageChange,
           }}
           locale={{
             emptyText: (
               <Empty
-                description="Không có loại bất động sản nào"
+                description={t("admin.noPropertyTypes")}
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
               />
             ),

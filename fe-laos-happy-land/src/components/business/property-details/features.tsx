@@ -1,6 +1,7 @@
 "use client";
 
 import { Typography } from "antd";
+import { useTranslations } from "next-intl";
 import { Bed, Bath, Square, Building } from "lucide-react";
 
 const { Title, Text } = Typography;
@@ -17,10 +18,11 @@ type Props = {
 };
 
 export default function Features({ details, typeName }: Props) {
+  const t = useTranslations();
   return (
     <div className="mb-8">
       <Title level={3} className="mb-4 text-xl font-semibold">
-        Thông tin cơ bản
+        {t("property.basicInfo")}
       </Title>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {details?.bedrooms && (
@@ -31,7 +33,9 @@ export default function Features({ details, typeName }: Props) {
             <div className="text-lg font-bold text-gray-900">
               {details.bedrooms}
             </div>
-            <Text className="text-xs text-gray-600">Phòng ngủ</Text>
+            <Text className="text-xs text-gray-600">
+              {t("property.bedrooms")}
+            </Text>
           </div>
         )}
         {details?.bathrooms && (
@@ -42,7 +46,9 @@ export default function Features({ details, typeName }: Props) {
             <div className="text-lg font-bold text-gray-900">
               {details.bathrooms}
             </div>
-            <Text className="text-xs text-gray-600">Phòng tắm</Text>
+            <Text className="text-xs text-gray-600">
+              {t("property.bathrooms")}
+            </Text>
           </div>
         )}
         {details?.area && (
@@ -53,7 +59,7 @@ export default function Features({ details, typeName }: Props) {
             <div className="text-lg font-bold text-gray-900">
               {details.area}m²
             </div>
-            <Text className="text-xs text-gray-600">Diện tích</Text>
+            <Text className="text-xs text-gray-600">{t("property.area")}</Text>
           </div>
         )}
         <div className="group rounded-xl bg-white p-4 text-center shadow-sm transition-all duration-200 hover:shadow-md">
@@ -63,7 +69,9 @@ export default function Features({ details, typeName }: Props) {
           <div className="text-lg font-bold text-gray-900">
             {typeName ?? "N/A"}
           </div>
-          <Text className="text-xs text-gray-600">Loại BDS</Text>
+          <Text className="text-xs text-gray-600">
+            {t("property.propertyType")}
+          </Text>
         </div>
       </div>
     </div>

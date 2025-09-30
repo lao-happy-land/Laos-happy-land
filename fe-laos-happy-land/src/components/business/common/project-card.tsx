@@ -5,6 +5,7 @@ import Link from "next/link";
 import { MapPin, Home, Eye } from "lucide-react";
 import type { Property } from "@/@types/types";
 import { numberToString } from "@/share/helper/number-to-string";
+import { useTranslations } from "next-intl";
 
 interface ProjectCardProps {
   project: Property;
@@ -19,6 +20,7 @@ export default function ProjectCard({
   size = "medium",
   showDescription = false,
 }: ProjectCardProps) {
+  const t = useTranslations();
   const getCardPadding = () => {
     switch (size) {
       case "small":
@@ -55,13 +57,22 @@ export default function ProjectCard({
   const getStatusInfo = () => {
     switch (project.status) {
       case "approved":
-        return { color: "bg-green-100 text-green-800", text: "✅ Đã duyệt" };
+        return {
+          color: "bg-green-100 text-green-800",
+          text: t("common.approved"),
+        };
       case "pending":
-        return { color: "bg-orange-100 text-orange-800", text: "⏳ Chờ duyệt" };
+        return {
+          color: "bg-orange-100 text-orange-800",
+          text: t("common.pending"),
+        };
       case "rejected":
-        return { color: "bg-red-100 text-red-800", text: "❌ Từ chối" };
+        return { color: "bg-red-100 text-red-800", text: t("common.rejected") };
       default:
-        return { color: "bg-gray-100 text-gray-800", text: "📋 Chưa xác định" };
+        return {
+          color: "bg-gray-100 text-gray-800",
+          text: t("common.undetermined"),
+        };
     }
   };
 
@@ -105,7 +116,7 @@ export default function ProjectCard({
           {project.priority > 0 && (
             <div className="absolute top-3 left-3">
               <span className="bg-primary-500 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold text-white shadow-md">
-                ⭐ Nổi bật
+                ⭐ {t("common.featured")}
               </span>
             </div>
           )}
@@ -172,7 +183,7 @@ export default function ProjectCard({
             <div className="text-lg font-bold text-red-500">
               {project.price
                 ? numberToString(Number(project.price))
-                : "Liên hệ"}
+                : t("property.contactForPrice")}
             </div>
             {project.price && (
               <div className="text-sm text-gray-500">
@@ -187,7 +198,7 @@ export default function ProjectCard({
             <span className="truncate text-sm">
               {typeof project.location === "string"
                 ? project.location
-                : (project.location?.address ?? "Chưa cập nhật")}
+                : (project.location?.address ?? t("common.notUpdated"))}
             </span>
           </div>
 
@@ -196,7 +207,7 @@ export default function ProjectCard({
             <div className="mb-4 flex items-center gap-2 text-sm text-gray-600">
               <Home className="h-4 w-4 flex-shrink-0 text-gray-400" />
               <span className="text-sm">
-                Diện tích: {project.details.area} m²
+                {t("property.area")}: {project.details.area} m²
               </span>
             </div>
           )}
@@ -204,7 +215,7 @@ export default function ProjectCard({
           {/* Footer - Push to bottom */}
           <div className="mt-auto flex items-center justify-between border-t border-gray-100 pt-3">
             <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
-              🏗️ Dự án
+              {t("common.project")}
             </span>
             <div className="text-xs text-gray-400">
               {new Date(project.createdAt).toLocaleDateString("vi-VN")}

@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useRequest } from "ahooks";
-import { Input, Select, Pagination, Spin, App } from "antd";
+import { Input, Pagination, Spin, App } from "antd";
 import { Search, MapPin, Star, Filter } from "lucide-react";
 import Image from "next/image";
 import { userService } from "@/share/service/user.service";
 import type { User } from "@/@types/types";
+import { useTranslations } from "next-intl";
+import { useUrlLocale } from "@/utils/locale";
 
 const { Search: SearchInput } = Input;
 
@@ -28,7 +30,9 @@ interface Broker {
 }
 
 export default function BrokerDirectory() {
+  const t = useTranslations();
   const router = useRouter();
+  const locale = useUrlLocale();
   const { message } = App.useApp();
   const [searchInputValue, setSearchInputValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -36,7 +40,7 @@ export default function BrokerDirectory() {
   // TODO: no longer needed?
   // const [locationFilter, setLocationFilter] = useState("");
   // const [specialtyFilter, setSpecialtyFilter] = useState("");
-  
+
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
@@ -70,7 +74,7 @@ export default function BrokerDirectory() {
       },
       onError: (error) => {
         console.error("Error loading brokers:", error);
-        message.error("Không thể tải danh sách môi giới. Vui lòng thử lại.");
+        message.error(t("errors.cannotLoadBrokers"));
       },
     },
   );
@@ -105,7 +109,11 @@ export default function BrokerDirectory() {
     location: user.locationInfo?.name ?? user.location ?? "",
     rating: user.ratingAverage ?? 0,
     reviewCount: user.ratingCount ?? 0,
-    specialties: user.specialties ?? ["Nhà phố", "Căn hộ", "Đất nền"],
+    specialties: user.specialties ?? [
+      t("broker.townhouse"),
+      t("broker.apartment"),
+      t("broker.land"),
+    ],
     experience: user.experienceYears ?? 0,
     propertiesCount: user.propertyCount ?? 0,
     // TODO: Add verified field to User API model
@@ -120,10 +128,10 @@ export default function BrokerDirectory() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="mb-2 text-4xl font-bold text-neutral-900">
-                Danh sách Môi giới Bất động sản
+                {t("broker.brokerDirectory")}
               </h1>
               <p className="text-lg text-neutral-600">
-                Tìm kiếm môi giới chuyên nghiệp và đáng tin cậy
+                {t("broker.findProfessionalBrokers")}
               </p>
             </div>
           </div>
@@ -135,10 +143,10 @@ export default function BrokerDirectory() {
             <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
               <div className="md:col-span-2">
                 <label className="mb-2 block text-sm font-medium text-neutral-700">
-                  Tìm kiếm môi giới
+                  {t("broker.searchBrokers")}
                 </label>
                 <SearchInput
-                  placeholder="Nhập tên hoặc công ty môi giới..."
+                  placeholder={t("broker.searchPlaceholder")}
                   size="large"
                   value={searchInputValue}
                   onChange={(e) => handleSearchChange(e.target.value)}
@@ -149,10 +157,10 @@ export default function BrokerDirectory() {
               {/* TODO: Add filters when */}
               {/* <div>
                 <label className="mb-2 block text-sm font-medium text-neutral-700">
-                  Địa điểm
+                  {t("search.location")}
                 </label>
                 <Select
-                  placeholder="Chọn địa điểm"
+                  placeholder={t("broker.selectLocation")}
                   size="large"
                   value={locationFilter}
                   onChange={setLocationFilter}
@@ -171,10 +179,10 @@ export default function BrokerDirectory() {
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium text-neutral-700">
-                  Chuyên môn
+                  {t("broker.specialty")}
                 </label>
                 <Select
-                  placeholder="Chọn chuyên môn"
+                  placeholder={t("broker.selectSpecialty")}
                   size="large"
                   value={specialtyFilter}
                   onChange={setSpecialtyFilter}
@@ -188,23 +196,19 @@ export default function BrokerDirectory() {
                   ))}
                 </Select>
               </div> */}
-            </div> 
+            </div>
           </div>
         </div>
 
         {/* Results Count */}
         <div className="mb-6 flex items-center justify-between">
           <p className="text-neutral-600">
-            Tìm thấy{" "}
-            <span className="text-primary-600 font-semibold">
-              {total}
-            </span>{" "}
-            môi giới
+            {t("broker.foundResults", { count: total })}
           </p>
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-neutral-400" />
             <span className="text-sm text-neutral-500">
-              Sắp xếp theo: Đánh giá cao nhất
+              {t("broker.sortByRating")}
             </span>
           </div>
         </div>
@@ -220,7 +224,7 @@ export default function BrokerDirectory() {
               <div
                 key={broker.id}
                 className="group cursor-pointer rounded-xl bg-white shadow-sm transition-all duration-300 hover:shadow-lg"
-                onClick={() => router.push(`/brokers/${broker.id}`)}
+                onClick={() => router.push(`/${locale}/brokers/${broker.id}`)}
               >
                 <div className="p-6 text-center">
                   {/* Avatar */}
@@ -254,13 +258,13 @@ export default function BrokerDirectory() {
                     {broker.name}
                   </h3>
                   <p className="mb-2 text-sm text-neutral-600">
-                    {broker.company ?? "Chưa cập nhật"}
+                    {broker.company ?? t("common.notUpdated")}
                   </p>
 
                   {/* Location */}
                   <div className="mb-3 flex items-center justify-center gap-1 text-sm text-neutral-500">
                     <MapPin className="h-4 w-4" />
-                    {broker.location ?? "Chưa cập nhật"}
+                    {broker.location ?? t("common.notUpdated")}
                   </div>
 
                   {/* Rating */}
@@ -270,7 +274,7 @@ export default function BrokerDirectory() {
                       {broker.rating}
                     </span>
                     <span className="text-sm text-neutral-500">
-                      ({broker.reviewCount} đánh giá)
+                      ({broker.reviewCount} {t("broker.reviews")})
                     </span>
                   </div>
 
@@ -295,13 +299,13 @@ export default function BrokerDirectory() {
                   <div className="mb-4 grid grid-cols-2 gap-2 text-xs text-neutral-600">
                     <div>
                       <span className="font-medium">{broker.experience}</span>{" "}
-                      năm kinh nghiệm
+                      {t("broker.yearsExperience")}
                     </div>
                     <div>
                       <span className="font-medium">
                         {broker.propertiesCount}
                       </span>{" "}
-                      bất động sản
+                      {t("broker.properties")}
                     </div>
                   </div>
 
@@ -313,7 +317,7 @@ export default function BrokerDirectory() {
                     onClick={(e) => {
                       e.stopPropagation();
                       message.success(
-                        `Đã gửi yêu cầu liên hệ đến ${broker.name}`,
+                        t("broker.contactRequestSent", { name: broker.name }),
                       );
                     }}
                   >
@@ -327,14 +331,14 @@ export default function BrokerDirectory() {
 
         {/* Pagination */}
         {total > pageSize && (
-            <Pagination
-              align="center"
-              current={currentPage}
-              total={total}
-              pageSize={pageSize}
-              onChange={handlePaginationChange}
-              showSizeChanger={false}
-            />
+          <Pagination
+            align="center"
+            current={currentPage}
+            total={total}
+            pageSize={pageSize}
+            onChange={handlePaginationChange}
+            showSizeChanger={false}
+          />
         )}
 
         {/* Empty State */}
@@ -344,11 +348,9 @@ export default function BrokerDirectory() {
               <Search className="h-8 w-8 text-neutral-400" />
             </div>
             <h3 className="mb-2 text-lg font-semibold text-neutral-900">
-              Không tìm thấy môi giới nào
+              {t("broker.noBrokersFound")}
             </h3>
-            <p className="text-neutral-600">
-              Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc
-            </p>
+            <p className="text-neutral-600">{t("broker.tryDifferentSearch")}</p>
           </div>
         )}
       </div>

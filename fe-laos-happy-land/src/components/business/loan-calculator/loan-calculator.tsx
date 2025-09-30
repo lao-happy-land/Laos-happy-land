@@ -12,13 +12,27 @@ import {
   Table,
   Space,
   Pagination,
+  Select,
+  Spin,
+  message,
 } from "antd";
 import {
   DollarSign,
   Calendar,
   TrendingUp,
   FileText,
+  Building,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useRequest } from "ahooks";
+import bankService from "@/share/service/bank.service";
+import type { TermRate } from "@/share/service/bank.service";
+import {
+  getCurrencyByLocale,
+  type SupportedLocale,
+} from "@/share/helper/locale.helper";
+import { useUrlLocale } from "@/utils/locale";
+import { numberToString } from "@/share/helper/number-to-string";
 
 const { Title, Text } = Typography;
 
@@ -38,33 +52,88 @@ interface LoanResult {
 }
 
 const LoanCalculator = () => {
+  const t = useTranslations();
+  const locale = useUrlLocale();
   const [loanAmount, setLoanAmount] = useState<number>(0);
-  const [interestRate, setInterestRate] = useState<number>(0);
+  const [selectedBank, setSelectedBank] = useState<string>("");
+  const [selectedTermRate, setSelectedTermRate] = useState<TermRate | null>(
+    null,
+  );
   const [loanTerm, setLoanTerm] = useState<number>(12); // 12 months (1 year)
-  const [calculationMethod, setCalculationMethod] = useState<"annuity" | "reducing">("annuity");
-  const [interestRateType, setInterestRateType] = useState<"yearly" | "monthly">("yearly");
+  const [calculationMethod, setCalculationMethod] = useState<
+    "annuity" | "reducing"
+  >("annuity");
+  const [interestRateType] = useState<"yearly" | "monthly">("yearly");
   const [result, setResult] = useState<LoanResult | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(12);
 
+  // Fetch banks data
+  const { data: banksData, loading: banksLoading } = useRequest(
+    async () => {
+      const response = await bankService.getBanks({ page: 1, perPage: 100 });
+      return response.data ?? [];
+    },
+    {
+      onError: (error) => {
+        console.error("Error loading banks:", error);
+        message.error(t("loanCalculator.cannotLoadBanks"));
+      },
+    },
+  );
+
+  const banks = banksData ?? [];
+
+  // Get selected bank's term rates
+  const selectedBankData = banks.find((bank) => bank.id === selectedBank);
+  const availableTermRates = selectedBankData?.termRates ?? [];
+
+  // Handle bank and term rate selection
+  const handleBankChange = (bankId: string) => {
+    setSelectedBank(bankId);
+    setSelectedTermRate(null);
+    const bank = banks.find((b) => b.id === bankId);
+    if (bank && bank.termRates.length > 0) {
+      setSelectedTermRate(bank.termRates[0] ?? null);
+    }
+  };
+
+  const handleTermRateChange = (termRateIndex: number) => {
+    if (availableTermRates[termRateIndex]) {
+      setSelectedTermRate(availableTermRates[termRateIndex]);
+    }
+  };
 
   const calculateLoan = (): LoanResult => {
-    const monthlyRate = interestRateType === "yearly" ? interestRate / 100 / 12 : interestRate / 100;
+    if (!selectedTermRate) {
+      return {
+        monthlyPayment: 0,
+        totalInterest: 0,
+        totalPayment: 0,
+        schedule: [],
+      };
+    }
+
+    const monthlyRate =
+      interestRateType === "yearly"
+        ? selectedTermRate.interestRate / 100 / 12
+        : selectedTermRate.interestRate / 100;
     const totalMonths = loanTerm;
-    
+
     if (calculationMethod === "annuity") {
       // Equal Installment Payment (Gốc + lãi chia đều hàng tháng)
-      const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, totalMonths)) / 
-                            (Math.pow(1 + monthlyRate, totalMonths) - 1);
-      
+      const monthlyPayment =
+        (loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, totalMonths))) /
+        (Math.pow(1 + monthlyRate, totalMonths) - 1);
+
       const schedule: LoanCalculation[] = [];
       let remainingBalance = loanAmount;
-      
+
       for (let month = 1; month <= totalMonths; month++) {
         const interestPayment = remainingBalance * monthlyRate;
         const principalPayment = monthlyPayment - interestPayment;
         remainingBalance -= principalPayment;
-        
+
         schedule.push({
           month,
           principalPayment,
@@ -73,7 +142,7 @@ const LoanCalculator = () => {
           remainingBalance: Math.max(0, remainingBalance),
         });
       }
-      
+
       return {
         monthlyPayment,
         totalInterest: monthlyPayment * totalMonths - loanAmount,
@@ -86,13 +155,13 @@ const LoanCalculator = () => {
       const schedule: LoanCalculation[] = [];
       let remainingBalance = loanAmount;
       let totalInterest = 0;
-      
+
       for (let month = 1; month <= totalMonths; month++) {
         const interestPayment = remainingBalance * monthlyRate;
         const totalPayment = principalPayment + interestPayment;
         remainingBalance -= principalPayment;
         totalInterest += interestPayment;
-        
+
         schedule.push({
           month,
           principalPayment,
@@ -101,7 +170,7 @@ const LoanCalculator = () => {
           remainingBalance: Math.max(0, remainingBalance),
         });
       }
-      
+
       return {
         monthlyPayment: schedule[0]?.totalPayment ?? 0,
         totalInterest,
@@ -112,22 +181,29 @@ const LoanCalculator = () => {
   };
 
   useEffect(() => {
-    if (loanAmount > 0 && interestRate > 0 && loanTerm > 0) {
+    if (loanAmount > 0 && selectedTermRate && loanTerm > 0) {
       const calculation = calculateLoan();
       setResult(calculation);
-      return
+      return;
     }
 
     setResult(null);
-  }, [loanAmount, interestRate, loanTerm, calculationMethod, interestRateType]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    loanAmount,
+    selectedTermRate,
+    loanTerm,
+    calculationMethod,
+    interestRateType,
+  ]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN').format(amount);
+    return new Intl.NumberFormat("vi-VN").format(amount);
   };
 
   // const handleExportSchedule = () => {
   //   if (!result) return;
-  //   
+  //
   //   const csvContent = [
   //     ['Tháng', 'Gốc trả', 'Lãi trả', 'Tổng trả', 'Dư nợ còn lại'],
   //     ...result.schedule.map(item => [
@@ -138,7 +214,7 @@ const LoanCalculator = () => {
   //       formatCurrency(item.remainingBalance),
   //     ])
   //   ].map(row => row.join(',')).join('\n');
-  //   
+  //
   //   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   //   const link = document.createElement('a');
   //   const url = URL.createObjectURL(blob);
@@ -152,27 +228,27 @@ const LoanCalculator = () => {
 
   const columns = [
     {
-      title: 'Tháng',
-      dataIndex: 'month',
-      key: 'month',
+      title: t("loanCalculator.month"),
+      dataIndex: "month",
+      key: "month",
       width: 80,
     },
     {
-      title: 'Gốc trả',
-      dataIndex: 'principalPayment',
-      key: 'principalPayment',
+      title: t("loanCalculator.principalPayment"),
+      dataIndex: "principalPayment",
+      key: "principalPayment",
       render: (value: number) => formatCurrency(value),
     },
     {
-      title: 'Lãi trả',
-      dataIndex: 'interestPayment',
-      key: 'interestPayment',
+      title: t("loanCalculator.interestPayment"),
+      dataIndex: "interestPayment",
+      key: "interestPayment",
       render: (value: number) => formatCurrency(value),
     },
     {
-      title: 'Tổng trả',
-      dataIndex: 'totalPayment',
-      key: 'totalPayment',
+      title: t("loanCalculator.totalPaymentColumn"),
+      dataIndex: "totalPayment",
+      key: "totalPayment",
       render: (value: number) => (
         <Text strong className="text-green-600">
           {formatCurrency(value)}
@@ -180,21 +256,30 @@ const LoanCalculator = () => {
       ),
     },
     {
-      title: 'Dư nợ còn lại',
-      dataIndex: 'remainingBalance',
-      key: 'remainingBalance',
+      title: t("loanCalculator.remainingBalance"),
+      dataIndex: "remainingBalance",
+      key: "remainingBalance",
       render: (value: number) => formatCurrency(value),
     },
   ];
+
+  if (banksLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Spin size="large" />
+        <Text className="ml-3">{t("loanCalculator.loadingBanks")}</Text>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
       <Card className="shadow-lg">
         <div className="mb-6">
           <div className="mb-4 flex items-center justify-center gap-3">
-           <div>
+            <div>
               <Title level={3} className="mb-0">
-                Công cụ tính khoản vay
+                {t("loanCalculator.title")}
               </Title>
             </div>
           </div>
@@ -208,7 +293,7 @@ const LoanCalculator = () => {
               <div>
                 <Text strong className="mb-2 block">
                   <DollarSign className="mr-1 inline h-4 w-4" />
-                  Số tiền vay
+                  {t("loanCalculator.loanAmount")}
                 </Text>
                 <Input
                   size="large"
@@ -217,55 +302,90 @@ const LoanCalculator = () => {
                     const value = e.target.value.replace(/\D/g, "");
                     setLoanAmount(Number(value));
                   }}
-                  suffix="VNĐ" //  TODO: consider mutlple currency
-                  placeholder="Nhập số tiền vay"
+                  suffix={getCurrencyByLocale(locale as SupportedLocale)}
+                  placeholder={t("loanCalculator.enterLoanAmount")}
                   className="w-full"
                 />
 
-                {/* TODO: numberToString function is not working correctly, ex: 1.235.020.000 => 1 tỷ */}
-                {/* <Text type="secondary" className="text-sm">
-                  {numberToString(loanAmount)}
-                </Text> */}
+                <Text type="secondary" className="text-sm">
+                  {numberToString(
+                    loanAmount,
+                    locale as SupportedLocale,
+                    getCurrencyByLocale(locale as SupportedLocale),
+                  )}
+                </Text>
               </div>
 
-              {/* Interest Rate */}
+              {/* Bank Selection */}
               <div>
                 <Text strong className="mb-2 block">
-                  <TrendingUp className="mr-1 inline h-4 w-4" />
-                  Lãi suất
+                  <Building className="mr-1 inline h-4 w-4" />
+                  {t("loanCalculator.selectBank")}
                 </Text>
-                <Row gutter={12}>
-                  <Col span={12}>
-                    <Input
-                      size="large"
-                      value={interestRate}
-                      onChange={(e) => {
-                        const value = parseFloat(e.target.value) || 0;
-                        setInterestRate(value);
-                      }}
-                      suffix="%"
-                      placeholder="Nhập lãi suất"
-                      className="w-full"
-                    />
-                  </Col>
-                  <Col span={12}>
-                    <Radio.Group
-                      value={interestRateType}
-                      onChange={(e) => setInterestRateType(e.target.value as "yearly" | "monthly")}
-                      className="w-full"
-                    >
-                      <Radio value="yearly">Năm</Radio>
-                      <Radio value="monthly">Tháng</Radio>
-                    </Radio.Group>
-                  </Col>
-                </Row>
+                <Select
+                  size="large"
+                  value={selectedBank}
+                  onChange={handleBankChange}
+                  placeholder={t("loanCalculator.chooseBankPlaceholder")}
+                  className="w-full"
+                  loading={banksLoading}
+                  showSearch
+                  filterOption={(input, option) =>
+                    (option?.label ?? "")
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
+                  }
+                  options={banks.map((bank) => ({
+                    value: bank.id,
+                    label: bank.name,
+                  }))}
+                />
               </div>
+
+              {/* Term Rate Selection */}
+              {availableTermRates.length > 0 && (
+                <div>
+                  <Text strong className="mb-2 block">
+                    <TrendingUp className="mr-1 inline h-4 w-4" />
+                    {t("loanCalculator.selectTermRate")}
+                  </Text>
+                  <Select
+                    size="large"
+                    value={
+                      selectedTermRate
+                        ? availableTermRates.findIndex(
+                            (rate) =>
+                              rate.term === selectedTermRate.term &&
+                              rate.interestRate ===
+                                selectedTermRate.interestRate,
+                          )
+                        : undefined
+                    }
+                    onChange={handleTermRateChange}
+                    placeholder={t("loanCalculator.chooseTermRatePlaceholder")}
+                    className="w-full"
+                    options={availableTermRates.map((rate, index) => ({
+                      value: index,
+                      label: `${rate.term}: ${rate.interestRate}%`,
+                    }))}
+                  />
+                  {selectedTermRate && (
+                    <div className="mt-2">
+                      <Text type="secondary" className="text-sm">
+                        {t("loanCalculator.selectedRate")}:{" "}
+                        {selectedTermRate.interestRate}% (
+                        {selectedTermRate.term})
+                      </Text>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Loan Term */}
               <div>
                 <Text strong className="mb-2 block">
                   <Calendar className="mr-1 inline h-4 w-4" />
-                  Thời gian vay
+                  {t("loanCalculator.loanTerm")}
                 </Text>
                 <Input
                   size="large"
@@ -274,8 +394,8 @@ const LoanCalculator = () => {
                     const value = parseInt(e.target.value) || 1;
                     setLoanTerm(Math.min(Math.max(value, 1), 300));
                   }}
-                  suffix="tháng"
-                  placeholder="Nhập thời gian vay (1-300 tháng)"
+                  suffix={t("loanCalculator.months")}
+                  placeholder={t("loanCalculator.enterLoanTerm")}
                   className="w-full"
                 />
               </div>
@@ -284,22 +404,30 @@ const LoanCalculator = () => {
               <div>
                 <Text strong className="mb-2 block">
                   <FileText className="mr-1 inline h-4 w-4" />
-                  Phương pháp tính
+                  {t("loanCalculator.calculationMethod")}
                 </Text>
                 <Radio.Group
                   value={calculationMethod}
-                  onChange={(e) => setCalculationMethod(e.target.value as "annuity" | "reducing")}
+                  onChange={(e) =>
+                    setCalculationMethod(
+                      e.target.value as "annuity" | "reducing",
+                    )
+                  }
                   className="w-full"
                 >
                   <Space direction="vertical" className="w-full">
                     <Radio value="annuity" className="w-full">
                       <div>
-                        <Text strong>Gốc + lãi chia đều hàng tháng</Text>
+                        <Text strong>
+                          {t("loanCalculator.equalInstallment")}
+                        </Text>
                       </div>
                     </Radio>
                     <Radio value="reducing" className="w-full">
                       <div>
-                        <Text strong>Gốc cố định, lãi giảm dần</Text>
+                        <Text strong>
+                          {t("loanCalculator.reducingBalance")}
+                        </Text>
                       </div>
                     </Radio>
                   </Space>
@@ -313,14 +441,14 @@ const LoanCalculator = () => {
             {result && (
               <Card className="border-green-200 bg-gradient-to-br from-green-50 to-blue-50">
                 <Title level={4} className="mb-4">
-                  Kết quả tính toán
+                  {t("loanCalculator.calculationResults")}
                 </Title>
 
                 <Space direction="vertical" size="large" className="w-full">
                   {/* Số tiền trả tháng đầu */}
                   <div>
-                    <Text className="block text-sm mb-1">
-                      Số tiền trả tháng đầu
+                    <Text className="mb-1 block text-sm">
+                      {t("loanCalculator.firstMonthPayment")}
                     </Text>
                     <Text className="block text-3xl font-bold text-green-600">
                       {formatCurrency(result.monthlyPayment)}
@@ -329,8 +457,8 @@ const LoanCalculator = () => {
 
                   {/* Tổng lãi phải trả */}
                   <div>
-                    <Text className="block text-sm mb-1">
-                      Tổng lãi phải trả
+                    <Text className="mb-1 block text-sm">
+                      {t("loanCalculator.totalInterest")}
                     </Text>
                     <Text className="block text-2xl font-bold text-orange-600">
                       {formatCurrency(result.totalInterest)}
@@ -339,15 +467,15 @@ const LoanCalculator = () => {
 
                   {/* Tổng số tiền gốc và lãi phải trả */}
                   <div>
-                    <Text className="block text-sm mb-1">
-                      Tổng số tiền gốc và lãi phải trả
+                    <Text className="mb-1 block text-sm">
+                      {t("loanCalculator.totalPayment")}
                     </Text>
                     <Text className="block text-2xl font-bold text-red-600">
                       {formatCurrency(result.totalPayment)}
                     </Text>
                   </div>
 
-                    {/* TODO: Do not need this feature for now */}
+                  {/* TODO: Do not need this feature for now */}
                   {/* <div className="text-center">
                     <Button
                       type="primary"
@@ -369,13 +497,16 @@ const LoanCalculator = () => {
           <>
             <Divider />
             <div className="mb-4">
-              <Title level={4}>Kỳ hạn thanh toán</Title>
+              <Title level={4}>{t("loanCalculator.paymentSchedule")}</Title>
             </div>
 
             <div className="overflow-x-auto">
               <Table
                 columns={columns}
-                dataSource={result.schedule.slice((currentPage - 1) * pageSize, currentPage * pageSize)}
+                dataSource={result.schedule.slice(
+                  (currentPage - 1) * pageSize,
+                  currentPage * pageSize,
+                )}
                 pagination={false}
                 size="small"
                 className="mb-4"
@@ -393,7 +524,7 @@ const LoanCalculator = () => {
                   setPageSize(size || 12);
                 }}
                 showTotal={(total, range) =>
-                  `${range[0]}-${range[1]} của ${total} kỳ hạn`
+                  `${range[0]}-${range[1]} ${t("loanCalculator.of")} ${total} ${t("loanCalculator.paymentSchedule")}`
                 }
                 showSizeChanger={false}
               />

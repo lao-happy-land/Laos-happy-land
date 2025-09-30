@@ -1,6 +1,7 @@
 "use client";
 
 import type { Property } from "@/@types/types";
+import { useTranslations } from "next-intl";
 import {
   MapPin,
   Bath,
@@ -17,9 +18,12 @@ import { numberToString } from "@/share/helper/number-to-string";
 import { Button } from "antd";
 import { useState } from "react";
 import { formatCreatedDate } from "@/share/helper/format-date";
+import { useUrlLocale } from "@/utils/locale";
 
 export default function PropertyCard({ property }: { property: Property }) {
+  const t = useTranslations();
   const [isPhoneRevealed, setIsPhoneRevealed] = useState(false);
+  const locale = useUrlLocale();
 
   const hiddenPhone = property.owner?.phone?.slice(0, -4) + "****";
 
@@ -45,12 +49,12 @@ export default function PropertyCard({ property }: { property: Property }) {
   };
 
   return (
-    <Link href={`/property/${property.id}`} className="block">
+    <Link href={`/${locale}/property/${property.id}`} className="block">
       <div className="group relative h-full overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-500 hover:border-red-200 hover:shadow-lg">
         <div className="absolute top-4 right-4 z-10">
           <div className="flex items-center gap-1 rounded-full bg-green-500/90 px-2.5 py-1 text-xs font-medium text-white shadow-lg backdrop-blur-sm">
             <Shield className="h-3 w-3" />
-            <span>Đã xác thực</span>
+            <span>{t("property.verified")}</span>
           </div>
         </div>
 
@@ -130,13 +134,13 @@ export default function PropertyCard({ property }: { property: Property }) {
               <span className="text-2xl font-bold text-red-600">
                 {property.price
                   ? numberToString(Number(property.price))
-                  : "Liên hệ"}
+                  : t("property.contactForPrice")}
               </span>
               <span className="text-gray-500">•</span>
               <div className="flex items-center gap-1">
                 <MapPin className="h-4 w-4" />
                 <span className="text-sm text-gray-600">
-                  {property.location?.address ?? "Chưa cập nhật"}
+                  {property.location?.address ?? t("common.notUpdated")}
                 </span>
               </div>
             </div>
@@ -183,7 +187,10 @@ export default function PropertyCard({ property }: { property: Property }) {
                 </div>
                 <div className="flex items-center gap-1 text-xs text-gray-500">
                   <Calendar className="h-3 w-3" />
-                  <span>Đăng {formatCreatedDate(property.createdAt)}</span>
+                  <span>
+                    {t("property.posted")}{" "}
+                    {formatCreatedDate(property.createdAt)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -199,7 +206,7 @@ export default function PropertyCard({ property }: { property: Property }) {
                   {isPhoneRevealed ? property.owner?.phone : hiddenPhone}
                 </span>
                 <span className="hidden text-xs opacity-90 sm:inline">
-                  - Hiển số
+                  - {t("property.showNumber")}
                 </span>
               </Button>
             </div>
