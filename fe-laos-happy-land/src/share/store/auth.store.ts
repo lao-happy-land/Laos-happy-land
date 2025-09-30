@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { authService } from "@/share/service/auth.service";
 import type { User } from "@/share/service/auth.service";
+import { useLocaleStore } from "./locale.store";
 
 interface AuthState {
   user: User | null;
@@ -49,6 +50,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   login: async (email: string, password: string, redirectUrl?: string) => {
     try {
+      const locale = useLocaleStore.getState().getLocale();
       // Use auth service to handle login
       const response = await authService.login({ email, password });
 
@@ -73,9 +75,9 @@ export const useAuthStore = create<AuthState>((set) => ({
         if (redirectUrl && redirectUrl !== "/") {
           window.location.href = redirectUrl;
         } else if (userData?.role?.toLowerCase() === "admin") {
-          window.location.href = "/admin";
+          window.location.href = `/${locale}/admin`;
         } else {
-          window.location.href = "/";
+          window.location.href = `/${locale}/`;
         }
       }, 1000); // Increased delay to ensure cookie is set
     } catch (error: unknown) {
@@ -106,6 +108,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   handleGoogleCallback: async (token: string, redirectUrl?: string) => {
     try {
+      const locale = useLocaleStore.getState().getLocale();
       // Use auth service to handle Google callback
       const response = await authService.handleGoogleCallback(token);
 
@@ -133,9 +136,9 @@ export const useAuthStore = create<AuthState>((set) => ({
         if (finalRedirectUrl && finalRedirectUrl !== "/") {
           window.location.href = finalRedirectUrl;
         } else if (userData?.role?.toLowerCase() === "admin") {
-          window.location.href = "/admin";
+          window.location.href = `/${locale}/admin`;
         } else {
-          window.location.href = "/";
+          window.location.href = `/${locale}/`;
         }
       }, 1000);
     } catch (error: unknown) {
@@ -150,8 +153,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: () => {
+    const locale = useLocaleStore.getState().getLocale();
     authService.logout();
-    window.location.href = "/";
+    window.location.href = `/${locale}/`;
 
     set({
       user: null,

@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useUserRoles } from "@/share/hook/useUserRoles";
 import { useRequest } from "ahooks";
 import { userService } from "@/share/service/user.service";
+import { useTranslations } from "next-intl";
 
 interface UserRole {
   id: string;
@@ -37,6 +38,7 @@ export default function UserModal({
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const { userRoles } = useUserRoles();
+  const t = useTranslations();
 
   useEffect(() => {
     if (user && action === "update") {
@@ -59,15 +61,13 @@ export default function UserModal({
     {
       manual: true,
       onSuccess: () => {
-        message.success("Tạo người dùng thành công!");
+        message.success(t("admin.createUserSuccess"));
         onClose();
         refreshUsers();
       },
       onError: (error) => {
         console.error("Error creating user:", error);
-        message.error(
-          "Không thể tạo người dùng. Vui lòng kiểm tra thông tin và thử lại.",
-        );
+        message.error(t("admin.createUserFailed"));
       },
     },
   );
@@ -79,15 +79,13 @@ export default function UserModal({
     {
       manual: true,
       onSuccess: () => {
-        message.success("Cập nhật người dùng thành công!");
+        message.success(t("admin.updateUserSuccess"));
         onClose();
         refreshUsers();
       },
       onError: (error) => {
         console.error("Error updating user:", error);
-        message.error(
-          "Không thể cập nhật người dùng. Vui lòng kiểm tra thông tin và thử lại.",
-        );
+        message.error(t("admin.updateUserFailed"));
       },
     },
   );
@@ -99,8 +97,8 @@ export default function UserModal({
       } else {
         await updateUser(values as UpdateUserDto);
       }
-    } catch (error) {
-      console.error("Error submitting form:", error);
+    } catch {
+      console.error("Error submitting form:");
     }
   };
 
@@ -108,18 +106,20 @@ export default function UserModal({
     <Modal
       open={isOpen}
       onCancel={onClose}
-      title={action === "create" ? "Tạo người dùng" : "Cập nhật người dùng"}
+      title={
+        action === "create" ? t("admin.createUser") : t("admin.updateUser")
+      }
       onOk={() => {
         form.submit();
       }}
-      okText={action === "create" ? "Tạo" : "Cập nhật"}
-      cancelText="Hủy"
+      okText={action === "create" ? t("admin.create") : t("admin.update")}
+      cancelText={t("admin.cancel")}
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit}>
         <Form.Item
           name="fullName"
-          label="Họ và tên"
-          rules={[{ required: true, message: "Vui lòng nhập họ và tên!" }]}
+          label={t("admin.fullName")}
+          rules={[{ required: true, message: t("admin.pleaseEnterFullName") }]}
         >
           <Input />
         </Form.Item>
@@ -127,10 +127,10 @@ export default function UserModal({
           <Col span={12}>
             <Form.Item
               name="email"
-              label="Email"
+              label={t("admin.email")}
               rules={[
-                { required: true, message: "Vui lòng nhập email!" },
-                { type: "email", message: "Email không hợp lệ!" },
+                { required: true, message: t("admin.pleaseEnterEmail") },
+                { type: "email", message: t("admin.invalidEmail") },
               ]}
             >
               <Input disabled={action === "update"} />
@@ -139,8 +139,8 @@ export default function UserModal({
           <Col span={12}>
             <Form.Item
               name="roleId"
-              label="Vai trò"
-              rules={[{ required: true, message: "Vui lòng chọn vai trò!" }]}
+              label={t("admin.role")}
+              rules={[{ required: true, message: t("admin.pleaseSelectRole") }]}
             >
               <Select
                 options={userRoles.map((role) => ({
@@ -153,16 +153,18 @@ export default function UserModal({
         </Row>
         <Form.Item
           name="phone"
-          label="Số điện thoại"
-          rules={[{ required: true, message: "Vui lòng nhập số điện thoại!" }]}
+          label={t("admin.phone")}
+          rules={[{ required: true, message: t("admin.pleaseEnterPhone") }]}
         >
           <Input />
         </Form.Item>
         {action === "create" && (
           <Form.Item
             name="password"
-            label="Mật khẩu"
-            rules={[{ required: true, message: "Vui lòng nhập mật khẩu!" }]}
+            label={t("admin.password")}
+            rules={[
+              { required: true, message: t("admin.pleaseEnterPassword") },
+            ]}
           >
             <Input.Password />
           </Form.Item>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useClickAway, useEventListener } from "ahooks";
+import { useTranslations } from "next-intl";
 import {
   Filter,
   MapPin,
@@ -30,7 +31,6 @@ import {
   Pagination,
   App,
 } from "antd";
-import { PRICE_RANGE_OPTIONS } from "@/share/constant/home-search";
 import propertyService from "@/share/service/property.service";
 import propertyTypeService from "@/share/service/property-type.service";
 import locationInfoService from "@/share/service/location-info.service";
@@ -46,13 +46,21 @@ import PropertyCardSkeleton from "@/components/business/common/property-card-ske
 import PropertiesMap from "@/components/business/common/properties-map";
 
 import Image from "next/image";
+import { useUrlLocale } from "@/utils/locale";
+import {
+  getPropertyParamsByLocale,
+  getValidLocale,
+  type SupportedLocale,
+} from "@/share/helper/locale.helper";
 
 interface PropertiesProps {
   transaction: "sale" | "rent" | "project";
 }
 
 const Properties = ({ transaction }: PropertiesProps) => {
+  const t = useTranslations();
   const { message } = App.useApp();
+  const locale = useUrlLocale();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -109,7 +117,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
       },
       onError: (error) => {
         console.error("Failed to fetch property types:", error);
-        message.error("Không thể tải danh sách loại bất động sản");
+        message.error(t("admin.cannotLoadPropertyTypes"));
       },
     },
   );
@@ -126,7 +134,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
       },
       onError: (error) => {
         console.error("Failed to fetch location infos:", error);
-        message.error("Không thể tải danh sách khu vực");
+        message.error(t("admin.cannotLoadLocations"));
       },
     },
   );
@@ -143,7 +151,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
       },
       onError: (error) => {
         console.error("Failed to fetch trending locations:", error);
-        message.error("Không thể tải danh sách khu vực trending");
+        message.error(t("admin.cannotLoadTrendingLocations"));
       },
     },
   );
@@ -193,7 +201,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
         transaction: transaction,
         page: currentPage,
         perPage: pageSize,
-        currency: "LAK",
+        ...getPropertyParamsByLocale(locale as SupportedLocale),
         ...params,
       };
 
@@ -317,7 +325,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
 
   // Create locations array from API data
   const locations = [
-    { id: "all", label: "Tất cả khu vực" },
+    { id: "all", label: t("search.allAreas") },
     ...locationInfos.map((locationInfo) => ({
       id: locationInfo.id,
       label: locationInfo.name,
@@ -337,8 +345,6 @@ const Properties = ({ transaction }: PropertiesProps) => {
     ...locationInfos.map((locationInfo) => locationInfo.id),
   ];
 
-  const priceRanges = PRICE_RANGE_OPTIONS;
-
   // Generate property type options from API data
 
   const propertyTypeOptions = [
@@ -347,6 +353,18 @@ const Properties = ({ transaction }: PropertiesProps) => {
       name: type.name,
       icon: <Building2 className="h-4 w-4" />,
     })),
+  ];
+
+  // Create translated price ranges
+  const priceRanges = [
+    { value: "all", label: t("search.priceRanges.all") },
+    { value: "under-500", label: t("search.priceRanges.under500") },
+    { value: "500-800", label: t("search.priceRanges.range500to800") },
+    { value: "800-1000", label: t("search.priceRanges.range800to1000") },
+    { value: "1000-2000", label: t("search.priceRanges.range1to2billion") },
+    { value: "2000-5000", label: t("search.priceRanges.range2to5billion") },
+    { value: "5000-10000", label: t("search.priceRanges.range5to10billion") },
+    { value: "over-10000", label: t("search.priceRanges.over10billion") },
   ];
 
   const handleSearch = () => {
@@ -365,7 +383,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
     if (keyword) params.keyword = keyword;
 
     updateSearchParams(params);
-    message.success("Đang tìm kiếm...");
+    message.success(t("search.searching"));
   };
 
   const handleSelectedPropertyType = (type: string) => {
@@ -564,16 +582,16 @@ const Properties = ({ transaction }: PropertiesProps) => {
         minValue = 100;
         maxValue = 200;
         break;
-      case "200-500":
+      case "200-300":
         minValue = 200;
+        maxValue = 300;
+        break;
+      case "300-500":
+        minValue = 300;
         maxValue = 500;
         break;
-      case "500-1000":
+      case "over-500":
         minValue = 500;
-        maxValue = 1000;
-        break;
-      case "over-1000":
-        minValue = 1000;
         maxValue = 1000;
         break;
       case "all":
@@ -708,12 +726,12 @@ const Properties = ({ transaction }: PropertiesProps) => {
       newSelectedAreaRange = "50-100";
     } else if (urlMinAreaNum === 100 && urlMaxAreaNum === 200) {
       newSelectedAreaRange = "100-200";
-    } else if (urlMinAreaNum === 200 && urlMaxAreaNum === 500) {
-      newSelectedAreaRange = "200-500";
+    } else if (urlMinAreaNum === 200 && urlMaxAreaNum === 300) {
+      newSelectedAreaRange = "200-300";
+    } else if (urlMinAreaNum === 300 && urlMaxAreaNum === 500) {
+      newSelectedAreaRange = "300-500";
     } else if (urlMinAreaNum === 500 && urlMaxAreaNum === 1000) {
-      newSelectedAreaRange = "500-1000";
-    } else if (urlMinAreaNum === 1000 && urlMaxAreaNum === 1000) {
-      newSelectedAreaRange = "over-1000";
+      newSelectedAreaRange = "over-500";
     } else if (urlMinAreaNum !== 0 || urlMaxAreaNum !== 1000) {
       newSelectedAreaRange = "";
     }
@@ -804,15 +822,15 @@ const Properties = ({ transaction }: PropertiesProps) => {
             <div className="my-4 flex items-center text-sm">
               <div className="flex items-center space-x-2">
                 <span className="cursor-pointer text-gray-500 transition-colors hover:text-red-500 hover:underline">
-                  Trang chủ
+                  {t("navigation.home")}
                 </span>
                 <ChevronRight className="h-4 w-4 text-gray-300" />
                 <span className="font-medium text-gray-900">
                   {transaction === "sale"
-                    ? "Nhà đất bán"
+                    ? t("navigation.propertiesForSale")
                     : transaction === "rent"
-                      ? "Nhà đất cho thuê"
-                      : "Dự án"}
+                      ? t("navigation.propertiesForRent")
+                      : t("navigation.projects")}
                 </span>
                 {getFilterDisplayText() && (
                   <>
@@ -837,7 +855,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                   <Input
                     size="large"
                     prefix={<Search className="h-5 w-5 text-gray-400" />}
-                    placeholder="Nhập địa điểm, dự án, hoặc từ khóa..."
+                    placeholder={t("search.locationPlaceholder")}
                     value={keyword}
                     onChange={(e) => setKeyword(e.target.value)}
                     onClick={handleSearchInputClick}
@@ -868,7 +886,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                       {selectedLocation !== "all"
                         ? (locations.find((loc) => loc.id === selectedLocation)
                             ?.label ?? selectedLocation)
-                        : "Tất cả khu vực"}
+                        : t("search.allAreas")}
                     </span>
                   </div>
                   <ChevronRight size={16} className="rotate-90 text-gray-400" />
@@ -883,7 +901,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                 className="h-12 rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-8 font-semibold shadow-lg transition-all duration-200 hover:from-red-600 hover:to-red-700 hover:shadow-xl"
               >
                 <Search className="hidden h-4 w-4 lg:block" />
-                Tìm kiếm
+                {t("common.search")}
               </Button>
             </div>
 
@@ -900,7 +918,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                       <span className="text-xs">🏠</span>
                     </div>
                     <span className="text-sm font-medium text-gray-700">
-                      Loại BĐS
+                      {t("search.propertyType")}
                     </span>
                   </div>
                   <ChevronRight
@@ -920,7 +938,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                     <div className="border-b border-gray-100 p-3">
                       <div className="flex items-center justify-between">
                         <Typography.Title level={5} className="mb-0 text-sm">
-                          Loại nhà đất
+                          {t("search.propertyType")}
                         </Typography.Title>
                         <Button
                           type="text"
@@ -936,7 +954,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                         <div className="flex items-center justify-center py-4">
                           <Spin size="small" />
                           <span className="ml-2 text-sm text-gray-500">
-                            Đang tải loại bất động sản...
+                            {t("search.loadingPropertyTypes")}
                           </span>
                         </div>
                       ) : (
@@ -978,14 +996,14 @@ const Properties = ({ transaction }: PropertiesProps) => {
                         }}
                         className="text-sm text-gray-500 hover:text-red-500"
                       >
-                        Đặt lại
+                        {t("common.reset")}
                       </Button>
                       <Button
                         type="primary"
                         onClick={() => setPropertyTypeOpen(false)}
                         className="border-0 bg-red-500 text-sm hover:bg-red-600"
                       >
-                        Áp dụng
+                        {t("common.apply")}
                       </Button>
                     </div>
                   </div>
@@ -1003,7 +1021,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                       <span className="text-xs">💰</span>
                     </div>
                     <span className="text-sm font-medium text-gray-700">
-                      Mức giá
+                      {t("search.priceRange")}
                     </span>
                   </div>
                   <ChevronRight
@@ -1023,7 +1041,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                     <div className="border-b border-gray-100 p-3">
                       <div className="flex items-center justify-between">
                         <Typography.Title level={5} className="mb-0 text-sm">
-                          Mức giá
+                          {t("search.priceRange")}
                         </Typography.Title>
                         <Button
                           type="text"
@@ -1040,13 +1058,13 @@ const Properties = ({ transaction }: PropertiesProps) => {
                         <div className="mb-4 flex gap-4">
                           <div className="flex-1">
                             <Typography.Text className="mb-1 block text-sm text-gray-600">
-                              Từ:{" "}
+                              {t("search.from")}:{" "}
                               {minPrice
                                 ? numberToString(parseInt(minPrice))
                                 : "0"}
                             </Typography.Text>
                             <Input
-                              placeholder="Từ"
+                              placeholder={t("search.from")}
                               className="rounded-lg"
                               value={minPrice}
                               onChange={(e) =>
@@ -1061,13 +1079,13 @@ const Properties = ({ transaction }: PropertiesProps) => {
                           </div>
                           <div className="flex-1">
                             <Typography.Text className="mb-1 block text-sm text-gray-600">
-                              Đến:{" "}
+                              {t("search.to")}:{" "}
                               {maxPrice
                                 ? numberToString(parseInt(maxPrice))
                                 : "∞"}
                             </Typography.Text>
                             <Input
-                              placeholder="Đến"
+                              placeholder={t("search.to")}
                               className="rounded-lg"
                               value={maxPrice}
                               onChange={(e) =>
@@ -1125,14 +1143,14 @@ const Properties = ({ transaction }: PropertiesProps) => {
                         }}
                         className="text-sm text-gray-500 hover:text-red-500"
                       >
-                        Đặt lại
+                        {t("common.reset")}
                       </Button>
                       <Button
                         type="primary"
                         onClick={() => setPriceRangeOpen(false)}
                         className="border-0 bg-red-500 text-sm hover:bg-red-600"
                       >
-                        Áp dụng
+                        {t("common.apply")}
                       </Button>
                     </div>
                   </div>
@@ -1150,7 +1168,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                       <span className="text-xs">📐</span>
                     </div>
                     <span className="text-sm font-medium text-gray-700">
-                      Diện tích
+                      {t("search.area")}
                     </span>
                   </div>
                   <ChevronRight
@@ -1170,7 +1188,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                     <div className="border-b border-gray-100 p-3">
                       <div className="flex items-center justify-between">
                         <Typography.Title level={5} className="mb-0 text-sm">
-                          Diện tích
+                          {t("search.area")}
                         </Typography.Title>
                         <Button
                           type="text"
@@ -1187,10 +1205,10 @@ const Properties = ({ transaction }: PropertiesProps) => {
                         <div className="mb-4 flex gap-4">
                           <div className="flex-1">
                             <Typography.Text className="mb-1 block text-sm text-gray-600">
-                              Từ: {minArea || "0"}m²
+                              {t("search.from")}: {minArea || "0"}m²
                             </Typography.Text>
                             <Input
-                              placeholder="Từ"
+                              placeholder={t("search.from")}
                               className="rounded-lg"
                               value={minArea}
                               onChange={(e) => {
@@ -1210,10 +1228,10 @@ const Properties = ({ transaction }: PropertiesProps) => {
                           </div>
                           <div className="flex-1">
                             <Typography.Text className="mb-1 block text-sm text-gray-600">
-                              Đến: {maxArea || "∞"}m²
+                              {t("search.to")}: {maxArea || "∞"}m²
                             </Typography.Text>
                             <Input
-                              placeholder="Đến"
+                              placeholder={t("search.to")}
                               className="rounded-lg"
                               value={maxArea}
                               onChange={(e) => {
@@ -1258,12 +1276,34 @@ const Properties = ({ transaction }: PropertiesProps) => {
                           className="w-full"
                         >
                           {[
-                            { value: "under-50", label: "Dưới 50m²" },
-                            { value: "50-100", label: "50-100m²" },
-                            { value: "100-200", label: "100-200m²" },
-                            { value: "200-500", label: "200-500m²" },
-                            { value: "500-1000", label: "500-1000m²" },
-                            { value: "over-1000", label: "Trên 1000m²" },
+                            {
+                              value: "all",
+                              label: t("search.areaRanges.all"),
+                            },
+                            {
+                              value: "under-50",
+                              label: t("search.areaRanges.under50"),
+                            },
+                            {
+                              value: "50-100",
+                              label: t("search.areaRanges.range50to100"),
+                            },
+                            {
+                              value: "100-200",
+                              label: t("search.areaRanges.range100to200"),
+                            },
+                            {
+                              value: "200-300",
+                              label: t("search.areaRanges.range200to300"),
+                            },
+                            {
+                              value: "300-500",
+                              label: t("search.areaRanges.range300to500"),
+                            },
+                            {
+                              value: "over-500",
+                              label: t("search.areaRanges.over500"),
+                            },
                           ].map((range) => (
                             <div key={range.value} className="mb-2">
                               <Radio value={range.value} className="text-sm">
@@ -1288,14 +1328,14 @@ const Properties = ({ transaction }: PropertiesProps) => {
                         }}
                         className="text-sm text-gray-500 hover:text-red-500"
                       >
-                        Đặt lại
+                        {t("common.reset")}
                       </Button>
                       <Button
                         type="primary"
                         onClick={() => setAreaOpen(false)}
                         className="border-0 bg-red-500 text-sm hover:bg-red-600"
                       >
-                        Áp dụng
+                        {t("common.apply")}
                       </Button>
                     </div>
                   </div>
@@ -1313,10 +1353,10 @@ const Properties = ({ transaction }: PropertiesProps) => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">
-                      Tìm kiếm thông minh
+                      {t("search.smartSearch")}
                     </h3>
                     <p className="text-sm text-gray-600">
-                      Khám phá các khu vực phổ biến
+                      {t("search.explorePopularAreas")}
                     </p>
                   </div>
                   <Button
@@ -1341,10 +1381,10 @@ const Properties = ({ transaction }: PropertiesProps) => {
                           </div>
                           <div>
                             <h4 className="font-semibold text-gray-900">
-                              Khu vực trending
+                              {t("search.trending")}
                             </h4>
                             <p className="text-sm text-gray-500">
-                              Các khu vực được tìm kiếm nhiều nhất
+                              {t("search.trendingDescription")}
                             </p>
                           </div>
                         </div>
@@ -1389,8 +1429,8 @@ const Properties = ({ transaction }: PropertiesProps) => {
                                         <div className="mt-1 flex items-center gap-1">
                                           <span className="text-xs text-gray-500">
                                             {location.viewCount
-                                              ? `${location.viewCount.toLocaleString()} lượt xem`
-                                              : "Đang trending"}
+                                              ? `${location.viewCount.toLocaleString()} ${t("search.views")}`
+                                              : t("search.trending")}
                                           </span>
                                         </div>
                                       </div>
@@ -1409,23 +1449,18 @@ const Properties = ({ transaction }: PropertiesProps) => {
                           </div>
                           <div>
                             <h4 className="font-semibold text-gray-900">
-                              Từ khóa hot
+                              {t("search.hotKeywords")}
                             </h4>
                             <p className="text-sm text-gray-500">
-                              Từ khóa tìm kiếm phổ biến
+                              {t("search.popularSearchTerms")}
                             </p>
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {[
-                            "Nhà phố",
-                            "Chung cư",
-                            "Biệt thự",
-                            "Đất nền",
-                            "Shophouse",
-                            "Penthouse",
-                            "Căn hộ",
-                            "Villa",
+                            t("search.propertyTypes.streetHouse"),
+                            t("search.propertyTypes.apartment"),
+                            t("search.propertyTypes.land"),
                           ].map((keyword) => (
                             <button
                               key={keyword}
@@ -1455,10 +1490,10 @@ const Properties = ({ transaction }: PropertiesProps) => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">
-                      Chọn khu vực tìm kiếm
+                      {t("search.selectLocation")}
                     </h3>
                     <p className="text-sm text-gray-600">
-                      Bạn muốn tìm bất động sản tại tỉnh thành nào?
+                      {t("search.selectLocationDescription")}
                     </p>
                   </div>
                   <Button
@@ -1480,10 +1515,10 @@ const Properties = ({ transaction }: PropertiesProps) => {
                       </div>
                       <div>
                         <h4 className="font-semibold text-gray-900">
-                          Top tỉnh thành nổi bật
+                          {t("search.topLocations")}
                         </h4>
                         <p className="text-sm text-gray-500">
-                          Các khu vực được quan tâm nhiều nhất
+                          {t("search.topLocationsDescription")}
                         </p>
                       </div>
                     </div>
@@ -1548,10 +1583,10 @@ const Properties = ({ transaction }: PropertiesProps) => {
                       </div>
                       <div>
                         <h4 className="font-semibold text-gray-900">
-                          Tất cả tỉnh thành
+                          {t("search.allLocations")}
                         </h4>
                         <p className="text-sm text-gray-500">
-                          Chọn từ danh sách đầy đủ
+                          {t("search.allLocationsDescription")}
                         </p>
                       </div>
                     </div>
@@ -1576,7 +1611,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                               >
                                 <span className="capitalize">
                                   {province === "all"
-                                    ? "Tất cả khu vực"
+                                    ? t("search.allAreas")
                                     : (locationInfos.find(
                                         (loc) => loc.id === province,
                                       )?.name ?? province)}
@@ -1602,7 +1637,9 @@ const Properties = ({ transaction }: PropertiesProps) => {
         {/* Layout Toggle */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Hiển thị:</span>
+            <span className="text-sm font-medium text-gray-700">
+              {t("search.display")}
+            </span>
             <div className="flex rounded-lg border border-gray-200 bg-white p-1">
               <Button
                 type={layout === "list" ? "primary" : "text"}
@@ -1611,7 +1648,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                 onClick={() => setLayout("list")}
                 className="flex items-center gap-1"
               >
-                Danh sách
+                {t("search.list")}
               </Button>
               <Button
                 type={layout === "grid" ? "primary" : "text"}
@@ -1620,7 +1657,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                 onClick={() => setLayout("grid")}
                 className="flex items-center gap-1"
               >
-                Lưới
+                {t("search.grid")}
               </Button>
               <Button
                 type={layout === "map" ? "primary" : "text"}
@@ -1629,13 +1666,13 @@ const Properties = ({ transaction }: PropertiesProps) => {
                 onClick={() => setLayout("map")}
                 className="flex items-center gap-1"
               >
-                Bản đồ
+                {t("search.map")}
               </Button>
             </div>
           </div>
 
           <div className="text-sm text-gray-500">
-            {properties?.data?.length ?? 0} bất động sản
+            {properties?.data?.length ?? 0} {t("search.properties")}
           </div>
         </div>
 
@@ -1659,7 +1696,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                 {/* Property List */}
                 {properties?.data.length === 0 ? (
                   <div className="flex h-[500px] items-center justify-center">
-                    <Empty description="Không tìm thấy bất động sản phù hợp" />
+                    <Empty description={t("property.noSuitableProperties")} />
                   </div>
                 ) : (
                   <div
@@ -1694,11 +1731,10 @@ const Properties = ({ transaction }: PropertiesProps) => {
               <div className="rounded-2xl bg-gradient-to-r from-red-50 to-orange-50 p-8">
                 <div className="mb-4">
                   <h3 className="mb-2 text-xl font-bold text-gray-900">
-                    Không tìm thấy bất động sản phù hợp?
+                    {t("property.noSuitableProperties")}
                   </h3>
                   <p className="text-gray-600">
-                    Hãy thử điều chỉnh bộ lọc hoặc đăng ký nhận thông báo khi có
-                    tin mới
+                    {t("property.tryAdjustingFilters")}
                   </p>
                 </div>
 
@@ -1708,14 +1744,14 @@ const Properties = ({ transaction }: PropertiesProps) => {
                     className="border-red-500 bg-red-500 px-8 text-white hover:border-red-600 hover:bg-red-600"
                   >
                     <Filter className="mr-2 h-4 w-4" />
-                    Điều chỉnh bộ lọc
+                    {t("property.adjustFilters")}
                   </Button>
                   <Button
                     size="large"
                     className="border-gray-300 px-8 hover:bg-gray-50"
                   >
                     <Heart className="mr-2 h-4 w-4" />
-                    Đăng ký thông báo
+                    {t("property.subscribeNotifications")}
                   </Button>
                 </div>
               </div>

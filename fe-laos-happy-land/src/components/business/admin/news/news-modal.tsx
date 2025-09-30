@@ -8,6 +8,7 @@ import { newsTypeService } from "@/share/service/news-type.service";
 import type { Content, News } from "@/@types/types";
 import type { CreateNewsDto } from "@/@types/gentype-axios";
 import ProjectContentBuilder from "@/components/business/common/project-content-builder";
+import { useTranslations } from "next-intl";
 
 const { Option } = Select;
 
@@ -27,6 +28,7 @@ const NewsModal: React.FC<NewsModalProps> = ({
   onSuccess,
 }) => {
   const [form] = Form.useForm();
+  const t = useTranslations();
 
   // Fetch news types
   const { data: newsTypesData } = useRequest(
@@ -42,11 +44,11 @@ const NewsModal: React.FC<NewsModalProps> = ({
     {
       manual: true,
       onSuccess: () => {
-        message.success("Tạo tin tức thành công!");
+        message.success(t("admin.createNewsSuccess"));
         onSuccess();
       },
       onError: (error: unknown) => {
-        message.error("Tạo tin tức thất bại!");
+        message.error(t("admin.createNewsFailed"));
         console.error("Create error:", error);
       },
     },
@@ -58,11 +60,11 @@ const NewsModal: React.FC<NewsModalProps> = ({
     {
       manual: true,
       onSuccess: () => {
-        message.success("Cập nhật tin tức thành công!");
+        message.success(t("admin.updateNewsSuccess"));
         onSuccess();
       },
       onError: (error: unknown) => {
-        message.error("Cập nhật tin tức thất bại!");
+        message.error(t("admin.updateNewsFailed"));
         console.error("Update error:", error);
       },
     },
@@ -116,12 +118,12 @@ const NewsModal: React.FC<NewsModalProps> = ({
 
   return (
     <Modal
-      title={mode === "create" ? "Thêm tin tức" : "Sửa tin tức"}
+      title={mode === "create" ? t("admin.addNews") : t("admin.editNews")}
       open={visible}
       onCancel={onClose}
       footer={[
         <Button key="cancel" onClick={onClose} disabled={isLoading}>
-          Hủy
+          {t("admin.cancel")}
         </Button>,
         <Button
           key="submit"
@@ -129,7 +131,7 @@ const NewsModal: React.FC<NewsModalProps> = ({
           loading={isLoading}
           onClick={handleSubmit}
         >
-          {mode === "create" ? "Tạo" : "Cập nhật"}
+          {mode === "create" ? t("admin.create") : t("admin.update")}
         </Button>,
       ]}
       width={800}
@@ -137,23 +139,23 @@ const NewsModal: React.FC<NewsModalProps> = ({
       <Form form={form} layout="vertical" requiredMark={false}>
         <Form.Item
           name="title"
-          label="Tiêu đề tin tức"
+          label={t("admin.newsTitle")}
           rules={[
-            { required: true, message: "Vui lòng nhập tiêu đề tin tức!" },
-            { min: 5, message: "Tiêu đề phải có ít nhất 5 ký tự!" },
-            { max: 200, message: "Tiêu đề không được quá 200 ký tự!" },
+            { required: true, message: t("admin.pleaseEnterNewsTitle") },
+            { min: 5, message: t("admin.newsTitleMinLength") },
+            { max: 200, message: t("admin.newsTitleMaxLength") },
           ]}
         >
-          <Input placeholder="Nhập tiêu đề tin tức..." size="large" />
+          <Input placeholder={t("admin.enterNewsTitle")} size="large" />
         </Form.Item>
 
         <Form.Item
           name="newsTypeId"
-          label="Loại tin tức"
-          rules={[{ required: true, message: "Vui lòng chọn loại tin tức!" }]}
+          label={t("admin.newsType")}
+          rules={[{ required: true, message: t("admin.pleaseSelectNewsType") }]}
         >
           <Select
-            placeholder="Chọn loại tin tức..."
+            placeholder={t("admin.selectNewsType")}
             size="large"
             key={
               (news as unknown as { type?: { id: string } })?.type?.id ??

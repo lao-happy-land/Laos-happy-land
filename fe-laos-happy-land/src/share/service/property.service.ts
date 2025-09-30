@@ -75,6 +75,11 @@ const propertyService = {
     }
   },
 
+  getPropertyByUserId: async (userId: string): Promise<Property[]> => {
+    const response = await api.propertyControllerGetByUserId(userId);
+    return response.data as unknown as Property[];
+  },
+
   createProperty: async (data: CreatePropertyDto): Promise<Property> => {
     try {
       const response = await api.propertyControllerCreate(data);

@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useUrlLocale } from "@/utils/locale";
 import { useAuthStore } from "@/share/store/auth.store";
+import { useTranslations } from "next-intl";
 import {
   Card,
   Form,
@@ -39,11 +41,10 @@ import {
   Loader2,
 } from "lucide-react";
 import type { UpdatePropertyDto } from "@/@types/gentype-axios";
-import type { PropertyType, LocationInfo, Content } from "@/@types/types";
+import type { PropertyType, Content } from "@/@types/types";
 import { useRequest } from "ahooks";
 import propertyService from "@/share/service/property.service";
 import propertyTypeService from "@/share/service/property-type.service";
-import locationInfoService from "@/share/service/location-info.service";
 import uploadService from "@/share/service/upload.service";
 import ProjectContentBuilder from "@/components/business/common/project-content-builder";
 import MapboxLocationSelector from "@/components/business/common/mapbox-location-selector";
@@ -56,12 +57,13 @@ const { Title, Text } = Typography;
 type EditPropertyProps = { propertyId: string };
 
 export default function EditProperty({ propertyId }: EditPropertyProps) {
+  const t = useTranslations();
   const { message, modal } = App.useApp();
   const { isAuthenticated } = useAuthStore();
   const router = useRouter();
+  const locale = useUrlLocale();
   const [form] = Form.useForm();
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
-  const [locationInfos, setLocationInfos] = useState<LocationInfo[]>([]);
   const [selectedLocationInfoId, setSelectedLocationInfoId] =
     useState<string>("");
   const [selectedTransactionType, setSelectedTransactionType] = useState<
@@ -102,30 +104,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
       manual: true,
       onSuccess: (data) => setPropertyTypes(data),
       onError: () => {
-        message.error("Không thể tải danh sách loại bất động sản");
-      },
-    },
-  );
-
-  // Load location infos
-  const { loading: loadingLocations, run: fetchLocationInfos } = useRequest(
-    async () => {
-      const response = await locationInfoService.getAllLocationInfo();
-      return response.data;
-    },
-    {
-      manual: true,
-      onSuccess: (data) => {
-        if (Array.isArray(data)) {
-          setLocationInfos(data);
-        } else {
-          console.warn("Location infos data is not an array:", data);
-          setLocationInfos([]);
-        }
-      },
-      onError: (_error) => {
-        message.error("Không thể tải danh sách địa điểm");
-        setLocationInfos([]);
+        message.error(t("admin.cannotLoadPropertyTypes"));
       },
     },
   );
@@ -134,14 +113,14 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
     if (selectedTransactionType) {
       fetchPropertyTypes();
     }
-    fetchLocationInfos();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTransactionType]);
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push("/login?redirect=/edit-property");
+      router.push(`/${locale}/login?redirect=/${locale}/edit-property`);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, router]);
 
   useEffect(() => {
@@ -196,20 +175,6 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
     }, 0);
   }, [property, form]);
 
-  // Update selectedLocationInfoId when locationInfos are loaded (for proper Select initialization)
-  useEffect(() => {
-    if (property?.locationInfo?.id && locationInfos.length > 0) {
-      setSelectedLocationInfoId(property.locationInfo.id);
-    }
-  }, [property?.locationInfo?.id, locationInfos]);
-
-  // Sync selectedLocationInfoId with form field
-  useEffect(() => {
-    if (selectedLocationInfoId) {
-      form.setFieldValue("locationInfoId", selectedLocationInfoId);
-    }
-  }, [selectedLocationInfoId, form]);
-
   // Sync locationData with form field
   useEffect(() => {
     if (locationData?.address) {
@@ -220,7 +185,6 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
   const { loading: submitting, run: submitForm } = useRequest(
     async (values: {
       typeId: string;
-      locationInfoId: string;
       title: string;
       description?: string;
       price?: number;
@@ -245,13 +209,8 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
       // Use already uploaded image URLs or existing images
       const existingMainImage = property?.mainImage;
 
-      // Use currentLocationInfoId from validation
-      const currentLocationInfoId =
-        values.locationInfoId || selectedLocationInfoId;
-
       const formData: UpdatePropertyDto = {
         typeId: values.typeId,
-        locationInfoId: currentLocationInfoId,
         title: values.title,
         description: values.description,
         price: values.price,
@@ -284,11 +243,11 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
     {
       manual: true,
       onSuccess: () => {
-        message.success("Cập nhật tin đăng thành công!");
-        router.push("/dashboard");
+        message.success(t("admin.updatePropertySuccess"));
+        router.push(`/${locale}/dashboard`);
       },
       onError: () => {
-        message.error("Không thể cập nhật tin đăng");
+        message.error(t("admin.updatePropertyError"));
       },
     },
   );
@@ -318,29 +277,29 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
 
     // Validate required fields
     if (!values.title || values.title.trim().length < 10) {
-      errors.push("Tiêu đề phải có ít nhất 10 ký tự");
+      errors.push(t("admin.titleMinLength"));
     }
     if (!values.description || values.description.trim().length < 50) {
-      errors.push("Mô tả phải có ít nhất 50 ký tự");
+      errors.push(t("admin.descriptionMinLength"));
     }
     if (!values.typeId) {
-      errors.push("Vui lòng chọn loại bất động sản");
+      errors.push(t("admin.pleaseSelectPropertyType"));
     }
     // Check locationInfoId from form or state
     const currentLocationInfoId =
       values.locationInfoId || selectedLocationInfoId;
     if (!currentLocationInfoId) {
-      errors.push("Vui lòng chọn khu vực");
+      errors.push(t("admin.pleaseSelectArea"));
     }
     if (!values.price || values.price <= 0) {
-      errors.push("Vui lòng nhập giá hợp lệ");
+      errors.push(t("admin.pleaseEnterValidPrice"));
     }
     if (!values.area || values.area <= 0) {
-      errors.push("Vui lòng nhập diện tích hợp lệ");
+      errors.push(t("admin.pleaseEnterValidArea"));
     }
     // Check location from form field
     if (!values.location) {
-      errors.push("Vui lòng chọn vị trí trên bản đồ");
+      errors.push(t("admin.pleaseSelectLocationOnMap"));
     }
 
     // Validate images for non-project types
@@ -348,7 +307,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
       // Check main image - either new upload or existing image
       const hasMainImage = mainImageFile ?? mainImageUrl ?? property?.mainImage;
       if (!hasMainImage) {
-        errors.push("Vui lòng tải lên ảnh chính");
+        errors.push(t("admin.pleaseUploadMainImage"));
       }
 
       // Check additional images - count existing images that weren't removed + new uploads
@@ -358,20 +317,20 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
         ).length ?? 0;
       const totalImages = remainingExistingImages + imageUrls.length;
       if (totalImages < 3) {
-        errors.push("Vui lòng tải lên ít nhất 3 ảnh phụ");
+        errors.push(t("admin.pleaseUploadAtLeast3Images"));
       }
 
       // Check if images are still uploading
       if (uploadingMainImage) {
-        errors.push("Ảnh chính đang được tải lên, vui lòng chờ");
+        errors.push(t("admin.mainImageUploading"));
       }
       if (uploadingImages.some((uploading) => uploading)) {
-        errors.push("Một số ảnh phụ đang được tải lên, vui lòng chờ");
+        errors.push(t("admin.additionalImagesUploading"));
       }
 
       // Check if main image upload failed
       if (mainImageFile && !mainImageUrl && !uploadingMainImage) {
-        errors.push("Ảnh chính tải lên thất bại, vui lòng thử lại");
+        errors.push(t("admin.mainImageUploadFailed"));
       }
 
       // Check if any additional image upload failed
@@ -381,7 +340,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
       );
       if (failedUploads.length > 0) {
         errors.push(
-          `${failedUploads.length} ảnh phụ tải lên thất bại, vui lòng thử lại`,
+          `${failedUploads.length} ${t("admin.additionalImagesUploadFailed")}`,
         );
       }
     }
@@ -389,11 +348,11 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
     // Show validation errors if any
     if (errors.length > 0) {
       modal.error({
-        title: "Lỗi xác thực",
+        title: t("admin.validationError"),
         content: (
           <div className="space-y-2">
             <p className="font-medium text-red-600">
-              Vui lòng kiểm tra lại các thông tin sau:
+              {t("admin.pleaseCheckTheInformationYouEntered")}
             </p>
             <ul className="list-inside list-disc space-y-1 text-sm">
               {errors.map((error, index) => (
@@ -404,44 +363,45 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
             </ul>
           </div>
         ),
-        okText: "Đã hiểu",
+        okText: t("admin.understood"),
       });
       return;
     }
 
     // Show confirmation dialog
     modal.confirm({
-      title: "Xác nhận cập nhật",
+      title: t("admin.confirmUpdate"),
       content: (
         <div className="space-y-2">
-          <p>Bạn có chắc chắn muốn cập nhật tin đăng này?</p>
+          <p>{t("admin.confirmUpdateContent")}</p>
           <div className="text-sm text-gray-600">
             <p>
-              <strong>Tiêu đề:</strong> {values.title}
+              <strong>{t("admin.title")}:</strong> {values.title}
             </p>
             <p>
-              <strong>Loại giao dịch:</strong>{" "}
+              <strong>{t("admin.transactionType")}:</strong>{" "}
               {values.transactionType === "sale"
-                ? "Bán"
+                ? t("admin.sale")
                 : values.transactionType === "rent"
-                  ? "Cho thuê"
-                  : "Dự án"}
+                  ? t("admin.rent")
+                  : t("admin.project")}
             </p>
             {values.price && (
               <p>
-                <strong>Giá:</strong> {values.price.toLocaleString()} USD
+                <strong>{t("admin.price")}:</strong>{" "}
+                {values.price.toLocaleString()} USD
               </p>
             )}
           </div>
         </div>
       ),
-      okText: "Cập nhật",
-      cancelText: "Hủy",
+      okText: t("admin.update"),
+      cancelText: t("admin.cancel"),
       onOk: () => {
         submitForm(values);
       },
       onCancel: () => {
-        message.info("Đã hủy cập nhật");
+        message.info(t("admin.updateCancelled"));
       },
     });
   };
@@ -449,12 +409,12 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
   const handleMainImageUpload = async (file: File) => {
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
-      message.error("Chỉ có thể tải lên file hình ảnh!");
+      message.error(t("admin.onlyImageFilesAllowed"));
       return false;
     }
     const isLt5M = file.size / 1024 / 1024 < 5;
     if (!isLt5M) {
-      message.error("Hình ảnh phải nhỏ hơn 5MB!");
+      message.error(t("admin.imageMustBeLessThan5MB"));
       return false;
     }
 
@@ -464,10 +424,10 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
     try {
       const result = await uploadService.uploadImage(file);
       setMainImageUrl(result.url);
-      message.success("Tải lên ảnh chính thành công!");
+      message.success(t("admin.mainImageUploadedSuccessfully"));
     } catch (error) {
       console.error("Failed to upload main image:", error);
-      message.error("Không thể tải lên ảnh chính");
+      message.error(t("admin.cannotUploadMainImage"));
       setMainImageFile(null);
     } finally {
       setUploadingMainImage(false);
@@ -479,12 +439,12 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
   const handleImagesUpload = async (file: File) => {
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
-      message.error("Chỉ có thể tải lên file hình ảnh!");
+      message.error(t("admin.onlyImageFilesAllowed"));
       return false;
     }
     const isLt5M = file.size / 1024 / 1024 < 5;
     if (!isLt5M) {
-      message.error("Hình ảnh phải nhỏ hơn 5MB!");
+      message.error(t("admin.imageMustBeLessThan5MB"));
       return false;
     }
     const existingImagesCount =
@@ -492,7 +452,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
         (_, index) => !removedExistingImages.includes(index),
       ).length ?? 0;
     if (existingImagesCount + imageFiles.length >= 9) {
-      message.error("Chỉ có thể tải lên tối đa 9 ảnh phụ!");
+      message.error(t("admin.maximum9AdditionalImages"));
       return false;
     }
 
@@ -503,10 +463,10 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
     try {
       const result = await uploadService.uploadImage(file);
       setImageUrls([...imageUrls, result.url]);
-      message.success(`Tải lên ảnh ${newIndex + 1} thành công!`);
+      message.success(t("admin.imageUploadedSuccessfully"));
     } catch (error) {
       console.error("Failed to upload image:", error);
-      message.error(`Không thể tải lên ảnh ${newIndex + 1}`);
+      message.error(t("admin.cannotUploadImage"));
       // Remove the failed file
       setImageFiles(imageFiles.filter((_, i) => i !== newIndex));
     } finally {
@@ -551,10 +511,10 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
             level={1}
             className="!mb-2 !text-3xl !font-bold !text-gray-900"
           >
-            Cập nhật tin bất động sản
+            {t("admin.updateProperty")}
           </Title>
           <Text className="text-lg text-gray-600">
-            Chỉnh sửa thông tin tin đăng của bạn
+            {t("admin.updatePropertyContent")}
           </Text>
         </div>
 
@@ -583,15 +543,19 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <Form.Item
                   name="title"
-                  label={<Text className="font-medium">Tiêu đề tin đăng</Text>}
+                  label={
+                    <Text className="font-medium">
+                      {t("admin.propertyTitle")}
+                    </Text>
+                  }
                   rules={[
-                    { required: true, message: "Vui lòng nhập tiêu đề!" },
-                    { min: 10, message: "Tiêu đề phải có ít nhất 10 ký tự!" },
-                    { max: 200, message: "Tiêu đề không được quá 200 ký tự!" },
+                    { required: true, message: t("admin.pleaseEnterTitle") },
+                    { min: 10, message: t("admin.titleMinLength") },
+                    { max: 200, message: t("admin.titleMaxLength") },
                   ]}
                 >
                   <Input
-                    placeholder="Nhập tiêu đề tin đăng..."
+                    placeholder={t("admin.enterPropertyTitle")}
                     size="large"
                     className="rounded-lg"
                     showCount
@@ -600,34 +564,45 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                 </Form.Item>
                 <Form.Item
                   name="transactionType"
-                  label={<Text className="font-medium">Loại giao dịch</Text>}
+                  label={
+                    <Text className="font-medium">
+                      {t("admin.transactionType")}
+                    </Text>
+                  }
                   rules={[
                     {
                       required: true,
-                      message: "Vui lòng chọn loại giao dịch!",
+                      message: t("admin.pleaseSelectTransactionType"),
                     },
                   ]}
                 >
                   <Select
-                    placeholder="Chọn loại giao dịch"
+                    placeholder={t("admin.selectTransactionType")}
                     size="large"
                     className="rounded-lg"
                     onChange={handleTransactionTypeChange}
                   >
-                    <Option value="sale">Bán</Option>
-                    <Option value="rent">Cho thuê</Option>
-                    <Option value="project">Dự án</Option>
+                    <Option value="sale">{t("admin.sale")}</Option>
+                    <Option value="rent">{t("admin.rent")}</Option>
+                    <Option value="project">{t("admin.project")}</Option>
                   </Select>
                 </Form.Item>
                 <Form.Item
                   name="typeId"
-                  label={<Text className="font-medium">Loại bất động sản</Text>}
+                  label={
+                    <Text className="font-medium">
+                      {t("admin.propertyType")}
+                    </Text>
+                  }
                   rules={[
-                    { required: true, message: "Vui lòng chọn loại BĐS!" },
+                    {
+                      required: true,
+                      message: t("admin.pleaseSelectPropertyType"),
+                    },
                   ]}
                 >
                   <Select
-                    placeholder="Chọn loại bất động sản"
+                    placeholder={t("admin.selectPropertyType")}
                     size="large"
                     className="rounded-lg"
                     loading={loadingTypes}
@@ -643,17 +618,19 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                 <Form.Item
                   name="legalStatus"
                   label={
-                    <Text className="font-medium">Tình trạng pháp lý</Text>
+                    <Text className="font-medium">
+                      {t("admin.legalStatus")}
+                    </Text>
                   }
                   rules={[
                     {
                       max: 200,
-                      message: "Tình trạng pháp lý không được quá 200 ký tự!",
+                      message: t("admin.legalStatusMaxLength"),
                     },
                   ]}
                 >
                   <Input
-                    placeholder="Nhập tình trạng pháp lý..."
+                    placeholder={t("admin.enterLegalStatus")}
                     size="large"
                     className="rounded-lg"
                     showCount
@@ -665,23 +642,27 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
               <div className="grid grid-cols-1 gap-x-6 md:grid-cols-2">
                 <Form.Item
                   name="price"
-                  label={<Text className="font-medium">Giá (USD$)</Text>}
+                  label={
+                    <Text className="font-medium">
+                      {t("admin.price")} (USD$)
+                    </Text>
+                  }
                   rules={[
-                    { required: true, message: "Vui lòng nhập giá!" },
+                    { required: true, message: t("admin.pleaseEnterPrice") },
                     {
                       type: "number",
                       min: 1,
-                      message: "Giá phải lớn hơn 0!",
+                      message: t("admin.priceMustBeGreaterThan0"),
                     },
                     {
                       type: "number",
                       max: 999999999,
-                      message: "Giá không được quá 999,999,999 USD!",
+                      message: t("admin.priceMustBeLessThan999999999"),
                     },
                   ]}
                 >
                   <InputNumber
-                    placeholder="Nhập giá..."
+                    placeholder={t("admin.enterPrice")}
                     formatter={(value) =>
                       `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                     }
@@ -701,27 +682,27 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                   label={
                     <span className="flex items-center gap-1 font-medium">
                       <Home className="h-4 w-4" />
-                      Diện tích (m²)
+                      {t("admin.area")} (m²)
                     </span>
                   }
                   rules={[
-                    { required: true, message: "Vui lòng nhập diện tích!" },
+                    { required: true, message: t("admin.pleaseEnterArea") },
                     {
                       type: "number",
                       min: 1,
-                      message: "Diện tích phải lớn hơn 0!",
+                      message: t("admin.areaMustBeGreaterThan0"),
                     },
                     {
                       type: "number",
                       max: 10000,
-                      message: "Diện tích không được quá 10,000 m²!",
+                      message: t("admin.areaMustBeLessThan10000"),
                     },
                   ]}
                 >
                   <InputNumber
                     min={0}
                     max={10000}
-                    placeholder="Nhập diện tích..."
+                    placeholder={t("admin.enterArea")}
                     size="large"
                     style={{ width: "100%" }}
                   />
@@ -734,26 +715,26 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       label={
                         <span className="flex items-center gap-1 font-medium">
                           <Bed className="h-4 w-4" />
-                          Phòng ngủ
+                          {t("admin.bedrooms")}
                         </span>
                       }
                       rules={[
                         {
                           type: "number",
                           min: 0,
-                          message: "Số phòng ngủ không được âm!",
+                          message: t("admin.bedroomsMustBeGreaterThan0"),
                         },
                         {
                           type: "number",
                           max: 20,
-                          message: "Số phòng ngủ không được quá 20!",
+                          message: t("admin.bedroomsMustBeLessThan20"),
                         },
                       ]}
                     >
                       <InputNumber
                         min={0}
                         max={20}
-                        placeholder="Nhập số phòng ngủ..."
+                        placeholder={t("admin.enterBedrooms")}
                         size="large"
                         style={{ width: "100%" }}
                       />
@@ -764,26 +745,26 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       label={
                         <span className="flex items-center gap-1 font-medium">
                           <Bath className="h-4 w-4" />
-                          Phòng tắm
+                          {t("admin.bathrooms")}
                         </span>
                       }
                       rules={[
                         {
                           type: "number",
                           min: 0,
-                          message: "Số phòng tắm không được âm!",
+                          message: t("admin.bathroomsMustBeGreaterThan0"),
                         },
                         {
                           type: "number",
                           max: 10,
-                          message: "Số phòng tắm không được quá 10!",
+                          message: t("admin.bathroomsMustBeLessThan10"),
                         },
                       ]}
                     >
                       <InputNumber
                         min={0}
                         max={10}
-                        placeholder="Nhập số phòng tắm..."
+                        placeholder={t("admin.enterBathrooms")}
                         size="large"
                         style={{ width: "100%" }}
                       />
@@ -799,7 +780,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       level={3}
                       className="!mb-0 !text-xl !font-semibold !text-gray-900"
                     >
-                      Tiện ích
+                      {t("admin.amenities")}
                     </Title>
                   </div>
                   <div className="grid grid-cols-3 justify-center gap-4 lg:grid-cols-6">
@@ -807,7 +788,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       name="wifi"
                       label={
                         <p className="flex items-center gap-1 font-medium text-green-600">
-                          <Wifi className="h-4 w-4" /> WiFi
+                          <Wifi className="h-4 w-4" /> {t("admin.wifi")}
                         </p>
                       }
                       valuePropName="checked"
@@ -818,7 +799,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       name="tv"
                       label={
                         <p className="flex items-center gap-1 font-medium text-red-600">
-                          <Tv className="h-4 w-4" /> TV
+                          <Tv className="h-4 w-4" /> {t("admin.tv")}
                         </p>
                       }
                       valuePropName="checked"
@@ -829,7 +810,8 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       name="airConditioner"
                       label={
                         <p className="flex items-center gap-1 font-medium text-blue-600">
-                          <Snowflake className="h-4 w-4" /> Điều hòa
+                          <Snowflake className="h-4 w-4" />{" "}
+                          {t("admin.airConditioner")}
                         </p>
                       }
                       valuePropName="checked"
@@ -840,7 +822,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       name="parking"
                       label={
                         <p className="flex items-center gap-1 font-medium text-orange-600">
-                          <Car className="h-4 w-4" /> Bãi đỗ xe
+                          <Car className="h-4 w-4" /> {t("admin.parking")}
                         </p>
                       }
                       valuePropName="checked"
@@ -851,7 +833,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       name="kitchen"
                       label={
                         <p className="flex items-center gap-1 font-medium text-pink-600">
-                          <Utensils className="h-4 w-4" /> Nhà bếp
+                          <Utensils className="h-4 w-4" /> {t("admin.kitchen")}
                         </p>
                       }
                       valuePropName="checked"
@@ -862,7 +844,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       name="security"
                       label={
                         <p className="flex items-center gap-1 font-medium text-green-600">
-                          <Shield className="h-4 w-4" /> An ninh
+                          <Shield className="h-4 w-4" /> {t("admin.security")}
                         </p>
                       }
                       valuePropName="checked"
@@ -875,16 +857,21 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
 
               <Form.Item
                 name="description"
-                label={<Text className="font-medium">Mô tả ngắn</Text>}
+                label={
+                  <Text className="font-medium">{t("admin.description")}</Text>
+                }
                 rules={[
-                  { required: true, message: "Vui lòng nhập mô tả!" },
-                  { min: 50, message: "Mô tả phải có ít nhất 50 ký tự!" },
-                  { max: 2000, message: "Mô tả không được quá 2000 ký tự!" },
+                  {
+                    required: true,
+                    message: t("admin.pleaseEnterDescription"),
+                  },
+                  { min: 50, message: t("admin.descriptionMinLength") },
+                  { max: 2000, message: t("admin.descriptionMaxLength") },
                 ]}
               >
                 <TextArea
                   rows={6}
-                  placeholder="Mô tả ngắn gọn về bất động sản, tiện ích xung quanh, hướng nhà, view..."
+                  placeholder={t("admin.enterDescription")}
                   className="rounded-lg"
                   showCount
                   maxLength={2000}
@@ -898,7 +885,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                     level={3}
                     className="!mb-0 !text-xl !font-semibold !text-gray-900"
                   >
-                    Nội dung dự án
+                    {t("admin.projectContent")}
                   </Title>
                 </div>
                 <Form.Item
@@ -912,7 +899,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                             (value as unknown as Content[]).length === 0
                           ) {
                             return Promise.reject(
-                              new Error("Vui lòng thêm ít nhất 1 nội dung"),
+                              new Error(t("admin.pleaseAddAtLeast1Content")),
                             );
                           }
                         }
@@ -943,9 +930,10 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
               </Form.Item>
 
               <div className="space-y-2">
-                <Text className="font-medium">Vị trí trên bản đồ *</Text>
+                <Text className="font-medium">
+                  {t("admin.locationOnMap")} *
+                </Text>
                 <MapboxLocationSelector
-                  form={form}
                   value={locationData}
                   onChange={(newLocationData) => {
                     setLocationData(newLocationData);
@@ -954,19 +942,8 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       form.setFieldValue("location", newLocationData.address);
                     }
                   }}
-                  placeholder="Chọn vị trí trên bản đồ"
+                  placeholder={t("admin.selectLocationOnMap")}
                   initialSearchValue={property?.location?.address}
-                  locationInfos={locationInfos}
-                  selectedLocationInfoId={selectedLocationInfoId}
-                  onLocationInfoChange={(locationInfoId) => {
-                    setSelectedLocationInfoId(locationInfoId);
-                    form.setFieldValue("locationInfoId", locationInfoId);
-                  }}
-                  loadingLocations={loadingLocations}
-                  mode="edit"
-                  hasExistingLocation={
-                    !!(property?.location && property?.locationInfo)
-                  }
                 />
               </div>
             </div>
@@ -980,12 +957,12 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                     level={3}
                     className="!mb-0 !text-xl !font-semibold !text-gray-900"
                   >
-                    Hình ảnh
+                    {t("admin.images")}
                   </Title>
                 </div>
                 {/* Main Image */}
                 <div className="space-y-4">
-                  <Text className="font-medium">Ảnh chính *</Text>
+                  <Text className="font-medium">{t("admin.mainImage")} *</Text>
                   <div className="rounded-lg border-2 border-dashed border-gray-300 p-6 text-center transition-colors hover:border-blue-400">
                     {mainImageFile ? (
                       <div className="relative h-64 w-full">
@@ -1001,14 +978,14 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                             <div className="text-center text-white">
                               <Spin size="large" />
                               <div className="mt-2 text-sm">
-                                Đang tải lên...
+                                {t("admin.uploading")}...
                               </div>
                             </div>
                           </div>
                         )}
                         {mainImageUrl && !uploadingMainImage && (
                           <div className="absolute top-2 right-2">
-                            <Tooltip title="Tải lên thành công">
+                            <Tooltip title={t("admin.uploadSuccess")}>
                               <CheckCircle className="h-6 w-6 rounded-full bg-white text-green-500" />
                             </Tooltip>
                           </div>
@@ -1035,11 +1012,11 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                           height={128}
                         />
                         <div className="absolute top-2 left-2">
-                          <Tooltip title="Ảnh hiện tại">
+                          <Tooltip title={t("admin.existingImage")}>
                             <div className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-1">
                               <CheckCircle className="h-3 w-3 text-blue-600" />
                               <span className="text-xs text-blue-600">
-                                Hiện tại
+                                {t("admin.existing")}
                               </span>
                             </div>
                           </Tooltip>
@@ -1069,14 +1046,14 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                           )}
                           <Text className="block text-gray-600">
                             {uploadingMainImage
-                              ? "Đang tải lên..."
-                              : "Tải lên ảnh chính"}
+                              ? t("admin.uploading") + "..."
+                              : t("admin.uploadMainImage")}
                           </Text>
                           <Text className="block text-sm text-gray-500">
-                            JPG, PNG, GIF tối đa 5MB
+                            {t("admin.jpgPngGifMax5MB")}
                           </Text>
                           <Text className="block text-xs text-gray-400">
-                            Kéo thả hoặc click để chọn
+                            {t("admin.dragAndDropOrClickToSelect")}
                           </Text>
                         </div>
                       </Upload>
@@ -1089,11 +1066,11 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Text className="font-medium">
-                        Ảnh phụ (tối đa 9 ảnh)
+                        {t("admin.additionalImages")} ({t("admin.max9Images")})
                       </Text>
                       {imageUrls.length > 0 && (
                         <Tooltip
-                          title={`${imageUrls.length} ảnh đã tải lên thành công`}
+                          title={`${imageUrls.length} ${t("admin.imagesUploadedSuccessfully")}`}
                         >
                           <div className="flex items-center gap-1 rounded-full bg-green-100 px-2 py-1">
                             <CheckCircle className="h-3 w-3 text-green-600" />
@@ -1108,7 +1085,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       {(property?.images?.filter(
                         (_, index) => !removedExistingImages.includes(index),
                       ).length ?? 0) + imageFiles.length}
-                      /9 ảnh
+                      /9 {t("admin.images")}
                     </Text>
                   </div>
                   <div className="flex flex-wrap gap-4">
@@ -1128,11 +1105,11 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                               height={100}
                             />
                             <div className="absolute top-1 left-1">
-                              <Tooltip title="Ảnh hiện tại">
+                              <Tooltip title={t("admin.existingImage")}>
                                 <div className="flex items-center gap-1 rounded-full bg-blue-100 px-1 py-0.5">
                                   <CheckCircle className="h-2 w-2 text-blue-600" />
                                   <span className="text-xs text-blue-600">
-                                    Hiện tại
+                                    {t("admin.existing")}
                                   </span>
                                 </div>
                               </Tooltip>
@@ -1172,7 +1149,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                         )}
                         {imageUrls[index] && !uploadingImages[index] && (
                           <div className="absolute top-1 right-1">
-                            <Tooltip title="Tải lên thành công">
+                            <Tooltip title={t("admin.uploadSuccess")}>
                               <CheckCircle className="h-4 w-4 rounded-full bg-white text-green-500" />
                             </Tooltip>
                           </div>
@@ -1238,10 +1215,10 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
               <Button
                 type="default"
                 size="large"
-                onClick={() => router.push("/dashboard")}
+                onClick={() => router.push(`/${locale}/dashboard`)}
                 className="rounded-lg"
               >
-                Hủy
+                {t("admin.cancel")}
               </Button>
               <Button
                 type="primary"
@@ -1251,7 +1228,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                 loading={submitting}
                 className="rounded-lg bg-blue-600 hover:bg-blue-700"
               >
-                Cập nhật
+                {t("admin.update")}
               </Button>
             </div>
           </Form>

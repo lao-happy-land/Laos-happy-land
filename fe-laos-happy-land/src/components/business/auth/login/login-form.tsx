@@ -5,6 +5,7 @@ import { Form, Input, Button, Checkbox, App, Divider } from "antd";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 import { useAuthStore } from "@/share/store/auth.store";
 import GoogleLoginButton from "../google-login-button";
+import { useTranslations } from "next-intl";
 
 interface LoginFormProps {
   onError?: (error: string) => void;
@@ -16,6 +17,7 @@ export default function LoginForm({ onError, redirectUrl }: LoginFormProps) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const { login } = useAuthStore();
+  const t = useTranslations();
 
   const handleSubmit = async (values: {
     email: string;
@@ -35,7 +37,7 @@ export default function LoginForm({ onError, redirectUrl }: LoginFormProps) {
           }
         )?.response?.data?.message ??
         (error as { message?: string })?.message ??
-        "Đăng nhập thất bại";
+        t("auth.loginFailed");
       if (onError) {
         onError(errorMessage);
       } else {
@@ -55,23 +57,23 @@ export default function LoginForm({ onError, redirectUrl }: LoginFormProps) {
       size="large"
     >
       <Form.Item
-        label="Email"
+        label={t("auth.email")}
         name="email"
         rules={[
-          { required: true, message: "Vui lòng nhập email!" },
-          { type: "email", message: "Email không hợp lệ!" },
+          { required: true, message: t("auth.pleaseEnterEmail") },
+          { type: "email", message: t("auth.invalidEmail") },
         ]}
       >
-        <Input placeholder="Nhập email của bạn" />
+        <Input placeholder={t("auth.enterYourEmail")} />
       </Form.Item>
 
       <Form.Item
-        label="Mật khẩu"
+        label={t("auth.password")}
         name="password"
-        rules={[{ required: true, message: "Vui lòng nhập mật khẩu!" }]}
+        rules={[{ required: true, message: t("auth.pleaseEnterPassword") }]}
       >
         <Input.Password
-          placeholder="Nhập mật khẩu"
+          placeholder={t("auth.enterPassword")}
           iconRender={(visible) =>
             visible ? (
               <Eye className="h-4 w-4" />
@@ -83,7 +85,7 @@ export default function LoginForm({ onError, redirectUrl }: LoginFormProps) {
       </Form.Item>
 
       <Form.Item name="remember" valuePropName="checked">
-        <Checkbox>Ghi nhớ đăng nhập</Checkbox>
+        <Checkbox>{t("auth.rememberLogin")}</Checkbox>
       </Form.Item>
 
       <Form.Item>
@@ -94,11 +96,11 @@ export default function LoginForm({ onError, redirectUrl }: LoginFormProps) {
           loading={loading}
           icon={<LogIn className="h-4 w-4" />}
         >
-          Đăng nhập
+          {t("auth.login")}
         </Button>
       </Form.Item>
 
-      <Divider>Hoặc</Divider>
+      <Divider>{t("auth.or")}</Divider>
 
       <Form.Item>
         <GoogleLoginButton redirectUrl={redirectUrl} onError={onError} />

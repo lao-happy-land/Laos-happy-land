@@ -9,6 +9,7 @@ import type { MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type { Property } from "@/@types/types";
 
 interface PropertiesMapProps {
@@ -24,6 +25,7 @@ export default function PropertiesMap({
   onPropertyClick,
   height = "600px",
 }: PropertiesMapProps) {
+  const t = useTranslations("property");
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(
     null,
   );
@@ -205,8 +207,8 @@ export default function PropertiesMap({
                 <div className="absolute bottom-3 left-3">
                   <div className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-gray-800 shadow-sm">
                     {selectedProperty.transactionType === "sale"
-                      ? "Bán"
-                      : "Cho thuê"}
+                      ? t("forSale")
+                      : t("forRent")}
                   </div>
                 </div>
 
@@ -246,18 +248,20 @@ export default function PropertiesMap({
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <div className="h-2 w-2 rounded-full bg-green-500"></div>
                         <span>
-                          {selectedProperty.details.bedrooms} phòng ngủ
+                          {selectedProperty.details.bedrooms} {t("bedrooms")}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <div className="h-2 w-2 rounded-full bg-purple-500"></div>
                         <span>
-                          {selectedProperty.details.bathrooms} phòng tắm
+                          {selectedProperty.details.bathrooms} {t("bathrooms")}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <div className="h-2 w-2 rounded-full bg-orange-500"></div>
-                        <span>Ưu tiên {selectedProperty.priority}</span>
+                        <span>
+                          {t("priority")} {selectedProperty.priority}
+                        </span>
                       </div>
                     </>
                   )}
@@ -271,12 +275,12 @@ export default function PropertiesMap({
                       <span className="font-medium">
                         {selectedProperty.viewsCount || 0}
                       </span>
-                      <span className="text-xs">lượt xem</span>
+                      <span className="text-xs">{t("views")}</span>
                     </div>
                     <div className="flex items-center gap-1 text-sm text-gray-600">
                       <Heart size={14} className="text-red-500" />
                       <span className="font-medium">0</span>
-                      <span className="text-xs">yêu thích</span>
+                      <span className="text-xs">{t("favorites")}</span>
                     </div>
                   </div>
                   <div className="text-xs text-gray-500">
@@ -298,7 +302,7 @@ export default function PropertiesMap({
                       block
                       className="bg-red-500 font-semibold shadow-lg hover:bg-red-600"
                     >
-                      Xem chi tiết
+                      {t("viewDetails")}
                     </Button>
                   </Link>
                   <Button
@@ -307,7 +311,7 @@ export default function PropertiesMap({
                     icon={<Heart size={16} />}
                     className="border-gray-300 text-gray-600 hover:border-red-300 hover:text-red-500"
                   >
-                    Yêu thích
+                    {t("favorite")}
                   </Button>
                 </div>
               </div>

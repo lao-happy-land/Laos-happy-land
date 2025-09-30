@@ -5,6 +5,7 @@ import { Form, Input, Button, Row, Col, App, Divider } from "antd";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
 import { authService } from "@/share/service/auth.service";
 import GoogleLoginButton from "../google-login-button";
+import { useTranslations } from "next-intl";
 
 interface RegisterFormProps {
   onSuccess?: (message: string) => void;
@@ -18,6 +19,7 @@ export default function RegisterForm({
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const t = useTranslations();
 
   const handleSubmit = async (values: {
     fullName: string;
@@ -35,9 +37,9 @@ export default function RegisterForm({
         password: values.password,
       });
 
-      message.success("Đăng ký thành công!");
+      message.success(t("auth.registrationSuccess"));
       if (onSuccess) {
-        onSuccess("Đăng ký thành công! Vui lòng đăng nhập.");
+        onSuccess(t("auth.registrationSuccessMessage"));
       }
       form.resetFields();
     } catch (error: unknown) {
@@ -49,7 +51,7 @@ export default function RegisterForm({
           }
         )?.response?.data?.message ??
         (error as { message?: string })?.message ??
-        "Đăng ký thất bại";
+        t("auth.registrationFailed");
       if (onError) {
         onError(errorMessage);
       } else {
@@ -71,51 +73,51 @@ export default function RegisterForm({
       <Row gutter={16}>
         <Col span={12}>
           <Form.Item
-            label="Họ và tên"
+            label={t("auth.fullName")}
             name="fullName"
-            rules={[{ required: true, message: "Vui lòng nhập họ và tên!" }]}
+            rules={[{ required: true, message: t("auth.pleaseEnterFullName") }]}
           >
-            <Input placeholder="Nhập họ và tên" />
+            <Input placeholder={t("auth.enterFullName")} />
           </Form.Item>
         </Col>
         <Col span={12}>
           <Form.Item
-            label="Số điện thoại"
+            label={t("auth.phone")}
             name="phone"
             rules={[
-              { required: true, message: "Vui lòng nhập số điện thoại!" },
+              { required: true, message: t("auth.pleaseEnterPhone") },
               {
                 pattern: /^[0-9]{10,11}$/,
-                message: "Số điện thoại không hợp lệ!",
+                message: t("auth.invalidPhone"),
               },
             ]}
           >
-            <Input placeholder="Nhập số điện thoại" />
+            <Input placeholder={t("auth.enterPhone")} />
           </Form.Item>
         </Col>
       </Row>
 
       <Form.Item
-        label="Email"
+        label={t("auth.email")}
         name="email"
         rules={[
-          { required: true, message: "Vui lòng nhập email!" },
-          { type: "email", message: "Email không hợp lệ!" },
+          { required: true, message: t("auth.pleaseEnterEmail") },
+          { type: "email", message: t("auth.invalidEmail") },
         ]}
       >
-        <Input placeholder="Nhập email của bạn" />
+        <Input placeholder={t("auth.enterEmail")} />
       </Form.Item>
 
       <Form.Item
-        label="Mật khẩu"
+        label={t("auth.password")}
         name="password"
         rules={[
-          { required: true, message: "Vui lòng nhập mật khẩu!" },
-          { min: 6, message: "Mật khẩu phải có ít nhất 6 ký tự!" },
+          { required: true, message: t("auth.pleaseEnterPassword") },
+          { min: 6, message: t("auth.passwordMinLength") },
         ]}
       >
         <Input.Password
-          placeholder="Nhập mật khẩu"
+          placeholder={t("auth.enterPassword")}
           iconRender={(visible) =>
             visible ? (
               <Eye className="h-4 w-4" />
@@ -127,23 +129,23 @@ export default function RegisterForm({
       </Form.Item>
 
       <Form.Item
-        label="Xác nhận mật khẩu"
+        label={t("auth.confirmPassword")}
         name="confirmPassword"
         dependencies={["password"]}
         rules={[
-          { required: true, message: "Vui lòng xác nhận mật khẩu!" },
+          { required: true, message: t("auth.pleaseConfirmPassword") },
           ({ getFieldValue }) => ({
             validator(_, value) {
               if (!value || getFieldValue("password") === value) {
                 return Promise.resolve();
               }
-              return Promise.reject(new Error("Mật khẩu xác nhận không khớp!"));
+              return Promise.reject(new Error(t("auth.passwordMismatch")));
             },
           }),
         ]}
       >
         <Input.Password
-          placeholder="Nhập lại mật khẩu"
+          placeholder={t("auth.reEnterPassword")}
           iconRender={(visible) =>
             visible ? (
               <Eye className="h-4 w-4" />
@@ -162,15 +164,15 @@ export default function RegisterForm({
           loading={loading}
           icon={<UserPlus className="h-4 w-4" />}
         >
-          Đăng ký
+          {t("auth.register")}
         </Button>
       </Form.Item>
 
-      <Divider>Hoặc</Divider>
+      <Divider>{t("auth.or")}</Divider>
 
       <Form.Item>
         <GoogleLoginButton onError={onError}>
-          Đăng ký với Google
+          {t("auth.registerWithGoogle")}
         </GoogleLoginButton>
       </Form.Item>
     </Form>

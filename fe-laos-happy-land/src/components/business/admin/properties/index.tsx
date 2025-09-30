@@ -22,7 +22,6 @@ import {
   App,
 } from "antd";
 import {
-  AlertTriangle,
   Plus,
   Search,
   Trash2,
@@ -30,18 +29,25 @@ import {
   CheckCircle,
   Filter,
   X,
+  AlertTriangle,
 } from "lucide-react";
 import propertyService from "@/share/service/property.service";
 import propertyTypeService from "@/share/service/property-type.service";
 import type { Property, User, PropertyType } from "@/@types/types";
 import { numberToString } from "@/share/helper/number-to-string";
+import { useTranslations } from "next-intl";
+import { useUrlLocale } from "@/utils/locale";
+import {
+  getPropertyParamsByLocale,
+  getValidLocale,
+} from "@/share/helper/locale.helper";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
 const AdminProperties = () => {
   const { modal, message } = App.useApp();
-
+  const t = useTranslations();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -65,6 +71,8 @@ const AdminProperties = () => {
   const [rejectionReason, setRejectionReason] = useState("");
   const [total, setTotal] = useState(0);
 
+  const locale = useUrlLocale();
+
   // Fetch property types
   const { loading: propertyTypesLoading, run: fetchPropertyTypes } = useRequest(
     async () => {
@@ -80,7 +88,7 @@ const AdminProperties = () => {
       },
       onError: (error) => {
         console.error("Failed to fetch property types:", error);
-        message.error("Không thể tải danh sách loại bất động sản");
+        message.error(t("admin.cannotLoadPropertyTypes"));
       },
     },
   );
@@ -147,7 +155,7 @@ const AdminProperties = () => {
       } = {
         page: currentPage,
         perPage: pageSize,
-        currency: "LAK",
+        ...getPropertyParamsByLocale(getValidLocale(locale)),
       };
 
       if (searchTerm.trim()) {
@@ -190,7 +198,7 @@ const AdminProperties = () => {
       },
       onError: (error) => {
         console.error("Failed to fetch properties:", error);
-        message.error("Không thể tải danh sách tin đăng");
+        message.error(t("admin.cannotLoadProperties"));
       },
     },
   );
@@ -203,12 +211,12 @@ const AdminProperties = () => {
     {
       manual: true,
       onSuccess: () => {
-        message.success("Xóa tin đăng thành công!");
+        message.success(t("admin.propertyDeletedSuccessfully"));
         fetchProperties();
       },
       onError: (error) => {
         console.error("Failed to delete property:", error);
-        message.error("Không thể xóa tin đăng");
+        message.error(t("admin.cannotDeleteProperty"));
       },
     },
   );
@@ -227,7 +235,7 @@ const AdminProperties = () => {
     if (priceRange[1] < 100000000000) params.maxPrice = priceRange[1];
 
     updateSearchParams(params);
-    message.success("Đang tìm kiếm...");
+    message.success(t("admin.searching"));
   };
 
   const handleClearFilters = () => {
@@ -325,21 +333,23 @@ const AdminProperties = () => {
 
   const handleApprove = (property: Property) => {
     modal.confirm({
-      title: "Xác nhận duyệt",
-      content: `Bạn có chắc chắn muốn duyệt tin đăng "${property.title}"?`,
-      okText: "Duyệt",
+      title: t("admin.confirmApprove"),
+      content: t("admin.confirmApproveContent", {
+        title: property.title,
+      }),
+      okText: t("admin.approve"),
       okType: "primary",
-      cancelText: "Hủy",
+      cancelText: t("admin.cancel"),
       onOk() {
         propertyService
           .approveProperty(property.id)
           .then(() => {
-            message.success("Đã duyệt tin đăng thành công!");
+            message.success(t("admin.propertyApprovedSuccessfully"));
             fetchProperties(); // Refresh the list
           })
           .catch((error) => {
             console.error("Error approving property:", error);
-            message.error("Có lỗi xảy ra khi duyệt tin đăng!");
+            message.error(t("admin.cannotApproveProperty"));
           });
       },
     });
@@ -347,14 +357,16 @@ const AdminProperties = () => {
 
   const handleReject = (property: Property) => {
     modal.confirm({
-      title: "Từ chối tin đăng",
+      title: t("admin.confirmReject"),
       content: (
         <div>
           <p className="mb-4">
-            Bạn có chắc chắn muốn từ chối tin đăng &quot;{property.title}&quot;?
+            {t("admin.confirmRejectContent", {
+              title: property.title,
+            })}
           </p>
           <Input.TextArea
-            placeholder="Nhập lý do từ chối (tùy chọn)"
+            placeholder={t("admin.enterRejectionReason")}
             rows={3}
             value={rejectionReason}
             onChange={(e) => setRejectionReason(e.target.value)}
@@ -362,22 +374,22 @@ const AdminProperties = () => {
           />
         </div>
       ),
-      okText: "Xác nhận từ chối",
+      okText: t("admin.confirmReject"),
       okType: "danger",
-      cancelText: "Hủy",
+      cancelText: t("admin.cancel"),
       onOk() {
-        const reason = rejectionReason.trim() || "Admin rejected";
+        const reason = rejectionReason.trim() || t("admin.adminRejected");
 
         propertyService
           .rejectProperty(property.id, { reason })
           .then(() => {
-            message.success("Đã từ chối tin đăng thành công!");
+            message.success(t("admin.propertyRejectedSuccessfully"));
             setRejectionReason(""); // Reset reason
             fetchProperties(); // Refresh the list
           })
           .catch((error) => {
             console.error("Error rejecting property:", error);
-            message.error("Có lỗi xảy ra khi từ chối tin đăng!");
+            message.error(t("admin.cannotRejectProperty"));
           });
       },
     });
@@ -385,12 +397,14 @@ const AdminProperties = () => {
 
   const handleDelete = (property: Property) => {
     modal.confirm({
-      title: "Xác nhận xóa",
+      title: t("admin.confirmDelete"),
       icon: <AlertTriangle className="text-red-500" />,
-      content: `Bạn có chắc chắn muốn xóa tin đăng "${property.title}"?`,
-      okText: "Xóa",
+      content: t("admin.confirmDeleteContent", {
+        title: property.title,
+      }),
+      okText: t("admin.delete"),
       okType: "danger",
-      cancelText: "Hủy",
+      cancelText: t("admin.cancel"),
       onOk() {
         deleteProperty(property.id);
       },
@@ -432,9 +446,9 @@ const AdminProperties = () => {
 
     if (selectedStatus !== "all") {
       const statusMap = {
-        pending: "Chờ duyệt",
-        approved: "Đã duyệt",
-        rejected: "Từ chối",
+        pending: t("admin.pending"),
+        approved: t("admin.approved"),
+        rejected: t("admin.rejected"),
       };
       filters.push(
         statusMap[selectedStatus as keyof typeof statusMap] || selectedStatus,
@@ -443,9 +457,9 @@ const AdminProperties = () => {
 
     if (selectedTransactionType !== "all") {
       const transactionMap = {
-        sale: "Bán",
-        rent: "Cho thuê",
-        project: "Dự án",
+        sale: t("admin.sale"),
+        rent: t("admin.forRent"),
+        project: t("admin.projects"),
       };
       filters.push(
         transactionMap[
@@ -473,10 +487,10 @@ const AdminProperties = () => {
         <Row justify="space-between" align="middle" className="mb-4">
           <Col>
             <Title level={2} className="mb-2 text-gray-900">
-              Quản lý tin đăng
+              {t("admin.manageProperties")}
             </Title>
             <Text className="text-lg text-gray-600">
-              Quản lý tất cả tin đăng bất động sản trên hệ thống
+              {t("admin.manageAllProperties")}
             </Text>
           </Col>
           <Col>
@@ -487,7 +501,7 @@ const AdminProperties = () => {
                 icon={<Plus className="h-4 w-4" />}
                 className="border-blue-600 bg-blue-600 hover:border-blue-700 hover:bg-blue-700"
               >
-                Thêm tin đăng
+                {t("admin.addProperty")}
               </Button>
             </Link>
           </Col>
@@ -505,7 +519,7 @@ const AdminProperties = () => {
                 onClick={() => setShowFilters(!showFilters)}
                 className={showFilters ? "border-blue-600 bg-blue-600" : ""}
               >
-                Bộ lọc
+                {t("admin.filter")}
                 {getActiveFilterCount() > 0 && (
                   <Tag color="red" className="ml-1">
                     {getActiveFilterCount()}
@@ -520,7 +534,7 @@ const AdminProperties = () => {
                   onClick={handleClearFilters}
                   className="text-gray-500 hover:text-red-500"
                 >
-                  Xóa bộ lọc
+                  {t("admin.clearFilters")}
                 </Button>
               )}
 
@@ -533,7 +547,7 @@ const AdminProperties = () => {
           </Col>
           <Col xs={24} md={8}>
             <Input
-              placeholder="Tìm kiếm tin đăng..."
+              placeholder={t("admin.searchProperties")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               prefix={<Search className="h-4 w-4 text-gray-400" />}
@@ -551,26 +565,26 @@ const AdminProperties = () => {
               <div
                 className={`grid grid-cols-1 gap-6 md:grid-cols-${selectedTransactionType === "all" ? "4" : "5"}`}
               >
-                <Form.Item label="Hình thức">
+                <Form.Item label={t("admin.transactionType")}>
                   <Select
-                    placeholder="Chọn hình thức"
+                    placeholder={t("admin.selectTransactionType")}
                     value={selectedTransactionType}
                     onChange={handleTransactionTypeChange}
                     allowClear
                     loading={propertyTypesLoading}
                   >
-                    <Option value="all">Tất cả</Option>
-                    <Option value="sale">Bán</Option>
-                    <Option value="rent">Cho thuê</Option>
-                    <Option value="project">Dự án</Option>
+                    <Option value="all">{t("common.all")}</Option>
+                    <Option value="sale">{t("admin.sale")}</Option>
+                    <Option value="rent">{t("admin.forRent")}</Option>
+                    <Option value="project">{t("admin.projects")}</Option>
                   </Select>
                 </Form.Item>
 
                 {selectedTransactionType !== "all" && (
-                  <Form.Item label="Loại bất động sản">
+                  <Form.Item label={t("admin.propertyType")}>
                     <Select
                       mode="multiple"
-                      placeholder="Chọn loại bất động sản"
+                      placeholder={t("admin.selectPropertyType")}
                       value={selectedPropertyTypes}
                       onChange={handlePropertyTypeChange}
                       loading={propertyTypesLoading}
@@ -586,21 +600,21 @@ const AdminProperties = () => {
                   </Form.Item>
                 )}
 
-                <Form.Item label="Trạng thái">
+                <Form.Item label={t("admin.status")}>
                   <Select
-                    placeholder="Chọn trạng thái"
+                    placeholder={t("admin.selectStatus")}
                     value={selectedStatus}
                     onChange={handleStatusChange}
                     allowClear
                     loading={propertyTypesLoading}
                   >
-                    <Option value="all">Tất cả</Option>
-                    <Option value="pending">Chờ duyệt</Option>
-                    <Option value="approved">Đã duyệt</Option>
-                    <Option value="rejected">Từ chối</Option>
+                    <Option value="all">{t("common.all")}</Option>
+                    <Option value="pending">{t("admin.pending")}</Option>
+                    <Option value="approved">{t("admin.approved")}</Option>
+                    <Option value="rejected">{t("admin.rejected")}</Option>
                   </Select>
                 </Form.Item>
-                <Form.Item label="Khoảng giá (LAK)">
+                <Form.Item label={t("admin.priceRange")}>
                   <div className="space-y-2">
                     <Slider
                       range
@@ -618,14 +632,14 @@ const AdminProperties = () => {
                   </div>
                 </Form.Item>
 
-                <Form.Item label="Vị trí">
+                <Form.Item label={t("admin.location")}>
                   <Select
-                    placeholder="Chọn vị trí"
+                    placeholder={t("admin.selectLocation")}
                     value={selectedLocation}
                     onChange={handleLocationChange}
                     allowClear
                   >
-                    <Option value="all">Tất cả</Option>
+                    <Option value="all">{t("common.all")}</Option>
                     <Option value="vientiane">Vientiane</Option>
                     <Option value="luang-prabang">Luang Prabang</Option>
                     <Option value="pakse">Pakse</Option>
@@ -637,9 +651,11 @@ const AdminProperties = () => {
               </div>
 
               <div className="flex justify-end gap-2">
-                <Button onClick={handleClearFilters}>Xóa bộ lọc</Button>
+                <Button onClick={handleClearFilters}>
+                  {t("admin.clearFilters")}
+                </Button>
                 <Button type="primary" onClick={handleSearch}>
-                  Áp dụng bộ lọc
+                  {t("admin.applyFilters")}
                 </Button>
               </div>
             </Form>
@@ -663,20 +679,20 @@ const AdminProperties = () => {
               setPageSize(pageSize);
             },
             showTotal: (total, range) =>
-              `${range[0]}-${range[1]} của ${total} tin đăng`,
+              `${range[0]}-${range[1]} ${t("admin.of")} ${total} ${t("admin.properties")}`,
           }}
           scroll={{ x: 1000 }}
           locale={{
             emptyText: (
               <Empty
-                description="Không có tin đăng nào"
+                description={t("admin.noProperties")}
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
               />
             ),
           }}
           columns={[
             {
-              title: "Tin đăng",
+              title: t("admin.property"),
               dataIndex: "title",
               key: "title",
               fixed: "left",
@@ -688,14 +704,14 @@ const AdminProperties = () => {
                       {title}
                     </div>
                     <div className="mt-1 text-sm text-gray-500">
-                      📍 {property.location?.address ?? "Chưa có địa chỉ"}
+                      📍 {property.location?.address ?? t("admin.noAddress")}
                     </div>
                   </div>
                 </div>
               ),
             },
             {
-              title: "Người đăng",
+              title: t("admin.owner"),
               dataIndex: "owner",
               key: "owner",
               width: 160,
@@ -703,29 +719,31 @@ const AdminProperties = () => {
                 <Tag color="blue">
                   {typeof owner === "string"
                     ? owner
-                    : (owner?.fullName ?? "Không xác định")}
+                    : (owner?.fullName ?? t("admin.unknown"))}
                 </Tag>
               ),
             },
             {
-              title: "Loại",
+              title: t("admin.propertyType"),
               dataIndex: "type",
               key: "type",
               width: 180,
               render: (
                 type: { id: string; name: string } | null | undefined,
-              ) => <Tag color="blue">{type?.name ?? "Không xác định"}</Tag>,
+              ) => <Tag color="blue">{type?.name ?? t("admin.unknown")}</Tag>,
             },
             {
-              title: "Giá",
+              title: t("admin.price"),
               dataIndex: "price",
               key: "price",
               width: 150,
               render: (price: string) =>
-                price ? `${numberToString(Number(price))} LAK` : "Thỏa thuận",
+                price
+                  ? `${numberToString(Number(price))} LAK`
+                  : t("admin.negotiable"),
             },
             {
-              title: "Trạng thái",
+              title: t("admin.status"),
               dataIndex: "status",
               key: "status",
               width: 80,
@@ -740,22 +758,22 @@ const AdminProperties = () => {
                   }
                 >
                   {status === "approved"
-                    ? "Đã duyệt"
+                    ? t("admin.approved")
                     : status === "pending"
-                      ? "Chờ duyệt"
-                      : "Từ chối"}
+                      ? t("admin.pending")
+                      : t("admin.rejected")}
                 </Tag>
               ),
             },
             {
-              title: "Lượt xem",
+              title: t("admin.views"),
               dataIndex: "viewsCount",
               key: "viewsCount",
               width: 80,
               render: (count: number) => count || 0,
             },
             {
-              title: "Ngày đăng",
+              title: t("admin.createdAt"),
               dataIndex: "createdAt",
               key: "createdAt",
               width: 120,
@@ -767,18 +785,18 @@ const AdminProperties = () => {
                     day: "2-digit",
                   });
                 } catch {
-                  return "Invalid date";
+                  return t("common.invalidDate");
                 }
               },
             },
             {
-              title: "Thao tác",
+              title: t("admin.actions"),
               key: "actions",
               width: 200,
               render: (_: unknown, property: Property) => (
                 <Space size="small">
-                  <Tooltip title="Xem/Sửa tin đăng">
-                    <Link href={`/admin/properties/${property.id}`}>
+                  <Tooltip title={t("admin.viewEditProperty")}>
+                    <Link href={`/${locale}/admin/properties/${property.id}`}>
                       <button
                         type="button"
                         className="rounded-md bg-blue-50 p-2 text-blue-500 hover:bg-blue-100 hover:text-blue-700"
@@ -788,7 +806,7 @@ const AdminProperties = () => {
                     </Link>
                   </Tooltip>
 
-                  <Tooltip title="Xóa tin đăng">
+                  <Tooltip title={t("admin.deleteProperty")}>
                     <button
                       type="button"
                       className="rounded-md bg-red-50 p-2 text-red-500 hover:bg-red-100 hover:text-red-700"
@@ -801,7 +819,7 @@ const AdminProperties = () => {
 
                   {property.status === "pending" && (
                     <>
-                      <Tooltip title="Duyệt tin đăng">
+                      <Tooltip title={t("admin.approveProperty")}>
                         <button
                           type="button"
                           className="rounded-md bg-blue-50 p-2 text-blue-500 hover:bg-blue-100 hover:text-blue-700"
@@ -810,7 +828,7 @@ const AdminProperties = () => {
                           <CheckCircle className="h-4 w-4" />
                         </button>
                       </Tooltip>
-                      <Tooltip title="Từ chối tin đăng">
+                      <Tooltip title={t("admin.rejectProperty")}>
                         <button
                           type="button"
                           className="rounded-md bg-red-50 p-2 text-red-500 hover:bg-red-100 hover:text-red-700"

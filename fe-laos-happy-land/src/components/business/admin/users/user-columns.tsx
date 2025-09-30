@@ -22,7 +22,7 @@ interface User {
 }
 
 // Utility function to format date consistently
-const formatDate = (dateString: string) => {
+const formatDate = (dateString: string, t: (key: string) => string) => {
   try {
     const date = new Date(dateString);
     return date.toLocaleDateString("vi-VN", {
@@ -30,8 +30,8 @@ const formatDate = (dateString: string) => {
       month: "2-digit",
       day: "2-digit",
     });
-  } catch (error) {
-    return "Invalid date";
+  } catch {
+    return t("common.invalidDate");
   }
 };
 
@@ -39,10 +39,11 @@ export const getColumns = (
   handleEditUser: (user: User) => void,
   handleDeleteUser: (id: string) => Promise<void>,
   deletingUser: boolean,
+  t: (key: string) => string,
 ) => {
   return [
     {
-      title: "Người dùng",
+      title: t("admin.user"),
       key: "user",
       render: (user: User) => (
         <Space>
@@ -55,35 +56,37 @@ export const getColumns = (
             <div style={{ fontWeight: 500 }}>{user.fullName}</div>
             <div style={{ fontWeight: 500 }}>{user.id}</div>
 
-            <Text type="secondary">ID: {user.id.slice(0, 8)}...</Text>
+            <Text type="secondary">
+              {t("admin.id")}: {user.id.slice(0, 8)}...
+            </Text>
           </div>
         </Space>
       ),
     },
     {
-      title: "Email",
+      title: t("admin.email"),
       dataIndex: "email",
       key: "email",
     },
     {
-      title: "Số điện thoại",
+      title: t("admin.phone"),
       dataIndex: "phone",
       key: "phone",
     },
     {
-      title: "Vai trò",
+      title: t("admin.role"),
       key: "role",
       render: (user: User) => {
         return <Tag color="blue">{user.role.name}</Tag>;
       },
     },
     {
-      title: "Ngày tạo",
+      title: t("admin.createdAt"),
       key: "createdAt",
-      render: (user: User) => <Text>{formatDate(user.createdAt)}</Text>,
+      render: (user: User) => <Text>{formatDate(user.createdAt, t)}</Text>,
     },
     {
-      title: "Thao tác",
+      title: t("admin.actions"),
       key: "actions",
       render: (user: User) => (
         <Space>
@@ -91,21 +94,21 @@ export const getColumns = (
             type="text"
             icon={<Edit size={16} />}
             onClick={() => handleEditUser(user)}
-            title="Chỉnh sửa"
+            title={t("admin.edit")}
           />
           <Popconfirm
-            title="Xóa người dùng"
-            description="Bạn có chắc chắn muốn xóa người dùng này?"
+            title={t("admin.deleteUser")}
+            description={t("admin.deleteUserConfirm")}
             onConfirm={() => handleDeleteUser(user.id)}
-            okText="Có"
-            cancelText="Không"
+            okText={t("common.yes")}
+            cancelText={t("common.no")}
           >
             <Button
               type="text"
               danger
               icon={<Trash2 size={16} />}
               loading={deletingUser}
-              title="Xóa"
+              title={t("admin.delete")}
             />
           </Popconfirm>
         </Space>

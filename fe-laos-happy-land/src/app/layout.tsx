@@ -8,6 +8,9 @@ import { App } from "antd";
 import { Suspense } from "react";
 import LoadingScreen from "@/components/common/loading-screen";
 import AuthProvider from "@/components/common/auth-provider";
+import { NextIntlClientProvider, useTranslations } from "next-intl";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
+import { useUrlLocale } from "@/utils/locale";
 import TokenHandler from "@/components/common/token-handler";
 
 export const metadata: Metadata = {
@@ -59,31 +62,37 @@ const beVietnamPro = Be_Vietnam_Pro({
   weight: ["400", "500", "700"],
 });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const messages = await getMessages();
+  const t = await getTranslations("common");
+  const locale = await getLocale();
+
   return (
-    <html lang="vi" className={`${beVietnamPro.variable}`}>
+    <html lang={locale} className={`${beVietnamPro.variable}`}>
       <body className="antialiased">
         <AntdRegistry>
           <AntdConfigProvider>
             <App>
-              <AuthProvider>
-                <Suspense
-                  fallback={
-                    <LoadingScreen
-                      variant="primary"
-                      message="Đang tải trang..."
-                      size="lg"
-                      showProgress
-                      duration={3}
-                    />
-                  }
-                >
-                  <TokenHandler />
-                  {children}
-                </Suspense>
-              </AuthProvider>
+              <NextIntlClientProvider locale={locale} messages={messages}>
+                <AuthProvider>
+                  <Suspense
+                    fallback={
+                      <LoadingScreen
+                        variant="primary"
+                        message={t("loading")}
+                        size="lg"
+                        showProgress
+                        duration={3}
+                      />
+                    }
+                  >
+                    <TokenHandler />
+                    {children}
+                  </Suspense>
+                </AuthProvider>
+              </NextIntlClientProvider>
             </App>
           </AntdConfigProvider>
         </AntdRegistry>
