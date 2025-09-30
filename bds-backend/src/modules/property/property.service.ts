@@ -119,9 +119,10 @@ export class PropertyService {
       owner,
       locationInfo: locationInfo,
       type: propertyType,
-      status: (isAdmin || isBroker)
-        ? PropertyStatusEnum.APPROVED
-        : PropertyStatusEnum.PENDING,
+      status:
+        isAdmin || isBroker
+          ? PropertyStatusEnum.APPROVED
+          : PropertyStatusEnum.PENDING,
     });
 
     await this.entityManager.save(property);
@@ -331,6 +332,30 @@ export class PropertyService {
       itemCount: total,
       pageOptionsDto: params,
     });
+    return new ResponsePaginate(finalResult as any, pageMetaDto, 'Success');
+  }
+
+  async getByUserId(userId: string, params: GetPropertyByUserDto) {
+    const qb = this.propertyRepository
+      .createQueryBuilder('property')
+      .leftJoinAndSelect('property.type', 'type')
+      .leftJoinAndSelect('property.owner', 'owner')
+      .where('property.owner_id = :userId', { userId })
+      .orderBy('property.createdAt', 'DESC')
+      .skip(params.skip)
+      .take(params.perPage);
+
+    const [properties, total] = await qb.getManyAndCount();
+
+    const finalResult = params.currency
+      ? properties.map((item) => this.formatProperty(item, params.currency))
+      : properties;
+
+    const pageMetaDto = new PageMetaDto({
+      itemCount: total,
+      pageOptionsDto: params,
+    });
+
     return new ResponsePaginate(finalResult as any, pageMetaDto, 'Success');
   }
 
