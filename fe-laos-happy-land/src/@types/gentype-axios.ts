@@ -42,6 +42,36 @@ export interface CreateUserDto {
    * @format binary
    */
   image?: File;
+  /**
+   * Years of experience (default 0)
+   * @example 2
+   */
+  experienceYears?: number;
+  /**
+   * Specialties of the user
+   * @example ["Apartment","Land"]
+   */
+  specialties?: string[];
+  /**
+   * Languages the user can speak
+   * @example ["Vietnamese","English"]
+   */
+  languages?: string[];
+  /**
+   * Certifications of the user
+   * @example ["Broker License","Real Estate Certificate"]
+   */
+  certifications?: string[];
+  /**
+   * Company name of the user
+   * @example "ABC Real Estate"
+   */
+  company?: string;
+  /**
+   * Verified status of the user
+   * @example true
+   */
+  verified?: boolean;
 }
 
 export interface UpdateUserDto {
@@ -80,6 +110,36 @@ export interface UpdateUserDto {
    * @format binary
    */
   image?: File;
+  /**
+   * Years of experience (default 0)
+   * @example 2
+   */
+  experienceYears?: number;
+  /**
+   * Specialties of the user
+   * @example ["Apartment","Land"]
+   */
+  specialties?: string[];
+  /**
+   * Languages the user can speak
+   * @example ["Vietnamese","English"]
+   */
+  languages?: string[];
+  /**
+   * Certifications of the user
+   * @example ["Broker License","Real Estate Certificate"]
+   */
+  certifications?: string[];
+  /**
+   * Company name of the user
+   * @example "ABC Real Estate"
+   */
+  company?: string;
+  /**
+   * Verified status of the user
+   * @example true
+   */
+  verified?: boolean;
 }
 
 export interface RegisterDto {
@@ -136,6 +196,18 @@ export interface LocationDto {
   city?: string;
   /** @example "Vietnam" */
   country?: string;
+  /** @example "12A" */
+  buildingNumber?: string;
+  /** @example "Nguyễn Huệ" */
+  street?: string;
+  /** @example "Quận 1" */
+  district?: string;
+  /** @example "TP.HCM" */
+  province?: string;
+  /** @example "700000" */
+  postalCode?: string;
+  /** @example "Bến Nghé" */
+  neighborhood?: string;
 }
 
 export interface CreatePropertyDto {
@@ -144,11 +216,6 @@ export interface CreatePropertyDto {
    * @example "f2f6f4f0-6b6b-4b8c-9b87-5f6a6c6a6c6a"
    */
   typeId: string;
-  /**
-   * ID của LocationInfo
-   * @example "d7f6a6a0-1234-5678-9876-abcdefabcdef"
-   */
-  locationInfoId: string;
   /**
    * Tiêu đề tin rao
    * @example "Căn hộ cao cấp 2PN tại Quận 1, view sông tuyệt đẹp"
@@ -193,11 +260,6 @@ export interface UpdatePropertyDto {
    * @example "f2f6f4f0-6b6b-4b8c-9b87-5f6a6c6a6c6a"
    */
   typeId?: string;
-  /**
-   * ID của LocationInfo
-   * @example "d7f6a6a0-1234-5678-9876-abcdefabcdef"
-   */
-  locationInfoId?: string;
   /**
    * Tiêu đề tin rao
    * @example "Căn hộ cao cấp 2PN tại Quận 1, view sông tuyệt đẹp"
@@ -273,12 +335,9 @@ export interface CreateSettingDto {
   /** Facebook url */
   facebook?: string;
   /** List images setting */
-  images?: File[];
-  /**
-   * Banner image setting
-   * @format binary
-   */
-  banner?: File;
+  images?: string[];
+  /** Banner image setting */
+  banner?: string;
 }
 
 export interface CreateExchangeRateDto {
@@ -344,6 +403,101 @@ export interface CreateNewsDto {
    * @example "b12f8b63-4f0a-4c85-9c48-4e9fa0d1a1f1"
    */
   newsTypeId?: string;
+}
+
+export interface UpdateNewsDto {
+  /**
+   * Tiêu đề của tin tức
+   * @example "Chính sách mới về BĐS"
+   */
+  title?: string;
+  /**
+   * Nội dung chi tiết dạng JSON
+   * @example [{"type":"p","value":"Nội dung chi tiết của tin tức..."},{"type":"img","value":"https://example.com/image.jpg"}]
+   */
+  details?: object;
+  /**
+   * ID của loại tin tức (NewsType)
+   * @example "b12f8b63-4f0a-4c85-9c48-4e9fa0d1a1f1"
+   */
+  newsTypeId?: string;
+}
+
+export interface CreateAboutUsDto {
+  /**
+   * Title of the about us page
+   * @example "about us"
+   */
+  title: string;
+  /**
+   * Content of the about us page
+   * @example "abcdefghijklmnopqrstuvwxyz"
+   */
+  content: string;
+}
+
+export interface UpdateAboutUsDto {
+  /**
+   * Title of the about us page
+   * @example "about us"
+   */
+  title?: string;
+  /**
+   * Content of the about us page
+   * @example "abcdefghijklmnopqrstuvwxyz"
+   */
+  content?: string;
+}
+
+export interface CreateUserFeedbackDto {
+  /**
+   * ID của môi giới (user được đánh giá)
+   * @example "a3f6b6de-34c9-4f5d-9a62-4b9e6e9b7d21"
+   */
+  userId: string;
+  /**
+   * Điểm đánh giá (1-5)
+   * @example 5
+   */
+  rating: number;
+  /**
+   * Nội dung nhận xét
+   * @example "Môi giới rất nhiệt tình và chuyên nghiệp."
+   */
+  comment?: string;
+}
+
+export interface TermRateDto {
+  /**
+   * Kỳ hạn gửi
+   * @example "3 tháng"
+   */
+  term: string;
+  /**
+   * Lãi suất (%) tương ứng với kỳ hạn
+   * @example 0.5
+   */
+  interestRate: number;
+}
+
+export interface CreateBankDto {
+  /**
+   * Tên ngân hàng
+   * @example "Banque pour le Commerce Extérieur Lao (BCEL)"
+   */
+  name: string;
+  /** Danh sách kỳ hạn và lãi suất */
+  termRates: TermRateDto[];
+}
+
+export interface UpdateBankDto {
+  /**
+   * Tên ngân hàng
+   * @example "Banque pour le Commerce Extérieur Lao (BCEL)"
+   */
+  name?: string;
+  /** Danh sách kỳ hạn và lãi suất */
+  termRates?: TermRateDto[];
 }
 
 import type {
@@ -573,6 +727,10 @@ export class Api<
         search?: string;
         /** Role of the user */
         role?: string;
+        /** Filter by specialty */
+        specialty?: string;
+        /** Filter by location info ID */
+        locationInfoId?: string;
       },
       params: RequestParams = {},
     ) =>
@@ -598,6 +756,10 @@ export class Api<
         search?: string;
         /** Role of the user */
         role?: string;
+        /** Filter by specialty */
+        specialty?: string;
+        /** Filter by location info ID */
+        locationInfoId?: string;
         fullName?: string;
         take?: number;
         skip?: number;
@@ -825,7 +987,7 @@ export class Api<
         page?: number;
         perPage?: number;
         /** Loại bất động sản (có thể truyền nhiều, cách nhau dấu phẩy) */
-        type?: string;
+        type?: string[];
         /** ID của location */
         locationId?: string;
         /** Từ khóa tìm kiếm tiêu đề/mô tả */
@@ -881,6 +1043,28 @@ export class Api<
         method: "GET",
         query: query,
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Property
+     * @name PropertyControllerGetByUserId
+     * @request GET:/api/property/user/{userId}
+     */
+    propertyControllerGetByUserId: (
+      userId: string,
+      query?: {
+        page?: number;
+        perPage?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/property/user/${userId}`,
+        method: "GET",
+        query: query,
         ...params,
       }),
 
@@ -1167,7 +1351,7 @@ export class Api<
         path: `/api/setting`,
         method: "POST",
         body: data,
-        type: ContentType.FormData,
+        type: ContentType.Json,
         ...params,
       }),
 
@@ -1222,7 +1406,7 @@ export class Api<
         path: `/api/setting/${id}`,
         method: "PATCH",
         body: data,
-        type: ContentType.FormData,
+        type: ContentType.Json,
         ...params,
       }),
 
@@ -1589,7 +1773,7 @@ export class Api<
      */
     newsControllerUpdate: (
       id: string,
-      data: CreateNewsDto,
+      data: UpdateNewsDto,
       params: RequestParams = {},
     ) =>
       this.request<void, any>({
@@ -1611,6 +1795,256 @@ export class Api<
     newsControllerRemove: (id: string, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/news/${id}`,
+        method: "DELETE",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags AboutUs
+     * @name AboutUsControllerCreate
+     * @summary Create about us
+     * @request POST:/api/about-us
+     */
+    aboutUsControllerCreate: (
+      data: CreateAboutUsDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/about-us`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags AboutUs
+     * @name AboutUsControllerGetAll
+     * @summary Get all about us
+     * @request GET:/api/about-us
+     */
+    aboutUsControllerGetAll: (
+      query?: {
+        page?: number;
+        perPage?: number;
+        /** Từ khóa tìm kiếm tên about us */
+        search?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/about-us`,
+        method: "GET",
+        query: query,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags AboutUs
+     * @name AboutUsControllerGet
+     * @summary Get about us by id
+     * @request GET:/api/about-us/{id}
+     */
+    aboutUsControllerGet: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/about-us/${id}`,
+        method: "GET",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags AboutUs
+     * @name AboutUsControllerUpdate
+     * @summary Update about us by id
+     * @request PATCH:/api/about-us/{id}
+     */
+    aboutUsControllerUpdate: (
+      id: string,
+      data: UpdateAboutUsDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/about-us/${id}`,
+        method: "PATCH",
+        body: data,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags AboutUs
+     * @name AboutUsControllerRemove
+     * @summary Delete about us by id
+     * @request DELETE:/api/about-us/{id}
+     */
+    aboutUsControllerRemove: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/about-us/${id}`,
+        method: "DELETE",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags UserFeedback
+     * @name UserFeedbackControllerCreate
+     * @summary Create user feedback
+     * @request POST:/api/user-feedback
+     * @secure
+     */
+    userFeedbackControllerCreate: (
+      data: CreateUserFeedbackDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/user-feedback`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags UserFeedback
+     * @name UserFeedbackControllerGetByUserId
+     * @summary Get feedback list by user id
+     * @request GET:/api/user-feedback/user/{userId}
+     */
+    userFeedbackControllerGetByUserId: (
+      userId: string,
+      query?: {
+        page?: number;
+        perPage?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/user-feedback/user/${userId}`,
+        method: "GET",
+        query: query,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags UserFeedback
+     * @name UserFeedbackControllerGetById
+     * @summary Get feedback detail by id
+     * @request GET:/api/user-feedback/{id}
+     */
+    userFeedbackControllerGetById: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/user-feedback/${id}`,
+        method: "GET",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Bank
+     * @name BankControllerCreateBank
+     * @summary Create bank
+     * @request POST:/api/bank
+     */
+    bankControllerCreateBank: (
+      data: CreateBankDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/bank`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Bank
+     * @name BankControllerGetAll
+     * @summary Get all bank
+     * @request GET:/api/bank
+     */
+    bankControllerGetAll: (
+      query?: {
+        page?: number;
+        perPage?: number;
+        /** Search of the bank */
+        search?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/bank`,
+        method: "GET",
+        query: query,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Bank
+     * @name BankControllerGet
+     * @summary Get bank by id
+     * @request GET:/api/bank/{id}
+     */
+    bankControllerGet: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/bank/${id}`,
+        method: "GET",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Bank
+     * @name BankControllerUpdate
+     * @summary Update bank by id
+     * @request PATCH:/api/bank/{id}
+     */
+    bankControllerUpdate: (
+      id: string,
+      data: UpdateBankDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/bank/${id}`,
+        method: "PATCH",
+        body: data,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Bank
+     * @name BankControllerRemove
+     * @summary Delete bank by id
+     * @request DELETE:/api/bank/{id}
+     */
+    bankControllerRemove: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/bank/${id}`,
         method: "DELETE",
         ...params,
       }),

@@ -11,10 +11,20 @@ import {
   UploadedFiles,
   UseGuards,
   UseInterceptors,
+  Headers,
 } from '@nestjs/common';
 import { PropertyService } from './property.service';
 import { CreatePropertyDto } from './dto/create_property.dto';
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiHeader,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { GetPropertiesFilterDto } from './dto/get_property.dto';
 import { UpdatePropertyDto } from './dto/update_property.dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
@@ -23,99 +33,155 @@ import { PageOptionsDto } from 'src/common/dtos/pageOption';
 import { RejectPropertyDto } from './dto/reject_property.dto';
 import { User } from 'src/entities/user.entity';
 import { Request } from 'express';
-import { AuthGuard, OptionalAuthGuard } from '../auth/guard/auth.guard';
+import {
+  AdminGuard,
+  AuthGuard,
+  OptionalAuthGuard,
+} from '../auth/guard/auth.guard';
+import { GetPropertyDetailDto } from './dto/get_property_id.dto';
+import { GetPropertyByUserDto } from './dto/get_property_by_user.dto';
 
 @Controller('property')
 export class PropertyController {
   constructor(private readonly propertyService: PropertyService) {}
 
   @Post()
-  @ApiConsumes('multipart/form-data')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  // @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreatePropertyDto })
   @ApiResponse({ status: 200, description: 'Property created successfully' })
-  @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'mainImage', maxCount: 1 },
-      { name: 'images', maxCount: 10 },
-    ]),
-  )
   async create(
-    @Body() createPropertyDto: CreatePropertyDto,
-    @UploadedFiles()
-    files: {
-      mainImage?: Multer.File[];
-      images?: Multer.File[];
-    },
+    @Req() req: Request,
+    @Body() body: any,
   ) {
+    const user = req.user as User;
+    if (typeof body.details === 'string') {
+      try {
+        body.details = JSON.parse(body.details);
+      } catch {}
+    }
+    if (typeof body.location === 'string') {
+      try {
+        body.location = JSON.parse(body.location);
+      } catch {}
+    }
     return this.propertyService.create(
-      createPropertyDto,
-      files.mainImage?.[0],
-      files.images || [],
+      body as CreatePropertyDto,
+      user,
     );
   }
 
   @Get()
   @UseGuards(OptionalAuthGuard)
   @ApiBearerAuth()
+  @ApiHeader({
+    name: 'currency',
+    description: 'Currency filter (LAK | USD | VND)',
+    required: false,
+    schema: { type: 'string', enum: ['LAK', 'USD', 'VND'] },
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   async getAll(
     @Query() params: GetPropertiesFilterDto,
+    @Headers() rawHeaders: Record<string, string>,
     @Req() req: Request,
   ) {
     const user = req.user as User;
-    console.log(user)
-    return this.propertyService.getAll(params, user);
+
+    const mergedParams: GetPropertiesFilterDto = {
+      skip: params.skip ?? 0,
+      perPage: params.perPage ?? 10,
+      ...params,
+      currency:
+        (rawHeaders['currency'] as 'LAK' | 'USD' | 'VND') ?? params.currency,
+    };
+
+    return this.propertyService.getAll(mergedParams, user);
   }
+
+@Get('owner')
+@UseGuards(AuthGuard)
+@ApiBearerAuth()
+@ApiHeader({
+  name: 'currency',
+  description: 'Currency filter (LAK | USD | VND)',
+  required: false,
+  schema: { type: 'string', enum: ['LAK', 'USD', 'VND'] },
+})
+@ApiResponse({ status: 200, description: 'Success' })
+async getByUser(
+  @Req() req: Request,
+  @Query() params: GetPropertyByUserDto,
+  @Headers() rawHeaders: Record<string, string>,
+) {
+  const user = req.user as User;
+
+  const mergedParams: GetPropertyByUserDto = {
+    skip: params.skip ?? 0,
+    perPage: params.perPage ?? 10,
+    ...params,
+    currency: (rawHeaders['currency'] as 'LAK' | 'USD' | 'VND') ?? params.currency,
+  };
+
+  return this.propertyService.getByUser(mergedParams, user);
+}
 
   @Get(':id')
+  @ApiHeader({
+    name: 'currency',
+    description: 'Currency filter (LAK | USD | VND)',
+    required: false,
+    schema: { type: 'string', enum: ['LAK', 'USD', 'VND'] },
+  })
   @ApiResponse({ status: 200, description: 'Property found' })
-  async get(@Param('id') id: string) {
-    return this.propertyService.get(id);
-  }
-
-  @Get('owner/:userId')
-  @ApiResponse({ status: 200, description: 'Success' })
-  async getByUser(
-    @Param('userId') userId: string,
-    @Query() params: PageOptionsDto,
+  async get(
+    @Param('id') id: string,
+    @Query() params: GetPropertyDetailDto,
+    @Headers() rawHeaders: Record<string, string>,
   ) {
-    return this.propertyService.getByUser(userId, params);
+    const mergedParams: GetPropertyDetailDto = {
+      ...params,
+      currency:
+        (rawHeaders['currency'] as 'LAK' | 'USD' | 'VND') ?? params.currency,
+    };
+
+    return this.propertyService.get(id, mergedParams);
   }
 
   @Patch(':id')
-  @ApiConsumes('multipart/form-data')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  // @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UpdatePropertyDto })
   @ApiResponse({ status: 200, description: 'Property updated successfully' })
-  @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'mainImage', maxCount: 1 },
-      { name: 'images', maxCount: 10 },
-    ]),
-  )
   async update(
     @Param('id') id: string,
-    @Body() updatePropertyDto: UpdatePropertyDto,
-    @UploadedFiles()
-    files: {
-      mainImage?: Multer.File[];
-      images?: Multer.File[];
-    },
+    @Body() body: any,
   ) {
+    if (typeof body.location === 'string') {
+      try {
+        body.location = JSON.parse(body.location);
+      } catch {}
+    }
     return this.propertyService.update(
       id,
-      updatePropertyDto,
-      files.mainImage?.[0],
-      files.images?.length ? files.images : undefined,
+      body as UpdatePropertyDto,
     );
   }
 
   @Delete(':id')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
   @ApiResponse({ status: 200, description: 'Property deleted successfully' })
-  async remove(@Param('id') id: string) {
-    return this.propertyService.remove(id);
+  async remove(@Param('id') id: string, @Req() req: Request) {
+    const user = req.user as User;
+    return this.propertyService.remove(id, user);
   }
 
   @Patch(':id/approve')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Approve a property' })
   @ApiParam({ name: 'id', description: 'Property ID' })
   @ApiResponse({ status: 200, description: 'Property approved successfully' })
@@ -125,6 +191,8 @@ export class PropertyController {
   }
 
   @Patch(':id/reject')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Reject a property' })
   @ApiParam({ name: 'id', description: 'Property ID' })
   @ApiBody({
@@ -133,7 +201,10 @@ export class PropertyController {
   })
   @ApiResponse({ status: 200, description: 'Property rejected successfully' })
   @ApiResponse({ status: 404, description: 'Property not found' })
-  async reject(@Param('id') id: string, @Body() rejectPropertyDto: RejectPropertyDto) {
+  async reject(
+    @Param('id') id: string,
+    @Body() rejectPropertyDto: RejectPropertyDto,
+  ) {
     return this.propertyService.rejectProperty(id, rejectPropertyDto);
   }
 }

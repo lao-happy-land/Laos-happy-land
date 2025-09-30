@@ -1,15 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import {
-  Card,
-  Button,
-  Input,
-  Typography,
-  Select,
-  Form,
-  type FormInstance,
-} from "antd";
+import { Card, Button, Input, Typography } from "antd";
 import { MapPin, Search, Check } from "lucide-react";
 import Map from "react-map-gl/mapbox";
 import { Marker, Popup } from "react-map-gl/mapbox";
@@ -18,7 +10,6 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { useTranslations } from "next-intl";
 
 const { Text } = Typography;
-const { Option } = Select;
 
 interface LocationData {
   latitude: number;
@@ -34,30 +25,12 @@ interface LocationData {
   neighborhood?: string;
 }
 
-interface LocationInfo {
-  id: string;
-  name: string;
-  imageURL?: string;
-  viewCount?: number;
-  strict?: string[];
-  createdAt: string;
-  createdBy: string | null;
-  updatedAt: string;
-  updatedBy: string | null;
-  deletedAt: string | null;
-  deletedBy: string | null;
-}
-
 interface MapboxLocationSelectorProps {
-  form?: FormInstance;
   value?: LocationData | null;
   onChange?: (location: LocationData | null) => void;
   placeholder?: string;
   disabled?: boolean;
   initialSearchValue?: string;
-  locationInfos?: LocationInfo[];
-  selectedLocationInfoId?: string;
-  onLocationInfoChange?: (locationInfoId: string) => void;
   loadingLocations?: boolean;
   mode?: "create" | "edit";
   hasExistingLocation?: boolean;
@@ -233,16 +206,10 @@ function parseMapboxFeature(f: MapboxFeature) {
 }
 
 export default function MapboxLocationSelector({
-  form: _form,
   value,
   onChange,
   disabled = false,
   initialSearchValue,
-  locationInfos = [],
-  selectedLocationInfoId,
-  loadingLocations = false,
-  mode = "create",
-  hasExistingLocation = false,
 }: MapboxLocationSelectorProps) {
   const t = useTranslations();
   const [mapLocation, setMapLocation] = useState<LocationData | null>(
@@ -316,9 +283,6 @@ export default function MapboxLocationSelector({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const isLocationRequired =
-    mode === "create" || (mode === "edit" && !hasExistingLocation);
-
   useEffect(() => {
     if (value && value !== mapLocation) {
       setMapLocation(value);
@@ -344,18 +308,6 @@ export default function MapboxLocationSelector({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, mapLocation]);
-
-  // Sync selectedLocationInfoId → searchQuery
-  useEffect(() => {
-    if (selectedLocationInfoId && locationInfos.length > 0) {
-      const selectedLocation = locationInfos.find(
-        (loc) => loc.id === selectedLocationInfoId,
-      );
-      if (selectedLocation) {
-        setSearchQuery(selectedLocation.name);
-      }
-    }
-  }, [selectedLocationInfoId, locationInfos]);
 
   // Reverse geocode with Laos-aware types & languages
   const reverseGeocode = useCallback(
@@ -629,7 +581,7 @@ export default function MapboxLocationSelector({
           {/* Location Info Dropdown */}
           <div>
             <Text className="mb-2 block text-sm font-medium text-neutral-700">
-              Khu vực <span className="text-red-500">*</span>
+              {t("map.area")} <span className="text-red-500">*</span>
             </Text>
             <div className="grid w-full grid-cols-1 gap-2 lg:grid-cols-4">
               <div
@@ -693,7 +645,7 @@ export default function MapboxLocationSelector({
                     <div className="flex items-center justify-center p-4">
                       <div className="flex items-center gap-2 text-sm text-neutral-500">
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-neutral-300 border-t-blue-500"></div>
-                        Đang tìm kiếm...
+                        {t("map.searching")}
                       </div>
                     </div>
                   </div>
@@ -706,46 +658,12 @@ export default function MapboxLocationSelector({
                   searchQuery.trim() && (
                     <div className="absolute top-full right-0 left-0 z-50 mt-1 rounded-lg border border-neutral-200 bg-white shadow-lg">
                       <div className="p-4 text-center text-sm text-neutral-500">
-                        Không tìm thấy kết quả cho &ldquo;{searchQuery}&rdquo;
+                        {t("map.noResultsFound", { query: searchQuery })}
                       </div>
                     </div>
                   )}
               </div>
-              <div className="col-span-1 grid grid-cols-3 gap-2">
-                <Form.Item
-                  key={selectedLocationInfoId ?? "empty"}
-                  name="locationInfoId"
-                  className="col-span-2"
-                  initialValue={selectedLocationInfoId}
-                  rules={[
-                    {
-                      required: isLocationRequired,
-                      message: t("map.selectAreaMessage"),
-                    },
-                  ]}
-                >
-                  <Select
-                    placeholder={t("map.selectArea")}
-                    loading={loadingLocations}
-                    showSearch
-                    className="w-full"
-                    filterOption={(input, option) => {
-                      const text = option?.children as unknown as string;
-                      return text.toLowerCase().includes(input.toLowerCase());
-                    }}
-                  >
-                    {Array.isArray(locationInfos) &&
-                      locationInfos.map((location) => (
-                        <Option key={location.id} value={location.id}>
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-gray-500" />
-                            <span>{location.name}</span>
-                          </div>
-                        </Option>
-                      ))}
-                  </Select>
-                </Form.Item>
-
+              <div className="col-span-1">
                 <Button
                   type="primary"
                   onClick={() => performSearch(searchQuery)}
@@ -753,7 +671,7 @@ export default function MapboxLocationSelector({
                   icon={<Search className="h-4 w-4" />}
                   disabled={disabled}
                 >
-                  Tìm
+                  {t("map.search")}
                 </Button>
               </div>
             </div>
@@ -812,58 +730,60 @@ export default function MapboxLocationSelector({
                       <div className="mt-2 space-y-1">
                         {mapLocation.buildingNumber && (
                           <div className="text-xs text-neutral-600">
-                            <strong>Số nhà:</strong>{" "}
+                            <strong>{t("map.buildingNumber")}:</strong>{" "}
                             {mapLocation.buildingNumber}
                           </div>
                         )}
                         {mapLocation.street && (
                           <div className="text-xs text-neutral-600">
-                            <strong>Đường:</strong> {mapLocation.street}
+                            <strong>{t("map.street")}:</strong>{" "}
+                            {mapLocation.street}
                           </div>
                         )}
                         {mapLocation.neighborhood && (
                           <div className="text-xs text-neutral-600">
-                            <strong>Khu phố:</strong> {mapLocation.neighborhood}
+                            <strong>{t("map.neighborhood")}:</strong>{" "}
+                            {mapLocation.neighborhood}
                           </div>
                         )}
                         {mapLocation.district && (
                           <div className="text-xs text-neutral-600">
-                            <strong>Khu vực:</strong> {mapLocation.district}
+                            <strong>{t("map.district")}:</strong>{" "}
+                            {mapLocation.district}
                           </div>
                         )}
                         {mapLocation.city && (
                           <div className="text-xs text-neutral-600">
-                            <strong>Thành phố:</strong> {mapLocation.city}
+                            <strong>{t("map.city")}:</strong> {mapLocation.city}
                           </div>
                         )}
                         {mapLocation.province && (
                           <div className="text-xs text-neutral-600">
-                            <strong>Tỉnh:</strong> {mapLocation.province}
+                            <strong>{t("map.province")}:</strong>{" "}
+                            {mapLocation.province}
                           </div>
                         )}
                         {mapLocation.country && (
                           <div className="text-xs text-neutral-600">
-                            <strong>Quốc gia:</strong> {mapLocation.country}
+                            <strong>{t("map.country")}:</strong>{" "}
+                            {mapLocation.country}
                           </div>
                         )}
                         {mapLocation.postalCode && (
                           <div className="text-xs text-neutral-600">
-                            <strong>Mã bưu điện:</strong>{" "}
+                            <strong>{t("map.postalCode")}:</strong>{" "}
                             {mapLocation.postalCode}
                           </div>
                         )}
                         {!mapLocation.buildingNumber && !mapLocation.street && (
                           <div className="mt-2 rounded bg-blue-50 p-2">
                             <div className="text-xs text-blue-700">
-                              <strong>💡 Lưu ý:</strong> Thông tin chi tiết về
-                              đường và số nhà có thể không có sẵn cho khu vực
-                              này. Vị trí đã được xác định chính xác theo tọa độ
-                              GPS.
+                              <strong>💡 {t("map.note")}:</strong>{" "}
+                              {t("map.locationNote")}
                             </div>
                             <div className="mt-1 text-xs text-blue-600">
-                              <strong>💡 Gợi ý:</strong> Thử tìm kiếm với tên
-                              đường cụ thể, tên tòa nhà, hoặc địa danh gần đó để
-                              có thông tin chi tiết hơn.
+                              <strong>💡 {t("map.tip")}:</strong>{" "}
+                              {t("map.locationTip")}
                             </div>
                           </div>
                         )}

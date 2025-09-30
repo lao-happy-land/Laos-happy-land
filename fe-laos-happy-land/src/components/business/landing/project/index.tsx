@@ -21,7 +21,6 @@ interface ProjectItem {
 
 const ProjectPage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const locale = useUrlLocale();
   const t = useTranslations();
   const [filters, setFilters] = useState({
     area: t("project.all"),

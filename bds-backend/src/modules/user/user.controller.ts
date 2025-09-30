@@ -14,10 +14,16 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create_user.dto';
-import { ApiBody, ApiConsumes, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiQuery,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { GetUserDto } from './dto/get_user.dto';
 import { UpdateUserDto } from './dto/update_user.dto';
-import { AuthGuard, RoleGuard } from '../auth/guard/auth.guard';
+import { AdminGuard } from '../auth/guard/auth.guard';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { Multer } from 'multer';
 
@@ -106,6 +112,8 @@ export class UserController {
   }
 
   @Patch(':id/approve')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiBody({
     schema: { type: 'object', properties: { approve: { type: 'boolean' } } },
   })

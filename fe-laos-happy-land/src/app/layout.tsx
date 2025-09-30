@@ -9,8 +9,9 @@ import { Suspense } from "react";
 import LoadingScreen from "@/components/common/loading-screen";
 import AuthProvider from "@/components/common/auth-provider";
 import { NextIntlClientProvider, useTranslations } from "next-intl";
-import { getMessages } from "next-intl/server";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { useUrlLocale } from "@/utils/locale";
+import TokenHandler from "@/components/common/token-handler";
 
 export const metadata: Metadata = {
   title: "Laos Happy Land - Bất động sản Lào",
@@ -61,12 +62,12 @@ const beVietnamPro = Be_Vietnam_Pro({
   weight: ["400", "500", "700"],
 });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const t = useTranslations();
-  const messages = getMessages();
-  const locale = useUrlLocale();
+  const messages = await getMessages();
+  const t = await getTranslations("common");
+  const locale = await getLocale();
 
   return (
     <html lang={locale} className={`${beVietnamPro.variable}`}>
@@ -80,13 +81,14 @@ export default function RootLayout({
                     fallback={
                       <LoadingScreen
                         variant="primary"
-                        message={t("common.loading")}
+                        message={t("loading")}
                         size="lg"
                         showProgress
                         duration={3}
                       />
                     }
                   >
+                    <TokenHandler />
                     {children}
                   </Suspense>
                 </AuthProvider>

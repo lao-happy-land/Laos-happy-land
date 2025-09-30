@@ -1,7 +1,7 @@
 "use client";
 
 import { Row, Col, Card, Divider, Spin } from "antd";
-import type { Content } from "@/@types/types";
+import type { Content, PropertyPrice } from "@/@types/types";
 import HeaderBar from "@/components/business/property-details/header-bar";
 import Gallery from "@/components/business/property-details/gallery";
 import PriceInfo from "@/components/business/property-details/price-info";
@@ -10,6 +10,7 @@ import Amenities from "@/components/business/property-details/amenities";
 import ProjectContent from "@/components/business/property-details/project-content";
 import DetailsSection from "@/components/business/property-details/details-section";
 import ContactCard from "@/components/business/property-details/contact-card";
+import LoanCalculator from "@/components/business/loan-calculator/loan-calculator";
 import { useState } from "react";
 import { useRequest } from "ahooks";
 import propertyService from "@/share/service/property.service";
@@ -123,11 +124,7 @@ export default function PropertyDetails({ propertyId }: Props) {
           >
             <div className="mb-6">
               <PriceInfo
-                price={
-                  (property.price as string)
-                    ? parseFloat(property.price as string)
-                    : undefined
-                }
+                price={(property.price as PropertyPrice) ?? null}
                 transactionType={property.transactionType as TransactionEnum}
                 createdAt={property.createdAt}
               />
@@ -162,6 +159,10 @@ export default function PropertyDetails({ propertyId }: Props) {
               createdAt={property?.createdAt}
               updatedAt={property.updatedAt}
             />
+
+            <Divider />
+
+            <LoanCalculator />
           </Card>
         </Col>
 

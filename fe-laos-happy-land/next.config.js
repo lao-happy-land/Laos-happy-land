@@ -9,6 +9,10 @@ const withNextIntl = createNextIntlPlugin("./src/i18n.ts");
 
 /** @type {import("next").NextConfig} */
 const config = {
+  // Set default port to 3001
+  env: {
+    PORT: "3001",
+  },
   images: {
     remotePatterns: [
       {

@@ -1,10 +1,11 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Property } from 'src/entities/property.entity';
+import { PriceHistoryEntry, Property } from 'src/entities/property.entity';
 import { EntityManager, Repository } from 'typeorm';
 import { GetPropertiesFilterDto } from './dto/get_property.dto';
 import { ResponsePaginate } from 'src/common/dtos/reponsePaginate';
@@ -18,6 +19,10 @@ import { PropertyType } from 'src/entities/property-type.entity';
 import { PageOptionsDto } from 'src/common/dtos/pageOption';
 import { PropertyStatusEnum } from 'src/common/enum/enum';
 import { RejectPropertyDto } from './dto/reject_property.dto';
+import { ExchangeRateService } from '../exchange-rate/exchange-rate.service';
+import { LocationInfo } from 'src/entities/location-info.entity';
+import { GetPropertyDetailDto } from './dto/get_property_id.dto';
+import { GetPropertyByUserDto } from './dto/get_property_by_user.dto';
 
 @Injectable()
 export class PropertyService {
@@ -25,20 +30,14 @@ export class PropertyService {
     @InjectRepository(Property)
     private readonly propertyRepository: Repository<Property>,
     private readonly cloudinaryService: CloudinaryService,
+    private readonly exchangeRateService: ExchangeRateService,
     private readonly entityManager: EntityManager,
   ) {}
 
-  async create(
-    createPropertyDto: CreatePropertyDto,
-    mainImage?: Multer.File,
-    images?: File[],
-  ) {
-    const user = await this.entityManager.findOneBy(User, {
-      id: createPropertyDto.user_id,
-    });
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
+  async create(createPropertyDto: CreatePropertyDto, user?: any) {
+    const isAdmin = !!user?.role && user.role.toString() === 'Admin';
+    const isBroker = !!user?.role && user.role.toString() === 'Broker';
+    const owner = await this.entityManager.findOneBy(User, { id: user.sub });
 
     const propertyType = await this.entityManager.findOneBy(PropertyType, {
       id: createPropertyDto.typeId,
@@ -47,7 +46,43 @@ export class PropertyService {
       throw new BadRequestException('Property type not found');
     }
 
-    const { user_id, typeId, ...propertyData } = createPropertyDto;
+    let locationData = null;
+    if (createPropertyDto.location) {
+      if (typeof createPropertyDto.location === 'string') {
+        try {
+          locationData = JSON.parse(createPropertyDto.location);
+        } catch {
+          throw new BadRequestException('Invalid location format');
+        }
+      } else {
+        locationData = createPropertyDto.location;
+      }
+    }
+    let locationInfo: LocationInfo = null;
+    if (locationData?.province && locationData?.district) {
+      let provinceInfo = await this.entityManager.findOne(LocationInfo, {
+        where: { name: locationData.province },
+      });
+
+      if (!provinceInfo) {
+        provinceInfo = this.entityManager.create(LocationInfo, {
+          name: locationData.province,
+          strict: [locationData.district],
+          viewCount: 0,
+        });
+        await this.entityManager.save(provinceInfo);
+      } else {
+        const strictList = provinceInfo.strict || [];
+        if (!strictList.includes(locationData.district)) {
+          provinceInfo.strict = [...strictList, locationData.district];
+          await this.entityManager.save(provinceInfo);
+        }
+      }
+
+      locationInfo = provinceInfo;
+    }
+
+    const { typeId, price: usdPrice, ...propertyData } = createPropertyDto;
 
     if (typeof propertyData.details === 'string') {
       try {
@@ -57,25 +92,21 @@ export class PropertyService {
       }
     }
 
-    if (mainImage) {
-      propertyData.mainImage =
-        await this.cloudinaryService.uploadAndReturnImageUrl(mainImage);
-    }
+    let finalPrice: Record<string, number> = null;
+    let history: PriceHistoryEntry[] = [];
 
-    if (images && images.length > 0) {
-      propertyData.images = await Promise.all(
-        images.map(async (file) => {
-          return await this.cloudinaryService.uploadAndReturnImageUrl(file);
-        }),
-      );
-    } else {
-      propertyData.images = null;
-    }
+    if (usdPrice !== undefined && usdPrice !== null) {
+      const rates = await this.exchangeRateService.getRates();
+      finalPrice = {};
+      finalPrice['USD'] = usdPrice;
 
-    if (propertyData.price) {
-      propertyData.priceHistory = [
+      Object.entries(rates).forEach(([currency, rate]) => {
+        finalPrice[currency] = usdPrice * rate;
+      });
+
+      history = [
         {
-          price: propertyData.price,
+          rates: finalPrice,
           date: new Date().toISOString(),
         },
       ];
@@ -83,12 +114,40 @@ export class PropertyService {
 
     const property = this.propertyRepository.create({
       ...propertyData,
-      owner: user,
+      price: finalPrice,
+      priceHistory: history,
+      owner,
+      locationInfo: locationInfo,
       type: propertyType,
+      status: (isAdmin || isBroker)
+        ? PropertyStatusEnum.APPROVED
+        : PropertyStatusEnum.PENDING,
     });
 
     await this.entityManager.save(property);
+
     return { property, message: 'Property created successfully' };
+  }
+
+  formatPrice(value: string | number | null): string | null {
+    if (value === null || value === undefined) return null;
+    return value.toString();
+  }
+
+  private formatProperty(
+    item: Property,
+    currency?: 'LAK' | 'USD' | 'VND',
+  ): any {
+    if (!currency) return item;
+    const cur = currency;
+    return {
+      ...item,
+      price: this.formatPrice(item.price?.[cur] ?? null),
+      priceHistory: (item.priceHistory || []).map((ph) => ({
+        date: ph.date,
+        rates: this.formatPrice(ph.rates?.[cur] ?? null),
+      })),
+    };
   }
 
   async getAll(params: GetPropertiesFilterDto, user: User) {
@@ -98,11 +157,10 @@ export class PropertyService {
       .createQueryBuilder('property')
       .leftJoinAndSelect('property.owner', 'owner')
       .leftJoinAndSelect('property.type', 'type')
+      .leftJoinAndSelect('property.locationInfo', 'locationInfo')
       .skip(params.skip)
       .take(params.perPage)
       .orderBy('property.createdAt', params.OrderSort);
-
-      
 
     if (!isAdmin) {
       properties.andWhere('property.status = :status', {
@@ -110,8 +168,21 @@ export class PropertyService {
       });
     }
 
-    if (params.type) {
-      properties.andWhere('type.name = :type', { type: params.type });
+    if (params.type?.length) {
+      properties.andWhere('type.id IN (:...types)', { types: params.type });
+    }
+
+    if (params.locationId) {
+      properties.andWhere('locationInfo.id = :locationId', {
+        locationId: params.locationId,
+      });
+      const location = await this.entityManager.findOne(LocationInfo, {
+        where: { id: params.locationId },
+      });
+      if (location) {
+        location.viewCount = (location.viewCount || 0) + 1;
+        await this.entityManager.save(location);
+      }
     }
 
     if (params.keyword) {
@@ -120,15 +191,19 @@ export class PropertyService {
         { keyword: `%${params.keyword}%` },
       );
     }
-    if (params.minPrice) {
-      properties.andWhere('property.price >= :minPrice', {
-        minPrice: params.minPrice,
-      });
-    }
-    if (params.maxPrice) {
-      properties.andWhere('property.price <= :maxPrice', {
-        maxPrice: params.maxPrice,
-      });
+    if (params.currency) {
+      if (params.minPrice !== undefined) {
+        properties.andWhere(
+          `(property.price ->> :currency)::numeric >= :minPrice`,
+          { currency: params.currency, minPrice: params.minPrice },
+        );
+      }
+      if (params.maxPrice !== undefined) {
+        properties.andWhere(
+          `(property.price ->> :currency)::numeric <= :maxPrice`,
+          { currency: params.currency, maxPrice: params.maxPrice },
+        );
+      }
     }
 
     if (params.minArea) {
@@ -167,9 +242,11 @@ export class PropertyService {
     }
 
     if (params.location) {
-      properties.andWhere('property.location ILIKE :location', {
-        location: `%${params.location}%`,
-      });
+      properties.andWhere(
+        `(property.location ->> 'address') ILIKE :location OR 
+      property.location ->> 'city' ILIKE :location`,
+        { location: `%${params.location}%` },
+      );
     }
 
     if (params.transaction) {
@@ -185,36 +262,58 @@ export class PropertyService {
     }
 
     const [result, total] = await properties.getManyAndCount();
+
+    const finalResult = params.currency
+      ? result.map((item) => this.formatProperty(item, params.currency))
+      : result;
+
     const pageMetaDto = new PageMetaDto({
       itemCount: total,
       pageOptionsDto: params,
     });
-
-    return new ResponsePaginate(result, pageMetaDto, 'Success');
+    return new ResponsePaginate(finalResult as any, pageMetaDto, 'Success');
   }
 
-  async get(id: string) {
-    const property = await this.propertyRepository
+  async get(id: string, params: GetPropertyDetailDto) {
+    const qb = this.propertyRepository
       .createQueryBuilder('property')
       .leftJoinAndSelect('property.owner', 'owner')
       .leftJoinAndSelect('property.type', 'type')
-      .where('property.id = :id', { id })
-      .getOne();
+      .leftJoinAndSelect('property.locationInfo', 'locationInfo')
+      .where('property.id = :id', { id });
+
+    if (params.currency) {
+      qb.andWhere(`property.price ? :currency`, { currency: params.currency });
+    }
+
+    const property = await qb.getOne();
     if (!property) {
       throw new BadRequestException('Property not found');
     }
 
     property.viewsCount = (property.viewsCount || 0) + 1;
     await this.propertyRepository.save(property);
-    return { property, message: 'Success' };
-  }
-
-  async getByUser(userId: string, params: PageOptionsDto) {
-    if (!userId) {
-      throw new BadRequestException('User ID is required');
+    if (property.locationInfo?.id) {
+      const location = await this.entityManager.findOne(LocationInfo, {
+        where: { id: property.locationInfo.id },
+      });
+      if (location) {
+        location.viewCount = (location.viewCount || 0) + 1;
+        await this.entityManager.save(location);
+      }
     }
 
-    const queryBuilder = this.propertyRepository
+    return {
+      property: this.formatProperty(property, params.currency),
+      message: 'Success',
+    };
+  }
+
+  async getByUser(params: GetPropertyByUserDto, user: any) {
+    const owner = await this.entityManager.findOneBy(User, { id: user.sub });
+    const userId = owner.id;
+
+    const qb = this.propertyRepository
       .createQueryBuilder('property')
       .leftJoinAndSelect('property.type', 'type')
       .where('property.owner_id = :userId', { userId })
@@ -222,22 +321,20 @@ export class PropertyService {
       .skip(params.skip)
       .take(params.perPage);
 
-    const [properties, total] = await queryBuilder.getManyAndCount();
+    const [properties, total] = await qb.getManyAndCount();
+
+    const finalResult = params.currency
+      ? properties.map((item) => this.formatProperty(item, params.currency))
+      : properties;
 
     const pageMetaDto = new PageMetaDto({
       itemCount: total,
       pageOptionsDto: params,
     });
-
-    return new ResponsePaginate(properties, pageMetaDto, 'Success');
+    return new ResponsePaginate(finalResult as any, pageMetaDto, 'Success');
   }
 
-  async update(
-    id: string,
-    updatePropertyDto: UpdatePropertyDto,
-    mainImage?: Multer.File,
-    images?: Multer.File[],
-  ) {
+  async update(id: string, updatePropertyDto: UpdatePropertyDto) {
     const property = await this.propertyRepository.findOne({
       where: { id },
       relations: ['owner', 'type'],
@@ -245,6 +342,41 @@ export class PropertyService {
 
     if (!property) {
       throw new NotFoundException('Property not found');
+    }
+    let locationData = null;
+    if (updatePropertyDto.location) {
+      if (typeof updatePropertyDto.location === 'string') {
+        try {
+          locationData = JSON.parse(updatePropertyDto.location);
+        } catch {
+          throw new BadRequestException('Invalid location format');
+        }
+      } else {
+        locationData = updatePropertyDto.location;
+      }
+      property.location = locationData;
+    }
+    if (locationData?.province && locationData?.district) {
+      let provinceInfo = await this.entityManager.findOne(LocationInfo, {
+        where: { name: locationData.province },
+      });
+
+      if (!provinceInfo) {
+        provinceInfo = this.entityManager.create(LocationInfo, {
+          name: locationData.province,
+          strict: [locationData.district],
+          viewCount: 0,
+        });
+        await this.entityManager.save(provinceInfo);
+      } else {
+        const strictList = provinceInfo.strict || [];
+        if (!strictList.includes(locationData.district)) {
+          provinceInfo.strict = [...strictList, locationData.district];
+          await this.entityManager.save(provinceInfo);
+        }
+      }
+
+      property.locationInfo = provinceInfo;
     }
 
     if (updatePropertyDto.typeId) {
@@ -257,6 +389,16 @@ export class PropertyService {
       property.type = propertyType;
     }
 
+    if (updatePropertyDto.location) {
+      if (typeof updatePropertyDto.location === 'string') {
+        try {
+          updatePropertyDto.location = JSON.parse(updatePropertyDto.location);
+        } catch (e) {
+          throw new BadRequestException('Invalid location format');
+        }
+      }
+    }
+
     if (updatePropertyDto.details) {
       if (typeof updatePropertyDto.details === 'string') {
         try {
@@ -267,59 +409,58 @@ export class PropertyService {
       }
     }
 
-    if (mainImage) {
-      property.mainImage =
-        await this.cloudinaryService.uploadAndReturnImageUrl(mainImage);
-    }
-
-    if (images && images.length > 0) {
-      const imageUrls = await Promise.all(
-        images.map(async (file) => {
-          return await this.cloudinaryService.uploadAndReturnImageUrl(file);
-        }),
-      );
-      property.images = imageUrls;
-    }
-
     if (
       updatePropertyDto.price !== undefined &&
       updatePropertyDto.price !== null
     ) {
-      const newPrice = Number(updatePropertyDto.price);
-      const currentPrice = Number(property.price);
+      const newUsd = Number(updatePropertyDto.price);
+      if (!isNaN(newUsd)) {
+        const rates = await this.exchangeRateService.getRates();
+        const converted: Record<string, number> = { USD: newUsd };
 
-      if (!isNaN(newPrice) && newPrice !== currentPrice) {
-        const history = property.priceHistory || [];
-        const lastPrice =
-          history.length > 0 ? Number(history[history.length - 1].price) : null;
+        Object.entries(rates).forEach(([currency, rate]) => {
+          converted[currency] = newUsd * rate;
+        });
 
-        if (lastPrice !== newPrice) {
-          history.push({
-            price: newPrice,
+        property.price = converted;
+        property.priceHistory = [
+          ...(property.priceHistory || []),
+          {
+            rates: converted,
             date: new Date().toISOString(),
-          });
-          property.priceHistory = history;
-        }
+          },
+        ];
       }
     }
 
     Object.assign(property, {
       ...updatePropertyDto,
       typeId: undefined,
+      price: property.price,
     });
 
     await this.entityManager.save(property);
     return { property, message: 'Property updated successfully' };
   }
 
-  async remove(id: string) {
+  async remove(id: string, user: any) {
     const property = await this.propertyRepository.findOne({
       where: { id },
+      relations: ['owner'],
     });
 
     if (!property) {
-      throw new NotFoundException('Tour not found');
+      throw new NotFoundException('Property not found');
     }
+    const isAdmin = user?.role?.toString() === 'Admin';
+    const isOwner = property.owner?.id === user?.sub;
+
+    if (!isAdmin && !isOwner) {
+      throw new ForbiddenException(
+        'You are not allowed to delete this property',
+      );
+    }
+
     await this.entityManager.remove(property);
     return { message: 'Property deleted successfully' };
   }

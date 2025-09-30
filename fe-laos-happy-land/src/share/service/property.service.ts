@@ -10,7 +10,7 @@ const propertyService = {
   getProperties: async (query?: {
     page?: number;
     perPage?: number;
-    type?: string;
+    type?: string[];
     locationId?: string;
     currency?: string;
     keyword?: string;
@@ -26,6 +26,7 @@ const propertyService = {
     status?: "pending" | "approved" | "rejected";
   }): Promise<APIResponse<Property[]>> => {
     try {
+      // TODO: fix query builder for type string[]
       const response = await api.propertyControllerGetAll(query);
       const data = response.data as unknown;
 
@@ -72,6 +73,11 @@ const propertyService = {
       console.error("PropertyService: Error fetching property:", error);
       throw error;
     }
+  },
+
+  getPropertyByUserId: async (userId: string): Promise<Property[]> => {
+    const response = await api.propertyControllerGetByUserId(userId);
+    return response.data as unknown as Property[];
   },
 
   createProperty: async (data: CreatePropertyDto): Promise<Property> => {

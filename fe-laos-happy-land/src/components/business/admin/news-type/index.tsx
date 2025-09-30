@@ -14,6 +14,7 @@ import {
   Typography,
 } from "antd";
 import { Plus, Edit, Trash2, Search } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useRequest } from "ahooks";
 import { newsTypeService } from "@/share/service/news-type.service";
 import type { NewsType } from "@/@types/types";
@@ -22,6 +23,7 @@ import NewsTypeModal from "./news-type-modal";
 const { Title } = Typography;
 
 const NewsTypeAdmin: React.FC = () => {
+  const t = useTranslations();
   const [searchQuery, setSearchQuery] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
@@ -51,7 +53,7 @@ const NewsTypeAdmin: React.FC = () => {
         refresh();
       },
       onError: (error: unknown) => {
-        message.error("Xóa loại tin tức thất bại!");
+        message.error(t("admin.deleteNewsTypeFailed"));
         console.error("Delete error:", error);
       },
     },

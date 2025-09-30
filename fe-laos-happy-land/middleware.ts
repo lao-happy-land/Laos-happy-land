@@ -63,7 +63,7 @@ export function middleware(request: NextRequest) {
     const intlPathname = request.nextUrl.pathname;
 
     // Handle admin routes
-    if (intlPathname.includes("/admin")) {
+    if (intlPathname.includes(`/${preferredLocale}/admin`)) {
       if (!isAuthenticated) {
         const loginUrl = new URL(`/${preferredLocale}/login`, request.url);
         loginUrl.searchParams.set("redirect", intlPathname);

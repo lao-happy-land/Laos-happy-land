@@ -17,24 +17,7 @@ export class SettingService {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  async create(
-    createSettingDto: CreateSettingDto,
-    banner?: Multer.File,
-    images?: File[],
-  ) {
-    if (banner) {
-      createSettingDto.banner =
-        await this.cloudinaryService.uploadAndReturnImageUrl(banner);
-    }
-    if (images && images.length > 0) {
-      createSettingDto.images = await Promise.all(
-        images.map(async (file) => {
-          return await this.cloudinaryService.uploadAndReturnImageUrl(file);
-        }),
-      );
-    } else {
-      createSettingDto.images = null;
-    }
+  async create(createSettingDto: CreateSettingDto) {
     const setting = this.settingRepository.create(createSettingDto);
     await this.settingRepository.save(setting);
     return { setting, message: 'Setting created successfully' };
@@ -67,25 +50,17 @@ export class SettingService {
 
   async update(
     id: string,
-    updateSettingDto: CreateSettingDto,
-    banner?: Multer.File,
-    images?: File[],
+    updateSettingDto: CreateSettingDto
   ) {
     const setting = await this.settingRepository.findOneBy({ id });
     if (!setting) {
       throw new BadRequestException('Setting not found');
     }
-    if (banner) {
-      setting.banner =
-        await this.cloudinaryService.uploadAndReturnImageUrl(banner);
+    if (updateSettingDto.images) {
+      setting.images = updateSettingDto.images;
     }
-    if (images && images.length > 0) {
-      const imageUrls = await Promise.all(
-        images.map(async (file) => {
-          return await this.cloudinaryService.uploadAndReturnImageUrl(file);
-        }),
-      );
-      setting.images = imageUrls;
+    if (updateSettingDto.banner) {
+      setting.banner = updateSettingDto.banner;
     }
     if (updateSettingDto.description) {
       setting.description = updateSettingDto.description;

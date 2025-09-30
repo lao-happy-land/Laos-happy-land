@@ -22,7 +22,7 @@ interface User {
 }
 
 // Utility function to format date consistently
-const formatDate = (dateString: string) => {
+const formatDate = (dateString: string, t: (key: string) => string) => {
   try {
     const date = new Date(dateString);
     return date.toLocaleDateString("vi-VN", {
@@ -31,7 +31,7 @@ const formatDate = (dateString: string) => {
       day: "2-digit",
     });
   } catch {
-    return "Invalid date";
+    return t("common.invalidDate");
   }
 };
 
@@ -83,7 +83,7 @@ export const getColumns = (
     {
       title: t("admin.createdAt"),
       key: "createdAt",
-      render: (user: User) => <Text>{formatDate(user.createdAt)}</Text>,
+      render: (user: User) => <Text>{formatDate(user.createdAt, t)}</Text>,
     },
     {
       title: t("admin.actions"),
@@ -100,8 +100,8 @@ export const getColumns = (
             title={t("admin.deleteUser")}
             description={t("admin.deleteUserConfirm")}
             onConfirm={() => handleDeleteUser(user.id)}
-            okText={t("admin.yes")}
-            cancelText={t("admin.no")}
+            okText={t("common.yes")}
+            cancelText={t("common.no")}
           >
             <Button
               type="text"

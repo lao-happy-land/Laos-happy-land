@@ -22,18 +22,15 @@ export class CreateSettingDto {
   facebook?: string;
 
   @ApiPropertyOptional({
-    type: 'array',
-    items: { type: 'string', format: 'binary' },
+    type: [String],
     description: 'List images setting',
   })
   @IsOptional()
-  images?: Multer.File[];
+  images?: string[];
 
   @ApiPropertyOptional({
-    type: 'string',
-    format: 'binary',
     description: 'Banner image setting',
   })
   @IsOptional()
-  banner?: Multer.File;
+  banner?: string;
 }

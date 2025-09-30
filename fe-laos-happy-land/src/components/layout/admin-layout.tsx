@@ -9,7 +9,7 @@ import { useAuthStore } from "@/share/store/auth.store";
 import { LogOut, User, Settings } from "lucide-react";
 import { Button, Dropdown, App } from "antd";
 import LoadingScreen from "@/components/common/loading-screen";
-import UnauthorizedPage from "@/app/[locale]/unauthorized/page";
+import UnauthorizedPage from "@/app/[locale]/(auth)/unauthorized/page";
 import { useUrlLocale } from "@/utils/locale";
 import { useTranslations } from "next-intl";
 
@@ -63,11 +63,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     );
   }
 
-  const menuItems = ADMIN_NAV_ITEMS(pathname);
+  const menuItems = ADMIN_NAV_ITEMS(pathname, locale, t);
 
   const getPageTitle = () => {
     const currentItem = menuItems.find((item) => item.active);
-    return currentItem ? currentItem.label : "Dashboard";
+    return currentItem ? currentItem.label : t("admin.dashboard");
   };
 
   const getBreadcrumbs = () => {
@@ -75,7 +75,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     return [
       { label: "Admin", href: `/${locale}/admin` },
       {
-        label: currentItem?.label ?? "Dashboard",
+        label: currentItem?.label ?? t("admin.dashboard"),
         href: currentItem?.href ?? `/${locale}/admin`,
       },
     ];
@@ -159,7 +159,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="group flex w-full items-center justify-center rounded-xl bg-gray-50 p-3 transition-all duration-200 hover:bg-gray-100 hover:shadow-md"
-            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={
+              sidebarCollapsed
+                ? t("admin.expandSidebar")
+                : t("admin.collapseSidebar")
+            }
           >
             <svg
               className={`h-5 w-5 text-gray-600 transition-transform duration-200 group-hover:text-gray-900 ${
@@ -229,7 +233,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                       icon: <User className="h-4 w-4" />,
                       label: (
                         <Link href={`/${locale}/admin/profile`}>
-                          Hồ sơ cá nhân
+                          {t("admin.personalProfile")}
                         </Link>
                       ),
                     },
@@ -237,7 +241,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                       key: "settings",
                       icon: <Settings className="h-4 w-4" />,
                       label: (
-                        <Link href={`/${locale}/admin/settings`}>Cài đặt</Link>
+                        <Link href={`/${locale}/admin/settings`}>
+                          {t("admin.settings")}
+                        </Link>
                       ),
                     },
                     {

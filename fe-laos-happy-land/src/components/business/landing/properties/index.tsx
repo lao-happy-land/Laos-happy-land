@@ -31,7 +31,6 @@ import {
   Pagination,
   App,
 } from "antd";
-import { PRICE_RANGE_OPTIONS } from "@/share/constant/home-search";
 import propertyService from "@/share/service/property.service";
 import propertyTypeService from "@/share/service/property-type.service";
 import locationInfoService from "@/share/service/location-info.service";
@@ -47,6 +46,12 @@ import PropertyCardSkeleton from "@/components/business/common/property-card-ske
 import PropertiesMap from "@/components/business/common/properties-map";
 
 import Image from "next/image";
+import { useUrlLocale } from "@/utils/locale";
+import {
+  getPropertyParamsByLocale,
+  getValidLocale,
+  type SupportedLocale,
+} from "@/share/helper/locale.helper";
 
 interface PropertiesProps {
   transaction: "sale" | "rent" | "project";
@@ -55,6 +60,7 @@ interface PropertiesProps {
 const Properties = ({ transaction }: PropertiesProps) => {
   const t = useTranslations();
   const { message } = App.useApp();
+  const locale = useUrlLocale();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -195,7 +201,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
         transaction: transaction,
         page: currentPage,
         perPage: pageSize,
-        currency: "LAK",
+        ...getPropertyParamsByLocale(locale as SupportedLocale),
         ...params,
       };
 
@@ -339,8 +345,6 @@ const Properties = ({ transaction }: PropertiesProps) => {
     ...locationInfos.map((locationInfo) => locationInfo.id),
   ];
 
-  const priceRanges = PRICE_RANGE_OPTIONS;
-
   // Generate property type options from API data
 
   const propertyTypeOptions = [
@@ -349,6 +353,18 @@ const Properties = ({ transaction }: PropertiesProps) => {
       name: type.name,
       icon: <Building2 className="h-4 w-4" />,
     })),
+  ];
+
+  // Create translated price ranges
+  const priceRanges = [
+    { value: "all", label: t("search.priceRanges.all") },
+    { value: "under-500", label: t("search.priceRanges.under500") },
+    { value: "500-800", label: t("search.priceRanges.range500to800") },
+    { value: "800-1000", label: t("search.priceRanges.range800to1000") },
+    { value: "1000-2000", label: t("search.priceRanges.range1to2billion") },
+    { value: "2000-5000", label: t("search.priceRanges.range2to5billion") },
+    { value: "5000-10000", label: t("search.priceRanges.range5to10billion") },
+    { value: "over-10000", label: t("search.priceRanges.over10billion") },
   ];
 
   const handleSearch = () => {
@@ -566,16 +582,16 @@ const Properties = ({ transaction }: PropertiesProps) => {
         minValue = 100;
         maxValue = 200;
         break;
-      case "200-500":
+      case "200-300":
         minValue = 200;
+        maxValue = 300;
+        break;
+      case "300-500":
+        minValue = 300;
         maxValue = 500;
         break;
-      case "500-1000":
+      case "over-500":
         minValue = 500;
-        maxValue = 1000;
-        break;
-      case "over-1000":
-        minValue = 1000;
         maxValue = 1000;
         break;
       case "all":
@@ -710,12 +726,12 @@ const Properties = ({ transaction }: PropertiesProps) => {
       newSelectedAreaRange = "50-100";
     } else if (urlMinAreaNum === 100 && urlMaxAreaNum === 200) {
       newSelectedAreaRange = "100-200";
-    } else if (urlMinAreaNum === 200 && urlMaxAreaNum === 500) {
-      newSelectedAreaRange = "200-500";
+    } else if (urlMinAreaNum === 200 && urlMaxAreaNum === 300) {
+      newSelectedAreaRange = "200-300";
+    } else if (urlMinAreaNum === 300 && urlMaxAreaNum === 500) {
+      newSelectedAreaRange = "300-500";
     } else if (urlMinAreaNum === 500 && urlMaxAreaNum === 1000) {
-      newSelectedAreaRange = "500-1000";
-    } else if (urlMinAreaNum === 1000 && urlMaxAreaNum === 1000) {
-      newSelectedAreaRange = "over-1000";
+      newSelectedAreaRange = "over-500";
     } else if (urlMinAreaNum !== 0 || urlMaxAreaNum !== 1000) {
       newSelectedAreaRange = "";
     }
@@ -922,7 +938,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                     <div className="border-b border-gray-100 p-3">
                       <div className="flex items-center justify-between">
                         <Typography.Title level={5} className="mb-0 text-sm">
-                          Loại nhà đất
+                          {t("search.propertyType")}
                         </Typography.Title>
                         <Button
                           type="text"
@@ -938,7 +954,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                         <div className="flex items-center justify-center py-4">
                           <Spin size="small" />
                           <span className="ml-2 text-sm text-gray-500">
-                            Đang tải loại bất động sản...
+                            {t("search.loadingPropertyTypes")}
                           </span>
                         </div>
                       ) : (
@@ -980,7 +996,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                         }}
                         className="text-sm text-gray-500 hover:text-red-500"
                       >
-                        Đặt lại
+                        {t("common.reset")}
                       </Button>
                       <Button
                         type="primary"
@@ -1127,14 +1143,14 @@ const Properties = ({ transaction }: PropertiesProps) => {
                         }}
                         className="text-sm text-gray-500 hover:text-red-500"
                       >
-                        Đặt lại
+                        {t("common.reset")}
                       </Button>
                       <Button
                         type="primary"
                         onClick={() => setPriceRangeOpen(false)}
                         className="border-0 bg-red-500 text-sm hover:bg-red-600"
                       >
-                        Áp dụng
+                        {t("common.apply")}
                       </Button>
                     </div>
                   </div>
@@ -1152,7 +1168,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                       <span className="text-xs">📐</span>
                     </div>
                     <span className="text-sm font-medium text-gray-700">
-                      Diện tích
+                      {t("search.area")}
                     </span>
                   </div>
                   <ChevronRight
@@ -1172,7 +1188,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                     <div className="border-b border-gray-100 p-3">
                       <div className="flex items-center justify-between">
                         <Typography.Title level={5} className="mb-0 text-sm">
-                          Diện tích
+                          {t("search.area")}
                         </Typography.Title>
                         <Button
                           type="text"
@@ -1261,28 +1277,32 @@ const Properties = ({ transaction }: PropertiesProps) => {
                         >
                           {[
                             {
+                              value: "all",
+                              label: t("search.areaRanges.all"),
+                            },
+                            {
                               value: "under-50",
                               label: t("search.areaRanges.under50"),
                             },
                             {
                               value: "50-100",
-                              label: t("search.areaRanges.50to100"),
+                              label: t("search.areaRanges.range50to100"),
                             },
                             {
                               value: "100-200",
-                              label: t("search.areaRanges.100to200"),
+                              label: t("search.areaRanges.range100to200"),
                             },
                             {
-                              value: "200-500",
-                              label: t("search.areaRanges.200to500"),
+                              value: "200-300",
+                              label: t("search.areaRanges.range200to300"),
                             },
                             {
-                              value: "500-1000",
-                              label: t("search.areaRanges.500to1000"),
+                              value: "300-500",
+                              label: t("search.areaRanges.range300to500"),
                             },
                             {
-                              value: "over-1000",
-                              label: t("search.areaRanges.over1000"),
+                              value: "over-500",
+                              label: t("search.areaRanges.over500"),
                             },
                           ].map((range) => (
                             <div key={range.value} className="mb-2">
@@ -1315,7 +1335,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                         onClick={() => setAreaOpen(false)}
                         className="border-0 bg-red-500 text-sm hover:bg-red-600"
                       >
-                        Áp dụng
+                        {t("common.apply")}
                       </Button>
                     </div>
                   </div>
@@ -1333,10 +1353,10 @@ const Properties = ({ transaction }: PropertiesProps) => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">
-                      Tìm kiếm thông minh
+                      {t("search.smartSearch")}
                     </h3>
                     <p className="text-sm text-gray-600">
-                      Khám phá các khu vực phổ biến
+                      {t("search.explorePopularAreas")}
                     </p>
                   </div>
                   <Button
@@ -1361,10 +1381,10 @@ const Properties = ({ transaction }: PropertiesProps) => {
                           </div>
                           <div>
                             <h4 className="font-semibold text-gray-900">
-                              Khu vực trending
+                              {t("search.trending")}
                             </h4>
                             <p className="text-sm text-gray-500">
-                              Các khu vực được tìm kiếm nhiều nhất
+                              {t("search.trendingDescription")}
                             </p>
                           </div>
                         </div>
@@ -1440,12 +1460,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                           {[
                             t("search.propertyTypes.streetHouse"),
                             t("search.propertyTypes.apartment"),
-                            t("search.propertyTypes.villa"),
                             t("search.propertyTypes.land"),
-                            t("search.propertyTypes.shopHouse"),
-                            t("search.propertyTypes.penthouse"),
-                            t("search.propertyTypes.condo"),
-                            t("search.propertyTypes.villa"),
                           ].map((keyword) => (
                             <button
                               key={keyword}
@@ -1475,10 +1490,10 @@ const Properties = ({ transaction }: PropertiesProps) => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">
-                      Chọn khu vực tìm kiếm
+                      {t("search.selectLocation")}
                     </h3>
                     <p className="text-sm text-gray-600">
-                      Bạn muốn tìm bất động sản tại tỉnh thành nào?
+                      {t("search.selectLocationDescription")}
                     </p>
                   </div>
                   <Button
@@ -1500,10 +1515,10 @@ const Properties = ({ transaction }: PropertiesProps) => {
                       </div>
                       <div>
                         <h4 className="font-semibold text-gray-900">
-                          Top tỉnh thành nổi bật
+                          {t("search.topLocations")}
                         </h4>
                         <p className="text-sm text-gray-500">
-                          Các khu vực được quan tâm nhiều nhất
+                          {t("search.topLocationsDescription")}
                         </p>
                       </div>
                     </div>
@@ -1568,10 +1583,10 @@ const Properties = ({ transaction }: PropertiesProps) => {
                       </div>
                       <div>
                         <h4 className="font-semibold text-gray-900">
-                          Tất cả tỉnh thành
+                          {t("search.allLocations")}
                         </h4>
                         <p className="text-sm text-gray-500">
-                          Chọn từ danh sách đầy đủ
+                          {t("search.allLocationsDescription")}
                         </p>
                       </div>
                     </div>
@@ -1622,7 +1637,9 @@ const Properties = ({ transaction }: PropertiesProps) => {
         {/* Layout Toggle */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Hiển thị:</span>
+            <span className="text-sm font-medium text-gray-700">
+              {t("search.display")}
+            </span>
             <div className="flex rounded-lg border border-gray-200 bg-white p-1">
               <Button
                 type={layout === "list" ? "primary" : "text"}
@@ -1631,7 +1648,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                 onClick={() => setLayout("list")}
                 className="flex items-center gap-1"
               >
-                Danh sách
+                {t("search.list")}
               </Button>
               <Button
                 type={layout === "grid" ? "primary" : "text"}
@@ -1640,7 +1657,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                 onClick={() => setLayout("grid")}
                 className="flex items-center gap-1"
               >
-                Lưới
+                {t("search.grid")}
               </Button>
               <Button
                 type={layout === "map" ? "primary" : "text"}
@@ -1649,13 +1666,13 @@ const Properties = ({ transaction }: PropertiesProps) => {
                 onClick={() => setLayout("map")}
                 className="flex items-center gap-1"
               >
-                Bản đồ
+                {t("search.map")}
               </Button>
             </div>
           </div>
 
           <div className="text-sm text-gray-500">
-            {properties?.data?.length ?? 0} bất động sản
+            {properties?.data?.length ?? 0} {t("search.properties")}
           </div>
         </div>
 

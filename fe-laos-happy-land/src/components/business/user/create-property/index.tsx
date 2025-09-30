@@ -41,13 +41,12 @@ import {
   Loader2,
 } from "lucide-react";
 import type { CreatePropertyDto } from "@/@types/gentype-axios";
-import type { PropertyType, LocationInfo } from "@/@types/types";
+import type { PropertyType } from "@/@types/types";
 import { useRequest } from "ahooks";
 import ProjectContentBuilder from "@/components/business/common/project-content-builder";
 import MapboxLocationSelector from "@/components/business/common/mapbox-location-selector";
 import propertyService from "@/share/service/property.service";
 import propertyTypeService from "@/share/service/property-type.service";
-import locationInfoService from "@/share/service/location-info.service";
 import uploadService from "@/share/service/upload.service";
 import Image from "next/image";
 
@@ -63,7 +62,6 @@ export default function CreateProperty() {
   const locale = useUrlLocale();
   const [form] = Form.useForm();
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
-  const [locationInfos, setLocationInfos] = useState<LocationInfo[]>([]);
   const [selectedTransactionType, setSelectedTransactionType] = useState<
     "rent" | "sale" | "project"
   >("sale");
@@ -101,32 +99,9 @@ export default function CreateProperty() {
   );
 
   // Load location infos
-  const { loading: loadingLocations, run: fetchLocationInfos } = useRequest(
-    async () => {
-      const response = await locationInfoService.getAllLocationInfo();
-      return response.data;
-    },
-    {
-      manual: true,
-      onSuccess: (data) => {
-        if (Array.isArray(data)) {
-          setLocationInfos(data);
-        } else {
-          console.warn("Location infos data is not an array:", data);
-          setLocationInfos([]);
-        }
-      },
-      onError: (error) => {
-        console.error("Error loading location infos:", error);
-        message.error(t("admin.cannotLoadLocations"));
-        setLocationInfos([]);
-      },
-    },
-  );
 
   useEffect(() => {
     fetchPropertyTypes();
-    fetchLocationInfos();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTransactionType]);
 
@@ -140,7 +115,6 @@ export default function CreateProperty() {
   const { loading: submitting, run: submitForm } = useRequest(
     async (values: {
       typeId: string;
-      locationInfoId: string;
       title: string;
       description?: string;
       price?: number;
@@ -162,32 +136,46 @@ export default function CreateProperty() {
         | { type: "image"; url: string; caption?: string }
       )[];
     }) => {
-      if (!mainImageFile) {
+      if (!mainImageFile && selectedTransactionType !== "project") {
         throw new Error(t("admin.pleaseUploadMainImage"));
       }
 
       const userId = user?.id;
       if (!userId) {
-        throw new Error("User ID not found. Please log in again.");
+        throw new Error(t("errors.userIdNotFound"));
       }
 
       // Use already uploaded image URLs
-      if (!mainImageUrl && mainImageFile) {
+      if (
+        !mainImageUrl &&
+        mainImageFile &&
+        selectedTransactionType !== "project"
+      ) {
         throw new Error(t("admin.mainImageNotUploadedSuccessfully"));
       }
 
-      if (imageUrls.length !== imageFiles.length) {
+      if (
+        imageUrls.length !== imageFiles.length &&
+        selectedTransactionType !== "project"
+      ) {
         throw new Error(t("admin.someAdditionalImagesNotUploadedSuccessfully"));
       }
 
       const formData: CreatePropertyDto = {
         typeId: values.typeId,
-        locationInfoId: values.locationInfoId,
         title: values.title,
         description: values.description,
         price: values.price,
         legalStatus: values.legalStatus,
-        location: locationData ?? undefined,
+        location: locationData
+          ? {
+              latitude: locationData.latitude,
+              longitude: locationData.longitude,
+              address: locationData.address,
+              city: locationData.city,
+              country: locationData.country,
+            }
+          : undefined,
         transactionType: values.transactionType,
         details: {
           area: values.area,
@@ -222,7 +210,6 @@ export default function CreateProperty() {
 
   const handleSubmit = (values: {
     typeId: string;
-    locationInfoId: string;
     title: string;
     description?: string;
     price?: number;
@@ -333,7 +320,6 @@ export default function CreateProperty() {
 
   const handleTransactionTypeChange = (value: "rent" | "sale" | "project") => {
     setSelectedTransactionType(value);
-    form.setFieldsValue({ typeId: undefined });
   };
 
   return (
@@ -344,10 +330,10 @@ export default function CreateProperty() {
             level={1}
             className="!mb-2 !text-3xl !font-bold !text-gray-900"
           >
-            {t("admin.createProperty")}
+            {t("property.createProperty")}
           </Title>
           <Text className="text-lg text-gray-600">
-            {t("admin.sharePropertyInformation")}
+            {t("property.sharePropertyInformation")}
           </Text>
         </div>
 
@@ -378,20 +364,20 @@ export default function CreateProperty() {
                   name="title"
                   label={
                     <Text className="font-medium">
-                      {t("admin.propertyTitle")}
+                      {t("property.propertyTitle")}
                     </Text>
                   }
                   rules={[
-                    { required: true, message: t("admin.pleaseEnterTitle") },
+                    { required: true, message: t("property.pleaseEnterTitle") },
                     { min: 10, message: t("admin.titleMinLength") },
                     {
                       max: 200,
-                      message: t("admin.titleMaxLength"),
+                      message: t("property.titleMaxLength"),
                     },
                   ]}
                 >
                   <Input
-                    placeholder={t("admin.enterPropertyTitle")}
+                    placeholder={t("property.enterPropertyTitle")}
                     size="large"
                     className="rounded-lg"
                   />
@@ -400,43 +386,43 @@ export default function CreateProperty() {
                   name="transactionType"
                   label={
                     <Text className="font-medium">
-                      {t("admin.transactionType")}
+                      {t("property.transactionType")}
                     </Text>
                   }
                   rules={[
                     {
                       required: true,
-                      message: t("admin.pleaseSelectTransactionType"),
+                      message: t("property.pleaseSelectTransactionType"),
                     },
                   ]}
                 >
                   <Select
-                    placeholder={t("admin.selectTransactionType")}
+                    placeholder={t("property.selectTransactionType")}
                     size="large"
                     className="rounded-lg"
                     onChange={handleTransactionTypeChange}
                   >
-                    <Option value="sale">{t("admin.sale")}</Option>
-                    <Option value="rent">{t("admin.rent")}</Option>
-                    <Option value="project">{t("admin.project")}</Option>
+                    <Option value="sale">{t("property.sale")}</Option>
+                    <Option value="rent">{t("property.rent")}</Option>
+                    <Option value="project">{t("property.project")}</Option>
                   </Select>
                 </Form.Item>
                 <Form.Item
                   name="typeId"
                   label={
                     <Text className="font-medium">
-                      {t("admin.propertyType")}
+                      {t("property.propertyType")}
                     </Text>
                   }
                   rules={[
                     {
                       required: true,
-                      message: t("admin.pleaseSelectPropertyType"),
+                      message: t("property.pleaseSelectPropertyType"),
                     },
                   ]}
                 >
                   <Select
-                    placeholder={t("admin.selectPropertyType")}
+                    placeholder={t("property.selectPropertyType")}
                     size="large"
                     className="rounded-lg"
                     loading={loadingTypes}
@@ -453,26 +439,26 @@ export default function CreateProperty() {
                   name="legalStatus"
                   label={
                     <Text className="font-medium">
-                      {t("admin.legalStatus")}
+                      {t("property.legalStatus")}
                     </Text>
                   }
                   rules={[
                     {
                       required: true,
-                      message: t("admin.pleaseEnterLegalStatus"),
+                      message: t("property.pleaseEnterLegalStatus"),
                     },
                     {
                       min: 5,
-                      message: t("admin.legalStatusMinLength"),
+                      message: t("property.legalStatusMinLength"),
                     },
                     {
                       max: 100,
-                      message: t("admin.legalStatusMaxLength"),
+                      message: t("property.legalStatusMaxLength"),
                     },
                   ]}
                 >
                   <Input
-                    placeholder={t("admin.enterLegalStatus")}
+                    placeholder={t("property.enterLegalStatus")}
                     size="large"
                     className="rounded-lg"
                   />
@@ -484,21 +470,21 @@ export default function CreateProperty() {
                   name="price"
                   label={
                     <Text className="font-medium">
-                      {t("admin.price")} (USD$)
+                      {t("property.price")} (USD$)
                     </Text>
                   }
                   rules={[
-                    { required: true, message: t("admin.pleaseEnterPrice") },
+                    { required: true, message: t("property.pleaseEnterPrice") },
                     { type: "number", min: 1, message: t("admin.priceMin") },
                     {
                       type: "number",
-                      max: 10000000,
-                      message: t("admin.priceMax"),
+                      max: 1000000000,
+                      message: t("property.priceMax"),
                     },
                   ]}
                 >
                   <InputNumber
-                    placeholder={t("admin.enterPrice")}
+                    placeholder={t("property.enterPrice")}
                     formatter={(value) =>
                       `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                     }
@@ -517,26 +503,26 @@ export default function CreateProperty() {
                   label={
                     <span className="flex items-center gap-1 font-medium">
                       <Home className="h-4 w-4" />
-                      {t("admin.area")} (m²)
+                      {t("property.area")} (m²)
                     </span>
                   }
                   rules={[
-                    { required: true, message: t("admin.pleaseEnterArea") },
+                    { required: true, message: t("property.pleaseEnterArea") },
                     {
                       type: "number",
                       min: 1,
-                      message: t("admin.areaMin"),
+                      message: t("property.areaMin"),
                     },
                     {
                       type: "number",
-                      max: 10000,
-                      message: t("admin.areaMax"),
+                      max: 10000000,
+                      message: t("property.areaMax"),
                     },
                   ]}
                 >
                   <InputNumber
                     min={0}
-                    placeholder={t("admin.enterArea")}
+                    placeholder={t("property.enterArea")}
                     size="large"
                     style={{ width: "100%" }}
                   />
@@ -549,29 +535,29 @@ export default function CreateProperty() {
                       label={
                         <span className="flex items-center gap-1 font-medium">
                           <Bed className="h-4 w-4" />
-                          {t("admin.bedrooms")}
+                          {t("property.bedrooms")}
                         </span>
                       }
                       rules={[
                         {
                           required: true,
-                          message: t("admin.pleaseEnterBedrooms"),
+                          message: t("property.pleaseEnterBedrooms"),
                         },
                         {
                           type: "number",
                           min: 0,
-                          message: t("admin.bedroomsMin"),
+                          message: t("property.bedroomsMin"),
                         },
                         {
                           type: "number",
                           max: 20,
-                          message: t("admin.bedroomsMax"),
+                          message: t("property.bedroomsMax"),
                         },
                       ]}
                     >
                       <InputNumber
                         min={0}
-                        placeholder={t("admin.enterBedrooms")}
+                        placeholder={t("property.enterBedrooms")}
                         size="large"
                         style={{ width: "100%" }}
                       />
@@ -582,29 +568,29 @@ export default function CreateProperty() {
                       label={
                         <span className="flex items-center gap-1 font-medium">
                           <Bath className="h-4 w-4" />
-                          {t("admin.bathrooms")}
+                          {t("property.bathrooms")}
                         </span>
                       }
                       rules={[
                         {
                           required: true,
-                          message: t("admin.pleaseEnterBathrooms"),
+                          message: t("property.pleaseEnterBathrooms"),
                         },
                         {
                           type: "number",
                           min: 0,
-                          message: t("admin.bathroomsMin"),
+                          message: t("property.bathroomsMin"),
                         },
                         {
                           type: "number",
                           max: 10,
-                          message: t("admin.bathroomsMax"),
+                          message: t("property.bathroomsMax"),
                         },
                       ]}
                     >
                       <InputNumber
                         min={0}
-                        placeholder={t("admin.enterBathrooms")}
+                        placeholder={t("property.enterBathrooms")}
                         size="large"
                         style={{ width: "100%" }}
                       />
@@ -620,7 +606,7 @@ export default function CreateProperty() {
                       level={3}
                       className="!mb-0 !text-xl !font-semibold !text-gray-900"
                     >
-                      {t("admin.amenities")}
+                      {t("property.amenities")}
                     </Title>
                   </div>
                   <div className="grid grid-cols-3 justify-center gap-4 lg:grid-cols-6">
@@ -628,7 +614,7 @@ export default function CreateProperty() {
                       name="wifi"
                       label={
                         <p className="flex items-center gap-1 font-medium text-green-600">
-                          <Wifi className="h-4 w-4" /> {t("admin.wifi")}
+                          <Wifi className="h-4 w-4" /> {t("property.wifi")}
                         </p>
                       }
                       valuePropName="checked"
@@ -639,7 +625,7 @@ export default function CreateProperty() {
                       name="tv"
                       label={
                         <p className="flex items-center gap-1 font-medium text-red-600">
-                          <Tv className="h-4 w-4" /> {t("admin.tv")}
+                          <Tv className="h-4 w-4" /> {t("property.tv")}
                         </p>
                       }
                       valuePropName="checked"
@@ -651,7 +637,7 @@ export default function CreateProperty() {
                       label={
                         <p className="flex items-center gap-1 font-medium text-blue-600">
                           <Snowflake className="h-4 w-4" />{" "}
-                          {t("admin.airConditioner")}
+                          {t("property.airConditioner")}
                         </p>
                       }
                       valuePropName="checked"
@@ -662,7 +648,7 @@ export default function CreateProperty() {
                       name="parking"
                       label={
                         <p className="flex items-center gap-1 font-medium text-orange-600">
-                          <Car className="h-4 w-4" /> {t("admin.parking")}
+                          <Car className="h-4 w-4" /> {t("property.parking")}
                         </p>
                       }
                       valuePropName="checked"
@@ -673,7 +659,8 @@ export default function CreateProperty() {
                       name="kitchen"
                       label={
                         <p className="flex items-center gap-1 font-medium text-pink-600">
-                          <Utensils className="h-4 w-4" /> {t("admin.kitchen")}
+                          <Utensils className="h-4 w-4" />{" "}
+                          {t("property.kitchen")}
                         </p>
                       }
                       valuePropName="checked"
@@ -684,7 +671,8 @@ export default function CreateProperty() {
                       name="security"
                       label={
                         <p className="flex items-center gap-1 font-medium text-green-600">
-                          <Shield className="h-4 w-4" /> {t("admin.security")}
+                          <Shield className="h-4 w-4" />{" "}
+                          {t("property.security")}
                         </p>
                       }
                       valuePropName="checked"
@@ -698,23 +686,25 @@ export default function CreateProperty() {
               <Form.Item
                 name="description"
                 label={
-                  <Text className="font-medium">{t("admin.description")}</Text>
+                  <Text className="font-medium">
+                    {t("property.description")}
+                  </Text>
                 }
                 rules={[
                   {
                     required: true,
-                    message: t("admin.pleaseEnterDescription"),
+                    message: t("property.pleaseEnterDescription"),
                   },
                   { min: 20, message: t("admin.descriptionMinLength") },
                   {
                     max: 2000,
-                    message: t("admin.descriptionMaxLength"),
+                    message: t("property.descriptionMaxLength"),
                   },
                 ]}
               >
                 <TextArea
                   rows={6}
-                  placeholder={t("admin.enterDescription")}
+                  placeholder={t("property.enterDescription")}
                   className="rounded-lg"
                 />
               </Form.Item>
@@ -726,7 +716,7 @@ export default function CreateProperty() {
                     level={3}
                     className="!mb-0 !text-xl !font-semibold !text-gray-900"
                   >
-                    {t("admin.propertyContent")}
+                    {t("property.propertyContent")}
                   </Title>
                 </div>
                 <Form.Item
@@ -738,13 +728,15 @@ export default function CreateProperty() {
                           if (!Array.isArray(value) || value.length === 0) {
                             return Promise.reject(
                               new Error(
-                                t("admin.pleaseAddAtLeast1ContentForProject"),
+                                t(
+                                  "property.pleaseAddAtLeast1ContentForProject",
+                                ),
                               ),
                             );
                           }
                           if (value.length < 1) {
                             return Promise.reject(
-                              new Error(t("admin.pleaseAddAtLeast1Content")),
+                              new Error(t("property.pleaseAddAtLeast1Content")),
                             );
                           }
                         }
@@ -767,24 +759,24 @@ export default function CreateProperty() {
               <Form.Item
                 label={
                   <Text className="font-medium">
-                    {t("admin.locationOnMap")}
+                    {t("property.locationOnMap")}
                   </Text>
                 }
                 rules={[
                   {
                     required: true,
-                    message: t("admin.pleaseSelectLocationOnMap"),
+                    message: t("property.pleaseSelectLocationOnMap"),
                   },
                   {
                     validator: (_, value) => {
                       if (!value) {
                         return Promise.reject(
-                          new Error(t("admin.pleaseSelectLocation")),
+                          new Error(t("property.pleaseSelectLocation")),
                         );
                       }
                       if (!locationData) {
                         return Promise.reject(
-                          new Error(t("admin.pleaseSelectLocationOnMap")),
+                          new Error(t("property.pleaseSelectLocationOnMap")),
                         );
                       }
                       return Promise.resolve();
@@ -793,20 +785,9 @@ export default function CreateProperty() {
                 ]}
               >
                 <MapboxLocationSelector
-                  form={form}
                   value={locationData ?? undefined}
                   onChange={setLocationData}
-                  placeholder={t("admin.selectLocationOnMap")}
-                  locationInfos={locationInfos}
-                  selectedLocationInfoId={
-                    form.getFieldValue("locationInfoId") as string
-                  }
-                  onLocationInfoChange={(locationInfoId) => {
-                    form.setFieldValue("locationInfoId", locationInfoId);
-                  }}
-                  loadingLocations={loadingLocations}
-                  mode="create"
-                  hasExistingLocation={false}
+                  placeholder={t("property.selectLocationOnMap")}
                 />
               </Form.Item>
             </div>
@@ -820,17 +801,17 @@ export default function CreateProperty() {
                     level={3}
                     className="!mb-0 !text-xl !font-semibold !text-gray-900"
                   >
-                    {t("admin.images")}
+                    {t("property.images")}
                   </Title>
                 </div>
                 {/* Main Image */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     <Text className="font-medium">
-                      {t("admin.mainImage")} *
+                      {t("property.mainImage")} *
                     </Text>
                     {mainImageUrl && (
-                      <Tooltip title="Ảnh đã tải lên thành công">
+                      <Tooltip title={t("property.imageUploadedSuccessfully")}>
                         <CheckCircle className="h-4 w-4 text-green-500" />
                       </Tooltip>
                     )}
@@ -850,7 +831,7 @@ export default function CreateProperty() {
                             <div className="text-center text-white">
                               <Spin size="large" />
                               <div className="mt-2 text-sm">
-                                {t("admin.uploadingMainImage")}
+                                {t("property.uploadingMainImage")}
                               </div>
                             </div>
                           </div>
@@ -888,14 +869,14 @@ export default function CreateProperty() {
                           )}
                           <Text className="block text-gray-600">
                             {uploadingMainImage
-                              ? t("admin.uploadingMainImage")
-                              : "Tải lên ảnh chính"}
+                              ? t("property.uploadingMainImage")
+                              : t("property.uploadingMainImage")}
                           </Text>
                           <Text className="block text-sm text-gray-500">
-                            {t("admin.imageFormat")}
+                            {t("property.imageFormat")}
                           </Text>
                           <Text className="block text-xs text-gray-400">
-                            {t("admin.dragAndDropOrClickToSelect")}
+                            {t("property.dragAndDropOrClickToSelect")}
                           </Text>
                         </div>
                       </Upload>
@@ -908,7 +889,8 @@ export default function CreateProperty() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Text className="font-medium">
-                        {t("admin.additionalImages")} ({t("admin.max9Images")})
+                        {t("property.additionalImages")} (
+                        {t("property.max9Images")})
                       </Text>
                       {imageUrls.length > 0 && (
                         <Tooltip

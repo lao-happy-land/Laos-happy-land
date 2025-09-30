@@ -12,6 +12,7 @@ import e from 'express';
 import { UserRole } from 'src/entities/user-role.entity';
 import { Multer } from 'multer';
 import { CloudinaryService } from 'src/service/cloudinary.service';
+import { LocationInfo } from 'src/entities/location-info.entity';
 
 @Injectable()
 export class UserService {
@@ -47,6 +48,16 @@ export class UserService {
     });
     if (!role) throw new BadRequestException('Role not found');
 
+    let locationInfo: LocationInfo | null = null;
+    if (createUserDto.locationInfoId) {
+      locationInfo = await this.entityManager.findOneBy(LocationInfo, {
+        id: createUserDto.locationInfoId,
+      });
+      if (!locationInfo) {
+        throw new BadRequestException('Location info not found');
+      }
+    }
+
     let avatarUrl: string | null = null;
     if (image) {
       avatarUrl = await this.cloudinaryService.uploadAndReturnImageUrl(image);
@@ -56,6 +67,7 @@ export class UserService {
       ...createUserDto,
       password: hashedPassword,
       role,
+      locationInfo,
       avatarUrl,
     });
 
@@ -67,6 +79,9 @@ export class UserService {
     const query = this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.role', 'role')
+      .leftJoinAndSelect('user.locationInfo', 'locationInfo')
+      .skip(params.skip)
+      .take(params.perPage)
       .orderBy('user.createdAt', params.OrderSort);
 
     if (params.role) {
@@ -87,6 +102,19 @@ export class UserService {
             });
         }),
       );
+    }
+
+    if (params.specialty) {
+      query.andWhere(
+        "COALESCE(CAST(user.specialties AS text), '') ILIKE :specialty",
+        { specialty: `%${params.specialty}%` },
+      );
+    }
+
+    if (params.locationInfoId) {
+      query.andWhere('user.location_info_id = :locationInfoId', {
+        locationInfoId: params.locationInfoId,
+      });
     }
 
     const [result, total] = await query.getManyAndCount();
@@ -139,6 +167,16 @@ export class UserService {
         if (!role) throw new BadRequestException('Role not found');
         user.role = role;
       }
+
+      if (updateUserDto.locationInfoId) {
+        const locationInfo = await this.entityManager.findOneBy(LocationInfo, {
+          id: updateUserDto.locationInfoId,
+        });
+        if (!locationInfo) {
+          throw new BadRequestException('Location info not found');
+        }
+        user.locationInfo = locationInfo;
+      }
       if (image) {
         user.avatarUrl =
           await this.cloudinaryService.uploadAndReturnImageUrl(image);
@@ -147,6 +185,19 @@ export class UserService {
         const salt = crypto.randomBytes(16).toString('hex');
         const hashedPassword = this.hashPassword(updateUserDto.password, salt);
         user.password = hashedPassword;
+      }
+
+      if (updateUserDto.experienceYears !== undefined) {
+        user.experienceYears = updateUserDto.experienceYears;
+      }
+      if (updateUserDto.specialties) {
+        user.specialties = updateUserDto.specialties;
+      }
+      if (updateUserDto.languages) {
+        user.languages = updateUserDto.languages;
+      }
+      if (updateUserDto.certifications) {
+        user.certifications = updateUserDto.certifications;
       }
     }
     return await this.entityManager.save(user);

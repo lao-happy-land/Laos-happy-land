@@ -44,10 +44,9 @@ import type {
   CreatePropertyDto,
   UpdatePropertyDto,
 } from "@/@types/gentype-axios";
-import type { PropertyType, Property, LocationInfo } from "@/@types/types";
+import type { PropertyType, Property } from "@/@types/types";
 import propertyService from "@/share/service/property.service";
 import propertyTypeService from "@/share/service/property-type.service";
-import locationInfoService from "@/share/service/location-info.service";
 import uploadService from "@/share/service/upload.service";
 import ProjectContentBuilder from "@/components/business/common/project-content-builder";
 import MapboxLocationSelector from "@/components/business/common/mapbox-location-selector";
@@ -94,9 +93,6 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
   >("sale");
   const [currentProperty, setCurrentProperty] = useState<Property | null>(null);
   const [locationData, setLocationData] = useState<LocationData | null>(null);
-  const [locationInfos, setLocationInfos] = useState<LocationInfo[]>([]);
-  const [selectedLocationInfoId, setSelectedLocationInfoId] =
-    useState<string>("");
 
   const { loading: propertyTypesLoading, run: fetchPropertyTypes } = useRequest(
     async () => {
@@ -117,32 +113,8 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
     },
   );
 
-  const { loading: loadingLocations, run: fetchLocationInfos } = useRequest(
-    async () => {
-      const response = await locationInfoService.getAllLocationInfo();
-      return response.data;
-    },
-    {
-      manual: true,
-      onSuccess: (data) => {
-        if (Array.isArray(data)) {
-          setLocationInfos(data);
-        } else {
-          console.warn("Location infos data is not an array:", data);
-          setLocationInfos([]);
-        }
-      },
-      onError: (error) => {
-        console.error("Error loading location infos:", error);
-        message.error(t("admin.cannotLoadLocations"));
-        setLocationInfos([]);
-      },
-    },
-  );
-
   useEffect(() => {
     fetchPropertyTypes();
-    fetchLocationInfos();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTransactionType]);
 
@@ -207,36 +179,14 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
         content: currentProperty.details?.content ?? undefined,
         legalStatus: currentProperty.legalStatus ?? undefined,
         transactionType: currentProperty.transactionType,
-        locationInfoId: currentProperty.locationInfo?.id ?? "",
         location: currentProperty.location?.address ?? "",
       });
-
-      setSelectedLocationInfoId(currentProperty.locationInfo?.id ?? "");
 
       // Set existing images
       setExistingMainImage(currentProperty.mainImage);
       setExistingImages(currentProperty.images ?? []);
     }
   }, [currentProperty, form]);
-
-  // Set selectedLocationInfoId after locationInfos are loaded
-  useEffect(() => {
-    if (currentProperty?.locationInfo?.id && locationInfos.length > 0) {
-      const locationExists = locationInfos.some(
-        (loc) => loc.id === currentProperty.locationInfo?.id,
-      );
-      if (
-        locationExists &&
-        selectedLocationInfoId !== currentProperty.locationInfo.id
-      ) {
-        setSelectedLocationInfoId(currentProperty.locationInfo.id);
-      }
-    }
-  }, [
-    currentProperty?.locationInfo?.id,
-    locationInfos,
-    selectedLocationInfoId,
-  ]);
 
   // Sync locationData with form field
   useEffect(() => {
@@ -246,33 +196,29 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
   }, [locationData, form]);
 
   const { loading: submitting, run: submitForm } = useRequest(
-    async (
-      values: {
-        typeId: string;
-        title: string;
-        description?: string;
-        price?: number;
-        area?: number;
-        bedrooms?: number;
-        bathrooms?: number;
-        wifi?: boolean;
-        tv?: boolean;
-        airConditioner?: boolean;
-        parking?: boolean;
-        kitchen?: boolean;
-        security?: boolean;
-        content?: (
-          | { type: "heading"; text: string; level?: 1 | 2 | 3 }
-          | { type: "paragraph"; text: string }
-          | { type: "image"; url: string; caption?: string }
-        )[];
-        legalStatus?: string;
-        location?: string;
-        locationInfoId?: string;
-        transactionType: "rent" | "sale" | "project";
-      },
-      currentLocationInfoId: string,
-    ) => {
+    async (values: {
+      typeId: string;
+      title: string;
+      description?: string;
+      price?: number;
+      area?: number;
+      bedrooms?: number;
+      bathrooms?: number;
+      wifi?: boolean;
+      tv?: boolean;
+      airConditioner?: boolean;
+      parking?: boolean;
+      kitchen?: boolean;
+      security?: boolean;
+      content?: (
+        | { type: "heading"; text: string; level?: 1 | 2 | 3 }
+        | { type: "paragraph"; text: string }
+        | { type: "image"; url: string; caption?: string }
+      )[];
+      legalStatus?: string;
+      location?: string;
+      transactionType: "rent" | "sale" | "project";
+    }) => {
       const formData: CreatePropertyDto | UpdatePropertyDto = {
         typeId: values.typeId,
         title: values.title,
@@ -292,7 +238,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
         },
         legalStatus: values.legalStatus,
         location: locationData as LocationDto | undefined,
-        locationInfoId: currentLocationInfoId,
+
         transactionType: values.transactionType,
       };
 
@@ -324,7 +270,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
         const userId = useAuthStore.getState().user?.id;
 
         if (!userId) {
-          throw new Error("User ID not found. Please log in again.");
+          throw new Error(t("errors.userIdNotFound"));
         }
 
         return await propertyService.createProperty(createData);
@@ -372,7 +318,6 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
     security: boolean;
     legalStatus?: string;
     location?: string;
-    locationInfoId?: string;
     transactionType: "rent" | "sale" | "project";
   }) => {
     if (selectedTransactionType !== "project") {
@@ -397,15 +342,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
       return;
     }
 
-    // Check locationInfoId from form field
-    const currentLocationInfoId =
-      values.locationInfoId ?? selectedLocationInfoId;
-    if (!currentLocationInfoId) {
-      message.error(t("admin.pleaseSelectArea"));
-      return;
-    }
-
-    submitForm(values, currentLocationInfoId);
+    submitForm(values);
   };
 
   const handleMainImageUpload = async (file: File) => {
@@ -461,10 +398,14 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
     try {
       const result = await uploadService.uploadImage(file);
       setImageUrls([...imageUrls, result.url]);
-      message.success(`Tải lên ảnh ${newIndex + 1} thành công!`);
+      message.success(
+        t("admin.uploadImageSuccessWithIndex", { index: newIndex + 1 }),
+      );
     } catch (error) {
       console.error("Failed to upload image:", error);
-      message.error(`Không thể tải lên ảnh ${newIndex + 1}`);
+      message.error(
+        t("admin.cannotUploadImageWithIndex", { index: newIndex + 1 }),
+      );
       // Remove the failed file
       setImageFiles(imageFiles.filter((_, i) => i !== newIndex));
     } finally {
@@ -835,7 +776,6 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
             <div className="space-y-2">
               <Text className="font-medium">{t("admin.location")} *</Text>
               <MapboxLocationSelector
-                form={form}
                 value={locationData}
                 onChange={(newLocationData) => {
                   setLocationData(newLocationData);
@@ -846,17 +786,8 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                 }}
                 placeholder={t("admin.selectLocation")}
                 initialSearchValue={currentProperty?.location?.address}
-                locationInfos={locationInfos}
-                selectedLocationInfoId={selectedLocationInfoId}
-                onLocationInfoChange={(locationInfoId) => {
-                  setSelectedLocationInfoId(locationInfoId);
-                  form.setFieldValue("locationInfoId", locationInfoId);
-                }}
-                loadingLocations={loadingLocations}
                 mode={mode}
-                hasExistingLocation={
-                  !!(currentProperty?.location && currentProperty?.locationInfo)
-                }
+                hasExistingLocation={!!currentProperty?.location}
               />
             </div>
           </div>
