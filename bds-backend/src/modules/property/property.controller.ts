@@ -51,10 +51,7 @@ export class PropertyController {
   // @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreatePropertyDto })
   @ApiResponse({ status: 200, description: 'Property created successfully' })
-  async create(
-    @Req() req: Request,
-    @Body() body: any,
-  ) {
+  async create(@Req() req: Request, @Body() body: any) {
     const user = req.user as User;
     if (typeof body.details === 'string') {
       try {
@@ -66,10 +63,7 @@ export class PropertyController {
         body.location = JSON.parse(body.location);
       } catch {}
     }
-    return this.propertyService.create(
-      body as CreatePropertyDto,
-      user,
-    );
+    return this.propertyService.create(body as CreatePropertyDto, user);
   }
 
   @Get()
@@ -100,32 +94,57 @@ export class PropertyController {
     return this.propertyService.getAll(mergedParams, user);
   }
 
-@Get('owner')
-@UseGuards(AuthGuard)
-@ApiBearerAuth()
-@ApiHeader({
-  name: 'currency',
-  description: 'Currency filter (LAK | USD | VND)',
-  required: false,
-  schema: { type: 'string', enum: ['LAK', 'USD', 'VND'] },
-})
-@ApiResponse({ status: 200, description: 'Success' })
-async getByUser(
-  @Req() req: Request,
-  @Query() params: GetPropertyByUserDto,
-  @Headers() rawHeaders: Record<string, string>,
-) {
-  const user = req.user as User;
+  @Get('owner')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiHeader({
+    name: 'currency',
+    description: 'Currency filter (LAK | USD | VND)',
+    required: false,
+    schema: { type: 'string', enum: ['LAK', 'USD', 'VND'] },
+  })
+  @ApiResponse({ status: 200, description: 'Success' })
+  async getByUser(
+    @Req() req: Request,
+    @Query() params: GetPropertyByUserDto,
+    @Headers() rawHeaders: Record<string, string>,
+  ) {
+    const user = req.user as User;
 
-  const mergedParams: GetPropertyByUserDto = {
-    skip: params.skip ?? 0,
-    perPage: params.perPage ?? 10,
-    ...params,
-    currency: (rawHeaders['currency'] as 'LAK' | 'USD' | 'VND') ?? params.currency,
-  };
+    const mergedParams: GetPropertyByUserDto = {
+      skip: params.skip ?? 0,
+      perPage: params.perPage ?? 10,
+      ...params,
+      currency:
+        (rawHeaders['currency'] as 'LAK' | 'USD' | 'VND') ?? params.currency,
+    };
 
-  return this.propertyService.getByUser(mergedParams, user);
-}
+    return this.propertyService.getByUser(mergedParams, user);
+  }
+
+  @Get('user/:userId')
+  @ApiHeader({
+    name: 'currency',
+    description: 'Currency filter (LAK | USD | VND)',
+    required: false,
+    schema: { type: 'string', enum: ['LAK', 'USD', 'VND'] },
+  })
+  @ApiResponse({ status: 200, description: 'Success' })
+  async getByUserId(
+    @Param('userId') userId: string,
+    @Query() params: GetPropertyByUserDto,
+    @Headers() rawHeaders: Record<string, string>,
+  ) {
+    const mergedParams: GetPropertyByUserDto = {
+      skip: params.skip ?? 0,
+      perPage: params.perPage ?? 10,
+      ...params,
+      currency:
+        (rawHeaders['currency'] as 'LAK' | 'USD' | 'VND') ?? params.currency,
+    };
+
+    return this.propertyService.getByUserId(userId, mergedParams);
+  }
 
   @Get(':id')
   @ApiHeader({
@@ -155,19 +174,13 @@ async getByUser(
   // @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UpdatePropertyDto })
   @ApiResponse({ status: 200, description: 'Property updated successfully' })
-  async update(
-    @Param('id') id: string,
-    @Body() body: any,
-  ) {
+  async update(@Param('id') id: string, @Body() body: any) {
     if (typeof body.location === 'string') {
       try {
         body.location = JSON.parse(body.location);
       } catch {}
     }
-    return this.propertyService.update(
-      id,
-      body as UpdatePropertyDto,
-    );
+    return this.propertyService.update(id, body as UpdatePropertyDto);
   }
 
   @Delete(':id')
