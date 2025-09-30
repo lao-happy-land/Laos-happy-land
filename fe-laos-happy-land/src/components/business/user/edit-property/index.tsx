@@ -41,11 +41,10 @@ import {
   Loader2,
 } from "lucide-react";
 import type { UpdatePropertyDto } from "@/@types/gentype-axios";
-import type { PropertyType, LocationInfo, Content } from "@/@types/types";
+import type { PropertyType, Content } from "@/@types/types";
 import { useRequest } from "ahooks";
 import propertyService from "@/share/service/property.service";
 import propertyTypeService from "@/share/service/property-type.service";
-import locationInfoService from "@/share/service/location-info.service";
 import uploadService from "@/share/service/upload.service";
 import ProjectContentBuilder from "@/components/business/common/project-content-builder";
 import MapboxLocationSelector from "@/components/business/common/mapbox-location-selector";
@@ -65,7 +64,6 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
   const locale = useUrlLocale();
   const [form] = Form.useForm();
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
-  const [locationInfos, setLocationInfos] = useState<LocationInfo[]>([]);
   const [selectedLocationInfoId, setSelectedLocationInfoId] =
     useState<string>("");
   const [selectedTransactionType, setSelectedTransactionType] = useState<
@@ -111,34 +109,10 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
     },
   );
 
-  // Load location infos
-  const { loading: loadingLocations, run: fetchLocationInfos } = useRequest(
-    async () => {
-      const response = await locationInfoService.getAllLocationInfo();
-      return response.data;
-    },
-    {
-      manual: true,
-      onSuccess: (data) => {
-        if (Array.isArray(data)) {
-          setLocationInfos(data);
-        } else {
-          console.warn("Location infos data is not an array:", data);
-          setLocationInfos([]);
-        }
-      },
-      onError: (_error) => {
-        message.error(t("admin.cannotLoadLocations"));
-        setLocationInfos([]);
-      },
-    },
-  );
-
   useEffect(() => {
     if (selectedTransactionType) {
       fetchPropertyTypes();
     }
-    fetchLocationInfos();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTransactionType]);
 
@@ -201,20 +175,6 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
     }, 0);
   }, [property, form]);
 
-  // Update selectedLocationInfoId when locationInfos are loaded (for proper Select initialization)
-  useEffect(() => {
-    if (property?.locationInfo?.id && locationInfos.length > 0) {
-      setSelectedLocationInfoId(property.locationInfo.id);
-    }
-  }, [property?.locationInfo?.id, locationInfos]);
-
-  // Sync selectedLocationInfoId with form field
-  useEffect(() => {
-    if (selectedLocationInfoId) {
-      form.setFieldValue("locationInfoId", selectedLocationInfoId);
-    }
-  }, [selectedLocationInfoId, form]);
-
   // Sync locationData with form field
   useEffect(() => {
     if (locationData?.address) {
@@ -225,7 +185,6 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
   const { loading: submitting, run: submitForm } = useRequest(
     async (values: {
       typeId: string;
-      locationInfoId: string;
       title: string;
       description?: string;
       price?: number;
@@ -250,13 +209,8 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
       // Use already uploaded image URLs or existing images
       const existingMainImage = property?.mainImage;
 
-      // Use currentLocationInfoId from validation
-      const currentLocationInfoId =
-        values.locationInfoId || selectedLocationInfoId;
-
       const formData: UpdatePropertyDto = {
         typeId: values.typeId,
-        locationInfoId: currentLocationInfoId,
         title: values.title,
         description: values.description,
         price: values.price,
@@ -980,7 +934,6 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                   {t("admin.locationOnMap")} *
                 </Text>
                 <MapboxLocationSelector
-                  form={form}
                   value={locationData}
                   onChange={(newLocationData) => {
                     setLocationData(newLocationData);
@@ -991,17 +944,6 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                   }}
                   placeholder={t("admin.selectLocationOnMap")}
                   initialSearchValue={property?.location?.address}
-                  locationInfos={locationInfos}
-                  selectedLocationInfoId={selectedLocationInfoId}
-                  onLocationInfoChange={(locationInfoId) => {
-                    setSelectedLocationInfoId(locationInfoId);
-                    form.setFieldValue("locationInfoId", locationInfoId);
-                  }}
-                  loadingLocations={loadingLocations}
-                  mode="edit"
-                  hasExistingLocation={
-                    !!(property?.location && property?.locationInfo)
-                  }
                 />
               </div>
             </div>

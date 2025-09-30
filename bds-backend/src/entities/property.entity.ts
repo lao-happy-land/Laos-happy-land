@@ -10,8 +10,28 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 import { AbstractEntity } from 'src/common/entities';
-import {  PropertyStatusEnum, TransactionEnum } from 'src/common/enum/enum';
+import { PropertyStatusEnum, TransactionEnum } from 'src/common/enum/enum';
 import { PropertyType } from './property-type.entity';
+import { LocationInfo } from './location-info.entity';
+
+export interface PriceHistoryEntry {
+  rates: Record<string, number>;
+  date: string;
+}
+
+export interface LocationData {
+  latitude: number;
+  longitude: number;
+  address: string;
+  city?: string;
+  country?: string;
+  buildingNumber?: string;
+  street?: string;
+  district?: string;
+  province?: string;
+  postalCode?: string;
+  neighborhood?: string;
+}
 
 @Entity('properties')
 export class Property extends AbstractEntity {
@@ -34,11 +54,11 @@ export class Property extends AbstractEntity {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ type: 'numeric', precision: 18, scale: 2, nullable: true })
-  price: number;
+  @Column({ type: 'jsonb', nullable: true })
+  price: Record<string, number>;
 
   @Column({ type: 'jsonb', nullable: true })
-  priceHistory: any;
+  priceHistory: PriceHistoryEntry[];
 
   @Column({ type: 'jsonb', nullable: true })
   details: any;
@@ -49,8 +69,8 @@ export class Property extends AbstractEntity {
   @Column({ nullable: true })
   legalStatus: string;
 
-  @Column({ type: 'text', nullable: true })
-  location: string;
+  @Column({ type: 'jsonb', nullable: true })
+  location: LocationData;
 
   @Column({ type: 'int', default: 0 })
   priority: number;
@@ -76,8 +96,14 @@ export class Property extends AbstractEntity {
   })
   status: PropertyStatusEnum;
 
-  @Column({ type: 'text', nullable: true})
+  @Column({ type: 'text', nullable: true })
   reason: string;
+
+  @ManyToOne(() => LocationInfo, (locationInfo) => locationInfo.properties, {
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'location_info_id' })
+  locationInfo: LocationInfo;
 
   constructor(property: Partial<Property>) {
     super();

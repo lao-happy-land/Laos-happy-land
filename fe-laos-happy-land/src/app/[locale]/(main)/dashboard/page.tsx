@@ -35,6 +35,7 @@ import {
   Empty,
   Spin,
 } from "antd";
+import { useTranslations } from "next-intl";
 
 const { Title, Text } = Typography;
 
@@ -55,6 +56,7 @@ export default function DashboardPage() {
   const { user, isAuthenticated } = useAuthStore();
   const router = useRouter();
   const locale = useUrlLocale();
+  const t = useTranslations();
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [news, setNews] = useState<
@@ -165,12 +167,12 @@ export default function DashboardPage() {
   }
 
   const formatPrice = (price: unknown) => {
-    if (!price) return "Liên hệ";
+    if (!price) return t("common.contact");
     if (typeof price === "object" && price && "LAK" in price) {
       const lakPrice = (price as { LAK: number }).LAK;
       return `${(lakPrice / 1000000).toFixed(1)}M LAK`;
     }
-    return "Liên hệ";
+    return t("common.contact");
   };
 
   const getImageURL = (property: Property) => {
@@ -199,11 +201,11 @@ export default function DashboardPage() {
   const getStatusText = (status: string) => {
     switch (status) {
       case "approved":
-        return "Đã duyệt";
+        return t("common.approved");
       case "pending":
-        return "Chờ duyệt";
+        return t("common.pending");
       case "rejected":
-        return "Từ chối";
+        return t("common.rejected");
       default:
         return status;
     }
@@ -211,7 +213,7 @@ export default function DashboardPage() {
 
   const propertyColumns = [
     {
-      title: "Hình ảnh",
+      title: t("property.image"),
       dataIndex: "mainImage",
       key: "image",
       width: 80,
@@ -227,7 +229,7 @@ export default function DashboardPage() {
       ),
     },
     {
-      title: "Tiêu đề",
+      title: t("property.title"),
       dataIndex: "title",
       key: "title",
       render: (text: string, record: Property) => (
@@ -240,7 +242,7 @@ export default function DashboardPage() {
       ),
     },
     {
-      title: "Giá",
+      title: t("property.price"),
       dataIndex: "price",
       key: "price",
       render: (price: unknown) => (
@@ -248,7 +250,7 @@ export default function DashboardPage() {
       ),
     },
     {
-      title: "Trạng thái",
+      title: t("property.status"),
       dataIndex: "status",
       key: "status",
       render: (status: string) => (
@@ -256,7 +258,7 @@ export default function DashboardPage() {
       ),
     },
     {
-      title: "Lượt xem",
+      title: t("property.views"),
       dataIndex: "viewsCount",
       key: "views",
       render: (views: number) => (
@@ -267,21 +269,21 @@ export default function DashboardPage() {
       ),
     },
     {
-      title: "Ngày tạo",
+      title: t("property.createdAt"),
       dataIndex: "createdAt",
       key: "createdAt",
       render: (date: string) => (
         <div className="text-sm text-gray-600">
-          {new Date(date).toLocaleDateString("vi-VN")}
+          {new Date(date).toLocaleDateString()}
         </div>
       ),
     },
     {
-      title: "Thao tác",
+      title: t("property.actions"),
       key: "actions",
       render: (_: unknown, record: Property) => (
         <Space>
-          <Tooltip title="Xem chi tiết">
+          <Tooltip title={t("common.view")}>
             <Button
               type="text"
               size="small"
@@ -289,7 +291,7 @@ export default function DashboardPage() {
               onClick={() => router.push(`/${locale}/property/${record.id}`)}
             />
           </Tooltip>
-          <Tooltip title="Chỉnh sửa">
+          <Tooltip title={t("common.edit")}>
             <Button
               type="text"
               size="small"
@@ -304,7 +306,7 @@ export default function DashboardPage() {
               items: [
                 {
                   key: "delete",
-                  label: "Xóa",
+                  label: t("common.delete"),
                   icon: <Trash2 className="h-4 w-4" />,
                   danger: true,
                 },
@@ -329,7 +331,10 @@ export default function DashboardPage() {
         {/* Header */}
         <div className="mb-8">
           <Breadcrumb
-            items={[{ title: "Trang chủ" }, { title: "Dashboard" }]}
+            items={[
+              { title: t("navigation.home") },
+              { title: t("navigation.dashboard") },
+            ]}
             className="mb-4"
           />
           <div className="flex items-center justify-between">
@@ -347,7 +352,7 @@ export default function DashboardPage() {
                 icon={<Plus className="h-4 w-4" />}
                 onClick={() => router.push(`/${locale}/create-property`)}
               >
-                Đăng tin mới
+                {t("navigation.postAd")}
               </Button>
             </Space>
           </div>
@@ -358,7 +363,7 @@ export default function DashboardPage() {
           <Col xs={24} sm={12} lg={6}>
             <Card>
               <Statistic
-                title="Tổng bất động sản"
+                title={t("property.totalProperties")}
                 value={stats.totalProperties}
                 prefix={<Building2 className="h-4 w-4 text-blue-500" />}
                 suffix={
@@ -373,7 +378,7 @@ export default function DashboardPage() {
           <Col xs={24} sm={12} lg={6}>
             <Card>
               <Statistic
-                title="Tổng lượt xem"
+                title={t("property.totalViews")}
                 value={stats.totalViews}
                 prefix={<Eye className="h-4 w-4 text-green-500" />}
                 suffix={
@@ -388,7 +393,7 @@ export default function DashboardPage() {
           <Col xs={24} sm={12} lg={6}>
             <Card>
               <Statistic
-                title="Tin tức"
+                title={t("property.totalNews")}
                 value={stats.totalNews}
                 prefix={<FileText className="h-4 w-4 text-purple-500" />}
               />
@@ -397,7 +402,7 @@ export default function DashboardPage() {
           <Col xs={24} sm={12} lg={6}>
             <Card>
               <Statistic
-                title="Doanh thu (LAK)"
+                title={t("property.revenue")}
                 value={stats.revenue}
                 prefix={<DollarSign className="h-4 w-4 text-orange-500" />}
                 suffix={
@@ -414,7 +419,7 @@ export default function DashboardPage() {
         {/* Charts and Tables */}
         <Row gutter={[16, 16]}>
           <Col xs={24} lg={16}>
-            <Card title="Bất động sản gần đây" className="mb-6">
+            <Card title={t("property.latestProperties")} className="mb-6">
               <Table
                 columns={propertyColumns}
                 dataSource={properties}
@@ -426,7 +431,7 @@ export default function DashboardPage() {
             </Card>
           </Col>
           <Col xs={24} lg={8}>
-            <Card title="Tin tức gần đây" className="mb-6">
+            <Card title={t("property.latestNews")} className="mb-6">
               <div className="space-y-4">
                 {news.length > 0 ? (
                   news.map((item) => (

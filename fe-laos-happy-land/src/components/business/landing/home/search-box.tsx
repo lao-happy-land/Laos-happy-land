@@ -34,14 +34,10 @@ import {
 
 import Image from "next/image";
 import { numberToString } from "@/share/helper/number-to-string";
-import {
-  AREA_RANGE_OPTIONS,
-  PRICE_RANGE_OPTIONS,
-} from "@/share/constant/home-search";
 import locationInfoService from "@/share/service/location-info.service";
-import type { LocationInfo } from "@/@types/types";
+import propertyTypeService from "@/share/service/property-type.service";
+import type { LocationInfo, PropertyType } from "@/@types/types";
 import { useTranslations } from "next-intl";
-
 const { Title, Text } = Typography;
 
 const SearchBox = () => {
@@ -56,6 +52,30 @@ const SearchBox = () => {
     async () => {
       const response = await locationInfoService.getAllLocationInfo();
       return response.data ?? [];
+    },
+  );
+
+  // Fetch property types based on current search type
+  const { loading: propertyTypesLoading } = useRequest(
+    async () => {
+      const response = await propertyTypeService.getPropertyTypes({
+        transaction: searchType as "rent" | "sale" | "project",
+        page: 1,
+        perPage: 100,
+      });
+      return response.data;
+    },
+    {
+      refreshDeps: [searchType], // Refresh when search type changes
+      onSuccess: (data) => {
+        setPropertyTypes(data || []);
+        // Reset selected property types when search type changes
+        setSelectedPropertyTypes([]);
+      },
+      onError: (error) => {
+        console.error("Error loading property types:", error);
+        message.error(t("errors.cannotLoadPropertyTypes"));
+      },
     },
   );
 
@@ -83,6 +103,7 @@ const SearchBox = () => {
   const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<string[]>(
     [],
   );
+  const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([
     0, 100000000000,
   ]);
@@ -172,47 +193,75 @@ const SearchBox = () => {
     },
   ];
 
+  // Helper function to get icon based on property type name (language-agnostic)
+  const getPropertyTypeIcon = (typeName: string) => {
+    const lowerName = typeName.toLowerCase();
+
+    // Apartment/Building keywords (multi-language)
+    const apartmentKeywords = [
+      "apartment",
+      "căn hộ",
+      "ອະພາດເມັນ",
+      "building",
+      "condo",
+    ];
+    if (apartmentKeywords.some((keyword) => lowerName.includes(keyword))) {
+      return <Building2 className="h-4 w-4" />;
+    }
+
+    // House/Villa keywords (multi-language)
+    const houseKeywords = [
+      "house",
+      "nhà",
+      "ເຮືອນ",
+      "villa",
+      "home",
+      "biệt thự",
+    ];
+    if (houseKeywords.some((keyword) => lowerName.includes(keyword))) {
+      return <Home className="h-4 w-4" />;
+    }
+
+    // Land/Plot keywords (multi-language)
+    const landKeywords = ["land", "đất", "ທີ່ດິນ", "plot", "lot"];
+    if (landKeywords.some((keyword) => lowerName.includes(keyword))) {
+      return <Square className="h-4 w-4" />;
+    }
+
+    return <Building2 className="h-4 w-4" />; // Default icon
+  };
+
+  // Transform API property types to match the expected format
   const propertyTypeOptions = [
-    {
-      id: "apartment",
-      name: t("search.propertyTypes.apartment"),
-      icon: <Building2 className="h-4 w-4" />,
-    },
-    {
-      id: "mini-apartment",
-      name: t("search.propertyTypes.miniApartment"),
-      icon: <Building2 className="h-4 w-4" />,
-    },
-    {
-      id: "house",
-      name: t("search.propertyTypes.house"),
-      icon: <Home className="h-4 w-4" />,
-    },
-    {
-      id: "villa",
-      name: t("search.propertyTypes.villa"),
-      icon: <Home className="h-4 w-4" />,
-    },
-    {
-      id: "street-house",
-      name: t("search.propertyTypes.streetHouse"),
-      icon: <Home className="h-4 w-4" />,
-    },
-    {
-      id: "shophouse",
-      name: t("search.propertyTypes.shopHouse"),
-      icon: <Building2 className="h-4 w-4" />,
-    },
-    {
-      id: "land",
-      name: t("search.propertyTypes.land"),
-      icon: <Square className="h-4 w-4" />,
-    },
+    ...propertyTypes.map((type) => ({
+      id: type.id,
+      name: type.name,
+      icon: getPropertyTypeIcon(type.name),
+    })),
   ];
 
-  const priceRanges = PRICE_RANGE_OPTIONS;
+  // Create translated price ranges
+  const priceRanges = [
+    { value: "all", label: t("search.priceRanges.all") },
+    { value: "under-500", label: t("search.priceRanges.under500") },
+    { value: "500-800", label: t("search.priceRanges.range500to800") },
+    { value: "800-1000", label: t("search.priceRanges.range800to1000") },
+    { value: "1000-2000", label: t("search.priceRanges.range1to2billion") },
+    { value: "2000-5000", label: t("search.priceRanges.range2to5billion") },
+    { value: "5000-10000", label: t("search.priceRanges.range5to10billion") },
+    { value: "over-10000", label: t("search.priceRanges.over10billion") },
+  ];
 
-  const areaRanges = AREA_RANGE_OPTIONS;
+  // Create translated area ranges
+  const areaRanges = [
+    { value: "all", label: t("search.areaRanges.all") },
+    { value: "under-50", label: t("search.areaRanges.under50") },
+    { value: "50-100", label: t("search.areaRanges.range50to100") },
+    { value: "100-200", label: t("search.areaRanges.range100to200") },
+    { value: "200-300", label: t("search.areaRanges.range200to300") },
+    { value: "300-500", label: t("search.areaRanges.range300to500") },
+    { value: "over-500", label: t("search.areaRanges.over500") },
+  ];
 
   const handleSearch = async () => {
     const searchParams = new URLSearchParams();
@@ -231,10 +280,7 @@ const SearchBox = () => {
       searchParams.set("maxArea", areaRange[1].toString());
     }
     if (selectedPropertyTypes.length > 0) {
-      searchParams.set(
-        "selectedPropertyTypes",
-        selectedPropertyTypes.join(","),
-      );
+      searchParams.set("type", selectedPropertyTypes.join(","));
     }
     if (selectedLocation) {
       searchParams.set("locationId", selectedLocation);
@@ -540,8 +586,8 @@ const SearchBox = () => {
                   icon={<Search className="text-white" size={16} />}
                   className="rounded-none"
                 >
-                  <span className="hidden sm:inline">Tìm kiếm</span>
-                  <span className="sm:hidden">Tìm</span>
+                  <span className="hidden sm:inline">{t("common.search")}</span>
+                  <span className="sm:hidden">{t("common.find")}</span>
                 </Button>
               </div>
             </div>
@@ -554,10 +600,10 @@ const SearchBox = () => {
                   <div className="mb-4 flex items-center justify-between sm:mb-6">
                     <div>
                       <Title level={4} className="mb-1 text-base sm:text-lg">
-                        Chọn khu vực tìm kiếm
+                        {t("search.selectLocation")}
                       </Title>
                       <Text type="secondary" className="text-xs sm:text-sm">
-                        Bạn muốn tìm bất động sản tại tỉnh thành nào?
+                        {t("search.selectLocationDescription")}
                       </Text>
                     </div>
                     <Button
@@ -576,10 +622,10 @@ const SearchBox = () => {
                       </div>
                       <div>
                         <h4 className="font-semibold text-gray-900">
-                          Khu vực trending
+                          {t("search.explorePopularAreas")}
                         </h4>
                         <p className="text-sm text-gray-500">
-                          Các khu vực được tìm kiếm nhiều nhất
+                          {t("search.trendingDescription")}
                         </p>
                       </div>
                     </div>
@@ -645,10 +691,10 @@ const SearchBox = () => {
                       </div>
                       <div>
                         <h4 className="font-semibold text-gray-900">
-                          Tất cả tỉnh thành
+                          {t("search.allLocations")}
                         </h4>
                         <p className="text-sm text-gray-500">
-                          Chọn khu vực tìm kiếm
+                          {t("search.allLocationsDescription")}
                         </p>
                       </div>
                     </div>
@@ -729,7 +775,7 @@ const SearchBox = () => {
                     <div className="border-b border-gray-100 p-3 sm:p-4">
                       <div className="flex items-center justify-between">
                         <Title level={5} className="mb-0 text-sm sm:text-base">
-                          Loại nhà đất
+                          {t("search.propertyType")}
                         </Title>
                         <Button
                           type="text"
@@ -741,30 +787,38 @@ const SearchBox = () => {
                     </div>
 
                     <div className="max-h-64 overflow-y-auto p-3 sm:p-4">
-                      {propertyTypeOptions.map((type) => (
-                        <div
-                          key={type.id}
-                          className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 hover:bg-gray-50"
-                          onClick={() => handleSelectedPropertyType(type.id)}
-                        >
-                          <Checkbox
-                            checked={
-                              type.id === "all"
-                                ? propertyTypeOptions
-                                    .filter((option) => option.id !== "all")
-                                    .every((option) =>
-                                      selectedPropertyTypes.includes(option.id),
-                                    )
-                                : selectedPropertyTypes.includes(type.id)
-                            }
-                            className="text-red-500"
-                          />
-                          <span className="text-gray-600">{type.icon}</span>
-                          <span className="text-sm text-gray-700">
-                            {type.name}
-                          </span>
+                      {propertyTypesLoading ? (
+                        <div className="flex justify-center py-4">
+                          <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-blue-500"></div>
                         </div>
-                      ))}
+                      ) : (
+                        propertyTypeOptions.map((type) => (
+                          <div
+                            key={type.id}
+                            className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 hover:bg-gray-50"
+                            onClick={() => handleSelectedPropertyType(type.id)}
+                          >
+                            <Checkbox
+                              checked={
+                                type.id === "all"
+                                  ? propertyTypeOptions
+                                      .filter((option) => option.id !== "all")
+                                      .every((option) =>
+                                        selectedPropertyTypes.includes(
+                                          option.id,
+                                        ),
+                                      )
+                                  : selectedPropertyTypes.includes(type.id)
+                              }
+                              className="text-red-500"
+                            />
+                            <span className="text-gray-600">{type.icon}</span>
+                            <span className="text-sm text-gray-700">
+                              {type.name}
+                            </span>
+                          </div>
+                        ))
+                      )}
                     </div>
 
                     <div className="flex justify-between border-t border-gray-100 p-3 sm:p-4">
@@ -773,14 +827,14 @@ const SearchBox = () => {
                         onClick={() => setSelectedPropertyTypes([])}
                         className="text-sm text-gray-500 hover:text-red-500 sm:text-base"
                       >
-                        Đặt lại
+                        {t("common.reset")}
                       </Button>
                       <Button
                         type="primary"
                         onClick={() => setPropertyTypeOpen(false)}
                         className="border-0 bg-red-500 text-sm hover:bg-red-600 sm:text-base"
                       >
-                        Áp dụng
+                        {t("common.apply")}
                       </Button>
                     </div>
                   </div>
@@ -824,7 +878,7 @@ const SearchBox = () => {
                     <div className="border-b border-gray-100 p-3 sm:p-4">
                       <div className="flex items-center justify-between">
                         <Title level={5} className="mb-0 text-sm sm:text-base">
-                          Mức giá
+                          {t("search.priceRange")}
                         </Title>
                         <Button
                           type="text"
@@ -841,7 +895,8 @@ const SearchBox = () => {
                         <div className="mb-4 flex gap-4">
                           <div className="flex-1">
                             <Text className="mb-1 block text-sm text-gray-600">
-                              Từ: {numberToString(priceRange[0])}
+                              {t("search.from")}:{" "}
+                              {numberToString(priceRange[0])}
                             </Text>
                             <Input
                               placeholder={t("search.from")}
@@ -859,7 +914,7 @@ const SearchBox = () => {
                           </div>
                           <div className="flex-1">
                             <Text className="mb-1 block text-sm text-gray-600">
-                              Đến: {numberToString(priceRange[1])}
+                              {t("search.to")}: {numberToString(priceRange[1])}
                             </Text>
                             <Input
                               placeholder={t("search.to")}
@@ -920,14 +975,14 @@ const SearchBox = () => {
                         }}
                         className="text-gray-500 hover:text-red-500"
                       >
-                        Đặt lại
+                        {t("common.reset")}
                       </Button>
                       <Button
                         type="primary"
                         onClick={() => setPriceRangeOpen(false)}
                         className="border-0 bg-red-500 hover:bg-red-600"
                       >
-                        Áp dụng
+                        {t("common.apply")}
                       </Button>
                     </div>
                   </div>
@@ -971,7 +1026,7 @@ const SearchBox = () => {
                     <div className="border-b border-gray-100 p-3 sm:p-4">
                       <div className="flex items-center justify-between">
                         <Title level={5} className="mb-0 text-sm sm:text-base">
-                          Diện tích
+                          {t("search.area")}
                         </Title>
                         <Button
                           type="text"
@@ -988,7 +1043,7 @@ const SearchBox = () => {
                         <div className="mb-4 flex gap-4">
                           <div className="flex-1">
                             <Text className="mb-1 block text-sm text-gray-600">
-                              Diện tích nhỏ nhất
+                              {t("search.minArea")}
                             </Text>
                             <Input
                               placeholder={t("search.from")}
@@ -1007,7 +1062,7 @@ const SearchBox = () => {
                           </div>
                           <div className="flex-1">
                             <Text className="mb-1 block text-sm text-gray-600">
-                              Diện tích lớn nhất
+                              {t("search.maxArea")}
                             </Text>
                             <Input
                               placeholder={t("search.to")}

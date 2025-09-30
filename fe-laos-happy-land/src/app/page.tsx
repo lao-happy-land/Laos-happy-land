@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
+import { getLocale } from "next-intl/server";
 
-export default function RootPage() {
-  // Default redirect to Laos - client-side will handle locale detection
-  redirect("/la");
+export default async function HomePage() {
+  const locale = await getLocale();
+  return redirect(`/${locale}`);
 }

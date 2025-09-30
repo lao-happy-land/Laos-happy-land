@@ -61,6 +61,10 @@ export const userService = {
           updateData.email = value as string;
         } else if (key === "phone") {
           updateData.phone = value as string;
+        } else if (key === "location") {
+          // Note: The UpdateUserDto doesn't include location field
+          // For now we'll skip it, but in a real scenario we'd need to update the API
+          // updateData.location = value as string;
         }
       }
 

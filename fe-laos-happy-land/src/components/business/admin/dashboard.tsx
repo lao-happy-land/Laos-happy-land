@@ -537,10 +537,10 @@ const AdminDashboard = () => {
                       <div className="h-8 w-12 flex-shrink-0 rounded-lg bg-gradient-to-br from-gray-200 to-gray-300"></div>
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          Căn hộ 2PN tại Vientiane Center
+                          {t("admin.samplePropertyTitle")}
                         </div>
                         <div className="text-sm text-gray-500">
-                          Vientiane, Lào
+                          {t("admin.samplePropertyLocation")}
                         </div>
                       </div>
                     </div>
@@ -551,7 +551,7 @@ const AdminDashboard = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm font-semibold whitespace-nowrap text-gray-900">
-                    2.5 tỷ LAK
+                    {t("admin.samplePropertyPrice")}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
@@ -559,7 +559,7 @@ const AdminDashboard = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
-                    10/08/2025
+                    {t("admin.sampleDate")}
                   </td>
                   <td className="px-6 py-4 text-sm whitespace-nowrap">
                     <div className="flex items-center gap-2">

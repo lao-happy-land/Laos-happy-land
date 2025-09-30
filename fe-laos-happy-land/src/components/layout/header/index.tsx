@@ -28,6 +28,7 @@ import {
   Plus,
   ChevronDown,
   MoreHorizontal,
+  Calculator,
 } from "lucide-react";
 import type { User } from "@/share/service/auth.service";
 import { useRouter } from "next/navigation";
@@ -63,17 +64,23 @@ const getNavItems = (locale: string, t: (key: string) => string) => [
     href: `/${locale}/news`,
     icon: <FileText className="h-4 w-4" />,
   },
-  {
-    key: "analysis",
-    title: t("navigation.analysis"),
-    href: `/${locale}/analysis`,
-    icon: <BarChart3 className="h-4 w-4" />,
-  },
+  // {
+  //   key: "analysis",
+  //   title: t("navigation.analysis"),
+  //   href: `/${locale}/analysis`,
+  //   icon: <BarChart3 className="h-4 w-4" />,
+  // },
   {
     key: "directory",
     title: t("navigation.directory"),
     href: `/${locale}/brokers`,
     icon: <Users className="h-4 w-4" />,
+  },
+  {
+    key: "loan-calculator",
+    title: t("navigation.loanCalculator"),
+    href: `/${locale}/loan-calculator`,
+    icon: <Calculator className="h-4 w-4" />,
   },
 ];
 

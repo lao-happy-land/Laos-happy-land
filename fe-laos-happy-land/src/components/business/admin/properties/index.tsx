@@ -36,6 +36,11 @@ import propertyTypeService from "@/share/service/property-type.service";
 import type { Property, User, PropertyType } from "@/@types/types";
 import { numberToString } from "@/share/helper/number-to-string";
 import { useTranslations } from "next-intl";
+import { useUrlLocale } from "@/utils/locale";
+import {
+  getPropertyParamsByLocale,
+  getValidLocale,
+} from "@/share/helper/locale.helper";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -65,6 +70,8 @@ const AdminProperties = () => {
   const [pageSize, setPageSize] = useState(10);
   const [rejectionReason, setRejectionReason] = useState("");
   const [total, setTotal] = useState(0);
+
+  const locale = useUrlLocale();
 
   // Fetch property types
   const { loading: propertyTypesLoading, run: fetchPropertyTypes } = useRequest(
@@ -136,7 +143,7 @@ const AdminProperties = () => {
     async () => {
       const params: {
         keyword?: string;
-        type?: string;
+        type?: string[];
         minPrice?: number;
         maxPrice?: number;
         location?: string;
@@ -148,7 +155,7 @@ const AdminProperties = () => {
       } = {
         page: currentPage,
         perPage: pageSize,
-        currency: "LAK",
+        ...getPropertyParamsByLocale(getValidLocale(locale)),
       };
 
       if (searchTerm.trim()) {
@@ -156,7 +163,7 @@ const AdminProperties = () => {
       }
 
       if (selectedPropertyTypes.length > 0) {
-        params.type = selectedPropertyTypes.join(",");
+        params.type = selectedPropertyTypes;
       }
 
       if (selectedStatus !== "all") {
@@ -789,7 +796,7 @@ const AdminProperties = () => {
               render: (_: unknown, property: Property) => (
                 <Space size="small">
                   <Tooltip title={t("admin.viewEditProperty")}>
-                    <Link href={`/admin/properties/${property.id}`}>
+                    <Link href={`/${locale}/admin/properties/${property.id}`}>
                       <button
                         type="button"
                         className="rounded-md bg-blue-50 p-2 text-blue-500 hover:bg-blue-100 hover:text-blue-700"

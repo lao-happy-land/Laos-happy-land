@@ -8,7 +8,7 @@ import { newsTypeService } from "@/share/service/news-type.service";
 import type { Content, News } from "@/@types/types";
 import type { CreateNewsDto } from "@/@types/gentype-axios";
 import ProjectContentBuilder from "@/components/business/common/project-content-builder";
-import { useTranslation } from "react-i18next";
+import { useTranslations } from "next-intl";
 
 const { Option } = Select;
 
@@ -28,7 +28,7 @@ const NewsModal: React.FC<NewsModalProps> = ({
   onSuccess,
 }) => {
   const [form] = Form.useForm();
-  const { t } = useTranslation();
+  const t = useTranslations();
 
   // Fetch news types
   const { data: newsTypesData } = useRequest(
@@ -141,9 +141,9 @@ const NewsModal: React.FC<NewsModalProps> = ({
           name="title"
           label={t("admin.newsTitle")}
           rules={[
-            { required: true, message: "Vui lòng nhập tiêu đề tin tức!" },
-            { min: 5, message: "Tiêu đề phải có ít nhất 5 ký tự!" },
-            { max: 200, message: "Tiêu đề không được quá 200 ký tự!" },
+            { required: true, message: t("admin.pleaseEnterNewsTitle") },
+            { min: 5, message: t("admin.newsTitleMinLength") },
+            { max: 200, message: t("admin.newsTitleMaxLength") },
           ]}
         >
           <Input placeholder={t("admin.enterNewsTitle")} size="large" />
@@ -152,10 +152,10 @@ const NewsModal: React.FC<NewsModalProps> = ({
         <Form.Item
           name="newsTypeId"
           label={t("admin.newsType")}
-          rules={[{ required: true, message: "Vui lòng chọn loại tin tức!" }]}
+          rules={[{ required: true, message: t("admin.pleaseSelectNewsType") }]}
         >
           <Select
-            placeholder="Chọn loại tin tức..."
+            placeholder={t("admin.selectNewsType")}
             size="large"
             key={
               (news as unknown as { type?: { id: string } })?.type?.id ??

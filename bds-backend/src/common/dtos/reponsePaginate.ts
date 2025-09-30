@@ -15,3 +15,18 @@ export class ResponsePaginate<T> {
     this.message = message;
   }
 }
+
+export class ResponsePaginateObject<T> {
+  @IsArray()
+  readonly data: T;
+
+  readonly meta: PageMetaDto;
+
+  readonly message: string;
+
+  constructor(data: T, meta: PageMetaDto, message: string) {
+    this.data = data;
+    this.meta = meta;
+    this.message = message;
+  }
+}
