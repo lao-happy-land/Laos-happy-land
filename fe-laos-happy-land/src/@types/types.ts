@@ -30,7 +30,21 @@ export type User = {
   deletedAt: string | null;
   deletedBy: string | null;
   image: string | null;
-  fromBank: string | null;
+  fromBank:
+    | string
+    | {
+        note?: string;
+        phone?: string;
+        imageUrl?: string;
+        requested?: boolean;
+        isFromBank?: boolean;
+      }
+    | null;
+  roleRequests?: {
+    note?: string;
+    requested?: boolean;
+    requestedAt?: string;
+  } | null;
   password: string;
 
   // Broker-specific fields

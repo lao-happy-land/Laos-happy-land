@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Button, Spin, Empty } from "antd";
-import { MapPin, X, Eye, Heart } from "lucide-react";
+import { MapPin, X, Eye } from "lucide-react";
 import Map from "react-map-gl/mapbox";
 import { Marker, Popup } from "react-map-gl/mapbox";
 import type { MapRef } from "react-map-gl/mapbox";
@@ -277,11 +277,6 @@ export default function PropertiesMap({
                       </span>
                       <span className="text-xs">{t("views")}</span>
                     </div>
-                    <div className="flex items-center gap-1 text-sm text-gray-600">
-                      <Heart size={14} className="text-red-500" />
-                      <span className="font-medium">0</span>
-                      <span className="text-xs">{t("favorites")}</span>
-                    </div>
                   </div>
                   <div className="text-xs text-gray-500">
                     {new Date(selectedProperty.createdAt).toLocaleDateString(
@@ -305,14 +300,6 @@ export default function PropertiesMap({
                       {t("viewDetails")}
                     </Button>
                   </Link>
-                  <Button
-                    type="default"
-                    size="middle"
-                    icon={<Heart size={16} />}
-                    className="border-gray-300 text-gray-600 hover:border-red-300 hover:text-red-500"
-                  >
-                    {t("favorite")}
-                  </Button>
                 </div>
               </div>
             </div>

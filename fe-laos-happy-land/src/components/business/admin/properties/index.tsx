@@ -496,7 +496,7 @@ const AdminProperties = () => {
             </Text>
           </Col>
           <Col>
-            <Link href="/admin/properties/create">
+            <Link href={`/${locale}/admin/properties/create`}>
               <Button
                 type="primary"
                 size="large"

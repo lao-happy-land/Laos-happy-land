@@ -15,10 +15,9 @@ import {
   Award,
   MessageCircle,
   Share2,
-  Heart,
 } from "lucide-react";
 import Image from "next/image";
-import type { Property, UserFeedback } from "@/@types/types";
+import type { UserFeedback } from "@/@types/types";
 import { userService } from "@/share/service/user.service";
 import propertyService from "@/share/service/property.service";
 import { userFeedbackService } from "@/share/service/user-feedback.service";
@@ -68,22 +67,27 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
 
   // Fetch properties data with useRequest
   const {
-    data: properties,
+    data: propertiesData,
     loading: propertiesLoading,
     run: fetchProperties,
   } = useRequest(
     async () => {
       try {
-        const response = await propertyService.getPropertyByUserId(brokerId);
+        const response = await propertyService.getPropertyByUserId(brokerId, {
+          page: propertiesPagination.current,
+          perPage: propertiesPagination.pageSize,
+          currency: getCurrencyByLocale(getValidLocale(locale)),
+        });
 
-        // Handle response as array of properties
-        const propertiesArray: Property[] = Array.isArray(response)
-          ? response
-          : [];
+        // Handle APIResponse structure
+        const propertiesArray = response.data ?? [];
+        const totalCount = response.meta?.itemCount ?? propertiesArray.length;
+
         setPropertiesPagination((prev) => ({
           ...prev,
-          total: propertiesArray.length,
+          total: totalCount,
         }));
+
         return propertiesArray;
       } catch (error) {
         console.error("Error in fetchProperties:", error);
@@ -91,12 +95,18 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
       }
     },
     {
+      refreshDeps: [
+        propertiesPagination.current,
+        propertiesPagination.pageSize,
+      ],
       onError: (error) => {
         console.error("Error fetching properties:", error);
         message.error(t("errors.cannotLoadProperties"));
       },
     },
   );
+
+  const properties = propertiesData;
 
   // Fetch reviews data with useRequest
   const {
@@ -282,24 +292,14 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
                       </div>
                       <div className="flex gap-3">
                         <Button
-                          icon={<Heart />}
-                          size="large"
-                          className="border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700"
-                          onClick={() =>
-                            message.success(
-                              t("brokerDetail.addedToFavoriteList"),
-                            )
-                          }
-                        >
-                          {t("brokerDetail.favorite")}
-                        </Button>
-                        <Button
                           icon={<Share2 />}
                           size="large"
                           className="border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700"
-                          onClick={() =>
-                            message.success(t("brokerDetail.shareBrokerInfo"))
-                          }
+                          onClick={() => {
+                            void navigator.clipboard.writeText(
+                              window.location.href,
+                            );
+                          }}
                         >
                           {t("brokerDetail.share")}
                         </Button>
@@ -325,9 +325,10 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
                       icon={<Phone className="h-5 w-5" />}
                       className="group w-full justify-start border-green-200 bg-green-50 text-green-700 transition-all hover:bg-green-100 hover:shadow-md"
                       size="large"
-                      onClick={() =>
-                        message.success(t("brokerDetail.callRequestSent"))
-                      }
+                      onClick={() => {
+                        message.success(t("brokerDetail.callRequestSent"));
+                        window.open(`tel:${broker.phone}`, "_self");
+                      }}
                     >
                       <span className="ml-2">{broker.phone}</span>
                     </Button>
@@ -335,25 +336,14 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
                       icon={<Mail className="h-5 w-5" />}
                       className="group w-full justify-start border-blue-200 bg-blue-50 text-blue-700 transition-all hover:bg-blue-100 hover:shadow-md"
                       size="large"
-                      onClick={() =>
-                        message.success(t("brokerDetail.emailRequestSent"))
-                      }
+                      onClick={() => {
+                        message.success(t("brokerDetail.emailRequestSent"));
+                        window.open(`mailto:${broker.email}`, "_self");
+                      }}
                     >
                       <span className="ml-2">
                         {t("brokerDetail.sendEmail")}
                       </span>
-                    </Button>
-                    <Button
-                      icon={<MessageCircle className="h-5 w-5" />}
-                      className="w-full bg-gradient-to-r from-indigo-500 to-blue-600 text-white transition-all hover:from-indigo-600 hover:to-blue-700 hover:shadow-lg"
-                      size="large"
-                      onClick={() =>
-                        message.success(
-                          t("brokerDetail.messageSentSuccessfully"),
-                        )
-                      }
-                    >
-                      {t("brokerDetail.sendMessage")}
                     </Button>
                   </div>
                   <div className="mt-6 space-y-3 rounded-xl bg-white/60 p-4 backdrop-blur-sm">
@@ -413,7 +403,7 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
                   </div>
                   <div className="rounded-xl bg-gradient-to-br from-green-50 to-green-100 p-6 text-center shadow-sm transition-all hover:shadow-md">
                     <div className="mb-2 text-3xl font-bold text-green-600">
-                      {broker.propertyCount ?? properties?.length ?? 15}
+                      {properties?.length ?? 0}
                     </div>
                     <div className="text-sm font-medium text-green-800">
                       {t("brokerDetail.soldProperties")}
@@ -591,7 +581,7 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
 
             <TabPane
               tab={
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 capitalize">
                   <MapPin className="h-4 w-4" />
                   {t("broker.properties")}
                 </div>
@@ -694,7 +684,7 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
                           key={property.id}
                           className="group cursor-pointer overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-gray-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:ring-blue-200"
                           onClick={() =>
-                            router.push(`/property/${property.id}`)
+                            router.push(`/${locale}/property/${property.id}`)
                           }
                         >
                           <div className="relative h-56 w-full overflow-hidden">
@@ -711,9 +701,6 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
                             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                             <div className="absolute top-4 left-4 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 px-3 py-1 text-sm font-medium text-white shadow-lg">
                               {property.type?.name}
-                            </div>
-                            <div className="absolute top-4 right-4 rounded-full bg-white/20 p-2 backdrop-blur-md">
-                              <Heart className="h-4 w-4 text-white" />
                             </div>
                           </div>
                           <div className="p-6">
@@ -820,44 +807,20 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
                 />
 
                 {/* Review Summary */}
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <div className="text-center">
-                    <div className="text-4xl font-bold text-gray-900">
-                      {broker.ratingAverage ?? 0}
-                    </div>
-                    <div className="mb-2 flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
-                          key={star}
-                          className={`h-5 w-5 ${
-                            star <= (broker.ratingAverage ?? 0)
-                              ? "fill-yellow-400 text-yellow-400"
-                              : "text-gray-300"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <div className="text-gray-600">
-                      Dựa trên {broker.ratingCount ?? 0} đánh giá
-                    </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-5 text-gray-600">
+                    {t("brokerDetail.averageRating")}:
                   </div>
-                  <div className="space-y-2">
-                    {[5, 4, 3, 2, 1].map((star) => (
-                      <div key={star} className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">
-                          {star} {t("brokerDetail.stars")}
-                        </span>
-                        <div className="h-2 flex-1 rounded-full bg-gray-200">
-                          <div
-                            className="h-2 rounded-full bg-yellow-400"
-                            style={{ width: `${Math.random() * 100}%` }}
-                          />
-                        </div>
-                        <span className="text-sm text-gray-600">
-                          {/* TODO */}
-                          {Math.floor(Math.random() * 50)}
-                        </span>
-                      </div>
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`h-5 w-5 ${
+                          star <= (broker.ratingAverage ?? 0)
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-300"
+                        }`}
+                      />
                     ))}
                   </div>
                 </div>
