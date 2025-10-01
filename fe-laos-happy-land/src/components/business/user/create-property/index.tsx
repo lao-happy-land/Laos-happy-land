@@ -355,7 +355,7 @@ export default function CreateProperty() {
                   level={3}
                   className="!mb-0 !text-xl !font-semibold !text-gray-900"
                 >
-                  {t("admin.basicInformation")}
+                  {t("property.basicInformation")}
                 </Title>
               </div>
 
@@ -475,7 +475,7 @@ export default function CreateProperty() {
                   }
                   rules={[
                     { required: true, message: t("property.pleaseEnterPrice") },
-                    { type: "number", min: 1, message: t("admin.priceMin") },
+                    { type: "number", min: 1, message: t("property.priceMin") },
                     {
                       type: "number",
                       max: 1000000000,
@@ -695,7 +695,7 @@ export default function CreateProperty() {
                     required: true,
                     message: t("property.pleaseEnterDescription"),
                   },
-                  { min: 20, message: t("admin.descriptionMinLength") },
+                  { min: 20, message: t("property.descriptionMinLength") },
                   {
                     max: 2000,
                     message: t("property.descriptionMaxLength"),
@@ -838,7 +838,7 @@ export default function CreateProperty() {
                         )}
                         {mainImageUrl && !uploadingMainImage && (
                           <div className="absolute top-2 right-2">
-                            <Tooltip title={t("admin.uploadSuccess")}>
+                            <Tooltip title={t("property.uploadSuccess")}>
                               <CheckCircle className="h-6 w-6 rounded-full bg-white text-green-500" />
                             </Tooltip>
                           </div>
@@ -894,7 +894,7 @@ export default function CreateProperty() {
                       </Text>
                       {imageUrls.length > 0 && (
                         <Tooltip
-                          title={`${imageUrls.length} ${t("admin.imagesUploadedSuccessfully")}`}
+                          title={`${imageUrls.length} ${t("property.imagesUploadedSuccessfully")}`}
                         >
                           <div className="flex items-center gap-1 rounded-full bg-green-100 px-2 py-1">
                             <CheckCircle className="h-3 w-3 text-green-600" />
@@ -906,8 +906,7 @@ export default function CreateProperty() {
                       )}
                     </div>
                     <Text className="text-sm text-gray-500">
-                      {imageFiles.length}/{t("admin.max9Images")}{" "}
-                      {t("admin.images")}
+                      {imageFiles.length}/9 {t("property.images")}
                     </Text>
                   </div>
                   <div className="flex flex-wrap gap-4">
@@ -927,7 +926,7 @@ export default function CreateProperty() {
                         )}
                         {imageUrls[index] && !uploadingImages[index] && (
                           <div className="absolute top-1 right-1">
-                            <Tooltip title={t("admin.uploadSuccess")}>
+                            <Tooltip title={t("property.uploadSuccess")}>
                               <CheckCircle className="h-4 w-4 rounded-full bg-white text-green-500" />
                             </Tooltip>
                           </div>
@@ -980,7 +979,7 @@ export default function CreateProperty() {
                       />
                       <Text className="mt-1 block text-xs text-gray-500">
                         {imageUrls.length}/{imageFiles.length}{" "}
-                        {t("admin.imagesUploadedSuccessfully")}
+                        {t("property.imagesUploadedSuccessfully")}
                       </Text>
                     </div>
                   )}
@@ -1007,7 +1006,7 @@ export default function CreateProperty() {
                 loading={submitting}
                 className="rounded-lg bg-blue-600 hover:bg-blue-700"
               >
-                {t("admin.createProperty")}
+                {t("property.createProperty")}
               </Button>
             </div>
           </Form>

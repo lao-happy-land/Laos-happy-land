@@ -1,6 +1,10 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { useUrlLocale } from "@/utils/locale";
 
 const Footer = () => {
+  const t = useTranslations();
+  const locale = useUrlLocale();
   return (
     <footer className="bg-gray-900 text-white">
       <div className="container mx-auto px-4 py-12">
@@ -30,15 +34,16 @@ const Footer = () => {
                 </svg>
               </div>
               <div>
-                <div className="text-2xl font-bold text-blue-400">Lào BDS</div>
+                <div className="text-2xl font-bold text-blue-400">
+                  {t("footer.companyName")}
+                </div>
                 <div className="-mt-1 text-xs text-gray-400">
-                  Bất động sản Lào
+                  {t("footer.companyTagline")}
                 </div>
               </div>
             </div>
             <p className="mb-4 text-gray-300">
-              Nền tảng bất động sản hàng đầu tại Lào. Kết nối người mua, người
-              bán và nhà đầu tư với những cơ hội bất động sản tốt nhất.
+              {t("footer.companyDescription")}
             </p>
             <div className="flex space-x-4">
               <Link
@@ -84,92 +89,96 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="mb-4 text-lg font-semibold">Liên kết nhanh</h3>
+            <h3 className="mb-4 text-lg font-semibold">
+              {t("footer.quickLinks")}
+            </h3>
             <ul className="space-y-2">
               <li>
                 <Link
-                  href="/"
+                  href={`/${locale}/properties-for-sale`}
                   className="text-gray-300 transition-colors hover:text-blue-400"
                 >
-                  Mua bán BDS
+                  {t("footer.propertiesForSale")}
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/"
+                  href={`/${locale}/properties-for-rent`}
                   className="text-gray-300 transition-colors hover:text-blue-400"
                 >
-                  Cho thuê BDS
+                  {t("footer.propertiesForRent")}
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/"
+                  href={`/${locale}/project`}
                   className="text-gray-300 transition-colors hover:text-blue-400"
                 >
-                  Dự án BDS
+                  {t("footer.realEstateProjects")}
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/"
+                  href={`/${locale}/news`}
                   className="text-gray-300 transition-colors hover:text-blue-400"
                 >
-                  Tin tức thị trường
+                  {t("footer.marketNews")}
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/"
+                  href={`/${locale}/create-property`}
                   className="text-gray-300 transition-colors hover:text-blue-400"
                 >
-                  Đăng tin miễn phí
+                  {t("footer.postPropertyFree")}
                 </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h3 className="mb-4 text-lg font-semibold">Loại hình BDS</h3>
+            <h3 className="mb-4 text-lg font-semibold">
+              {t("footer.services")}
+            </h3>
             <ul className="space-y-2">
               <li>
                 <Link
-                  href="/"
+                  href={`/${locale}/brokers`}
                   className="text-gray-300 transition-colors hover:text-blue-400"
                 >
-                  Căn hộ/Chung cư
+                  {t("footer.findBrokers")}
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/"
+                  href={`/${locale}/loan-calculator`}
                   className="text-gray-300 transition-colors hover:text-blue-400"
                 >
-                  Nhà ở
+                  {t("footer.loanCalculator")}
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/"
+                  href={`/${locale}/properties-for-project`}
                   className="text-gray-300 transition-colors hover:text-blue-400"
                 >
-                  Đất
+                  {t("footer.projectProperties")}
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/"
+                  href={`/${locale}/dashboard`}
                   className="text-gray-300 transition-colors hover:text-blue-400"
                 >
-                  Văn phòng
+                  {t("footer.dashboard")}
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/"
+                  href={`/${locale}/profile`}
                   className="text-gray-300 transition-colors hover:text-blue-400"
                 >
-                  Mặt bằng kinh doanh
+                  {t("footer.profile")}
                 </Link>
               </li>
             </ul>
@@ -177,7 +186,9 @@ const Footer = () => {
 
           {/* Contact Info */}
           <div>
-            <h3 className="mb-4 text-lg font-semibold">Thông tin liên hệ</h3>
+            <h3 className="mb-4 text-lg font-semibold">
+              {t("footer.contactInfo")}
+            </h3>
             <div className="space-y-3 text-gray-300">
               <div className="flex items-start space-x-3">
                 <svg
@@ -199,7 +210,7 @@ const Footer = () => {
                     d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                   />
                 </svg>
-                <p>123 Đường Setthathirath, Chanthabouly, Vientiane, Lào</p>
+                <p>{t("footer.address")}</p>
               </div>
               <div className="flex items-center space-x-3">
                 <svg
@@ -216,8 +227,10 @@ const Footer = () => {
                   />
                 </svg>
                 <div>
-                  <p>Hotline: +856 20 123 4567</p>
-                  <p className="text-sm text-gray-400">Hỗ trợ 24/7</p>
+                  <p>{t("footer.hotline")}</p>
+                  <p className="text-sm text-gray-400">
+                    {t("footer.support24_7")}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
@@ -234,7 +247,7 @@ const Footer = () => {
                     d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                   />
                 </svg>
-                <p>info@laobds.com</p>
+                <p>{t("footer.email")}</p>
               </div>
             </div>
           </div>
@@ -244,75 +257,77 @@ const Footer = () => {
         <div className="mt-8 border-t border-gray-800 pt-8">
           <div className="mb-8 grid grid-cols-1 gap-8 md:grid-cols-3">
             <div>
-              <h4 className="mb-3 font-semibold">Hỗ trợ khách hàng</h4>
+              <h4 className="mb-3 font-semibold">
+                {t("footer.customerSupport")}
+              </h4>
               <ul className="space-y-2 text-sm text-gray-300">
                 <li>
                   <Link
-                    href="/huong-dan"
+                    href={`/${locale}/news`}
                     className="transition-colors hover:text-blue-400"
                   >
-                    Hướng dẫn đăng tin
+                    {t("footer.newsAndGuides")}
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href="/bao-gia"
+                    href={`/${locale}/loan-calculator`}
                     className="transition-colors hover:text-blue-400"
                   >
-                    Bảng giá dịch vụ
+                    {t("footer.loanCalculator")}
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href="/faq"
+                    href={`/${locale}/brokers`}
                     className="transition-colors hover:text-blue-400"
                   >
-                    Câu hỏi thường gặp
+                    {t("footer.findBrokers")}
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href="/lien-he"
+                    href={`/${locale}/create-property`}
                     className="transition-colors hover:text-blue-400"
                   >
-                    Liên hệ hỗ trợ
+                    {t("footer.postProperty")}
                   </Link>
                 </li>
               </ul>
             </div>
             <div>
-              <h4 className="mb-3 font-semibold">Về chúng tôi</h4>
+              <h4 className="mb-3 font-semibold">{t("footer.aboutUs")}</h4>
               <ul className="space-y-2 text-sm text-gray-300">
                 <li>
                   <Link
-                    href="/gioi-thieu"
+                    href={`/${locale}`}
                     className="transition-colors hover:text-blue-400"
                   >
-                    Giới thiệu
+                    {t("footer.homePage")}
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href="/blog"
+                    href={`/${locale}/project`}
                     className="transition-colors hover:text-blue-400"
                   >
-                    Blog BDS
+                    {t("footer.realEstateProjects")}
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href="/tuyen-dung"
+                    href={`/${locale}/dashboard`}
                     className="transition-colors hover:text-blue-400"
                   >
-                    Tuyển dụng
+                    {t("footer.userDashboard")}
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href="/chinh-sach-bao-mat"
+                    href={`/${locale}/profile`}
                     className="transition-colors hover:text-blue-400"
                   >
-                    Chính sách bảo mật
+                    {t("footer.userProfile")}
                   </Link>
                 </li>
               </ul>
@@ -324,32 +339,32 @@ const Footer = () => {
         <div className="border-t border-gray-800 pt-8">
           <div className="flex flex-col items-center justify-between space-y-4 md:flex-row md:space-y-0">
             <p className="text-sm text-gray-400">
-              © 2025 Lào BDS. Bản quyền thuộc về Lào BDS.
+              {t("footer.copyright")}
               <Link
-                href="/dieu-khoan"
+                href={`/${locale}/terms`}
                 className="ml-2 transition-colors hover:text-blue-400"
               >
-                Điều khoản sử dụng
+                {t("footer.termsOfService")}
               </Link>
             </p>
             <div className="flex space-x-6 text-sm">
               <Link
-                href="/chinh-sach-bao-mat"
+                href={`/${locale}/privacy`}
                 className="text-gray-400 transition-colors hover:text-blue-400"
               >
-                Chính sách bảo mật
+                {t("footer.privacyPolicy")}
               </Link>
               <Link
-                href="/dieu-khoan"
+                href={`/${locale}/terms`}
                 className="text-gray-400 transition-colors hover:text-blue-400"
               >
-                Điều khoản sử dụng
+                {t("footer.termsOfService")}
               </Link>
               <Link
-                href="/sitemap"
+                href={`/${locale}/news`}
                 className="text-gray-400 transition-colors hover:text-blue-400"
               >
-                Sơ đồ trang web
+                {t("footer.news")}
               </Link>
             </div>
           </div>
