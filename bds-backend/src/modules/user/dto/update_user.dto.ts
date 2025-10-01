@@ -19,30 +19,35 @@ export class UpdateUserDto {
     example: 'Nguyen Van A',
     description: 'Full name of the user',
   })
+  @IsString()
   fullName?: string;
 
   @ApiPropertyOptional({
     example: 'nguyenvana@example.com',
     description: 'Email of the user',
   })
+  @IsString()
   email?: string;
 
   @ApiPropertyOptional({
     example: '0123456789',
     description: 'Phone number of the user',
   })
+  @IsString()
   phone?: string;
 
   @ApiPropertyOptional({
     example: 'password123',
     description: 'Password of the user',
   })
+  @IsString()
   password?: string;
 
   @ApiPropertyOptional({
     example: 'f2f6f4f0-6b6b-4b8c-9b87-5f6a6c6a6c6a',
     description: 'Role ID of the user',
   })
+  @IsString()
   roleId?: string;
 
   @ApiPropertyOptional({
