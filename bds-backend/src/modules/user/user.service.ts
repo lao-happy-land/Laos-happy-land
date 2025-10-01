@@ -167,6 +167,21 @@ export class UserService {
     return { user, message: 'Success' };
   }
 
+  async getRandomUsersFromBank(limit = 10) {
+    const users = await this.userRepository
+      .createQueryBuilder('user')
+      .where("user.fromBank ->> 'isFromBank' = :fromBank", { fromBank: 'true' })
+      .getMany();
+
+    if (!users.length) {
+      return [];
+    }
+
+    const shuffled = users.sort(() => 0.5 - Math.random());
+
+    return shuffled.slice(0, limit);
+  }
+
   async update(id: string, updateUserDto: UpdateUserDto, image?: Multer.File) {
     const user = await this.userRepository.findOneBy({ id });
     if (!user) {
