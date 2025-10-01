@@ -14,73 +14,30 @@ export class SettingService {
   constructor(
     @InjectRepository(Setting)
     private readonly settingRepository: Repository<Setting>,
-    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  async create(createSettingDto: CreateSettingDto) {
-    const setting = this.settingRepository.create(createSettingDto);
-    await this.settingRepository.save(setting);
-    return { setting, message: 'Setting created successfully' };
-  }
+  // Lấy Setting duy nhất
+  async getSetting() {
+    let setting = await this.settingRepository.findOneBy({});
 
-  async getAll(params: GetSettingDto) {
-    const settings = this.settingRepository
-      .createQueryBuilder('setting')
-      .skip(params.skip)
-      .take(params.perPage)
-      .orderBy('setting.createdAt', params.OrderSort);
-    const [result, total] = await settings.getManyAndCount();
-    const pageMetaDto = new PageMetaDto({
-      itemCount: total,
-      pageOptionsDto: params,
-    });
-    return new ResponsePaginate(result, pageMetaDto, 'Success');
-  }
-
-  async get(id: string) {
-    const setting = await this.settingRepository
-      .createQueryBuilder('setting')
-      .where('setting.id = :id', { id })
-      .getOne();
     if (!setting) {
-      throw new BadRequestException('Setting not found');
+      // Tạo mặc định nếu chưa có
+      setting = this.settingRepository.create({});
+      await this.settingRepository.save(setting);
     }
     return { setting, message: 'Success' };
   }
 
-  async update(
-    id: string,
-    updateSettingDto: CreateSettingDto
-  ) {
-    const setting = await this.settingRepository.findOneBy({ id });
+  // Cập nhật Setting duy nhất
+  async updateSetting(updateDto: CreateSettingDto) {
+    let setting = await this.settingRepository.findOneBy({});
+
     if (!setting) {
-      throw new BadRequestException('Setting not found');
-    }
-    if (updateSettingDto.images) {
-      setting.images = updateSettingDto.images;
-    }
-    if (updateSettingDto.banner) {
-      setting.banner = updateSettingDto.banner;
-    }
-    if (updateSettingDto.description) {
-      setting.description = updateSettingDto.description;
-    }
-    if (updateSettingDto.hotline) {
-      setting.hotline = updateSettingDto.hotline;
-    }
-    if (updateSettingDto.facebook) {
-      setting.facebook = updateSettingDto.facebook;
+      setting = this.settingRepository.create(updateDto);
+    } else {
+      Object.assign(setting, updateDto); // Gán các field cập nhật
     }
     await this.settingRepository.save(setting);
     return { setting, message: 'Setting updated successfully' };
-  }
-
-  async remove(id: string) {
-    const setting = await this.settingRepository.findOneBy({ id });
-    if (!setting) {
-      throw new BadRequestException('Setting not found');
-    }
-    await this.settingRepository.remove(setting);
-    return { message: 'Setting deleted successfully' };
   }
 }

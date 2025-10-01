@@ -6,7 +6,7 @@ export class AboutUs extends AbstractEntity {
     @PrimaryGeneratedColumn('uuid')
     id: string
 
-    @Column({ unique: true})
+    @Column({ type: 'text', nullable: true})
     title: string;
 
     @Column({ type: 'text', nullable: true })

@@ -60,6 +60,16 @@ export class UserController {
     return this.userService.getBankRequests(params);
   }
 
+  @Get('random-from-bank')
+  @ApiResponse({ status: 200, description: 'Random user from bank' })
+  async getRandomUser() {
+    const users = await this.userService.getRandomUsersFromBank();
+   if (!users) {
+      return { message: 'No users from bank found' };
+    }
+    return { users, message: 'Success' };
+  }
+
   @Get(':id')
   @ApiResponse({ status: 200, description: 'User found successfully' })
   async get(@Param('id') id: string) {
