@@ -13,6 +13,7 @@ import { UserRole } from 'src/entities/user-role.entity';
 import { Multer } from 'multer';
 import { CloudinaryService } from 'src/service/cloudinary.service';
 import { LocationInfo } from 'src/entities/location-info.entity';
+import { LocationDto } from '../property/dto/create_property.dto';
 
 @Injectable()
 export class UserService {
@@ -48,14 +49,41 @@ export class UserService {
     });
     if (!role) throw new BadRequestException('Role not found');
 
-    let locationInfo: LocationInfo | null = null;
-    if (createUserDto.locationInfoId) {
-      locationInfo = await this.entityManager.findOneBy(LocationInfo, {
-        id: createUserDto.locationInfoId,
-      });
-      if (!locationInfo) {
-        throw new BadRequestException('Location info not found');
+    let locationData: any = null;
+    if (createUserDto.location) {
+      if (typeof createUserDto.location === 'string') {
+        try {
+          locationData = JSON.parse(createUserDto.location);
+        } catch {
+          throw new BadRequestException('Invalid location format');
+        }
+      } else {
+        locationData = createUserDto.location;
       }
+    }
+
+    let locationInfo: LocationInfo = null;
+    if (locationData?.province && locationData?.district) {
+      let provinceInfo = await this.entityManager.findOne(LocationInfo, {
+        where: { name: locationData.province },
+      });
+
+      if (!provinceInfo) {
+        provinceInfo = this.entityManager.create(LocationInfo, {
+          name: locationData.province,
+          strict: [locationData.district],
+          viewCount: 0,
+        });
+        await this.entityManager.save(provinceInfo);
+      } else {
+        const strictList = provinceInfo.strict || [];
+        if (!strictList.includes(locationData.district)) {
+          provinceInfo.strict = [...strictList, locationData.district];
+          await this.entityManager.save(provinceInfo);
+        }
+      }
+
+      locationInfo = provinceInfo;
     }
 
     let avatarUrl: string | null = null;
@@ -145,15 +173,6 @@ export class UserService {
       throw new BadRequestException('User not found');
     }
     if (user) {
-      if (updateUserDto.email) {
-        if (
-          await this.userRepository.findOneBy({ email: updateUserDto.email })
-        ) {
-          throw new BadRequestException('Email already exists');
-        } else {
-          user.email = updateUserDto.email;
-        }
-      }
       if (updateUserDto.fullName) {
         user.fullName = updateUserDto.fullName;
       }
@@ -168,13 +187,44 @@ export class UserService {
         user.role = role;
       }
 
-      if (updateUserDto.locationInfoId) {
-        const locationInfo = await this.entityManager.findOneBy(LocationInfo, {
-          id: updateUserDto.locationInfoId,
-        });
-        if (!locationInfo) {
-          throw new BadRequestException('Location info not found');
+      if (updateUserDto.location) {
+        let locationData: LocationDto;
+
+        if (typeof updateUserDto.location === 'string') {
+          try {
+            locationData = JSON.parse(updateUserDto.location);
+          } catch {
+            throw new BadRequestException('Invalid location format');
+          }
+        } else {
+          locationData = updateUserDto.location;
         }
+
+        let locationInfo: LocationInfo = null;
+
+        if (locationData.province && locationData.district) {
+          let provinceInfo = await this.entityManager.findOne(LocationInfo, {
+            where: { name: locationData.province },
+          });
+
+          if (!provinceInfo) {
+            provinceInfo = this.entityManager.create(LocationInfo, {
+              name: locationData.province,
+              strict: [locationData.district],
+              viewCount: 0,
+            });
+            await this.entityManager.save(provinceInfo);
+          } else {
+            const strictList = provinceInfo.strict || [];
+            if (!strictList.includes(locationData.district)) {
+              provinceInfo.strict = [...strictList, locationData.district];
+              await this.entityManager.save(provinceInfo);
+            }
+          }
+
+          locationInfo = provinceInfo;
+        }
+
         user.locationInfo = locationInfo;
       }
       if (image) {
