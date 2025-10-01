@@ -258,7 +258,7 @@ export default function Header({
             </div>
 
             <div className="flex items-center">
-              <div className="lg:hidden">
+              <div className="xl:hidden">
                 <Button
                   type="text"
                   icon={<MenuIcon className="h-5 w-5" />}
@@ -266,7 +266,7 @@ export default function Header({
                 />
               </div>
 
-              <div className="hidden items-center space-x-3 lg:flex">
+              <div className="hidden items-center space-x-3 xl:flex">
                 <LanguageSwitcher />
                 {isAuthenticated && user ? (
                   <Dropdown

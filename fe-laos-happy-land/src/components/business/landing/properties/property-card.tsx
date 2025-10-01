@@ -19,11 +19,15 @@ import { Button } from "antd";
 import { useState } from "react";
 import { formatCreatedDate } from "@/share/helper/format-date";
 import { useUrlLocale } from "@/utils/locale";
+import {
+  getCurrencyByLocale,
+  type SupportedLocale,
+} from "@/share/helper/locale.helper";
 
 export default function PropertyCard({ property }: { property: Property }) {
   const t = useTranslations();
   const [isPhoneRevealed, setIsPhoneRevealed] = useState(false);
-  const locale = useUrlLocale();
+  const locale = useUrlLocale() as SupportedLocale;
 
   const hiddenPhone = property.owner?.phone?.slice(0, -4) + "****";
 
@@ -130,13 +134,17 @@ export default function PropertyCard({ property }: { property: Property }) {
               {property.title}
             </h3>
 
-            <div className="mb-2 flex items-center gap-3">
+            <div className="mb-2 flex flex-col items-start lg:flex-row lg:items-center lg:gap-3">
               <span className="text-2xl font-bold text-red-600">
                 {property.price
-                  ? numberToString(Number(property.price))
+                  ? numberToString(
+                      Number(property.price),
+                      locale,
+                      getCurrencyByLocale(locale),
+                    )
                   : t("property.contactForPrice")}
               </span>
-              <span className="text-gray-500">•</span>
+              <span className="hidden text-gray-500 lg:block">•</span>
               <div className="flex items-center gap-1">
                 <MapPin className="h-4 w-4" />
                 <span className="text-sm text-gray-600">
@@ -144,7 +152,7 @@ export default function PropertyCard({ property }: { property: Property }) {
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-4 text-sm text-gray-600">
+            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
               {(property.details?.bedrooms ?? 0) > 0 && (
                 <div className="flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">
                   <Bed className="h-4 w-4" />
@@ -176,7 +184,7 @@ export default function PropertyCard({ property }: { property: Property }) {
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between border-t border-gray-200 p-4">
+          <div className="flex flex-col items-start justify-between gap-4 border-t border-gray-200 p-4 lg:flex-row lg:items-center">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-600 shadow-lg">
                 <span className="text-sm font-bold text-white">T</span>
@@ -195,11 +203,11 @@ export default function PropertyCard({ property }: { property: Property }) {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex w-full items-center gap-3 lg:w-auto">
               <Button
                 type="primary"
                 onClick={handleRevealPhone}
-                className="flex items-center gap-2"
+                className="flex w-full items-center gap-2"
               >
                 <Phone className="h-4 w-4" />
                 <span>

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useUrlLocale } from "@/utils/locale";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useClickAway, useEventListener } from "ahooks";
 import { useRequest } from "ahooks";
 import {
@@ -16,6 +16,7 @@ import {
   Radio,
   Slider,
   Checkbox,
+  Modal,
 } from "antd";
 import {
   Home,
@@ -88,6 +89,12 @@ const SearchBox = () => {
   const [propertyTypeOpen, setPropertyTypeOpen] = useState(false);
   const [priceRangeOpen, setPriceRangeOpen] = useState(false);
   const [areaOpen, setAreaOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
 
   // Refs for modals
   const locationPopupRef = useRef<HTMLDivElement>(null);
@@ -111,27 +118,49 @@ const SearchBox = () => {
   const [areaRange, setAreaRange] = useState<[number, number]>([0, 1000]);
   const [selectedAreaRange, setSelectedAreaRange] = useState<string>("all");
 
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   useClickAway(() => {
     setShowLocationPopup(false);
   }, [locationPopupRef, locationSelectorRef]);
 
   useClickAway(() => {
-    setPropertyTypeOpen(false);
+    if (!isMobile) {
+      setPropertyTypeOpen(false);
+    }
   }, [propertyTypeDropdownRef, propertyTypeButtonRef]);
 
   useClickAway(() => {
-    setPriceRangeOpen(false);
+    if (!isMobile) {
+      setPriceRangeOpen(false);
+    }
   }, [priceRangeDropdownRef, priceRangeButtonRef]);
 
   useClickAway(() => {
-    setAreaOpen(false);
+    if (!isMobile) {
+      setAreaOpen(false);
+    }
   }, [areaDropdownRef, areaButtonRef]);
 
   useClickAway(() => {
-    setShowLocationPopup(false);
-    setPropertyTypeOpen(false);
-    setPriceRangeOpen(false);
-    setAreaOpen(false);
+    if (!isMobile) {
+      setShowLocationPopup(false);
+      setPropertyTypeOpen(false);
+      setPriceRangeOpen(false);
+      setAreaOpen(false);
+    } else {
+      setShowLocationPopup(false);
+    }
   }, [
     locationPopupRef,
     locationSelectorRef,
@@ -146,10 +175,14 @@ const SearchBox = () => {
   useEventListener(
     "scroll",
     () => {
-      setShowLocationPopup(false);
-      setPropertyTypeOpen(false);
-      setPriceRangeOpen(false);
-      setAreaOpen(false);
+      if (!isMobile) {
+        setShowLocationPopup(false);
+        setPropertyTypeOpen(false);
+        setPriceRangeOpen(false);
+        setAreaOpen(false);
+      } else {
+        setShowLocationPopup(false);
+      }
     },
     { target: typeof window !== "undefined" ? document : undefined },
   );
@@ -537,8 +570,62 @@ const SearchBox = () => {
           </div>
 
           {/* Main Search Container */}
-          <div className="shadow-3xl relative rounded-2xl rounded-t-none bg-white p-4 sm:rounded-3xl sm:rounded-t-none md:p-6">
-            <div className="relative mb-2 flex w-full flex-col items-stretch overflow-hidden rounded-xl border-2 border-gray-200 bg-white transition-all duration-300 focus-within:border-red-500 focus-within:ring-4 focus-within:ring-red-100 hover:border-red-300 hover:shadow-lg sm:flex-row sm:items-center sm:rounded-2xl">
+          <div className="shadow-3xl relative rounded-2xl rounded-t-none bg-white p-2 sm:rounded-3xl sm:rounded-t-none lg:p-4">
+            <div className="relative mb-2 flex w-full flex-col items-stretch overflow-hidden rounded-xl border-2 border-gray-200 bg-white transition-all duration-300 focus-within:border-red-500 focus-within:ring-4 focus-within:ring-red-100 hover:border-red-300 hover:shadow-lg sm:flex-row sm:items-center sm:rounded-2xl lg:hidden">
+              <div className="flex items-center gap-2 p-2 sm:gap-3 sm:p-0">
+                <div className="flex flex-1 items-center gap-2 border-b border-gray-200 p-3 pb-4">
+                  <Search className="text-gray-600" size={16} />
+                  <input
+                    type="text"
+                    placeholder={t("search.locationPlaceholder")}
+                    value={keyword}
+                    onChange={(e) => setKeyword(e.target.value)}
+                    className="flex-1 border-0 bg-transparent text-xs font-medium text-gray-700 placeholder-gray-500 outline-none sm:text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="mr-4 hidden h-6 w-px bg-gray-300 sm:block"></div>
+
+              <div className="grid grid-cols-2 items-center gap-2 p-2 sm:gap-3 sm:p-0">
+                <Button
+                  ref={locationSelectorRef}
+                  type="text"
+                  size="large"
+                  className="w-full"
+                  onClick={() => setShowLocationPopup(!showLocationPopup)}
+                >
+                  <MapPin className="text-gray-600" size={16} />
+                  <span className="text-xs font-medium text-gray-700 capitalize sm:text-sm">
+                    {selectedLocation
+                      ? (allLocationsData?.find(
+                          (loc: LocationInfo) => loc.id === selectedLocation,
+                        )?.name ?? selectedLocation)
+                      : t("search.nationwide")}
+                  </span>
+
+                  <ChevronDown
+                    size={16}
+                    className={`text-gray-400 transition-transform duration-200 ${
+                      showLocationPopup ? "rotate-180" : ""
+                    }`}
+                  />
+                </Button>
+
+                <Button
+                  type="primary"
+                  size="large"
+                  onClick={handleSearch}
+                  icon={<Search className="text-white" size={16} />}
+                  className="rounded-none"
+                >
+                  <span className="hidden sm:inline">{t("common.search")}</span>
+                  <span className="sm:hidden">{t("common.find")}</span>
+                </Button>
+              </div>
+            </div>
+
+            <div className="relative mb-2 hidden w-full flex-col items-stretch overflow-hidden rounded-xl border-2 border-gray-200 bg-white transition-all duration-300 focus-within:border-red-500 focus-within:ring-4 focus-within:ring-red-100 hover:border-red-300 hover:shadow-lg sm:flex-row sm:items-center sm:rounded-2xl lg:flex">
               <div className="flex items-center gap-2 p-3 sm:gap-3 sm:p-0">
                 <Button
                   ref={locationSelectorRef}
@@ -594,10 +681,10 @@ const SearchBox = () => {
             {showLocationPopup && (
               <div
                 ref={locationPopupRef}
-                className="location-popup absolute z-50 h-[60vh] w-[calc(100%-2rem)] overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-2xl sm:h-[50vh] sm:w-[calc(100%-3rem)] sm:rounded-2xl"
+                className="location-popup absolute z-50 h-[60vh] w-[calc(100%-1rem)] overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-2xl sm:h-[50vh] sm:w-[calc(100%-3rem)] sm:rounded-2xl"
               >
-                <div className="p-4 sm:p-6">
-                  <div className="mb-4 flex items-center justify-between sm:mb-6">
+                <div className="p-2 lg:p-4">
+                  <div className="mb-2 flex items-center justify-between sm:mb-4">
                     <div>
                       <Title level={4} className="mb-1 text-base sm:text-lg">
                         {t("search.selectLocation")}
@@ -739,7 +826,7 @@ const SearchBox = () => {
             )}
 
             {/* Filter Dropdowns */}
-            <div className="relative mt-4 grid w-full grid-cols-3 gap-4">
+            <div className="relative mt-2 grid w-full gap-2 lg:mt-4 lg:grid-cols-3 lg:gap-4">
               {/* Property Type Filter */}
               <div className="col-span-1 md:relative">
                 <Button
@@ -765,8 +852,8 @@ const SearchBox = () => {
                   />
                 </Button>
 
-                {/* Property Type Dropdown */}
-                {propertyTypeOpen && (
+                {/* Property Type Dropdown - Desktop */}
+                {!isMobile && propertyTypeOpen && (
                   <div
                     ref={propertyTypeDropdownRef}
                     className="filter-dropdown absolute top-full left-0 z-50 mt-3 w-full rounded-xl border border-gray-200 bg-white shadow-2xl sm:rounded-2xl"
@@ -839,6 +926,83 @@ const SearchBox = () => {
                     </div>
                   </div>
                 )}
+
+                {/* Property Type Modal - Mobile */}
+                <Modal
+                  title={
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
+                        <span className="text-base">🏠</span>
+                      </div>
+                      <span className="text-lg font-semibold">
+                        {t("search.propertyType")}
+                      </span>
+                    </div>
+                  }
+                  open={isMobile && propertyTypeOpen}
+                  onCancel={() => setPropertyTypeOpen(false)}
+                  footer={
+                    <div className="flex justify-between gap-3">
+                      <Button
+                        onClick={() => setSelectedPropertyTypes([])}
+                        className="flex-1 text-gray-500 hover:text-red-500"
+                        size="large"
+                      >
+                        {t("common.reset")}
+                      </Button>
+                      <Button
+                        type="primary"
+                        onClick={() => setPropertyTypeOpen(false)}
+                        className="flex-1 border-0 bg-red-500 hover:bg-red-600"
+                        size="large"
+                      >
+                        {t("common.apply")}
+                      </Button>
+                    </div>
+                  }
+                  centered
+                  width={400}
+                >
+                  <div className="max-h-[60vh] overflow-y-auto">
+                    {propertyTypesLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-red-500"></div>
+                        <span className="ml-3 text-gray-500">
+                          {t("search.loadingPropertyTypes")}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {propertyTypeOptions.map((type) => (
+                          <div
+                            key={type.id}
+                            className="flex cursor-pointer items-center gap-4 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 hover:border-red-200 hover:bg-red-50"
+                            onClick={() => handleSelectedPropertyType(type.id)}
+                          >
+                            <Checkbox
+                              checked={
+                                type.id === "all"
+                                  ? propertyTypeOptions
+                                      .filter((option) => option.id !== "all")
+                                      .every((option) =>
+                                        selectedPropertyTypes.includes(
+                                          option.id,
+                                        ),
+                                      )
+                                  : selectedPropertyTypes.includes(type.id)
+                              }
+                              className="text-red-500"
+                            />
+                            <span className="text-gray-600">{type.icon}</span>
+                            <span className="font-medium text-gray-700">
+                              {type.name}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </Modal>
               </div>
 
               {/* Price Range Filter */}
@@ -868,8 +1032,8 @@ const SearchBox = () => {
                   />
                 </Button>
 
-                {/* Price Range Dropdown */}
-                {priceRangeOpen && (
+                {/* Price Range Dropdown - Desktop */}
+                {!isMobile && priceRangeOpen && (
                   <div
                     ref={priceRangeDropdownRef}
                     className="filter-dropdown absolute top-full left-0 z-50 mt-3 w-full rounded-xl border border-gray-200 bg-white shadow-2xl sm:rounded-2xl"
@@ -894,10 +1058,14 @@ const SearchBox = () => {
                       <div className="mb-6">
                         <div className="mb-4 flex gap-4">
                           <div className="flex-1">
-                            <Text className="mb-1 block text-sm text-gray-600">
-                              {t("search.from")}:{" "}
-                              {numberToString(priceRange[0])}
-                            </Text>
+                            <div className="flex items-center gap-2">
+                              <Text className="mb-1 block text-sm text-gray-600">
+                                {t("search.from")}:
+                              </Text>
+                              <Text className="mb-1 block text-lg font-bold text-red-600">
+                                {numberToString(priceRange[0])}
+                              </Text>
+                            </div>
                             <Input
                               placeholder={t("search.from")}
                               className="rounded-lg"
@@ -913,9 +1081,14 @@ const SearchBox = () => {
                             <ArrowRight className="mb-2 h-5 w-5 text-gray-400" />
                           </div>
                           <div className="flex-1">
-                            <Text className="mb-1 block text-sm text-gray-600">
-                              {t("search.to")}: {numberToString(priceRange[1])}
-                            </Text>
+                            <div className="flex items-center gap-2">
+                              <Text className="mb-1 block text-sm text-gray-600">
+                                {t("search.to")}:
+                              </Text>
+                              <Text className="mb-1 block text-lg font-bold text-red-600">
+                                {numberToString(priceRange[1])}
+                              </Text>
+                            </div>
                             <Input
                               placeholder={t("search.to")}
                               className="rounded-lg"
@@ -987,6 +1160,142 @@ const SearchBox = () => {
                     </div>
                   </div>
                 )}
+
+                {/* Price Range Modal - Mobile */}
+                <Modal
+                  title={
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100">
+                        <span className="text-base">💰</span>
+                      </div>
+                      <span className="text-lg font-semibold">
+                        {t("search.priceRange")}
+                      </span>
+                    </div>
+                  }
+                  open={isMobile && priceRangeOpen}
+                  onCancel={() => setPriceRangeOpen(false)}
+                  footer={
+                    <div className="flex justify-between gap-3">
+                      <Button
+                        onClick={() => {
+                          handlePriceRangeSelection("all");
+                        }}
+                        className="flex-1 text-gray-500 hover:text-red-500"
+                        size="large"
+                      >
+                        {t("common.reset")}
+                      </Button>
+                      <Button
+                        type="primary"
+                        onClick={() => setPriceRangeOpen(false)}
+                        className="flex-1 border-0 bg-red-500 hover:bg-red-600"
+                        size="large"
+                      >
+                        {t("common.apply")}
+                      </Button>
+                    </div>
+                  }
+                  centered
+                  width={420}
+                >
+                  <div className="max-h-[70vh] overflow-y-auto">
+                    {/* Custom Price Range */}
+                    <div className="mb-6">
+                      <div className="mb-6 flex gap-3">
+                        <div className="flex-1">
+                          <Text className="mb-2 block text-sm font-medium text-gray-700">
+                            {t("search.from")}
+                          </Text>
+                          <Text className="mb-2 block text-lg font-bold text-red-600">
+                            {numberToString(priceRange[0])}
+                          </Text>
+                          <Input
+                            placeholder={t("search.from")}
+                            className="rounded-lg"
+                            size="large"
+                            value={priceRange[0]}
+                            onChange={(e) =>
+                              handleMinPriceInputChange(
+                                parseInt(e.target.value),
+                              )
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center pt-8">
+                          <ArrowRight className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <div className="flex-1">
+                          <Text className="mb-2 block text-sm font-medium text-gray-700">
+                            {t("search.to")}
+                          </Text>
+                          <Text className="mb-2 block text-lg font-bold text-red-600">
+                            {priceRange[1] === 100000000000
+                              ? "∞"
+                              : numberToString(priceRange[1])}
+                          </Text>
+                          <Input
+                            placeholder={t("search.to")}
+                            className="rounded-lg"
+                            size="large"
+                            value={priceRange[1]}
+                            onChange={(e) =>
+                              handleMaxPriceInputChange(
+                                parseInt(e.target.value),
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+                      <div className="px-2">
+                        <Slider
+                          range
+                          value={priceRange}
+                          onChange={(value) =>
+                            handlePriceRangeChange(value as [number, number])
+                          }
+                          min={0}
+                          step={1000000}
+                          tooltip={{
+                            formatter: (value?: number) => {
+                              if (typeof value !== "number") return "";
+                              return `${numberToString(value)}`;
+                            },
+                          }}
+                          max={20000000000}
+                          className="mb-6"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Predefined Price Ranges */}
+                    <div>
+                      <Text className="mb-3 block text-sm font-medium text-gray-700">
+                        {t("search.quickSelect")}
+                      </Text>
+                      <Radio.Group
+                        value={selectedPriceRange}
+                        onChange={(e) =>
+                          handlePriceRangeSelection(e.target.value as string)
+                        }
+                        className="w-full"
+                      >
+                        <div className="space-y-2">
+                          {priceRanges.map((range) => (
+                            <div
+                              key={range.value}
+                              className="rounded-lg border border-gray-100 p-3 hover:border-red-200 hover:bg-red-50"
+                            >
+                              <Radio value={range.value} className="text-base">
+                                {range.label}
+                              </Radio>
+                            </div>
+                          ))}
+                        </div>
+                      </Radio.Group>
+                    </div>
+                  </div>
+                </Modal>
               </div>
 
               {/* Area Filter */}
@@ -1016,8 +1325,8 @@ const SearchBox = () => {
                   />
                 </Button>
 
-                {/* Area Dropdown */}
-                {areaOpen && (
+                {/* Area Dropdown - Desktop */}
+                {!isMobile && areaOpen && (
                   <div
                     ref={areaDropdownRef}
                     className="filter-dropdown absolute top-full left-0 z-50 mt-3 w-full rounded-xl border border-gray-200 bg-white shadow-2xl sm:rounded-2xl"
@@ -1129,6 +1438,142 @@ const SearchBox = () => {
                     </div>
                   </div>
                 )}
+
+                {/* Area Modal - Mobile */}
+                <Modal
+                  title={
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100">
+                        <span className="text-base">📐</span>
+                      </div>
+                      <span className="text-lg font-semibold">
+                        {t("search.area")}
+                      </span>
+                    </div>
+                  }
+                  open={isMobile && areaOpen}
+                  onCancel={() => setAreaOpen(false)}
+                  footer={
+                    <div className="flex justify-between gap-3">
+                      <Button
+                        onClick={() => {
+                          handleAreaRangeSelection("all");
+                        }}
+                        className="flex-1 text-gray-500 hover:text-red-500"
+                        size="large"
+                      >
+                        {t("common.reset")}
+                      </Button>
+                      <Button
+                        type="primary"
+                        onClick={() => setAreaOpen(false)}
+                        className="flex-1 border-0 bg-red-500 hover:bg-red-600"
+                        size="large"
+                      >
+                        {t("common.apply")}
+                      </Button>
+                    </div>
+                  }
+                  centered
+                  width={420}
+                >
+                  <div className="max-h-[70vh] overflow-y-auto">
+                    {/* Custom Area Range */}
+                    <div className="mb-6">
+                      <div className="mb-6 flex gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <Text className="mb-2 block text-sm font-medium text-gray-700">
+                              {t("search.from")}
+                            </Text>
+                            <Text className="mb-2 block text-lg font-bold text-red-600">
+                              {areaRange[0]}m²
+                            </Text>
+                          </div>
+                          <Input
+                            placeholder={t("search.from")}
+                            className="rounded-lg"
+                            size="large"
+                            suffix="m²"
+                            value={areaRange[0]}
+                            onChange={(e) =>
+                              handleMinAreaInputChange(parseInt(e.target.value))
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center pt-8">
+                          <ArrowRight className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <Text className="mb-2 block text-sm font-medium text-gray-700">
+                              {t("search.to")}
+                            </Text>
+                            <Text className="mb-2 block text-lg font-bold text-red-600">
+                              {areaRange[1] === 1000 ? "∞" : areaRange[1]}m²
+                            </Text>
+                          </div>
+                          <Input
+                            placeholder={t("search.to")}
+                            className="rounded-lg"
+                            size="large"
+                            suffix="m²"
+                            value={areaRange[1]}
+                            onChange={(e) =>
+                              handleMaxAreaInputChange(parseInt(e.target.value))
+                            }
+                          />
+                        </div>
+                      </div>
+                      <div className="px-2">
+                        <Slider
+                          range
+                          value={areaRange}
+                          onChange={(value) =>
+                            handleAreaRangeChange(value as [number, number])
+                          }
+                          min={0}
+                          step={5}
+                          tooltip={{
+                            formatter: (value?: number) => {
+                              if (typeof value !== "number") return "";
+                              return `${value}m²`;
+                            },
+                          }}
+                          max={1000}
+                          className="mb-6"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Predefined Area Ranges */}
+                    <div>
+                      <Text className="mb-3 block text-sm font-medium text-gray-700">
+                        {t("search.quickSelect")}
+                      </Text>
+                      <Radio.Group
+                        value={selectedAreaRange}
+                        onChange={(e) =>
+                          handleAreaRangeSelection(e.target.value as string)
+                        }
+                        className="w-full"
+                      >
+                        <div className="space-y-2">
+                          {areaRanges.map((range) => (
+                            <div
+                              key={range.value}
+                              className="rounded-lg border border-gray-100 p-3 hover:border-red-200 hover:bg-red-50"
+                            >
+                              <Radio value={range.value} className="text-base">
+                                {range.label}
+                              </Radio>
+                            </div>
+                          ))}
+                        </div>
+                      </Radio.Group>
+                    </div>
+                  </div>
+                </Modal>
               </div>
             </div>
           </div>

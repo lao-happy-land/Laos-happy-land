@@ -439,12 +439,12 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
   const handleImagesUpload = async (file: File) => {
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
-      message.error(t("admin.onlyImageFilesAllowed"));
+      message.error(t("property.onlyImageFilesAllowed"));
       return false;
     }
     const isLt5M = file.size / 1024 / 1024 < 5;
     if (!isLt5M) {
-      message.error(t("admin.imageMustBeLessThan5MB"));
+      message.error(t("property.imageMustBeLessThan5MB"));
       return false;
     }
     const existingImagesCount =
@@ -452,7 +452,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
         (_, index) => !removedExistingImages.includes(index),
       ).length ?? 0;
     if (existingImagesCount + imageFiles.length >= 9) {
-      message.error(t("admin.maximum9AdditionalImages"));
+      message.error(t("property.maximum9AdditionalImages"));
       return false;
     }
 
@@ -463,10 +463,10 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
     try {
       const result = await uploadService.uploadImage(file);
       setImageUrls([...imageUrls, result.url]);
-      message.success(t("admin.imageUploadedSuccessfully"));
+      message.success(t("property.imageUploadedSuccessfully"));
     } catch (error) {
       console.error("Failed to upload image:", error);
-      message.error(t("admin.cannotUploadImage"));
+      message.error(t("property.cannotUploadImage"));
       // Remove the failed file
       setImageFiles(imageFiles.filter((_, i) => i !== newIndex));
     } finally {
@@ -511,10 +511,10 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
             level={1}
             className="!mb-2 !text-3xl !font-bold !text-gray-900"
           >
-            {t("admin.updateProperty")}
+            {t("property.updateProperty")}
           </Title>
           <Text className="text-lg text-gray-600">
-            {t("admin.updatePropertyContent")}
+            {t("property.updatePropertyContent")}
           </Text>
         </div>
 
@@ -536,7 +536,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                   level={3}
                   className="!mb-0 !text-xl !font-semibold !text-gray-900"
                 >
-                  Thông tin cơ bản
+                  {t("property.basicInformation")}
                 </Title>
               </div>
 
@@ -545,17 +545,17 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                   name="title"
                   label={
                     <Text className="font-medium">
-                      {t("admin.propertyTitle")}
+                      {t("property.propertyTitle")}
                     </Text>
                   }
                   rules={[
-                    { required: true, message: t("admin.pleaseEnterTitle") },
-                    { min: 10, message: t("admin.titleMinLength") },
-                    { max: 200, message: t("admin.titleMaxLength") },
+                    { required: true, message: t("property.pleaseEnterTitle") },
+                    { min: 10, message: t("property.titleMinLength") },
+                    { max: 200, message: t("property.titleMaxLength") },
                   ]}
                 >
                   <Input
-                    placeholder={t("admin.enterPropertyTitle")}
+                    placeholder={t("property.enterPropertyTitle")}
                     size="large"
                     className="rounded-lg"
                     showCount
@@ -566,43 +566,43 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                   name="transactionType"
                   label={
                     <Text className="font-medium">
-                      {t("admin.transactionType")}
+                      {t("property.transactionType")}
                     </Text>
                   }
                   rules={[
                     {
                       required: true,
-                      message: t("admin.pleaseSelectTransactionType"),
+                      message: t("property.pleaseSelectTransactionType"),
                     },
                   ]}
                 >
                   <Select
-                    placeholder={t("admin.selectTransactionType")}
+                    placeholder={t("property.selectTransactionType")}
                     size="large"
                     className="rounded-lg"
                     onChange={handleTransactionTypeChange}
                   >
-                    <Option value="sale">{t("admin.sale")}</Option>
-                    <Option value="rent">{t("admin.rent")}</Option>
-                    <Option value="project">{t("admin.project")}</Option>
+                    <Option value="sale">{t("property.sale")}</Option>
+                    <Option value="rent">{t("property.rent")}</Option>
+                    <Option value="project">{t("property.project")}</Option>
                   </Select>
                 </Form.Item>
                 <Form.Item
                   name="typeId"
                   label={
                     <Text className="font-medium">
-                      {t("admin.propertyType")}
+                      {t("property.propertyType")}
                     </Text>
                   }
                   rules={[
                     {
                       required: true,
-                      message: t("admin.pleaseSelectPropertyType"),
+                      message: t("property.pleaseSelectPropertyType"),
                     },
                   ]}
                 >
                   <Select
-                    placeholder={t("admin.selectPropertyType")}
+                    placeholder={t("property.selectPropertyType")}
                     size="large"
                     className="rounded-lg"
                     loading={loadingTypes}
@@ -619,18 +619,18 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                   name="legalStatus"
                   label={
                     <Text className="font-medium">
-                      {t("admin.legalStatus")}
+                      {t("property.legalStatus")}
                     </Text>
                   }
                   rules={[
                     {
                       max: 200,
-                      message: t("admin.legalStatusMaxLength"),
+                      message: t("property.legalStatusMaxLength"),
                     },
                   ]}
                 >
                   <Input
-                    placeholder={t("admin.enterLegalStatus")}
+                    placeholder={t("property.enterLegalStatus")}
                     size="large"
                     className="rounded-lg"
                     showCount
@@ -644,25 +644,25 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                   name="price"
                   label={
                     <Text className="font-medium">
-                      {t("admin.price")} (USD$)
+                      {t("property.price")} (USD$)
                     </Text>
                   }
                   rules={[
-                    { required: true, message: t("admin.pleaseEnterPrice") },
+                    { required: true, message: t("property.pleaseEnterPrice") },
                     {
                       type: "number",
                       min: 1,
-                      message: t("admin.priceMustBeGreaterThan0"),
+                      message: t("property.priceMustBeGreaterThan0"),
                     },
                     {
                       type: "number",
                       max: 999999999,
-                      message: t("admin.priceMustBeLessThan999999999"),
+                      message: t("property.priceMustBeLessThan999999999"),
                     },
                   ]}
                 >
                   <InputNumber
-                    placeholder={t("admin.enterPrice")}
+                    placeholder={t("property.enterPrice")}
                     formatter={(value) =>
                       `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                     }
@@ -682,27 +682,27 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                   label={
                     <span className="flex items-center gap-1 font-medium">
                       <Home className="h-4 w-4" />
-                      {t("admin.area")} (m²)
+                      {t("property.area")} (m²)
                     </span>
                   }
                   rules={[
-                    { required: true, message: t("admin.pleaseEnterArea") },
+                    { required: true, message: t("property.pleaseEnterArea") },
                     {
                       type: "number",
                       min: 1,
-                      message: t("admin.areaMustBeGreaterThan0"),
+                      message: t("property.areaMustBeGreaterThan0"),
                     },
                     {
                       type: "number",
                       max: 10000,
-                      message: t("admin.areaMustBeLessThan10000"),
+                      message: t("property.areaMustBeLessThan10000"),
                     },
                   ]}
                 >
                   <InputNumber
                     min={0}
                     max={10000}
-                    placeholder={t("admin.enterArea")}
+                    placeholder={t("property.enterArea")}
                     size="large"
                     style={{ width: "100%" }}
                   />
@@ -715,26 +715,26 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       label={
                         <span className="flex items-center gap-1 font-medium">
                           <Bed className="h-4 w-4" />
-                          {t("admin.bedrooms")}
+                          {t("property.bedrooms")}
                         </span>
                       }
                       rules={[
                         {
                           type: "number",
                           min: 0,
-                          message: t("admin.bedroomsMustBeGreaterThan0"),
+                          message: t("property.bedroomsMustBeGreaterThan0"),
                         },
                         {
                           type: "number",
                           max: 20,
-                          message: t("admin.bedroomsMustBeLessThan20"),
+                          message: t("property.bedroomsMustBeLessThan20"),
                         },
                       ]}
                     >
                       <InputNumber
                         min={0}
                         max={20}
-                        placeholder={t("admin.enterBedrooms")}
+                        placeholder={t("property.enterBedrooms")}
                         size="large"
                         style={{ width: "100%" }}
                       />
@@ -745,26 +745,26 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       label={
                         <span className="flex items-center gap-1 font-medium">
                           <Bath className="h-4 w-4" />
-                          {t("admin.bathrooms")}
+                          {t("property.bathrooms")}
                         </span>
                       }
                       rules={[
                         {
                           type: "number",
                           min: 0,
-                          message: t("admin.bathroomsMustBeGreaterThan0"),
+                          message: t("property.bathroomsMustBeGreaterThan0"),
                         },
                         {
                           type: "number",
                           max: 10,
-                          message: t("admin.bathroomsMustBeLessThan10"),
+                          message: t("property.bathroomsMustBeLessThan10"),
                         },
                       ]}
                     >
                       <InputNumber
                         min={0}
                         max={10}
-                        placeholder={t("admin.enterBathrooms")}
+                        placeholder={t("property.enterBathrooms")}
                         size="large"
                         style={{ width: "100%" }}
                       />
@@ -780,7 +780,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       level={3}
                       className="!mb-0 !text-xl !font-semibold !text-gray-900"
                     >
-                      {t("admin.amenities")}
+                      {t("property.amenities")}
                     </Title>
                   </div>
                   <div className="grid grid-cols-3 justify-center gap-4 lg:grid-cols-6">
@@ -788,7 +788,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       name="wifi"
                       label={
                         <p className="flex items-center gap-1 font-medium text-green-600">
-                          <Wifi className="h-4 w-4" /> {t("admin.wifi")}
+                          <Wifi className="h-4 w-4" /> {t("property.wifi")}
                         </p>
                       }
                       valuePropName="checked"
@@ -799,7 +799,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       name="tv"
                       label={
                         <p className="flex items-center gap-1 font-medium text-red-600">
-                          <Tv className="h-4 w-4" /> {t("admin.tv")}
+                          <Tv className="h-4 w-4" /> {t("property.tv")}
                         </p>
                       }
                       valuePropName="checked"
@@ -811,7 +811,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       label={
                         <p className="flex items-center gap-1 font-medium text-blue-600">
                           <Snowflake className="h-4 w-4" />{" "}
-                          {t("admin.airConditioner")}
+                          {t("property.airConditioner")}
                         </p>
                       }
                       valuePropName="checked"
@@ -822,7 +822,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       name="parking"
                       label={
                         <p className="flex items-center gap-1 font-medium text-orange-600">
-                          <Car className="h-4 w-4" /> {t("admin.parking")}
+                          <Car className="h-4 w-4" /> {t("property.parking")}
                         </p>
                       }
                       valuePropName="checked"
@@ -833,7 +833,8 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       name="kitchen"
                       label={
                         <p className="flex items-center gap-1 font-medium text-pink-600">
-                          <Utensils className="h-4 w-4" /> {t("admin.kitchen")}
+                          <Utensils className="h-4 w-4" />{" "}
+                          {t("property.kitchen")}
                         </p>
                       }
                       valuePropName="checked"
@@ -844,7 +845,8 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       name="security"
                       label={
                         <p className="flex items-center gap-1 font-medium text-green-600">
-                          <Shield className="h-4 w-4" /> {t("admin.security")}
+                          <Shield className="h-4 w-4" />{" "}
+                          {t("property.security")}
                         </p>
                       }
                       valuePropName="checked"
@@ -858,20 +860,22 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
               <Form.Item
                 name="description"
                 label={
-                  <Text className="font-medium">{t("admin.description")}</Text>
+                  <Text className="font-medium">
+                    {t("property.description")}
+                  </Text>
                 }
                 rules={[
                   {
                     required: true,
-                    message: t("admin.pleaseEnterDescription"),
+                    message: t("property.pleaseEnterDescription"),
                   },
-                  { min: 50, message: t("admin.descriptionMinLength") },
-                  { max: 2000, message: t("admin.descriptionMaxLength") },
+                  { min: 50, message: t("property.descriptionMinLength") },
+                  { max: 2000, message: t("property.descriptionMaxLength") },
                 ]}
               >
                 <TextArea
                   rows={6}
-                  placeholder={t("admin.enterDescription")}
+                  placeholder={t("property.enterDescription")}
                   className="rounded-lg"
                   showCount
                   maxLength={2000}
@@ -885,7 +889,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                     level={3}
                     className="!mb-0 !text-xl !font-semibold !text-gray-900"
                   >
-                    {t("admin.projectContent")}
+                    {t("property.projectContent")}
                   </Title>
                 </div>
                 <Form.Item
@@ -899,7 +903,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                             (value as unknown as Content[]).length === 0
                           ) {
                             return Promise.reject(
-                              new Error(t("admin.pleaseAddAtLeast1Content")),
+                              new Error(t("property.pleaseAddAtLeast1Content")),
                             );
                           }
                         }
@@ -931,7 +935,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
 
               <div className="space-y-2">
                 <Text className="font-medium">
-                  {t("admin.locationOnMap")} *
+                  {t("property.locationOnMap")} *
                 </Text>
                 <MapboxLocationSelector
                   value={locationData}
@@ -942,7 +946,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       form.setFieldValue("location", newLocationData.address);
                     }
                   }}
-                  placeholder={t("admin.selectLocationOnMap")}
+                  placeholder={t("property.selectLocationOnMap")}
                   initialSearchValue={property?.location?.address}
                 />
               </div>
@@ -957,12 +961,14 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                     level={3}
                     className="!mb-0 !text-xl !font-semibold !text-gray-900"
                   >
-                    {t("admin.images")}
+                    {t("property.images")}
                   </Title>
                 </div>
                 {/* Main Image */}
                 <div className="space-y-4">
-                  <Text className="font-medium">{t("admin.mainImage")} *</Text>
+                  <Text className="font-medium">
+                    {t("property.mainImage")} *
+                  </Text>
                   <div className="rounded-lg border-2 border-dashed border-gray-300 p-6 text-center transition-colors hover:border-blue-400">
                     {mainImageFile ? (
                       <div className="relative h-64 w-full">
@@ -978,14 +984,14 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                             <div className="text-center text-white">
                               <Spin size="large" />
                               <div className="mt-2 text-sm">
-                                {t("admin.uploading")}...
+                                {t("property.uploading")}...
                               </div>
                             </div>
                           </div>
                         )}
                         {mainImageUrl && !uploadingMainImage && (
                           <div className="absolute top-2 right-2">
-                            <Tooltip title={t("admin.uploadSuccess")}>
+                            <Tooltip title={t("property.uploadSuccess")}>
                               <CheckCircle className="h-6 w-6 rounded-full bg-white text-green-500" />
                             </Tooltip>
                           </div>
@@ -1012,11 +1018,11 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                           height={128}
                         />
                         <div className="absolute top-2 left-2">
-                          <Tooltip title={t("admin.existingImage")}>
+                          <Tooltip title={t("property.existingImage")}>
                             <div className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-1">
                               <CheckCircle className="h-3 w-3 text-blue-600" />
                               <span className="text-xs text-blue-600">
-                                {t("admin.existing")}
+                                {t("property.existing")}
                               </span>
                             </div>
                           </Tooltip>
@@ -1046,14 +1052,14 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                           )}
                           <Text className="block text-gray-600">
                             {uploadingMainImage
-                              ? t("admin.uploading") + "..."
-                              : t("admin.uploadMainImage")}
+                              ? t("property.uploading") + "..."
+                              : t("property.uploadMainImage")}
                           </Text>
                           <Text className="block text-sm text-gray-500">
-                            {t("admin.jpgPngGifMax5MB")}
+                            {t("property.jpgPngGifMax5MB")}
                           </Text>
                           <Text className="block text-xs text-gray-400">
-                            {t("admin.dragAndDropOrClickToSelect")}
+                            {t("property.dragAndDropOrClickToSelect")}
                           </Text>
                         </div>
                       </Upload>
@@ -1066,11 +1072,12 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Text className="font-medium">
-                        {t("admin.additionalImages")} ({t("admin.max9Images")})
+                        {t("property.additionalImages")} (
+                        {t("property.max9Images")})
                       </Text>
                       {imageUrls.length > 0 && (
                         <Tooltip
-                          title={`${imageUrls.length} ${t("admin.imagesUploadedSuccessfully")}`}
+                          title={`${imageUrls.length} ${t("property.imagesUploadedSuccessfully")}`}
                         >
                           <div className="flex items-center gap-1 rounded-full bg-green-100 px-2 py-1">
                             <CheckCircle className="h-3 w-3 text-green-600" />
@@ -1085,7 +1092,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       {(property?.images?.filter(
                         (_, index) => !removedExistingImages.includes(index),
                       ).length ?? 0) + imageFiles.length}
-                      /9 {t("admin.images")}
+                      /9 {t("property.images")}
                     </Text>
                   </div>
                   <div className="flex flex-wrap gap-4">
@@ -1105,11 +1112,11 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                               height={100}
                             />
                             <div className="absolute top-1 left-1">
-                              <Tooltip title={t("admin.existingImage")}>
+                              <Tooltip title={t("property.existingImage")}>
                                 <div className="flex items-center gap-1 rounded-full bg-blue-100 px-1 py-0.5">
                                   <CheckCircle className="h-2 w-2 text-blue-600" />
                                   <span className="text-xs text-blue-600">
-                                    {t("admin.existing")}
+                                    {t("property.existing")}
                                   </span>
                                 </div>
                               </Tooltip>
@@ -1149,7 +1156,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                         )}
                         {imageUrls[index] && !uploadingImages[index] && (
                           <div className="absolute top-1 right-1">
-                            <Tooltip title={t("admin.uploadSuccess")}>
+                            <Tooltip title={t("property.uploadSuccess")}>
                               <CheckCircle className="h-4 w-4 rounded-full bg-white text-green-500" />
                             </Tooltip>
                           </div>
