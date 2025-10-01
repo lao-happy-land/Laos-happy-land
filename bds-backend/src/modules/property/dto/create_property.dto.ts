@@ -16,15 +16,19 @@ import { Multer } from 'multer';
 import { Type } from 'class-transformer';
 
 export class LocationDto {
-  @ApiProperty({ example: 21.028511 })
+  @ApiPropertyOptional({ example: 21.028511 })
+  @IsOptional()
   @IsNumber()
   latitude: number;
 
-  @ApiProperty({ example: 105.804817 })
+  @ApiPropertyOptional({ example: 105.804817 })
+  @IsOptional()
+
   @IsNumber()
   longitude: number;
 
-  @ApiProperty({ example: '123 Nguyễn Huệ, Quận 1, TP.HCM' })
+  @ApiPropertyOptional({ example: '123 Nguyễn Huệ, Quận 1, TP.HCM' })
+  @IsOptional()
   @IsString()
   address: string;
 

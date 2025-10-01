@@ -3,6 +3,7 @@ import { IsArray, IsInt, IsOptional, IsString } from 'class-validator';
 import { RoleEnum } from 'src/common/enum/enum';
 import { Multer } from 'multer';
 import { Transform, Type } from 'class-transformer';
+import { LocationDto } from 'src/modules/property/dto/create_property.dto';
 
 export function ToArray() {
   return Transform(({ value }) =>
@@ -20,20 +21,15 @@ export class UpdateUserDto {
     description: 'Full name of the user',
   })
   @IsString()
+  @IsOptional()
   fullName?: string;
-
-  @ApiPropertyOptional({
-    example: 'nguyenvana@example.com',
-    description: 'Email of the user',
-  })
-  @IsString()
-  email?: string;
 
   @ApiPropertyOptional({
     example: '0123456789',
     description: 'Phone number of the user',
   })
   @IsString()
+  @IsOptional()
   phone?: string;
 
   @ApiPropertyOptional({
@@ -41,6 +37,7 @@ export class UpdateUserDto {
     description: 'Password of the user',
   })
   @IsString()
+  @IsOptional()
   password?: string;
 
   @ApiPropertyOptional({
@@ -48,13 +45,16 @@ export class UpdateUserDto {
     description: 'Role ID of the user',
   })
   @IsString()
+  @IsOptional()
   roleId?: string;
 
   @ApiPropertyOptional({
-    example: 'f2f6f4f0-6b6b-4b8c-9b87-5f6a6c6a6c6a',
-    description: 'Location Info ID of the user',
+    type: LocationDto,
+    description: 'Location info of the user',
+    required: false,
   })
-  locationInfoId?: string;
+  @IsOptional()
+  location?: LocationDto;
 
   @ApiPropertyOptional({
     type: 'string',

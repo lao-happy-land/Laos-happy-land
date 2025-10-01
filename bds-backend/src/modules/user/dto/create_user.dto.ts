@@ -9,6 +9,7 @@ import {
 } from 'class-validator';
 import { Multer } from 'multer';
 import { ToArray } from './update_user.dto';
+import { LocationDto } from 'src/modules/property/dto/create_property.dto';
 
 export class CreateUserDto {
   @ApiProperty({
@@ -52,12 +53,12 @@ export class CreateUserDto {
   roleId: string;
 
   @ApiPropertyOptional({
-    example: 'f2f6f4f0-6b6b-4b8c-9b87-5f6a6c6a6c6a',
-    description: 'Location Info ID of the user',
+    type: LocationDto,
+    description: 'Location info of the user',
+    required: false,
   })
   @IsOptional()
-  @IsString()
-  locationInfoId?: string;
+  location?: LocationDto;
 
   @ApiPropertyOptional({
     type: 'string',
