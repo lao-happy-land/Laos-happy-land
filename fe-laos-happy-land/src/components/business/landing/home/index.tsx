@@ -20,8 +20,8 @@ import ProjectCard from "@/components/business/common/project-card";
 import PropertyCardSkeleton from "@/components/business/common/property-card-skeleton";
 import { useUrlLocale } from "@/utils/locale";
 import {
-  getPropertyParamsByLocale,
-  getValidLocale,
+  getCurrencyByLocale,
+  type SupportedLocale,
 } from "@/share/helper/locale.helper";
 import { useTranslations } from "next-intl";
 import { newsService } from "@/share/service/news.service";
@@ -38,12 +38,11 @@ const LandingPage = () => {
     error: featuredError,
   } = useRequest(
     () =>
-      propertyService.getProperties(
-        getPropertyParamsByLocale(getValidLocale(locale), {
-          perPage: 4,
-          transaction: "sale",
-        }),
-      ),
+      propertyService.getProperties({
+        perPage: 4,
+        transaction: "sale",
+        currency: getCurrencyByLocale(locale as SupportedLocale),
+      }),
     {
       refreshDeps: [],
       onError: (error) => {
@@ -59,12 +58,11 @@ const LandingPage = () => {
     error: projectError,
   } = useRequest(
     () =>
-      propertyService.getProperties(
-        getPropertyParamsByLocale(getValidLocale(locale), {
-          transaction: "project",
-          perPage: 3,
-        }),
-      ),
+      propertyService.getProperties({
+        transaction: "project",
+        perPage: 3,
+        currency: getCurrencyByLocale(locale as SupportedLocale),
+      }),
     {
       refreshDeps: [],
       onError: (error) => {

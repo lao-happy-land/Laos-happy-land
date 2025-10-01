@@ -38,8 +38,10 @@ import { numberToString } from "@/share/helper/number-to-string";
 import { useTranslations } from "next-intl";
 import { useUrlLocale } from "@/utils/locale";
 import {
+  getCurrencyByLocale,
   getPropertyParamsByLocale,
   getValidLocale,
+  type SupportedLocale,
 } from "@/share/helper/locale.helper";
 
 const { Title, Text } = Typography;
@@ -733,17 +735,17 @@ const AdminProperties = () => {
               ) => <Tag color="blue">{type?.name ?? t("admin.unknown")}</Tag>,
             },
             {
-              title: t("admin.price"),
+              title: t("property.price"),
               dataIndex: "price",
               key: "price",
               width: 150,
               render: (price: string) =>
                 price
-                  ? `${numberToString(Number(price))} LAK`
+                  ? `${numberToString(Number(price), locale, getCurrencyByLocale(locale as SupportedLocale))}`
                   : t("admin.negotiable"),
             },
             {
-              title: t("admin.status"),
+              title: t("property.status"),
               dataIndex: "status",
               key: "status",
               width: 80,
@@ -766,14 +768,14 @@ const AdminProperties = () => {
               ),
             },
             {
-              title: t("admin.views"),
+              title: t("property.views"),
               dataIndex: "viewsCount",
               key: "viewsCount",
               width: 80,
               render: (count: number) => count || 0,
             },
             {
-              title: t("admin.createdAt"),
+              title: t("property.createdAt"),
               dataIndex: "createdAt",
               key: "createdAt",
               width: 120,

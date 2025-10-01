@@ -24,13 +24,13 @@ export const numberToString = (
   }
 
   if (number >= 1000000000) {
-    return (number / 1000000000).toFixed(0) + value[0] + currency;
+    return (number / 1000000000).toFixed(0) + " " + value[0] + " " + currency;
   }
   if (number >= 1000000) {
-    return (number / 1000000).toFixed(0) + value[1] + currency;
+    return (number / 1000000).toFixed(0) + " " + value[1] + " " + currency;
   }
   if (number >= 1000) {
-    return (number / 1000).toFixed(0) + value[2] + currency;
+    return (number / 1000).toFixed(0) + " " + value[2] + " " + currency;
   }
   return number.toLocaleString(language);
 };
