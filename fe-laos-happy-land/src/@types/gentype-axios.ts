@@ -6,6 +6,31 @@
  * ----------------------------------------------------------------------
  */
 
+export interface LocationDto {
+  /** @example 21.028511 */
+  latitude?: number;
+  /** @example 105.804817 */
+  longitude?: number;
+  /** @example "123 Nguyễn Huệ, Quận 1, TP.HCM" */
+  address?: string;
+  /** @example "Hà Nội" */
+  city?: string;
+  /** @example "Vietnam" */
+  country?: string;
+  /** @example "12A" */
+  buildingNumber?: string;
+  /** @example "Nguyễn Huệ" */
+  street?: string;
+  /** @example "Quận 1" */
+  district?: string;
+  /** @example "TP.HCM" */
+  province?: string;
+  /** @example "700000" */
+  postalCode?: string;
+  /** @example "Bến Nghé" */
+  neighborhood?: string;
+}
+
 export interface CreateUserDto {
   /**
    * Full name of the user
@@ -32,11 +57,8 @@ export interface CreateUserDto {
    * @example "f2f6f4f0-6b6b-4b8c-9b87-5f6a6c6a6c6a"
    */
   roleId: string;
-  /**
-   * Location Info ID of the user
-   * @example "f2f6f4f0-6b6b-4b8c-9b87-5f6a6c6a6c6a"
-   */
-  locationInfoId?: string;
+  /** Location info of the user */
+  location?: LocationDto;
   /**
    * Avatar of the user
    * @format binary
@@ -81,11 +103,6 @@ export interface UpdateUserDto {
    */
   fullName?: string;
   /**
-   * Email of the user
-   * @example "nguyenvana@example.com"
-   */
-  email?: string;
-  /**
    * Phone number of the user
    * @example "0123456789"
    */
@@ -100,11 +117,8 @@ export interface UpdateUserDto {
    * @example "f2f6f4f0-6b6b-4b8c-9b87-5f6a6c6a6c6a"
    */
   roleId?: string;
-  /**
-   * Location Info ID of the user
-   * @example "f2f6f4f0-6b6b-4b8c-9b87-5f6a6c6a6c6a"
-   */
-  locationInfoId?: string;
+  /** Location info of the user */
+  location?: LocationDto;
   /**
    * Avatar of the user
    * @format binary
@@ -183,31 +197,6 @@ export interface ResetPasswordDto {
   email: string;
   /** New password for the user */
   newPassword: string;
-}
-
-export interface LocationDto {
-  /** @example 21.028511 */
-  latitude: number;
-  /** @example 105.804817 */
-  longitude: number;
-  /** @example "123 Nguyễn Huệ, Quận 1, TP.HCM" */
-  address: string;
-  /** @example "Hà Nội" */
-  city?: string;
-  /** @example "Vietnam" */
-  country?: string;
-  /** @example "12A" */
-  buildingNumber?: string;
-  /** @example "Nguyễn Huệ" */
-  street?: string;
-  /** @example "Quận 1" */
-  district?: string;
-  /** @example "TP.HCM" */
-  province?: string;
-  /** @example "700000" */
-  postalCode?: string;
-  /** @example "Bến Nghé" */
-  neighborhood?: string;
 }
 
 export interface CreatePropertyDto {
@@ -423,19 +412,6 @@ export interface UpdateNewsDto {
   newsTypeId?: string;
 }
 
-export interface CreateAboutUsDto {
-  /**
-   * Title of the about us page
-   * @example "about us"
-   */
-  title: string;
-  /**
-   * Content of the about us page
-   * @example "abcdefghijklmnopqrstuvwxyz"
-   */
-  content: string;
-}
-
 export interface UpdateAboutUsDto {
   /**
    * Title of the about us page
@@ -444,7 +420,7 @@ export interface UpdateAboutUsDto {
   title?: string;
   /**
    * Content of the about us page
-   * @example "abcdefghijklmnopqrstuvwxyz"
+   * @example {"header":"about us","abc":"abcd"}
    */
   content?: string;
 }
@@ -500,19 +476,12 @@ export interface UpdateBankDto {
   termRates?: TermRateDto[];
 }
 
-import type {
-  AxiosInstance,
-  AxiosRequestConfig,
-  AxiosResponse,
-  HeadersDefaults,
-  ResponseType,
-} from "axios";
+import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, HeadersDefaults, ResponseType } from "axios";
 import axios from "axios";
 
 export type QueryParamsType = Record<string | number, any>;
 
-export interface FullRequestParams
-  extends Omit<AxiosRequestConfig, "data" | "params" | "url" | "responseType"> {
+export interface FullRequestParams extends Omit<AxiosRequestConfig, "data" | "params" | "url" | "responseType"> {
   /** set parameter to `true` for call `securityWorker` for this request */
   secure?: boolean;
   /** request path */
@@ -527,13 +496,9 @@ export interface FullRequestParams
   body?: unknown;
 }
 
-export type RequestParams = Omit<
-  FullRequestParams,
-  "body" | "method" | "query" | "path"
->;
+export type RequestParams = Omit<FullRequestParams, "body" | "method" | "query" | "path">;
 
-export interface ApiConfig<SecurityDataType = unknown>
-  extends Omit<AxiosRequestConfig, "data" | "cancelToken"> {
+export interface ApiConfig<SecurityDataType = unknown> extends Omit<AxiosRequestConfig, "data" | "cancelToken"> {
   securityWorker?: (
     securityData: SecurityDataType | null,
   ) => Promise<AxiosRequestConfig | void> | AxiosRequestConfig | void;
@@ -567,9 +532,7 @@ export class HttpClient<SecurityDataType = unknown> {
     injectHeaders,
     ...axiosConfig
   }: ApiConfig<SecurityDataType> = {}) {
-    this.instance =
-      instance ??
-      axios.create({ ...axiosConfig, baseURL: axiosConfig.baseURL || "" });
+    this.instance = instance ?? axios.create({ ...axiosConfig, baseURL: axiosConfig.baseURL || "" });
     this.secure = secure;
     this.format = format;
     this.securityWorker = securityWorker;
@@ -580,10 +543,7 @@ export class HttpClient<SecurityDataType = unknown> {
     this.securityData = data;
   };
 
-  protected mergeRequestParams(
-    params1: AxiosRequestConfig,
-    params2?: AxiosRequestConfig,
-  ): AxiosRequestConfig {
+  protected mergeRequestParams(params1: AxiosRequestConfig, params2?: AxiosRequestConfig): AxiosRequestConfig {
     const method = params1.method || (params2 && params2.method);
 
     return {
@@ -591,11 +551,7 @@ export class HttpClient<SecurityDataType = unknown> {
       ...params1,
       ...(params2 || {}),
       headers: {
-        ...((method &&
-          this.instance.defaults.headers[
-            method.toLowerCase() as keyof HeadersDefaults
-          ]) ||
-          {}),
+        ...((method && this.instance.defaults.headers[method.toLowerCase() as keyof HeadersDefaults]) || {}),
         ...(params1.headers || {}),
         ...((params2 && params2.headers) || {}),
       },
@@ -613,15 +569,11 @@ export class HttpClient<SecurityDataType = unknown> {
   protected createFormData(input: Record<string, unknown>): FormData {
     return Object.keys(input || {}).reduce((formData, key) => {
       const property = input[key];
-      const propertyContent: any[] =
-        property instanceof Array ? property : [property];
+      const propertyContent: any[] = property instanceof Array ? property : [property];
 
       for (const formItem of propertyContent) {
         const isFileType = formItem instanceof Blob || formItem instanceof File;
-        formData.append(
-          key,
-          isFileType ? formItem : this.stringifyFormItem(formItem),
-        );
+        formData.append(key, isFileType ? formItem : this.stringifyFormItem(formItem));
       }
 
       return formData;
@@ -645,29 +597,17 @@ export class HttpClient<SecurityDataType = unknown> {
     const requestParams = this.mergeRequestParams(params, secureParams);
     const responseFormat = format || this.format || undefined;
 
-    if (
-      type === ContentType.FormData &&
-      body &&
-      body !== null &&
-      typeof body === "object"
-    ) {
+    if (type === ContentType.FormData && body && body !== null && typeof body === "object") {
       body = this.createFormData(body as Record<string, unknown>);
     }
 
-    if (
-      type === ContentType.Text &&
-      body &&
-      body !== null &&
-      typeof body !== "string"
-    ) {
+    if (type === ContentType.Text && body && body !== null && typeof body !== "string") {
       body = JSON.stringify(body);
     }
 
     let headers = {
       ...(requestParams.headers || {}),
-      ...(type && type !== ContentType.FormData
-        ? { "Content-Type": type }
-        : {}),
+      ...(type && type !== ContentType.FormData ? { "Content-Type": type } : {}),
     };
 
     if (this.injectHeaders) {
@@ -692,9 +632,7 @@ export class HttpClient<SecurityDataType = unknown> {
  *
  * API cho website bất động sản
  */
-export class Api<
-  SecurityDataType extends unknown,
-> extends HttpClient<SecurityDataType> {
+export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDataType> {
   api = {
     /**
      * No description
@@ -731,6 +669,8 @@ export class Api<
         specialty?: string;
         /** Filter by location info ID */
         locationInfoId?: string;
+        /** Filter users who requested role upgrade */
+        requestedRoleUpgrade?: boolean;
       },
       params: RequestParams = {},
     ) =>
@@ -760,6 +700,8 @@ export class Api<
         specialty?: string;
         /** Filter by location info ID */
         locationInfoId?: string;
+        /** Filter users who requested role upgrade */
+        requestedRoleUpgrade?: boolean;
         fullName?: string;
         take?: number;
         skip?: number;
@@ -770,6 +712,20 @@ export class Api<
         path: `/api/user/bank-requests`,
         method: "GET",
         query: query,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags User
+     * @name UserControllerGetRandomUser
+     * @request GET:/api/user/random-from-bank
+     */
+    userControllerGetRandomUser: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/user/random-from-bank`,
+        method: "GET",
         ...params,
       }),
 
@@ -794,11 +750,7 @@ export class Api<
      * @name UserControllerUpdate
      * @request PATCH:/api/user/{id}
      */
-    userControllerUpdate: (
-      id: string,
-      data: UpdateUserDto,
-      params: RequestParams = {},
-    ) =>
+    userControllerUpdate: (id: string, data: UpdateUserDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/user/${id}`,
         method: "PATCH",
@@ -832,6 +784,7 @@ export class Api<
       id: string,
       data: {
         note?: string | null;
+        phone?: string | null;
         /** @format binary */
         image?: File | null;
       },
@@ -862,6 +815,52 @@ export class Api<
     ) =>
       this.request<void, any>({
         path: `/api/user/${id}/approve`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags User
+     * @name UserControllerRequestRoleUpgrade
+     * @request PATCH:/api/user/{id}/request-role-upgrade
+     */
+    userControllerRequestRoleUpgrade: (
+      id: string,
+      data: {
+        note?: string | null;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/user/${id}/request-role-upgrade`,
+        method: "PATCH",
+        body: data,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags User
+     * @name UserControllerApproveRoleUpgrade
+     * @request PATCH:/api/user/{id}/approve-role-upgrade
+     * @secure
+     */
+    userControllerApproveRoleUpgrade: (
+      id: string,
+      data: {
+        approve?: boolean;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/user/${id}/approve-role-upgrade`,
         method: "PATCH",
         body: data,
         secure: true,
@@ -941,10 +940,7 @@ export class Api<
      * @summary Reset user password
      * @request POST:/api/auth/reset-password
      */
-    authControllerResetPassword: (
-      data: ResetPasswordDto,
-      params: RequestParams = {},
-    ) =>
+    authControllerResetPassword: (data: ResetPasswordDto, params: RequestParams = {}) =>
       this.request<void, void>({
         path: `/api/auth/reset-password`,
         method: "POST",
@@ -961,10 +957,7 @@ export class Api<
      * @request POST:/api/property
      * @secure
      */
-    propertyControllerCreate: (
-      data: CreatePropertyDto,
-      params: RequestParams = {},
-    ) =>
+    propertyControllerCreate: (data: CreatePropertyDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/property`,
         method: "POST",
@@ -1090,11 +1083,7 @@ export class Api<
      * @request PATCH:/api/property/{id}
      * @secure
      */
-    propertyControllerUpdate: (
-      id: string,
-      data: UpdatePropertyDto,
-      params: RequestParams = {},
-    ) =>
+    propertyControllerUpdate: (id: string, data: UpdatePropertyDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/property/${id}`,
         method: "PATCH",
@@ -1124,6 +1113,28 @@ export class Api<
      * No description
      *
      * @tags Property
+     * @name PropertyControllerGetSimilarProperties
+     * @request GET:/api/property/{id}/similar
+     */
+    propertyControllerGetSimilarProperties: (
+      id: string,
+      query?: {
+        page?: number;
+        perPage?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/property/${id}/similar`,
+        method: "GET",
+        query: query,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Property
      * @name PropertyControllerApprove
      * @summary Approve a property
      * @request PATCH:/api/property/{id}/approve
@@ -1146,11 +1157,7 @@ export class Api<
      * @request PATCH:/api/property/{id}/reject
      * @secure
      */
-    propertyControllerReject: (
-      id: string,
-      data: RejectPropertyDto,
-      params: RequestParams = {},
-    ) =>
+    propertyControllerReject: (id: string, data: RejectPropertyDto, params: RequestParams = {}) =>
       this.request<void, void>({
         path: `/api/property/${id}/reject`,
         method: "PATCH",
@@ -1168,10 +1175,7 @@ export class Api<
      * @summary Create a new property type
      * @request POST:/api/property-type
      */
-    propertyTypeControllerCreate: (
-      data: CreatePropertyTypeDto,
-      params: RequestParams = {},
-    ) =>
+    propertyTypeControllerCreate: (data: CreatePropertyTypeDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/property-type`,
         method: "POST",
@@ -1229,11 +1233,7 @@ export class Api<
      * @summary Update a property type by ID
      * @request PATCH:/api/property-type/{id}
      */
-    propertyTypeControllerUpdate: (
-      id: string,
-      data: CreatePropertyTypeDto,
-      params: RequestParams = {},
-    ) =>
+    propertyTypeControllerUpdate: (id: string, data: CreatePropertyTypeDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/property-type/${id}`,
         method: "PATCH",
@@ -1265,10 +1265,7 @@ export class Api<
      * @summary Create user role
      * @request POST:/api/user-role
      */
-    userRoleControllerCreate: (
-      data: CreateUserRoleDto,
-      params: RequestParams = {},
-    ) =>
+    userRoleControllerCreate: (data: CreateUserRoleDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/user-role`,
         method: "POST",
@@ -1340,52 +1337,12 @@ export class Api<
      * No description
      *
      * @tags Setting
-     * @name SettingControllerCreate
-     * @request POST:/api/setting
-     */
-    settingControllerCreate: (
-      data: CreateSettingDto,
-      params: RequestParams = {},
-    ) =>
-      this.request<void, any>({
-        path: `/api/setting`,
-        method: "POST",
-        body: data,
-        type: ContentType.Json,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Setting
-     * @name SettingControllerGetAll
+     * @name SettingControllerGet
      * @request GET:/api/setting
      */
-    settingControllerGetAll: (
-      query?: {
-        page?: number;
-        perPage?: number;
-      },
-      params: RequestParams = {},
-    ) =>
+    settingControllerGet: (params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/setting`,
-        method: "GET",
-        query: query,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Setting
-     * @name SettingControllerGet
-     * @request GET:/api/setting/{id}
-     */
-    settingControllerGet: (id: string, params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/api/setting/${id}`,
         method: "GET",
         ...params,
       }),
@@ -1395,32 +1352,14 @@ export class Api<
      *
      * @tags Setting
      * @name SettingControllerUpdate
-     * @request PATCH:/api/setting/{id}
+     * @request PATCH:/api/setting
      */
-    settingControllerUpdate: (
-      id: string,
-      data: CreateSettingDto,
-      params: RequestParams = {},
-    ) =>
+    settingControllerUpdate: (data: CreateSettingDto, params: RequestParams = {}) =>
       this.request<void, any>({
-        path: `/api/setting/${id}`,
+        path: `/api/setting`,
         method: "PATCH",
         body: data,
         type: ContentType.Json,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Setting
-     * @name SettingControllerRemove
-     * @request DELETE:/api/setting/{id}
-     */
-    settingControllerRemove: (id: string, params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/api/setting/${id}`,
-        method: "DELETE",
         ...params,
       }),
 
@@ -1432,10 +1371,7 @@ export class Api<
      * @summary Create exchange rate
      * @request POST:/api/exchange-rate
      */
-    exchangeRateControllerCreate: (
-      data: CreateExchangeRateDto,
-      params: RequestParams = {},
-    ) =>
+    exchangeRateControllerCreate: (data: CreateExchangeRateDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/exchange-rate`,
         method: "POST",
@@ -1489,11 +1425,7 @@ export class Api<
      * @summary Update exchange rate by id
      * @request PATCH:/api/exchange-rate/{id}
      */
-    exchangeRateControllerUpdate: (
-      id: string,
-      data: UpdateExchangeRateDto,
-      params: RequestParams = {},
-    ) =>
+    exchangeRateControllerUpdate: (id: string, data: UpdateExchangeRateDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/exchange-rate/${id}`,
         method: "PATCH",
@@ -1524,10 +1456,7 @@ export class Api<
      * @name LocationInfoControllerCreate
      * @request POST:/api/location-info
      */
-    locationInfoControllerCreate: (
-      data: CreateLocationInfoDto,
-      params: RequestParams = {},
-    ) =>
+    locationInfoControllerCreate: (data: CreateLocationInfoDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/location-info`,
         method: "POST",
@@ -1585,11 +1514,7 @@ export class Api<
      * @name LocationInfoControllerUpdate
      * @request PATCH:/api/location-info/{id}
      */
-    locationInfoControllerUpdate: (
-      id: string,
-      data: CreateLocationInfoDto,
-      params: RequestParams = {},
-    ) =>
+    locationInfoControllerUpdate: (id: string, data: CreateLocationInfoDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/location-info/${id}`,
         method: "PATCH",
@@ -1620,10 +1545,7 @@ export class Api<
      * @summary Create news type
      * @request POST:/api/news-type
      */
-    newsTypeControllerCreateNewsType: (
-      data: CreateNewsTypeDto,
-      params: RequestParams = {},
-    ) =>
+    newsTypeControllerCreateNewsType: (data: CreateNewsTypeDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/news-type`,
         method: "POST",
@@ -1677,11 +1599,7 @@ export class Api<
      * @summary Update news type by id
      * @request PATCH:/api/news-type/{id}
      */
-    newsTypeControllerUpdate: (
-      id: string,
-      data: CreateNewsTypeDto,
-      params: RequestParams = {},
-    ) =>
+    newsTypeControllerUpdate: (id: string, data: CreateNewsTypeDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/news-type/${id}`,
         method: "PATCH",
@@ -1735,7 +1653,7 @@ export class Api<
         page?: number;
         perPage?: number;
         /** Type */
-        newsType?: string;
+        newsTypeId?: string;
         /** Từ khóa tìm kiếm tên tin tức */
         search?: string;
       },
@@ -1771,11 +1689,7 @@ export class Api<
      * @summary Update news by id
      * @request PATCH:/api/news/{id}
      */
-    newsControllerUpdate: (
-      id: string,
-      data: UpdateNewsDto,
-      params: RequestParams = {},
-    ) =>
+    newsControllerUpdate: (id: string, data: UpdateNewsDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/news/${id}`,
         method: "PATCH",
@@ -1803,57 +1717,12 @@ export class Api<
      * No description
      *
      * @tags AboutUs
-     * @name AboutUsControllerCreate
-     * @summary Create about us
-     * @request POST:/api/about-us
-     */
-    aboutUsControllerCreate: (
-      data: CreateAboutUsDto,
-      params: RequestParams = {},
-    ) =>
-      this.request<void, any>({
-        path: `/api/about-us`,
-        method: "POST",
-        body: data,
-        type: ContentType.Json,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags AboutUs
-     * @name AboutUsControllerGetAll
-     * @summary Get all about us
+     * @name AboutUsControllerGet
      * @request GET:/api/about-us
      */
-    aboutUsControllerGetAll: (
-      query?: {
-        page?: number;
-        perPage?: number;
-        /** Từ khóa tìm kiếm tên about us */
-        search?: string;
-      },
-      params: RequestParams = {},
-    ) =>
+    aboutUsControllerGet: (params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/about-us`,
-        method: "GET",
-        query: query,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags AboutUs
-     * @name AboutUsControllerGet
-     * @summary Get about us by id
-     * @request GET:/api/about-us/{id}
-     */
-    aboutUsControllerGet: (id: string, params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/api/about-us/${id}`,
         method: "GET",
         ...params,
       }),
@@ -1863,34 +1732,14 @@ export class Api<
      *
      * @tags AboutUs
      * @name AboutUsControllerUpdate
-     * @summary Update about us by id
-     * @request PATCH:/api/about-us/{id}
+     * @request PATCH:/api/about-us
      */
-    aboutUsControllerUpdate: (
-      id: string,
-      data: UpdateAboutUsDto,
-      params: RequestParams = {},
-    ) =>
+    aboutUsControllerUpdate: (data: UpdateAboutUsDto, params: RequestParams = {}) =>
       this.request<void, any>({
-        path: `/api/about-us/${id}`,
+        path: `/api/about-us`,
         method: "PATCH",
         body: data,
         type: ContentType.Json,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags AboutUs
-     * @name AboutUsControllerRemove
-     * @summary Delete about us by id
-     * @request DELETE:/api/about-us/{id}
-     */
-    aboutUsControllerRemove: (id: string, params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/api/about-us/${id}`,
-        method: "DELETE",
         ...params,
       }),
 
@@ -1903,10 +1752,7 @@ export class Api<
      * @request POST:/api/user-feedback
      * @secure
      */
-    userFeedbackControllerCreate: (
-      data: CreateUserFeedbackDto,
-      params: RequestParams = {},
-    ) =>
+    userFeedbackControllerCreate: (data: CreateUserFeedbackDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/user-feedback`,
         method: "POST",
@@ -1962,10 +1808,7 @@ export class Api<
      * @summary Create bank
      * @request POST:/api/bank
      */
-    bankControllerCreateBank: (
-      data: CreateBankDto,
-      params: RequestParams = {},
-    ) =>
+    bankControllerCreateBank: (data: CreateBankDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/bank`,
         method: "POST",
@@ -2021,11 +1864,7 @@ export class Api<
      * @summary Update bank by id
      * @request PATCH:/api/bank/{id}
      */
-    bankControllerUpdate: (
-      id: string,
-      data: UpdateBankDto,
-      params: RequestParams = {},
-    ) =>
+    bankControllerUpdate: (id: string, data: UpdateBankDto, params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/api/bank/${id}`,
         method: "PATCH",

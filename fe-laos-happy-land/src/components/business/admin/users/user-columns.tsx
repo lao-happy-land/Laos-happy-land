@@ -77,7 +77,20 @@ export const getColumns = (
       title: t("admin.role"),
       key: "role",
       render: (user: User) => {
-        return <Tag color="blue">{user.role.name}</Tag>;
+        const role = user.role.name;
+        const tagColor =
+          role === "Admin"
+            ? "border-red-700 bg-red-200 text-red-700"
+            : role === "User"
+              ? "border-green-700 bg-green-200 text-green-700"
+              : "border-blue-700 bg-blue-200 text-blue-700";
+        return (
+          <div
+            className={`flex items-center justify-center rounded-full border border-solid px-2 py-1 ${tagColor}`}
+          >
+            {role}
+          </div>
+        );
       },
     },
     {

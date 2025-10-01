@@ -1,4 +1,5 @@
 import { Api } from "@/@types/gentype-axios";
+import { useLocaleStore } from "../store/locale.store";
 
 // Tạo instance API với base URL từ environment
 const api = new Api({
@@ -50,10 +51,10 @@ api.instance.interceptors.response.use(
         document.cookie =
           "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
 
+        const locale = useLocaleStore.getState().getLocale();
+
         // Redirect to login page if not already there
-        if (window.location.pathname !== "/login") {
-          window.location.href = "/login";
-        }
+        window.location.href = `/${locale}/login`;
       }
     }
     const errorMessage =

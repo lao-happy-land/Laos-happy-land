@@ -262,7 +262,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                           cancelText: t("common.cancel"),
                           okType: "danger",
                           onOk: () => {
-                            logout();
+                            logout(`/${locale}/login`);
                           },
                         });
                       },

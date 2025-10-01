@@ -123,32 +123,38 @@ export default function PropertyTypeModal({
         <Form form={form} layout="vertical" className="mt-4">
           <Form.Item
             name="name"
-            label={t("admin.propertyName")}
+            label={t("property.propertyTypeName")}
             rules={[
               {
                 required: true,
-                message: t("admin.pleaseEnterPropertyName"),
+                message: t("property.pleaseEnterPropertyTypeName"),
               },
-              { min: 2, message: t("admin.propertyNameMinLength") },
+              { min: 2, message: t("property.propertyTypeNameMinLength") },
             ]}
           >
-            <Input placeholder={t("admin.enterPropertyName")} size="large" />
+            <Input
+              placeholder={t("property.enterPropertyTypeName")}
+              size="large"
+            />
           </Form.Item>
 
           <Form.Item
             name="transactionType"
-            label={t("admin.transactionType")}
+            label={t("property.transactionType")}
             rules={[
               {
                 required: true,
-                message: t("admin.pleaseSelectTransactionType"),
+                message: t("property.pleaseSelectTransactionType"),
               },
             ]}
           >
-            <Select placeholder={t("admin.selectTransactionType")} size="large">
-              <Option value="sale">{t("admin.sale")}</Option>
-              <Option value="rent">{t("admin.rent")}</Option>
-              <Option value="project">{t("admin.project")}</Option>
+            <Select
+              placeholder={t("property.selectTransactionType")}
+              size="large"
+            >
+              <Option value="sale">{t("property.sale")}</Option>
+              <Option value="rent">{t("property.rent")}</Option>
+              <Option value="project">{t("property.project")}</Option>
             </Select>
           </Form.Item>
         </Form>

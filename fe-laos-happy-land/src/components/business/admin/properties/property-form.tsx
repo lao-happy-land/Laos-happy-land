@@ -69,6 +69,12 @@ interface LocationData {
   address: string;
   city?: string;
   country?: string;
+  buildingNumber?: string;
+  street?: string;
+  district?: string;
+  province?: string;
+  postalCode?: string;
+  neighborhood?: string;
 }
 
 const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
@@ -153,6 +159,12 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
           address: currentProperty.location.address,
           city: currentProperty.location.city,
           country: currentProperty.location.country,
+          buildingNumber: currentProperty.location.buildingNumber,
+          street: currentProperty.location.street,
+          district: currentProperty.location.district,
+          province: currentProperty.location.province,
+          postalCode: currentProperty.location.postalCode,
+          neighborhood: currentProperty.location.neighborhood,
         });
       }
 
@@ -179,7 +191,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
         content: currentProperty.details?.content ?? undefined,
         legalStatus: currentProperty.legalStatus ?? undefined,
         transactionType: currentProperty.transactionType,
-        location: currentProperty.location?.address ?? "",
+        location: currentProperty.location ?? undefined,
       });
 
       // Set existing images
@@ -191,7 +203,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
   // Sync locationData with form field
   useEffect(() => {
     if (locationData?.address) {
-      form.setFieldValue("location", locationData.address);
+      form.setFieldValue("location", locationData);
     }
   }, [locationData, form]);
 
@@ -216,7 +228,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
         | { type: "image"; url: string; caption?: string }
       )[];
       legalStatus?: string;
-      location?: string;
+      location?: LocationDto;
       transactionType: "rent" | "sale" | "project";
     }) => {
       const formData: CreatePropertyDto | UpdatePropertyDto = {
@@ -238,8 +250,6 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
         },
         legalStatus: values.legalStatus,
         location: locationData as LocationDto | undefined,
-
-        transactionType: values.transactionType,
       };
 
       // Use already uploaded image URLs
@@ -275,10 +285,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
 
         return await propertyService.createProperty(createData);
       } else {
-        return await propertyService.updateProperty(
-          propertyId!,
-          formData as UpdatePropertyDto,
-        );
+        return await propertyService.updateProperty(propertyId!, formData);
       }
     },
     {
@@ -317,7 +324,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
     kitchen: boolean;
     security: boolean;
     legalStatus?: string;
-    location?: string;
+    location?: LocationDto;
     transactionType: "rent" | "sale" | "project";
   }) => {
     if (selectedTransactionType !== "project") {
@@ -336,8 +343,8 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
       }
     }
 
-    // Check location from form field
-    if (!values.location) {
+    // Check location from state (not form field)
+    if (!locationData) {
       message.error(t("admin.pleaseSelectLocationOnMap"));
       return;
     }
@@ -443,13 +450,13 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
       <div className="bg-primary-100 border-primary-300 mb-4 rounded-2xl border p-6 shadow-md">
         <h2 className="!text-primary-600 !mb-2 !text-3xl !font-bold">
           {mode === "create"
-            ? t("admin.addNewProperty")
-            : t("admin.editProperty")}
+            ? t("property.createProperty")
+            : t("property.updateProperty")}
         </h2>
         <p className="text-primary-600 text-md">
           {mode === "create"
-            ? t("admin.createNewPropertyListing")
-            : t("admin.updatePropertyInformation")}
+            ? t("property.sharePropertyInformation")
+            : t("property.updatePropertyInformation")}
         </p>
       </div>
       <Card>
@@ -470,7 +477,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                 level={3}
                 className="!mb-0 !text-xl !font-semibold !text-gray-900"
               >
-                {t("admin.basicInfo")}
+                {t("property.basicInformation")}
               </Title>
             </div>
 
@@ -479,15 +486,15 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                 name="title"
                 label={
                   <Text className="font-medium">
-                    {t("admin.propertyTitle")}
+                    {t("property.propertyTitle")}
                   </Text>
                 }
                 rules={[
-                  { required: true, message: t("admin.pleaseEnterTitle") },
+                  { required: true, message: t("property.pleaseEnterTitle") },
                 ]}
               >
                 <Input
-                  placeholder={t("admin.enterPropertyTitle")}
+                  placeholder={t("property.enterPropertyTitle")}
                   size="large"
                   className="rounded-lg"
                 />
@@ -496,41 +503,43 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                 name="transactionType"
                 label={
                   <Text className="font-medium">
-                    {t("admin.transactionType")}
+                    {t("property.transactionType")}
                   </Text>
                 }
                 rules={[
                   {
                     required: true,
-                    message: t("admin.pleaseSelectTransactionType"),
+                    message: t("property.pleaseSelectTransactionType"),
                   },
                 ]}
               >
                 <Select
-                  placeholder={t("admin.selectTransactionType")}
+                  placeholder={t("property.selectTransactionType")}
                   size="large"
                   className="rounded-lg"
                   onChange={handleTransactionTypeChange}
                 >
-                  <Option value="sale">{t("admin.sale")}</Option>
-                  <Option value="rent">{t("admin.rent")}</Option>
-                  <Option value="project">{t("admin.project")}</Option>
+                  <Option value="sale">{t("property.sale")}</Option>
+                  <Option value="rent">{t("property.rent")}</Option>
+                  <Option value="project">{t("property.project")}</Option>
                 </Select>
               </Form.Item>
               <Form.Item
                 name="typeId"
                 label={
-                  <Text className="font-medium">{t("admin.propertyType")}</Text>
+                  <Text className="font-medium">
+                    {t("property.propertyType")}
+                  </Text>
                 }
                 rules={[
                   {
                     required: true,
-                    message: t("admin.pleaseSelectPropertyType"),
+                    message: t("property.pleaseSelectPropertyType"),
                   },
                 ]}
               >
                 <Select
-                  placeholder={t("admin.selectPropertyType")}
+                  placeholder={t("property.selectPropertyType")}
                   size="large"
                   className="rounded-lg"
                   loading={propertyTypesLoading}
@@ -546,11 +555,13 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
               <Form.Item
                 name="legalStatus"
                 label={
-                  <Text className="font-medium">{t("admin.legalStatus")}</Text>
+                  <Text className="font-medium">
+                    {t("property.legalStatus")}
+                  </Text>
                 }
               >
                 <Input
-                  placeholder={t("admin.enterLegalStatus")}
+                  placeholder={t("property.enterLegalStatus")}
                   size="large"
                   className="rounded-lg"
                 />
@@ -561,14 +572,16 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
               <Form.Item
                 name="price"
                 label={
-                  <Text className="font-medium">{t("admin.price")} (USD$)</Text>
+                  <Text className="font-medium">
+                    {t("property.price")} (USD$)
+                  </Text>
                 }
                 rules={[
-                  { required: true, message: t("admin.pleaseEnterPrice") },
+                  { required: true, message: t("property.pleaseEnterPrice") },
                 ]}
               >
                 <InputNumber
-                  placeholder={t("admin.enterPrice")}
+                  placeholder={t("property.enterPrice")}
                   formatter={(value) =>
                     `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                   }
@@ -587,11 +600,11 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                 label={
                   <span className="flex items-center gap-1 font-medium">
                     <Home className="h-4 w-4" />
-                    {t("admin.area")} (m²)
+                    {t("property.area")} (m²)
                   </span>
                 }
                 rules={[
-                  { required: true, message: t("admin.pleaseEnterArea") },
+                  { required: true, message: t("property.pleaseEnterArea") },
                 ]}
               >
                 <InputNumber
@@ -609,7 +622,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     label={
                       <span className="flex items-center gap-1 font-medium">
                         <Bed className="h-4 w-4" />
-                        {t("admin.bedrooms")}
+                        {t("property.bedrooms")}
                       </span>
                     }
                   >
@@ -626,7 +639,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     label={
                       <span className="flex items-center gap-1 font-medium">
                         <Bath className="h-4 w-4" />
-                        {t("admin.bathrooms")}
+                        {t("property.bathrooms")}
                       </span>
                     }
                   >
@@ -648,7 +661,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     level={3}
                     className="!mb-0 !text-xl !font-semibold !text-gray-900"
                   >
-                    {t("admin.amenities")}
+                    {t("property.amenities")}
                   </Title>
                 </div>
                 <div className="grid grid-cols-3 justify-center gap-4 lg:grid-cols-6">
@@ -656,7 +669,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     name="wifi"
                     label={
                       <p className="flex items-center gap-1 font-medium text-green-600">
-                        <Wifi className="h-4 w-4" /> {t("admin.wifi")}
+                        <Wifi className="h-4 w-4" /> {t("property.wifi")}
                       </p>
                     }
                     valuePropName="checked"
@@ -667,7 +680,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     name="tv"
                     label={
                       <p className="flex items-center gap-1 font-medium text-red-600">
-                        <Tv className="h-4 w-4" /> {t("admin.tv")}
+                        <Tv className="h-4 w-4" /> {t("property.tv")}
                       </p>
                     }
                     valuePropName="checked"
@@ -679,7 +692,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     label={
                       <p className="flex items-center gap-1 font-medium text-blue-600">
                         <Snowflake className="h-4 w-4" />{" "}
-                        {t("admin.airConditioner")}
+                        {t("property.airConditioner")}
                       </p>
                     }
                     valuePropName="checked"
@@ -690,7 +703,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     name="parking"
                     label={
                       <p className="flex items-center gap-1 font-medium text-orange-600">
-                        <Car className="h-4 w-4" /> {t("admin.parking")}
+                        <Car className="h-4 w-4" /> {t("property.parking")}
                       </p>
                     }
                     valuePropName="checked"
@@ -701,7 +714,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     name="kitchen"
                     label={
                       <p className="flex items-center gap-1 font-medium text-pink-600">
-                        <Utensils className="h-4 w-4" /> {t("admin.kitchen")}
+                        <Utensils className="h-4 w-4" /> {t("property.kitchen")}
                       </p>
                     }
                     valuePropName="checked"
@@ -712,7 +725,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     name="security"
                     label={
                       <p className="flex items-center gap-1 font-medium text-green-600">
-                        <Shield className="h-4 w-4" /> {t("admin.security")}
+                        <Shield className="h-4 w-4" /> {t("property.security")}
                       </p>
                     }
                     valuePropName="checked"
@@ -726,15 +739,18 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
             <Form.Item
               name="description"
               label={
-                <Text className="font-medium">{t("admin.description")}</Text>
+                <Text className="font-medium">{t("property.description")}</Text>
               }
               rules={[
-                { required: true, message: t("admin.pleaseEnterDescription") },
+                {
+                  required: true,
+                  message: t("property.pleaseEnterDescription"),
+                },
               ]}
             >
               <TextArea
                 rows={6}
-                placeholder={t("admin.enterDescription")}
+                placeholder={t("property.enterDescription")}
                 className="rounded-lg"
               />
             </Form.Item>
@@ -747,10 +763,10 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                   className="!mb-0 !text-xl !font-semibold !text-gray-900"
                 >
                   {selectedTransactionType === "project"
-                    ? t("admin.projectContent")
+                    ? t("property.projectContent")
                     : selectedTransactionType === "sale"
-                      ? t("admin.saleDetails")
-                      : t("admin.rentalDetails")}
+                      ? t("property.saleDetails")
+                      : t("property.rentalDetails")}
                 </Title>
               </div>
               <ProjectContentBuilder
@@ -763,18 +779,13 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
 
           {/* Location */}
           <div className="space-y-6">
-            {/* Hidden field to track locationInfoId */}
-            <Form.Item name="locationInfoId" hidden>
-              <Input />
-            </Form.Item>
-
             {/* Hidden field to track location */}
             <Form.Item name="location" hidden>
               <Input />
             </Form.Item>
 
             <div className="space-y-2">
-              <Text className="font-medium">{t("admin.location")} *</Text>
+              <Text className="font-medium">{t("property.location")} *</Text>
               <MapboxLocationSelector
                 value={locationData}
                 onChange={(newLocationData) => {
@@ -784,7 +795,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     form.setFieldValue("location", newLocationData.address);
                   }
                 }}
-                placeholder={t("admin.selectLocation")}
+                placeholder={t("property.selectLocation")}
                 initialSearchValue={currentProperty?.location?.address}
                 mode={mode}
                 hasExistingLocation={!!currentProperty?.location}
@@ -801,13 +812,15 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                   level={3}
                   className="!mb-0 !text-xl !font-semibold !text-gray-900"
                 >
-                  {t("admin.images")}
+                  {t("property.images")}
                 </Title>
               </div>
               {/* Main Image */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
-                  <Text className="font-medium">{t("admin.mainImage")} *</Text>
+                  <Text className="font-medium">
+                    {t("property.mainImage")} *
+                  </Text>
                   {(mainImageUrl ?? existingMainImage) && (
                     <Tooltip title={t("admin.imageReady")}>
                       <CheckCircle className="h-4 w-4 text-green-500" />
@@ -829,14 +842,14 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                           <div className="text-center text-white">
                             <Spin size="large" />
                             <div className="mt-2 text-sm">
-                              {t("admin.uploading")}
+                              {t("property.uploading")}
                             </div>
                           </div>
                         </div>
                       )}
                       {mainImageUrl && !uploadingMainImage && (
                         <div className="absolute top-2 right-2">
-                          <Tooltip title={t("admin.uploadSuccess")}>
+                          <Tooltip title={t("property.uploadSuccess")}>
                             <CheckCircle className="h-6 w-6 rounded-full bg-white text-green-500" />
                           </Tooltip>
                         </div>
@@ -863,10 +876,10 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                         height={128}
                       />
                       <div className="absolute top-2 right-2">
-                        <Tooltip title={t("admin.existingImage")}>
+                        <Tooltip title={t("property.existingImage")}>
                           <div className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-1">
                             <span className="text-xs text-blue-600">
-                              {t("admin.existing")}
+                              {t("property.existing")}
                             </span>
                           </div>
                         </Tooltip>
@@ -896,14 +909,14 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                         )}
                         <Text className="block text-gray-600">
                           {uploadingMainImage
-                            ? t("admin.uploading")
-                            : t("admin.uploadMainImage")}
+                            ? t("property.uploading")
+                            : t("property.uploadMainImage")}
                         </Text>
                         <Text className="block text-sm text-gray-500">
-                          {t("admin.imageFormats")}
+                          {t("property.imageFormat")}
                         </Text>
                         <Text className="block text-xs text-gray-400">
-                          {t("admin.dragAndDrop")}
+                          {t("property.dragAndDropOrClickToSelect")}
                         </Text>
                       </div>
                     </Upload>
@@ -916,11 +929,12 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Text className="font-medium">
-                      {t("admin.additionalImages")} (tối đa 9 ảnh)
+                      {t("property.additionalImages")} (
+                      {t("property.max9Images")})
                     </Text>
                     {imageUrls.length > 0 && (
                       <Tooltip
-                        title={`${imageUrls.length} ${t("admin.newImagesUploadedSuccessfully")}`}
+                        title={`${imageUrls.length} ${t("property.newImagesUploadedSuccessfully")}`}
                       >
                         <div className="flex items-center gap-1 rounded-full bg-green-100 px-2 py-1">
                           <CheckCircle className="h-3 w-3 text-green-600" />
@@ -932,7 +946,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     )}
                     {existingImages.length > 0 && (
                       <Tooltip
-                        title={`${existingImages.length} ${t("admin.existingImages")}`}
+                        title={`${existingImages.length} ${t("property.existingImages")}`}
                       >
                         <div className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-1">
                           <span className="text-xs text-blue-600">
@@ -943,8 +957,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     )}
                   </div>
                   <Text className="text-sm text-gray-500">
-                    {existingImages.length + imageFiles.length}/
-                    {t("admin.maximum9AdditionalImages")}
+                    {existingImages.length + imageFiles.length}/9
                   </Text>
                 </div>
                 <div className="flex flex-wrap gap-4">
@@ -962,10 +975,10 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                         height={100}
                       />
                       <div className="absolute top-1 right-1">
-                        <Tooltip title={t("admin.existingImage")}>
+                        <Tooltip title={t("property.existingImage")}>
                           <div className="flex items-center gap-1 rounded-full bg-blue-100 px-1 py-0.5">
                             <span className="text-xs text-blue-600">
-                              {t("admin.existing")}
+                              {t("property.existing")}
                             </span>
                           </div>
                         </Tooltip>
@@ -1009,7 +1022,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                       )}
                       {imageUrls[index] && !uploadingImages[index] && (
                         <div className="absolute top-1 right-1">
-                          <Tooltip title={t("admin.uploadSuccess")}>
+                          <Tooltip title={t("property.uploadSuccess")}>
                             <CheckCircle className="h-4 w-4 rounded-full bg-white text-green-500" />
                           </Tooltip>
                         </div>
@@ -1059,9 +1072,10 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                       showInfo={false}
                     />
                     <Text className="mt-1 block text-xs text-gray-500">
-                      {imageUrls.length}/{imageFiles.length} ảnh mới đã tải lên
+                      {imageUrls.length}/{imageFiles.length}{" "}
+                      {t("property.imageUploadedSuccessfully")}
                       {existingImages.length > 0 &&
-                        ` • ${existingImages.length} ảnh hiện có`}
+                        ` • ${existingImages.length} ${t("property.existingImages")}`}
                     </Text>
                   </div>
                 )}
@@ -1078,7 +1092,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
               onClick={() => router.push(`/${locale}/admin/properties`)}
               className="rounded-lg"
             >
-              Hủy
+              {t("common.cancel")}
             </Button>
             <Button
               type="primary"
@@ -1089,8 +1103,8 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
               className="rounded-lg bg-blue-600 hover:bg-blue-700"
             >
               {mode === "create"
-                ? t("admin.createProperty")
-                : t("admin.update")}
+                ? t("property.createProperty")
+                : t("property.updateProperty")}
             </Button>
           </div>
         </Form>
