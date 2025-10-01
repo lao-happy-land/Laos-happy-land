@@ -32,7 +32,7 @@ export type User = {
   image: string | null;
   fromBank: string | null;
   password: string;
-  
+
   // Broker-specific fields
   propertyCount?: number;
   experienceYears?: number;
@@ -41,6 +41,8 @@ export type User = {
   specialties?: string[];
   languages?: string[];
   certifications?: string[];
+  company?: string;
+  verified?: boolean;
   locationInfo?: LocationInfo | null;
 };
 
