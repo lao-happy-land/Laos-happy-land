@@ -6,6 +6,11 @@ import { MapPin, Home, Eye } from "lucide-react";
 import type { Property } from "@/@types/types";
 import { numberToString } from "@/share/helper/number-to-string";
 import { useTranslations } from "next-intl";
+import { useUrlLocale } from "@/utils/locale";
+import {
+  getCurrencyByLocale,
+  type SupportedLocale,
+} from "@/share/helper/locale.helper";
 
 interface ProjectCardProps {
   project: Property;
@@ -21,6 +26,7 @@ export default function ProjectCard({
   showDescription = false,
 }: ProjectCardProps) {
   const t = useTranslations();
+  const locale = useUrlLocale() as SupportedLocale;
   const getCardPadding = () => {
     switch (size) {
       case "small":
@@ -182,14 +188,13 @@ export default function ProjectCard({
           <div className="mb-4">
             <div className="text-lg font-bold text-red-500">
               {project.price
-                ? numberToString(Number(project.price))
+                ? numberToString(
+                    Number(project.price),
+                    locale,
+                    getCurrencyByLocale(locale),
+                  )
                 : t("property.contactForPrice")}
             </div>
-            {project.price && (
-              <div className="text-sm text-gray-500">
-                {numberToString(Number(project.price))} LAK
-              </div>
-            )}
           </div>
 
           {/* Location */}

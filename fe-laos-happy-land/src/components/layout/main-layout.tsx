@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import LoadingScreen from "../common/loading-screen";
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
+import { useUrlLocale } from "@/utils/locale";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -17,9 +18,10 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const t = useTranslations();
   const pathname = usePathname();
+  const locale = useUrlLocale();
 
-  const isLoginPage = pathname.includes("/login");
-  const isRegisterPage = pathname.includes("/register");
+  const isLoginPage = pathname.includes(`/${locale}/login`);
+  const isRegisterPage = pathname.includes(`/${locale}/register`);
 
   useEffect(() => {
     const timer = setTimeout(() => {
