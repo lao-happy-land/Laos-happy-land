@@ -13,6 +13,7 @@ import {
   Edit3,
   Shield,
   Calendar,
+  X,
 } from "lucide-react";
 import { useRequest } from "ahooks";
 import { userService } from "@/share/service/user.service";
@@ -32,9 +33,19 @@ export default function Profile() {
     email: "",
     phone: "",
     address: "",
+    experienceYears: 0,
+    company: "",
+    specialties: [] as string[],
+    languages: [] as string[],
+    certifications: [] as string[],
   });
   const [locationData, setLocationData] = useState<LocationDto | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+
+  // States for managing array fields
+  const [newSpecialty, setNewSpecialty] = useState("");
+  const [newLanguage, setNewLanguage] = useState("");
+  const [newCertification, setNewCertification] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [message, setMessage] = useState<{
@@ -63,6 +74,11 @@ export default function Profile() {
         email: user.email ?? "",
         phone: user.phone ?? "",
         address: user.location ?? "",
+        experienceYears: user.experienceYears ?? 0,
+        company: user.company ?? "",
+        specialties: user.specialties ?? [],
+        languages: user.languages ?? [],
+        certifications: user.certifications ?? [],
       });
 
       // If user has location data as string, try to parse it for mapbox
@@ -86,6 +102,11 @@ export default function Profile() {
       address?: string;
       image?: File;
       location?: LocationDto;
+      experienceYears?: number;
+      company?: string;
+      specialties?: string[];
+      languages?: string[];
+      certifications?: string[];
     }) => {
       const formData = new FormData();
 
@@ -98,6 +119,26 @@ export default function Profile() {
       const locationToSave = values.location?.address ?? values.address ?? "";
       if (locationToSave) {
         formData.append("location", locationToSave);
+      }
+
+      // Add new fields
+      if (values.experienceYears !== undefined) {
+        formData.append("experienceYears", values.experienceYears.toString());
+      }
+      if (values.company) {
+        formData.append("company", values.company);
+      }
+      if (values.specialties && values.specialties.length > 0) {
+        formData.append("specialties", JSON.stringify(values.specialties));
+      }
+      if (values.languages && values.languages.length > 0) {
+        formData.append("languages", JSON.stringify(values.languages));
+      }
+      if (values.certifications && values.certifications.length > 0) {
+        formData.append(
+          "certifications",
+          JSON.stringify(values.certifications),
+        );
       }
 
       if (values.image) {
@@ -145,6 +186,67 @@ export default function Profile() {
     if (location?.address) {
       setFormData((prev) => ({ ...prev, address: location.address }));
     }
+  };
+
+  // Helper functions for managing array fields
+  const handleAddSpecialty = () => {
+    if (
+      newSpecialty.trim() &&
+      !formData.specialties.includes(newSpecialty.trim())
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        specialties: [...prev.specialties, newSpecialty.trim()],
+      }));
+      setNewSpecialty("");
+    }
+  };
+
+  const handleRemoveSpecialty = (specialty: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      specialties: prev.specialties.filter((s) => s !== specialty),
+    }));
+  };
+
+  const handleAddLanguage = () => {
+    if (
+      newLanguage.trim() &&
+      !formData.languages.includes(newLanguage.trim())
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        languages: [...prev.languages, newLanguage.trim()],
+      }));
+      setNewLanguage("");
+    }
+  };
+
+  const handleRemoveLanguage = (language: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      languages: prev.languages.filter((l) => l !== language),
+    }));
+  };
+
+  const handleAddCertification = () => {
+    if (
+      newCertification.trim() &&
+      !formData.certifications.includes(newCertification.trim())
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        certifications: [...prev.certifications, newCertification.trim()],
+      }));
+      setNewCertification("");
+    }
+  };
+
+  const handleRemoveCertification = (certification: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      certifications: prev.certifications.filter((c) => c !== certification),
+    }));
   };
 
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -213,6 +315,11 @@ export default function Profile() {
         email: userData.user.email ?? "",
         phone: userData.user.phone ?? "",
         address: userData.user.location ?? "",
+        experienceYears: userData.user.experienceYears ?? 0,
+        company: userData.user.company ?? "",
+        specialties: userData.user.specialties ?? [],
+        languages: userData.user.languages ?? [],
+        certifications: userData.user.certifications ?? [],
       });
 
       // Reset location data
@@ -222,9 +329,14 @@ export default function Profile() {
           longitude: 0,
           address: userData.user.location,
         });
-      } else {
-        setLocationData(null);
       }
+
+      // Reset array field inputs
+      setNewSpecialty("");
+      setNewLanguage("");
+      setNewCertification("");
+    } else {
+      setLocationData(null);
     }
     setAvatarFile(null);
     setIsEditing(false);
@@ -639,6 +751,215 @@ export default function Profile() {
                     </div>
                   </div>
                 </div>
+
+                {/* Professional Information */}
+                {userData?.user.role?.name === "broker" && (
+                  <div className="rounded-2xl bg-white p-8 shadow-sm">
+                    <h3 className="mb-6 text-xl font-bold text-neutral-900">
+                      {t("common.professionalInfo")}
+                    </h3>
+
+                    <div className="space-y-6">
+                      {/* Experience Years and Company */}
+                      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-neutral-700">
+                            {t("common.experienceYears")}
+                          </label>
+                          <Input
+                            type="number"
+                            placeholder={t("common.enterExperienceYears")}
+                            size="large"
+                            value={formData.experienceYears}
+                            onChange={(e) =>
+                              handleInputChange(
+                                "experienceYears",
+                                e.target.value,
+                              )
+                            }
+                            disabled={!isEditing}
+                            className={!isEditing ? "bg-neutral-50" : ""}
+                            min={0}
+                            max={50}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-neutral-700">
+                            {t("common.company")}
+                          </label>
+                          <Input
+                            placeholder={t("common.enterCompany")}
+                            size="large"
+                            value={formData.company}
+                            onChange={(e) =>
+                              handleInputChange("company", e.target.value)
+                            }
+                            disabled={!isEditing}
+                            className={!isEditing ? "bg-neutral-50" : ""}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Specialties */}
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-neutral-700">
+                          {t("common.specialties")}
+                        </label>
+                        {isEditing && (
+                          <div className="mb-3 flex gap-2">
+                            <Input
+                              placeholder={t("common.enterSpecialty")}
+                              size="large"
+                              value={newSpecialty}
+                              onChange={(e) => setNewSpecialty(e.target.value)}
+                              onPressEnter={handleAddSpecialty}
+                            />
+                            <Button
+                              type="primary"
+                              size="large"
+                              onClick={handleAddSpecialty}
+                              className="bg-blue-500 hover:bg-blue-600"
+                            >
+                              {t("common.add")}
+                            </Button>
+                          </div>
+                        )}
+                        <div className="flex flex-wrap gap-2">
+                          {formData.specialties.length > 0 ? (
+                            formData.specialties.map((specialty, index) => (
+                              <span
+                                key={index}
+                                className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-4 py-2 text-sm font-medium text-blue-700"
+                              >
+                                {specialty}
+                                {isEditing && (
+                                  <X
+                                    size={14}
+                                    className="cursor-pointer hover:text-blue-900"
+                                    onClick={() =>
+                                      handleRemoveSpecialty(specialty)
+                                    }
+                                  />
+                                )}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-sm text-gray-500">
+                              {t("common.noSpecialties")}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Languages */}
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-neutral-700">
+                          {t("common.languages")}
+                        </label>
+                        {isEditing && (
+                          <div className="mb-3 flex gap-2">
+                            <Input
+                              placeholder={t("common.enterLanguage")}
+                              size="large"
+                              value={newLanguage}
+                              onChange={(e) => setNewLanguage(e.target.value)}
+                              onPressEnter={handleAddLanguage}
+                            />
+                            <Button
+                              type="primary"
+                              size="large"
+                              onClick={handleAddLanguage}
+                              className="bg-green-500 hover:bg-green-600"
+                            >
+                              {t("common.add")}
+                            </Button>
+                          </div>
+                        )}
+                        <div className="flex flex-wrap gap-2">
+                          {formData.languages.length > 0 ? (
+                            formData.languages.map((language, index) => (
+                              <span
+                                key={index}
+                                className="inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-sm font-medium text-green-700"
+                              >
+                                {language}
+                                {isEditing && (
+                                  <X
+                                    size={14}
+                                    className="cursor-pointer hover:text-green-900"
+                                    onClick={() =>
+                                      handleRemoveLanguage(language)
+                                    }
+                                  />
+                                )}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-sm text-gray-500">
+                              {t("common.noLanguages")}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Certifications */}
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-neutral-700">
+                          {t("common.certifications")}
+                        </label>
+                        {isEditing && (
+                          <div className="mb-3 flex gap-2">
+                            <Input
+                              placeholder={t("common.enterCertification")}
+                              size="large"
+                              value={newCertification}
+                              onChange={(e) =>
+                                setNewCertification(e.target.value)
+                              }
+                              onPressEnter={handleAddCertification}
+                            />
+                            <Button
+                              type="primary"
+                              size="large"
+                              onClick={handleAddCertification}
+                              className="bg-purple-500 hover:bg-purple-600"
+                            >
+                              {t("common.add")}
+                            </Button>
+                          </div>
+                        )}
+                        <div className="flex flex-wrap gap-2">
+                          {formData.certifications.length > 0 ? (
+                            formData.certifications.map(
+                              (certification, index) => (
+                                <span
+                                  key={index}
+                                  className="inline-flex items-center gap-2 rounded-full bg-purple-100 px-4 py-2 text-sm font-medium text-purple-700"
+                                >
+                                  {certification}
+                                  {isEditing && (
+                                    <X
+                                      size={14}
+                                      className="cursor-pointer hover:text-purple-900"
+                                      onClick={() =>
+                                        handleRemoveCertification(certification)
+                                      }
+                                    />
+                                  )}
+                                </span>
+                              ),
+                            )
+                          ) : (
+                            <span className="text-sm text-gray-500">
+                              {t("common.noCertifications")}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Submit Button */}
                 {isEditing && (

@@ -38,7 +38,7 @@ const NewsPage = () => {
   const t = useTranslations();
 
   const [filters, setFilters] = useState({
-    category: searchParams.get("category") ?? "all",
+    newsType: searchParams.get("newsType") ?? "all",
     search: searchParams.get("search") ?? "",
     sortBy: searchParams.get("sortBy") ?? "newest",
     page: parseInt(searchParams.get("page") ?? "1"),
@@ -48,8 +48,8 @@ const NewsPage = () => {
   const updateURL = useCallback(
     (newFilters: typeof filters) => {
       const params = new URLSearchParams();
-      if (newFilters.category !== "all")
-        params.set("category", newFilters.category);
+      if (newFilters.newsType !== "all")
+        params.set("newsType", newFilters.newsType);
       if (newFilters.search) params.set("search", newFilters.search);
       if (newFilters.sortBy !== "newest")
         params.set("sortBy", newFilters.sortBy);
@@ -74,11 +74,11 @@ const NewsPage = () => {
         page: filters.page,
         perPage: 12, // 12 items per page
         search: filters.search,
-        newsType: filters.category !== "all" ? filters.category : undefined,
+        newsType: filters.newsType !== "all" ? filters.newsType : undefined,
       }),
     {
       refreshDeps: [
-        filters.category,
+        filters.newsType,
         filters.search,
         filters.sortBy,
         filters.page,
@@ -231,8 +231,8 @@ const NewsPage = () => {
               </div>
               <div className="flex gap-4">
                 <Select
-                  value={filters.category}
-                  onChange={(value) => handleFilterChange("category", value)}
+                  value={filters.newsType}
+                  onChange={(value) => handleFilterChange("newsType", value)}
                   size="large"
                   className="w-40"
                   suffixIcon={<Filter size={16} />}

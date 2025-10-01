@@ -583,9 +583,9 @@ export default function MapboxLocationSelector({
             <Text className="mb-2 block text-sm font-medium text-neutral-700">
               {t("map.area")} <span className="text-red-500">*</span>
             </Text>
-            <div className="grid w-full grid-cols-1 gap-2 lg:grid-cols-4">
+            <div className="grid w-full grid-cols-1 gap-2 lg:grid-cols-6">
               <div
-                className="relative col-span-1 lg:col-span-3"
+                className="relative col-span-1 lg:col-span-5"
                 ref={searchContainerRef}
               >
                 <Input
@@ -663,17 +663,15 @@ export default function MapboxLocationSelector({
                     </div>
                   )}
               </div>
-              <div className="col-span-1">
-                <Button
-                  type="primary"
-                  onClick={() => performSearch(searchQuery)}
-                  loading={isSearching}
-                  icon={<Search className="h-4 w-4" />}
-                  disabled={disabled}
-                >
-                  {t("map.search")}
-                </Button>
-              </div>
+              <Button
+                type="primary"
+                onClick={() => performSearch(searchQuery)}
+                loading={isSearching}
+                icon={<Search className="h-4 w-4" />}
+                disabled={disabled}
+              >
+                {t("map.search")}
+              </Button>
             </div>
           </div>
 
