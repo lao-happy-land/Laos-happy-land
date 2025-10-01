@@ -11,10 +11,12 @@ export class UpdateAboutUsDto {
   title?: string;
 
   @ApiPropertyOptional({
-    example: 'abcdefghijklmnopqrstuvwxyz',
+    example: {
+      header: 'about us',
+      abc: 'abcd',
+    },
     description: 'Content of the about us page',
   })
-  @IsString()
   @IsOptional()
   content?: string;
 }

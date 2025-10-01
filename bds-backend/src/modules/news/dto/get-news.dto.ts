@@ -8,7 +8,7 @@ export class GetNewsDto extends PageOptionsDto {
   })
   @IsOptional()
   @IsString()
-  newsType?: string;
+  newsTypeId?: string;
 
   @ApiPropertyOptional({
     description: 'Từ khóa tìm kiếm tên tin tức',

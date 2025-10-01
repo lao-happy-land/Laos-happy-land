@@ -14,6 +14,9 @@ export class Bank extends AbstractEntity {
   @Column()
   name: string;
 
+  @Column({ nullable: true })
+  imageUrl: string;
+
   @Column('json', { nullable: true })
   termRates: TermRate[];
 }

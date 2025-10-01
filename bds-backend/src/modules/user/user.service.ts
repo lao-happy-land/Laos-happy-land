@@ -145,6 +145,12 @@ export class UserService {
       });
     }
 
+    if (params.requestedRoleUpgrade !== undefined) {
+      query.andWhere(`"roleRequests"->>'requested' = :requested`, {
+        requested: params.requestedRoleUpgrade ? 'true' : 'false',
+      });
+    }
+
     const [result, total] = await query.getManyAndCount();
 
     const pageMetaDto = new PageMetaDto({
@@ -277,7 +283,12 @@ export class UserService {
     return { message: 'User deleted successfully' };
   }
 
-  async requestIsFromBank(id: string, image?: Multer.File, note?: string) {
+  async requestIsFromBank(
+    id: string,
+    image?: Multer.File,
+    note?: string,
+    phone?: string,
+  ) {
     const user = await this.userRepository.findOneBy({ id });
     if (!user) throw new BadRequestException('User not found');
 
@@ -295,11 +306,16 @@ export class UserService {
       imageUrl = await this.cloudinaryService.uploadAndReturnImageUrl(image);
     }
 
+    if (phone && !user.phone) {
+      user.phone = phone;
+    }
+
     user.fromBank = {
       ...fromBank,
       requested: true,
       imageUrl,
       note,
+      phone,
     };
     await this.entityManager.save(user);
 
@@ -373,5 +389,71 @@ export class UserService {
     });
 
     return new ResponsePaginate(result, pageMetaDto, 'Success');
+  }
+
+  async requestRoleUpgrade(id: string, note?: string) {
+    const user = await this.userRepository.findOne({
+      where: { id },
+      relations: ['role'],
+    });
+    if (!user) throw new BadRequestException('User not found');
+
+    const currentRole = user.role?.name;
+    const roleRequests = user.roleRequests || { requested: false, note: '' };
+
+    if (currentRole === 'Broker') {
+      throw new BadRequestException('User is already a Broker');
+    }
+    if (roleRequests.requested) {
+      throw new BadRequestException(
+        'User already has a pending role upgrade request',
+      );
+    }
+    user.roleRequests = {
+      requested: true,
+      note: note || null,
+      requestedAt: new Date(),
+    };
+
+    await this.entityManager.save(user);
+
+    return {
+      message: 'Role upgrade request submitted successfully',
+      user,
+    };
+  }
+
+  async approveRoleUpgrade(id: string, approve: boolean) {
+    const user = await this.userRepository.findOneBy({ id });
+    if (!user) throw new BadRequestException('User not found');
+
+    const roleRequests = user.roleRequests || { requested: false };
+
+    if (!roleRequests.requested) {
+      throw new BadRequestException(
+        'No role upgrade request pending for this user',
+      );
+    }
+
+    if (approve) {
+      const brokerRole = await this.userRoleRepository.findOne({
+        where: { name: 'Broker' },
+      });
+      if (!brokerRole) throw new BadRequestException('Broker role not found');
+      user.role = brokerRole;
+    }
+
+    user.roleRequests = {
+      requested: false,
+      note: approve ? 'Approved by admin' : 'Rejected by admin',
+      processedAt: new Date(),
+    };
+
+    await this.entityManager.save(user);
+
+    return {
+      message: `User ${user.fullName} has been ${approve ? 'upgraded to Broker' : 'rejected'}`,
+      user,
+    };
   }
 }
