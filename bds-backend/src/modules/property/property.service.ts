@@ -275,6 +275,49 @@ export class PropertyService {
     return new ResponsePaginate(finalResult as any, pageMetaDto, 'Success');
   }
 
+  async getSimilarProperties(propertyId: string, params: GetPropertyByUserDto) {
+    const property = await this.propertyRepository.findOne({
+      where: { id: propertyId },
+      relations: ['type', 'locationInfo'],
+    });
+
+    if (!property) {
+      throw new BadRequestException('Property not found');
+    }
+
+    const qb = this.propertyRepository
+      .createQueryBuilder('p')
+      .leftJoinAndSelect('p.type', 'type')
+      .leftJoinAndSelect('p.locationInfo', 'locationInfo')
+      .where('p.id != :propertyId', { propertyId });
+
+    if (property.type?.id) {
+      qb.andWhere('type.id = :typeId', { typeId: property.type.id });
+    }
+
+    if (property.locationInfo?.id) {
+      qb.andWhere('locationInfo.id = :locationId', {
+        locationId: property.locationInfo.id,
+      });
+    }
+
+    qb.skip(params.skip).take(params.perPage).orderBy('p.createdAt', 'DESC');
+
+    const [result, total] = await qb.getManyAndCount();
+
+    // Chỉ định currency khi format, không filter trực tiếp JSONB
+    const finalResult = params.currency
+      ? result.map((item) => this.formatProperty(item, params.currency))
+      : result;
+
+    const pageMetaDto = new PageMetaDto({
+      itemCount: total,
+      pageOptionsDto: params,
+    });
+
+    return new ResponsePaginate(finalResult as any, pageMetaDto, 'Success');
+  }
+
   async get(id: string, params: GetPropertyDetailDto) {
     const qb = this.propertyRepository
       .createQueryBuilder('property')
