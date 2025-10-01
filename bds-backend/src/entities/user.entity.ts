@@ -48,10 +48,19 @@ export class User extends AbstractEntity {
 
   @Column({ type: 'jsonb', nullable: true })
   fromBank: {
+    phone?: string;
     isFromBank?: boolean;
     imageUrl?: string;
     requested?: boolean;
     note?: string;
+  };
+
+  @Column({ type: 'jsonb', nullable: true })
+  roleRequests?: {
+    requested?: boolean;
+    note?: string;
+    requestedAt?: Date;
+    processedAt?: Date;
   };
 
   @Column({ type: 'int', default: 0 })

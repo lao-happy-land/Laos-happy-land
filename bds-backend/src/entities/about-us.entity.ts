@@ -9,6 +9,6 @@ export class AboutUs extends AbstractEntity {
     @Column({ type: 'text', nullable: true})
     title: string;
 
-    @Column({ type: 'text', nullable: true })
-    content: string
+    @Column({ type: 'jsonb', nullable: true })
+    content: any;
 }

@@ -39,8 +39,8 @@ export class NewsService {
             news.andWhere('news.title ILIKE :search', { search: `%${params.search}%` });
         }
 
-        if (params.newsType) {
-            news.andWhere('newsType.name = :newsType', { newsType: params.newsType });
+        if (params.newsTypeId) {
+            news.andWhere('newsType.id = :newsTypeId', { newsTypeId: params.newsTypeId });
         }
             
         const [result, total] = await news.getManyAndCount();

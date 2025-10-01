@@ -64,7 +64,7 @@ export class UserController {
   @ApiResponse({ status: 200, description: 'Random user from bank' })
   async getRandomUser() {
     const users = await this.userService.getRandomUsersFromBank();
-   if (!users) {
+    if (!users) {
       return { message: 'No users from bank found' };
     }
     return { users, message: 'Success' };
@@ -104,6 +104,7 @@ export class UserController {
       type: 'object',
       properties: {
         note: { type: 'string', nullable: true },
+        phone: { type: 'string', nullable: true },
         image: { type: 'string', format: 'binary', nullable: true },
       },
     },
@@ -116,9 +117,15 @@ export class UserController {
   async requestIsFromBank(
     @Param('id') id: string,
     @Body('note') note?: string,
+    @Body('phone') phone?: string,
     @UploadedFiles() files?: { image?: Multer.File[] },
   ) {
-    return this.userService.requestIsFromBank(id, files?.image?.[0], note);
+    return this.userService.requestIsFromBank(
+      id,
+      files?.image?.[0],
+      note,
+      phone,
+    );
   }
 
   @Patch(':id/approve')
@@ -136,6 +143,30 @@ export class UserController {
     @Body('approve') approve: boolean,
   ) {
     return this.userService.approveIsFromBank(id, approve);
+  }
+
+  @Patch(':id/request-role-upgrade')
+  @ApiBody({
+    schema: { type: 'object', properties: { note: { type: 'string', nullable: true } } },
+  })
+  @ApiResponse({ status: 200, description: 'Role upgrade request submitted successfully' })
+  async requestRoleUpgrade(
+    @Param('id') id: string,
+    @Body('note') note?: string,
+  ) {
+    return this.userService.requestRoleUpgrade(id, note);
+  }
+
+  @Patch(':id/approve-role-upgrade')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
+  @ApiBody({ schema: { type: 'object', properties: { approve: { type: 'boolean' } } } })
+  @ApiResponse({ status: 200, description: 'Admin approved/rejected role upgrade' })
+  async approveRoleUpgrade(
+    @Param('id') id: string,
+    @Body('approve') approve: boolean,
+  ) {
+    return this.userService.approveRoleUpgrade(id, approve);
   }
 
   @Delete(':id')
