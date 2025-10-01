@@ -21,11 +21,6 @@ export class PropertyTypeService {
       throw new BadRequestException('Name is required');
     }
 
-    const existed = await this.propertyTypeRepository.findOneBy({ name });
-    if (existed) {
-      throw new BadRequestException('Property type name already exists');
-    }
-
     const propertyType = this.propertyTypeRepository.create(
       createPropertyTypeDto,
     );

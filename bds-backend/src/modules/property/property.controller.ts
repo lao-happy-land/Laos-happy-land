@@ -154,6 +154,7 @@ export class PropertyController {
     schema: { type: 'string', enum: ['LAK', 'USD', 'VND'] },
   })
   @ApiResponse({ status: 200, description: 'Property found' })
+
   async get(
     @Param('id') id: string,
     @Query() params: GetPropertyDetailDto,
@@ -166,6 +167,29 @@ export class PropertyController {
     };
 
     return this.propertyService.get(id, mergedParams);
+  }
+
+  @Get(':id/similar')
+  @ApiHeader({
+    name: 'currency',
+    description: 'Currency filter (LAK | USD | VND)',
+    required: false,
+    schema: { type: 'string', enum: ['LAK', 'USD', 'VND'] },
+  })
+  @ApiResponse({ status: 200, description: 'Success' })
+  async getSimilarProperties(
+    @Param('id') id: string,
+    @Query() params: GetPropertyByUserDto,
+    @Headers() rawHeaders: Record<string, string>,
+  ) {
+    const mergedParams = {
+      skip: params.skip ?? 0,
+      perPage: params.perPage ?? 10,
+      currency:
+        (rawHeaders['currency'] as 'LAK' | 'USD' | 'VND') ?? params.currency,
+    };
+
+    return this.propertyService.getSimilarProperties(id, mergedParams);
   }
 
   @Patch(':id')
