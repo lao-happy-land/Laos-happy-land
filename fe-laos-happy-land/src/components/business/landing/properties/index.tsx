@@ -6,7 +6,6 @@ import { useTranslations } from "next-intl";
 import {
   Filter,
   MapPin,
-  Heart,
   ChevronRight,
   Search,
   X,
@@ -2096,7 +2095,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
       </div>
 
       {/* Main content */}
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 pb-4">
         {/* Layout Toggle */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -2190,37 +2189,6 @@ const Properties = ({ transaction }: PropertiesProps) => {
                 )}
               </>
             )}
-
-            {/* Enhanced Show More Section */}
-            <div className="mt-12 text-center">
-              <div className="rounded-2xl bg-gradient-to-r from-red-50 to-orange-50 p-8">
-                <div className="mb-4">
-                  <h3 className="mb-2 text-xl font-bold text-gray-900">
-                    {t("property.noSuitableProperties")}
-                  </h3>
-                  <p className="text-gray-600">
-                    {t("property.tryAdjustingFilters")}
-                  </p>
-                </div>
-
-                <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-                  <Button
-                    size="large"
-                    className="border-red-500 bg-red-500 px-8 text-white hover:border-red-600 hover:bg-red-600"
-                  >
-                    <Filter className="mr-2 h-4 w-4" />
-                    {t("property.adjustFilters")}
-                  </Button>
-                  <Button
-                    size="large"
-                    className="border-gray-300 px-8 hover:bg-gray-50"
-                  >
-                    <Heart className="mr-2 h-4 w-4" />
-                    {t("property.subscribeNotifications")}
-                  </Button>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
