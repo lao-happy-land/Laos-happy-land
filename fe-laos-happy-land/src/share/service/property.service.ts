@@ -75,9 +75,32 @@ const propertyService = {
     }
   },
 
-  getPropertyByUserId: async (userId: string): Promise<Property[]> => {
-    const response = await api.propertyControllerGetByUserId(userId);
-    return response.data as unknown as Property[];
+  getPropertyByUserId: async (
+    userId: string,
+    query?: {
+      page?: number;
+      perPage?: number;
+      currency?: string;
+    },
+  ): Promise<APIResponse<Property[]>> => {
+    try {
+      const response = await api.propertyControllerGetByUserId(userId, query);
+      const data = response.data as unknown;
+
+      // Handle different response formats
+      if (data && typeof data === "object" && data !== null) {
+        // If the response has a data field, use it
+        if ("data" in data) {
+          return data as APIResponse<Property[]>;
+        }
+      }
+
+      // Fallback to direct casting
+      return response.data as unknown as APIResponse<Property[]>;
+    } catch (error) {
+      console.error("PropertyService: Error fetching user properties:", error);
+      throw error;
+    }
   },
 
   createProperty: async (data: CreatePropertyDto): Promise<Property> => {
@@ -111,6 +134,45 @@ const propertyService = {
     data: RejectPropertyDto,
   ): Promise<void> => {
     await api.propertyControllerReject(id, data);
+  },
+
+  getSimilarProperties: async (
+    id: string,
+    query?: {
+      page?: number;
+      perPage?: number;
+      currency?: string;
+    },
+  ): Promise<APIResponse<Property[]>> => {
+    try {
+      const response = await api.propertyControllerGetSimilarProperties(
+        id,
+        query,
+      );
+      const data = response.data as unknown;
+
+      // Handle different response formats
+      if (data && typeof data === "object" && data !== null) {
+        // If the response has a data field, use it
+        if ("data" in data) {
+          return data as APIResponse<Property[]>;
+        }
+
+        // If the response is the APIResponse directly
+        if ("items" in data || "results" in data) {
+          return data as unknown as APIResponse<Property[]>;
+        }
+      }
+
+      // Fallback to direct casting
+      return response.data as unknown as APIResponse<Property[]>;
+    } catch (error) {
+      console.error(
+        "PropertyService: Error fetching similar properties:",
+        error,
+      );
+      throw error;
+    }
   },
 };
 

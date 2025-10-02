@@ -85,8 +85,7 @@ export default function LanguageSwitcher() {
         loading={loading}
         className="flex items-center gap-2 border-0 shadow-none hover:bg-gray-50"
       >
-        <span className="text-lg">{currentLanguage?.flag}</span>
-        <span className="hidden sm:inline">{currentLanguage?.name}</span>
+        <span className="inline">{currentLanguage?.name}</span>
       </Button>
     </Dropdown>
   );

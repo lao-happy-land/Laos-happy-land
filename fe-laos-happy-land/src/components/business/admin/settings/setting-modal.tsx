@@ -15,12 +15,10 @@ import {
 } from "antd";
 import { useRequest } from "ahooks";
 import { settingService } from "@/share/service/setting.service";
-import type {
-  Setting,
-  CreateSettingDto,
-} from "@/share/service/setting.service";
+import type { Setting } from "@/share/service/setting.service";
+import type { CreateSettingDto } from "@/@types/gentype-axios";
 import { useTranslations } from "next-intl";
-import { Plus, Delete } from "lucide-react";
+import { Plus } from "lucide-react";
 import type { UploadFile, UploadProps } from "antd";
 import uploadService from "@/share/service/upload.service";
 
@@ -47,26 +45,9 @@ const SettingModal: React.FC<SettingModalProps> = ({
   const [bannerFileList, setBannerFileList] = useState<UploadFile[]>([]);
   const [imagesFileList, setImagesFileList] = useState<UploadFile[]>([]);
 
-  // Create setting
-  const { run: createSetting, loading: createLoading } = useRequest(
-    (data: CreateSettingDto) => settingService.createSetting(data),
-    {
-      manual: true,
-      onSuccess: () => {
-        message.success(t("admin.createSettingSuccess"));
-        onSuccess();
-      },
-      onError: (error: unknown) => {
-        message.error(t("admin.createSettingFailed"));
-        console.error("Create error:", error);
-      },
-    },
-  );
-
-  // Update setting
+  // Update setting (only update supported, no create)
   const { run: updateSetting, loading: updateLoading } = useRequest(
-    (id: string, data: CreateSettingDto) =>
-      settingService.updateSetting(id, data),
+    (data: CreateSettingDto) => settingService.updateSetting(data),
     {
       manual: true,
       onSuccess: () => {
@@ -145,11 +126,8 @@ const SettingModal: React.FC<SettingModalProps> = ({
           .filter((url): url is string => Boolean(url)),
       };
 
-      if (mode === "create") {
-        createSetting(settingData);
-      } else if (mode === "edit" && setting) {
-        updateSetting(setting.id, settingData);
-      }
+      // Only update is supported (no create endpoint)
+      updateSetting(settingData);
     } catch (error) {
       console.error("Form validation failed:", error);
     }
@@ -275,6 +253,7 @@ const SettingModal: React.FC<SettingModalProps> = ({
                   listType="picture-card"
                   fileList={bannerFileList}
                   onChange={handleBannerChange}
+                  customRequest={customRequest as never}
                   accept="image/*"
                   maxCount={1}
                 >
@@ -296,6 +275,7 @@ const SettingModal: React.FC<SettingModalProps> = ({
                   listType="picture-card"
                   fileList={imagesFileList}
                   onChange={handleImagesChange}
+                  customRequest={customRequest as never}
                   accept="image/*"
                   multiple
                 >
@@ -316,11 +296,11 @@ const SettingModal: React.FC<SettingModalProps> = ({
           <Button
             type="primary"
             htmlType="submit"
-            loading={createLoading || updateLoading}
+            loading={updateLoading}
             size="large"
             className="bg-blue-500 hover:bg-blue-600"
           >
-            {mode === "create" ? t("admin.create") : t("admin.update")}
+            {t("admin.update")}
           </Button>
         </div>
       </Form>

@@ -11,7 +11,7 @@ import ProjectContent from "@/components/business/property-details/project-conte
 import DetailsSection from "@/components/business/property-details/details-section";
 import ContactCard from "@/components/business/property-details/contact-card";
 import LoanCalculator from "@/components/business/loan-calculator/loan-calculator";
-import { useState } from "react";
+import SimilarProperties from "@/components/business/property-details/similar-properties";
 import { useRequest } from "ahooks";
 import propertyService from "@/share/service/property.service";
 
@@ -38,7 +38,6 @@ export default function PropertyDetails({ propertyId }: Props) {
   const { data: property, loading } = useRequest(() =>
     propertyService.getPropertyById(propertyId),
   );
-  const [isFavorite, setIsFavorite] = useState(false);
 
   const allImages = [property?.mainImage, ...(property?.images ?? [])].filter(
     (img): img is string => {
@@ -64,7 +63,6 @@ export default function PropertyDetails({ propertyId }: Props) {
     }
   };
 
-  const handleFavorite = () => setIsFavorite((v) => !v);
   const handleContactOwner = () => {
     if (property?.owner?.phone) {
       window.open(`tel:${property.owner.phone}`, "_self");
@@ -111,8 +109,6 @@ export default function PropertyDetails({ propertyId }: Props) {
                   : ["/images/landingpage/apartment/apart-1.jpg"]
               }
               title={property.title}
-              isFavorite={isFavorite}
-              onToggleFavorite={handleFavorite}
               onShare={handleShare}
             />
           )}
@@ -124,7 +120,7 @@ export default function PropertyDetails({ propertyId }: Props) {
           >
             <div className="mb-6">
               <PriceInfo
-                price={(property.price as PropertyPrice) ?? null}
+                price={property.price as PropertyPrice | null}
                 transactionType={property.transactionType as TransactionEnum}
                 createdAt={property.createdAt}
               />
@@ -169,14 +165,15 @@ export default function PropertyDetails({ propertyId }: Props) {
         <Col xs={24} lg={8} style={{ padding: 0 }}>
           <ContactCard
             owner={property.owner}
-            isFavorite={isFavorite}
-            onToggleFavorite={handleFavorite}
             onShare={handleShare}
             onCall={handleContactOwner}
             onEmail={handleEmailOwner}
           />
         </Col>
       </Row>
+
+      {/* Similar Properties Section */}
+      <SimilarProperties propertyId={propertyId} />
     </div>
   );
 }

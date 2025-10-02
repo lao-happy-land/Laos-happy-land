@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, Heart, Home, Bed, Bath, Eye } from "lucide-react";
+import { MapPin, Home, Bed, Bath, Eye } from "lucide-react";
 import type { Property } from "@/@types/types";
 import { numberToString } from "@/share/helper/number-to-string";
 import { useUrlLocale } from "@/utils/locale";
@@ -14,7 +14,6 @@ import {
 
 interface PropertyCardProps {
   property: Property;
-  showHeart?: boolean;
   className?: string;
   size?: "small" | "medium" | "large";
   showDescription?: boolean;
@@ -22,7 +21,6 @@ interface PropertyCardProps {
 
 export default function PropertyCard({
   property,
-  showHeart = true,
   className = "",
   size = "medium",
   showDescription = false,
@@ -116,15 +114,6 @@ export default function PropertyCard({
               <span className="bg-primary-500 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold text-white shadow-md">
                 ⭐ {t("property.featured")}
               </span>
-            </div>
-          )}
-
-          {/* Heart button */}
-          {showHeart && (
-            <div className="absolute top-3 right-3">
-              <button className="hover:bg-primary-500 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-md transition-all duration-200 hover:scale-110 hover:text-white">
-                <Heart className="h-4 w-4" />
-              </button>
             </div>
           )}
 

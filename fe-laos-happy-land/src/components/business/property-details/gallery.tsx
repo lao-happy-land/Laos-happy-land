@@ -5,23 +5,15 @@ import { Card, Carousel, Button, Tooltip } from "antd";
 import { useTranslations } from "next-intl";
 import type { CarouselRef } from "antd/es/carousel";
 import Image from "next/image";
-import { Heart, Share2 } from "lucide-react";
+import { Share2 } from "lucide-react";
 
 type Props = {
   images: string[];
   title: string;
-  isFavorite: boolean;
-  onToggleFavorite: () => void;
   onShare: () => void;
 };
 
-export default function Gallery({
-  images,
-  title,
-  isFavorite,
-  onToggleFavorite,
-  onShare,
-}: Props) {
+export default function Gallery({ images, title, onShare }: Props) {
   const t = useTranslations();
   const carouselRef = useRef<CarouselRef>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -73,21 +65,6 @@ export default function Gallery({
         )}
 
         <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
-          <Tooltip title={t("property.addToFavorites")}>
-            <Button
-              type="primary"
-              shape="circle"
-              icon={
-                <Heart size={16} className={isFavorite ? "fill-current" : ""} />
-              }
-              onClick={onToggleFavorite}
-              className={`shadow-lg transition-all duration-200 ${
-                isFavorite
-                  ? "bg-red-500 hover:bg-red-600"
-                  : "bg-white hover:bg-gray-50"
-              }`}
-            />
-          </Tooltip>
           <Tooltip title={t("property.share")}>
             <Button
               type="primary"

@@ -7,11 +7,13 @@ import { usePathname } from "next/navigation";
 import { ADMIN_NAV_ITEMS } from "@/share/constant/admin-nav-constant";
 import { useAuthStore } from "@/share/store/auth.store";
 import { LogOut, User, Settings } from "lucide-react";
-import { Button, Dropdown, App } from "antd";
+import { Button, Dropdown, App, message } from "antd";
 import LoadingScreen from "@/components/common/loading-screen";
 import UnauthorizedPage from "@/app/[locale]/(auth)/unauthorized/page";
 import { useUrlLocale } from "@/utils/locale";
 import { useTranslations } from "next-intl";
+import LanguageSwitcher from "@/components/business/common/language-switcher";
+import router from "next/router";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -206,6 +208,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
             {/* User Section */}
             <div className="flex items-center gap-4">
+              {/* Language Switcher */}
+              <LanguageSwitcher />
+
               {/* User Dropdown */}
               <Dropdown
                 menu={{
@@ -263,6 +268,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                           okType: "danger",
                           onOk: () => {
                             logout();
+
+                            message.success(t("auth.logoutSuccess"));
+                            void router.push(`/${locale}/login`);
                           },
                         });
                       },
