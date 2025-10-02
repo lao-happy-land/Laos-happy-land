@@ -109,14 +109,6 @@ export class GetPropertiesFilterDto extends PageOptionsDto {
   transaction?: string;
 
   @ApiPropertyOptional({
-    description: 'Trạng thái xác minh',
-  })
-  @IsOptional()
-  @Type(() => Boolean)
-  @IsBoolean()
-  isVerified?: boolean;
-
-  @ApiPropertyOptional({
     description: 'Trạng thái hệ thống',
     enum: PropertyStatusEnum,
   })

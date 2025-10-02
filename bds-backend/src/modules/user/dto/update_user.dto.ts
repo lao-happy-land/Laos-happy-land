@@ -115,11 +115,4 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   company?: string;
-
-  @ApiPropertyOptional({
-    example: true,
-    description: 'Verified status of the user',
-  })
-  @IsOptional()
-  verified?: boolean;
 }
