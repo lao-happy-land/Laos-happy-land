@@ -72,11 +72,20 @@ export default function CreateProperty() {
   const [uploadingMainImage, setUploadingMainImage] = useState(false);
   const [uploadingImages, setUploadingImages] = useState<boolean[]>([]);
   const [locationData, setLocationData] = useState<{
-    latitude: number;
-    longitude: number;
-    address: string;
-    city?: string;
-    country?: string;
+    locationInfoId?: string;
+    location?: {
+      latitude?: number;
+      longitude?: number;
+      address?: string;
+      city?: string;
+      country?: string;
+      district?: string;
+      province?: string;
+      postalCode?: string;
+      neighborhood?: string;
+      buildingNumber?: string;
+      street?: string;
+    } | null;
   } | null>(null);
 
   // Load property types
@@ -163,19 +172,12 @@ export default function CreateProperty() {
 
       const formData: CreatePropertyDto = {
         typeId: values.typeId,
+        locationInfoId: locationData?.locationInfoId ?? "",
         title: values.title,
         description: values.description,
         price: values.price,
         legalStatus: values.legalStatus,
-        location: locationData
-          ? {
-              latitude: locationData.latitude,
-              longitude: locationData.longitude,
-              address: locationData.address,
-              city: locationData.city,
-              country: locationData.country,
-            }
-          : undefined,
+        location: locationData?.location ?? undefined,
         transactionType: values.transactionType,
         details: {
           area: values.area,
@@ -235,7 +237,7 @@ export default function CreateProperty() {
       message.error(t("admin.pleaseUploadAtLeast3Images"));
       return;
     }
-    if (!locationData) {
+    if (!locationData?.locationInfoId || !locationData?.location) {
       message.error(t("admin.pleaseSelectLocationOnMap"));
       return;
     }
@@ -369,7 +371,7 @@ export default function CreateProperty() {
                   }
                   rules={[
                     { required: true, message: t("property.pleaseEnterTitle") },
-                    { min: 10, message: t("admin.titleMinLength") },
+                    { min: 10, message: t("property.titleMinLength") },
                     {
                       max: 200,
                       message: t("property.titleMaxLength"),
@@ -764,17 +766,13 @@ export default function CreateProperty() {
                 }
                 rules={[
                   {
-                    required: true,
-                    message: t("property.pleaseSelectLocationOnMap"),
-                  },
-                  {
-                    validator: (_, value) => {
-                      if (!value) {
+                    validator: () => {
+                      if (!locationData?.locationInfoId) {
                         return Promise.reject(
-                          new Error(t("property.pleaseSelectLocation")),
+                          new Error(t("map.selectAreaMessage")),
                         );
                       }
-                      if (!locationData) {
+                      if (!locationData?.location) {
                         return Promise.reject(
                           new Error(t("property.pleaseSelectLocationOnMap")),
                         );
@@ -785,9 +783,8 @@ export default function CreateProperty() {
                 ]}
               >
                 <MapboxLocationSelector
-                  value={locationData ?? undefined}
+                  value={locationData}
                   onChange={setLocationData}
-                  placeholder={t("property.selectLocationOnMap")}
                 />
               </Form.Item>
             </div>

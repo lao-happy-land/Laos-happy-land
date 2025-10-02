@@ -230,7 +230,7 @@ const LandingPage = () => {
               </div>
               <div>
                 <div className="text-3xl font-bold text-white">
-                  {totalProperties}
+                  {totalProperties < 1000 ? "1000+" : `${totalProperties}+`}
                 </div>
                 <div className="text-primary-100 text-sm font-medium">
                   {t("home.totalListings")}
@@ -243,7 +243,7 @@ const LandingPage = () => {
               </div>
               <div>
                 <div className="text-3xl font-bold text-white">
-                  {totalProjects}
+                  {totalProjects < 100 ? "100+" : `${totalProjects}+`}
                 </div>
                 <div className="text-primary-100 text-sm font-medium">
                   {t("home.totalProjects")}
@@ -256,7 +256,7 @@ const LandingPage = () => {
               </div>
               <div>
                 <div className="text-3xl font-bold text-white">
-                  {totalViews}
+                  {totalViews < 10000 ? "10000+" : `${totalViews}+`}
                 </div>
                 <div className="text-primary-100 text-sm font-medium">
                   {t("home.totalViews")}

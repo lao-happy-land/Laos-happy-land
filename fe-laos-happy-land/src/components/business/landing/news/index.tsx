@@ -38,7 +38,7 @@ const NewsPage = () => {
   const t = useTranslations();
 
   const [filters, setFilters] = useState({
-    newsType: searchParams.get("newsType") ?? "all",
+    newsTypeId: searchParams.get("newsTypeId") ?? "all",
     search: searchParams.get("search") ?? "",
     sortBy: searchParams.get("sortBy") ?? "newest",
     page: parseInt(searchParams.get("page") ?? "1"),
@@ -48,11 +48,9 @@ const NewsPage = () => {
   const updateURL = useCallback(
     (newFilters: typeof filters) => {
       const params = new URLSearchParams();
-      if (newFilters.newsType !== "all")
-        params.set("newsType", newFilters.newsType);
+      if (newFilters.newsTypeId !== "all")
+        params.set("newsTypeId", newFilters.newsTypeId);
       if (newFilters.search) params.set("search", newFilters.search);
-      if (newFilters.sortBy !== "newest")
-        params.set("sortBy", newFilters.sortBy);
       if (newFilters.page > 1) params.set("page", newFilters.page.toString());
 
       const queryString = params.toString();
@@ -74,15 +72,11 @@ const NewsPage = () => {
         page: filters.page,
         perPage: 12, // 12 items per page
         search: filters.search,
-        newsType: filters.newsType !== "all" ? filters.newsType : undefined,
+        newsTypeId:
+          filters.newsTypeId !== "all" ? filters.newsTypeId : undefined,
       }),
     {
-      refreshDeps: [
-        filters.newsType,
-        filters.search,
-        filters.sortBy,
-        filters.page,
-      ],
+      refreshDeps: [filters.newsTypeId, filters.search, filters.page],
     },
   );
 
@@ -231,8 +225,8 @@ const NewsPage = () => {
               </div>
               <div className="flex gap-4">
                 <Select
-                  value={filters.newsType}
-                  onChange={(value) => handleFilterChange("newsType", value)}
+                  value={filters.newsTypeId}
+                  onChange={(value) => handleFilterChange("newsTypeId", value)}
                   size="large"
                   className="w-40"
                   suffixIcon={<Filter size={16} />}
@@ -242,16 +236,6 @@ const NewsPage = () => {
                       {cat.label}
                     </Option>
                   ))}
-                </Select>
-                <Select
-                  value={filters.sortBy}
-                  onChange={(value) => handleFilterChange("sortBy", value)}
-                  size="large"
-                  className="w-40"
-                >
-                  <Option value="newest">{t("news.newest")}</Option>
-                  <Option value="popular">{t("news.popular")}</Option>
-                  <Option value="views">{t("news.views")}</Option>
                 </Select>
               </div>
             </div>
@@ -421,32 +405,6 @@ const NewsPage = () => {
 
               {/* Sidebar */}
               <div className="lg:col-span-1">
-                {/* Popular Tags */}
-                <div className="mb-6 rounded-xl bg-white p-6 shadow-sm">
-                  <h3 className="mb-4 text-lg font-semibold text-neutral-900">
-                    {t("news.popularTags")}
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      t("news.tags.realEstate"),
-                      t("news.tags.market"),
-                      t("news.tags.investment"),
-                      t("news.tags.legal"),
-                      t("news.tags.vientiane"),
-                      t("news.tags.luangPrabang"),
-                      t("news.tags.buyHouse"),
-                      t("news.tags.rent"),
-                    ].map((tag) => (
-                      <Tag
-                        key={tag}
-                        className="hover:bg-primary-50 cursor-pointer transition-colors"
-                      >
-                        {tag}
-                      </Tag>
-                    ))}
-                  </div>
-                </div>
-
                 {/* Recent News */}
                 <div className="mb-6 rounded-xl bg-white p-6 shadow-sm">
                   <h3 className="mb-4 text-lg font-semibold text-neutral-900">
@@ -478,27 +436,6 @@ const NewsPage = () => {
                         </div>
                       </div>
                     ))}
-                  </div>
-                </div>
-
-                {/* Newsletter */}
-                <div className="rounded-xl bg-white p-6 shadow-sm">
-                  <h3 className="mb-4 text-lg font-semibold text-neutral-900">
-                    {t("news.subscribeNewsletter")}
-                  </h3>
-                  <div className="space-y-4">
-                    <p className="text-sm text-neutral-600">
-                      {t("news.getLatestNews")}
-                    </p>
-                    <Input placeholder={t("news.yourEmail")} size="large" />
-                    <Button
-                      type="primary"
-                      block
-                      size="large"
-                      className="font-semibold"
-                    >
-                      {t("news.subscribe")}
-                    </Button>
                   </div>
                 </div>
               </div>

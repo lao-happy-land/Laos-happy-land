@@ -17,7 +17,7 @@ export const newsService = {
   getAllNews: async (params?: {
     page?: number;
     perPage?: number;
-    newsType?: string;
+    newsTypeId?: string;
     search?: string;
   }) => {
     const response = await api.newsControllerGetAll(params);

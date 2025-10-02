@@ -1,73 +1,174 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useRequest } from "ahooks";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-
-interface Activity {
-  id: number;
-  type: string;
-  message: string;
-  time: string;
-  user: string;
-}
-
-interface Stats {
-  totalProperties: number;
-  pendingProperties: number;
-  totalUsers: number;
-  totalProjects: number;
-  monthlyRevenue: number;
-  recentActivities: Activity[];
-}
+import { useUrlLocale } from "@/utils/locale";
+import {
+  Spin,
+  Card,
+  Row,
+  Col,
+  Statistic,
+  Table,
+  Button,
+  Space,
+  Tag,
+  App,
+} from "antd";
+import {
+  Building2,
+  Users,
+  ArrowUpRight,
+  ArrowDownRight,
+  Clock,
+  CheckCircle,
+  XCircle,
+  FileText,
+  Eye,
+} from "lucide-react";
+import dashboardService, {
+  type RecentActivity,
+} from "@/share/service/dashboard.service";
+import propertyService from "@/share/service/property.service";
+import type { Property } from "@/@types/types";
+import Image from "next/image";
+import { numberToString } from "@/share/helper/number-to-string";
+import {
+  getCurrencyByLocale,
+  type SupportedLocale,
+} from "@/share/helper/locale.helper";
 
 const AdminDashboard = () => {
   const t = useTranslations();
-  const [stats, setStats] = useState<Stats>({
+  const locale = useUrlLocale();
+  const { message, modal } = App.useApp();
+
+  const { data: dashboardData, loading } = useRequest(async () => {
+    return await dashboardService.getDashboard();
+  });
+
+  const {
+    data: pendingPropertiesData,
+    loading: loadingPendingProperties,
+    run: refetchPendingProperties,
+  } = useRequest(async () => {
+    return await propertyService.getProperties({
+      status: "pending",
+      page: 1,
+      perPage: 10,
+      currency: getCurrencyByLocale(locale as SupportedLocale),
+    });
+  });
+
+  const handleApproveProperty = (property: Property) => {
+    modal.confirm({
+      title: t("admin.approveProperty"),
+      content: `${t("admin.confirmApproveProperty")} "${property.title}"?`,
+      okText: t("admin.approve"),
+      cancelText: t("admin.cancel"),
+      onOk: async () => {
+        try {
+          await propertyService.approveProperty(property.id);
+          message.success(t("admin.propertyApprovedSuccessfully"));
+          refetchPendingProperties();
+        } catch (error) {
+          console.error("Error approving property:", error);
+          message.error(t("admin.actionFailed"));
+        }
+      },
+    });
+  };
+
+  const handleRejectProperty = (property: Property) => {
+    modal.confirm({
+      title: t("admin.rejectProperty"),
+      content: `${t("admin.confirmRejectProperty")} "${property.title}"?`,
+      okText: t("admin.reject"),
+      okType: "danger",
+      cancelText: t("admin.cancel"),
+      onOk: async () => {
+        try {
+          await propertyService.rejectProperty(property.id, {
+            reason: "Rejected by admin",
+          });
+          message.success(t("admin.propertyRejectedSuccessfully"));
+          refetchPendingProperties();
+        } catch (error) {
+          console.error("Error rejecting property:", error);
+          message.error(t("admin.actionFailed"));
+        }
+      },
+    });
+  };
+
+  const getImageURL = (property: Property): string => {
+    if (property.mainImage && typeof property.mainImage === "string") {
+      return property.mainImage;
+    }
+    if (
+      property.images &&
+      property.images.length > 0 &&
+      typeof property.images[0] === "string"
+    ) {
+      return property.images[0];
+    }
+    if (property.transactionType === "project") {
+      return "/images/landingpage/project/project-1.jpg";
+    }
+    return "/images/landingpage/apartment/apart-1.jpg";
+  };
+
+  const getActivityIcon = (type: string) => {
+    if (type === "property")
+      return <Building2 className="h-5 w-5 text-blue-600" />;
+    if (type === "user") return <Users className="h-5 w-5 text-green-600" />;
+    if (type === "news")
+      return <FileText className="h-5 w-5 text-purple-600" />;
+    return <Eye className="h-5 w-5 text-gray-600" />;
+  };
+
+  const getActivityColor = (type: string) => {
+    if (type === "property") return "from-blue-100 to-blue-200";
+    if (type === "user") return "from-green-100 to-green-200";
+    if (type === "news") return "from-purple-100 to-purple-200";
+    return "from-gray-100 to-gray-200";
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (seconds < 60) return `${seconds} ${t("admin.secondsAgo")}`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} ${t("admin.minutesAgo")}`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} ${t("admin.hoursAgo")}`;
+    const days = Math.floor(hours / 24);
+    return `${days} ${t("admin.daysAgo")}`;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  const stats = dashboardData ?? {
     totalProperties: 0,
     pendingProperties: 0,
     totalUsers: 0,
-    totalProjects: 0,
-    monthlyRevenue: 0,
+    approvedPropertiesThisMonth: 0,
+    propertyGrowthRate: 0,
+    userGrowthRate: 0,
     recentActivities: [],
-  });
-
-  // Mock data - in real app, fetch from API
-  useEffect(() => {
-    setStats({
-      totalProperties: 1250,
-      pendingProperties: 45,
-      totalUsers: 850,
-      totalProjects: 25,
-      monthlyRevenue: 125000000, // LAK
-      recentActivities: [
-        {
-          id: 1,
-          type: "property",
-          message: t("admin.newProperty"),
-          time: `5 ${t("admin.minutesAgo")}`,
-          user: t("admin.sampleUser1"),
-        },
-        {
-          id: 2,
-          type: "user",
-          message: t("admin.newUser"),
-          time: `15 ${t("admin.minutesAgo")}`,
-          user: t("admin.systemUser"),
-        },
-        {
-          id: 3,
-          type: "project",
-          message: t("admin.newProject"),
-          time: `30 ${t("admin.minutesAgo")}`,
-          user: t("admin.adminUser"),
-        },
-      ],
-    });
-  }, [t]);
+  };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Page Header */}
       <div className="rounded-2xl border border-green-100 bg-gradient-to-r from-green-50 to-emerald-50 p-6">
         <h1 className="mb-2 text-3xl font-bold text-gray-900">
@@ -76,510 +177,295 @@ const AdminDashboard = () => {
         <p className="text-lg text-gray-600">{t("admin.systemOverview")}</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {/* Total Properties */}
-        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="mb-1 text-sm font-medium text-gray-600">
-                {t("admin.totalProperties")}
-              </p>
-              <p className="mb-2 text-3xl font-bold text-gray-900">
-                {stats.totalProperties.toString()}
-              </p>
-              <div className="flex items-center gap-1">
-                <svg
-                  className="h-4 w-4 text-green-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M7 11l5-5m0 0l5 5m-5-5v12"
-                  />
-                </svg>
-                <span className="text-sm font-medium text-green-600">+12%</span>
-                <span className="text-sm text-gray-500">
-                  {t("admin.comparedToLastMonth")}
+      {/* Recent Activities - 2 Cards */}
+      <Row gutter={[16, 16]}>
+        {/* Recent Activity Card 1 */}
+        <Col xs={24} md={12}>
+          <Card
+            title={
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-green-600" />
+                <span className="text-lg font-semibold">
+                  {t("admin.recentActivity")}
                 </span>
               </div>
-            </div>
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-100 to-blue-200">
-              <svg
-                className="h-7 w-7 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2z"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* Pending Properties */}
-        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="mb-1 text-sm font-medium text-gray-600">
-                {t("admin.pendingApproval")}
-              </p>
-              <p className="mb-2 text-3xl font-bold text-gray-900">
-                {stats.pendingProperties}
-              </p>
-              <div className="flex items-center gap-1">
-                <div className="h-2 w-2 animate-pulse rounded-full bg-yellow-500"></div>
-                <span className="text-sm font-medium text-yellow-600">
-                  {t("admin.needsProcessing")}
-                </span>
-              </div>
-            </div>
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-100 to-yellow-200">
-              <svg
-                className="h-7 w-7 text-yellow-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* Total Users */}
-        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="mb-1 text-sm font-medium text-gray-600">
-                {t("admin.users")}
-              </p>
-              <p className="mb-2 text-3xl font-bold text-gray-900">
-                {stats.totalUsers.toString()}
-              </p>
-              <div className="flex items-center gap-1">
-                <svg
-                  className="h-4 w-4 text-green-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M7 11l5-5m0 0l5 5m-5-5v12"
-                  />
-                </svg>
-                <span className="text-sm font-medium text-green-600">+8%</span>
-                <span className="text-sm text-gray-500">
-                  {t("admin.comparedToLastMonth")}
-                </span>
-              </div>
-            </div>
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-green-100 to-green-200">
-              <svg
-                className="h-7 w-7 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* Monthly Revenue */}
-        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="mb-1 text-sm font-medium text-gray-600">
-                {t("admin.monthlyRevenue")}
-              </p>
-              <p className="mb-2 text-3xl font-bold text-gray-900">
-                {(stats.monthlyRevenue / 1000000).toFixed(1)}M LAK
-              </p>
-              <div className="flex items-center gap-1">
-                <svg
-                  className="h-4 w-4 text-green-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M7 11l5-5m0 0l5 5m-5-5v12"
-                  />
-                </svg>
-                <span className="text-sm font-medium text-green-600">+15%</span>
-                <span className="text-sm text-gray-500">
-                  {t("admin.comparedToLastMonth")}
-                </span>
-              </div>
-            </div>
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-red-100 to-red-200">
-              <svg
-                className="h-7 w-7 text-red-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-8 xl:grid-cols-3">
-        <div className="xl:col-span-1">
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-            <h2 className="mb-6 flex items-center gap-2 text-lg font-semibold text-gray-900">
-              <svg
-                className="h-5 w-5 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
-              </svg>
-              {t("admin.quickActions")}
-            </h2>
-            <div className="grid grid-cols-1 gap-3">
-              <button className="group flex items-center gap-4 rounded-xl border border-gray-200 p-4 transition-all duration-200 hover:border-blue-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 transition-transform group-hover:scale-110">
-                  <svg
-                    className="h-6 w-6 text-blue-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                    />
-                  </svg>
-                </div>
-                <div className="text-left">
-                  <span className="text-sm font-semibold text-gray-900">
-                    {t("admin.addProperty")}
-                  </span>
-                  <p className="text-xs text-gray-500">
-                    {t("admin.postSaleRent")}
-                  </p>
-                </div>
-              </button>
-
-              <button className="group flex items-center gap-4 rounded-xl border border-gray-200 p-4 transition-all duration-200 hover:border-green-200 hover:bg-gradient-to-r hover:from-green-50 hover:to-green-100">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-green-100 to-green-200 transition-transform group-hover:scale-110">
-                  <svg
-                    className="h-6 w-6 text-green-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                    />
-                  </svg>
-                </div>
-                <div className="text-left">
-                  <span className="text-sm font-semibold text-gray-900">
-                    {t("admin.addProject")}
-                  </span>
-                  <p className="text-xs text-gray-500">
-                    {t("admin.createNewProject")}
-                  </p>
-                </div>
-              </button>
-
-              <button className="group flex items-center gap-4 rounded-xl border border-gray-200 p-4 transition-all duration-200 hover:border-yellow-200 hover:bg-gradient-to-r hover:from-yellow-50 hover:to-yellow-100">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-100 to-yellow-200 transition-transform group-hover:scale-110">
-                  <svg
-                    className="h-6 w-6 text-yellow-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                </div>
-                <div className="text-left">
-                  <span className="text-sm font-semibold text-gray-900">
-                    {t("admin.addUser")}
-                  </span>
-                  <p className="text-xs text-gray-500">
-                    {t("admin.manageAccounts")}
-                  </p>
-                </div>
-              </button>
-
-              <button className="group flex items-center gap-4 rounded-xl border border-gray-200 p-4 transition-all duration-200 hover:border-purple-200 hover:bg-gradient-to-r hover:from-purple-50 hover:to-purple-100">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-100 to-purple-200 transition-transform group-hover:scale-110">
-                  <svg
-                    className="h-6 w-6 text-purple-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
-                </div>
-                <div className="text-left">
-                  <span className="text-sm font-semibold text-gray-900">
-                    {t("admin.viewReports")}
-                  </span>
-                  <p className="text-xs text-gray-500">
-                    {t("admin.detailedStatistics")}
-                  </p>
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Activities */}
-        <div className="xl:col-span-2">
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-            <h2 className="mb-6 flex items-center gap-2 text-lg font-semibold text-gray-900">
-              <svg
-                className="h-5 w-5 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              {t("admin.recentActivity")}
-            </h2>
-            <div className="space-y-4">
-              {stats.recentActivities.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-start gap-4 rounded-xl bg-gray-50 p-4 transition-colors hover:bg-gray-100"
-                >
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-blue-200">
-                    <svg
-                      className="h-5 w-5 text-blue-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+            }
+            className="h-full"
+          >
+            <div className="space-y-3">
+              {stats.recentActivities.length > 0 ? (
+                stats.recentActivities
+                  .slice(0, 3)
+                  .map((activity: RecentActivity, index: number) => (
+                    <div
+                      key={index}
+                      className="flex items-start gap-3 rounded-lg bg-gray-50 p-3 transition-colors hover:bg-gray-100"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-900">
-                      {activity.message}
-                    </p>
-                    <div className="mt-1 flex items-center gap-2">
-                      <span className="text-xs text-gray-500">
-                        {activity.time}
-                      </span>
-                      <span className="text-xs text-gray-400">•</span>
-                      <span className="text-xs text-gray-500">
-                        {activity.user}
-                      </span>
-                    </div>
-                  </div>
-                  <button className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-600">
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              ))}
-            </div>
-            <button className="mt-6 w-full rounded-xl px-4 py-2 text-center text-sm font-medium text-green-600 transition-colors hover:bg-green-50 hover:text-green-700">
-              {t("admin.viewAllActivity")}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Properties Table */}
-      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-        <div className="border-b border-gray-200 bg-gray-50 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
-              <svg
-                className="h-5 w-5 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                />
-              </svg>
-              {t("admin.latestProperties")}
-            </h2>
-            <Link
-              href="/admin/properties"
-              className="flex items-center gap-1 text-sm font-medium text-green-600 hover:text-green-700"
-            >
-              {t("admin.viewAll")}
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </Link>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="border-b border-gray-200 bg-gray-50">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
-                  {t("admin.title")}
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
-                  {t("admin.type")}
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
-                  {t("admin.price")}
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
-                  {t("admin.status")}
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
-                  {t("admin.postedDate")}
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider text-gray-600 uppercase">
-                  {t("admin.actions")}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              {[1, 2, 3, 4, 5].map((item) => (
-                <tr key={item} className="transition-colors hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-12 flex-shrink-0 rounded-lg bg-gradient-to-br from-gray-200 to-gray-300"></div>
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {t("admin.samplePropertyTitle")}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {t("admin.samplePropertyLocation")}
+                      <div
+                        className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${getActivityColor(activity.type)}`}
+                      >
+                        {getActivityIcon(activity.type)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          {activity.description}
+                        </p>
+                        <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
+                          <span>{formatTimeAgo(activity.createdAt)}</span>
+                          <span>•</span>
+                          <span>{activity.createdBy}</span>
                         </div>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                      {t("admin.apartment")}
+                  ))
+              ) : (
+                <div className="py-8 text-center text-gray-500">
+                  {t("admin.noRecentActivity")}
+                </div>
+              )}
+            </div>
+          </Card>
+        </Col>
+
+        {/* Recent Activity Card 2 */}
+        <Col xs={24} md={12}>
+          <Card
+            title={
+              <div className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-blue-600" />
+                <span className="text-lg font-semibold">
+                  {t("admin.systemStats")}
+                </span>
+              </div>
+            }
+            className="h-full"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center justify-between rounded-lg bg-blue-50 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+                    <Building2 className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600">
+                      {t("admin.totalProperties")}
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {stats.totalProperties}
+                    </p>
+                  </div>
+                </div>
+                {stats.propertyGrowthRate !== 0 && (
+                  <div
+                    className={`flex items-center gap-1 ${stats.propertyGrowthRate > 0 ? "text-green-600" : "text-red-600"}`}
+                  >
+                    {stats.propertyGrowthRate > 0 ? (
+                      <ArrowUpRight className="h-4 w-4" />
+                    ) : (
+                      <ArrowDownRight className="h-4 w-4" />
+                    )}
+                    <span className="text-sm font-semibold">
+                      {stats.propertyGrowthRate > 0 ? "+" : ""}
+                      {stats.propertyGrowthRate.toFixed(1)}%
                     </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm font-semibold whitespace-nowrap text-gray-900">
-                    {t("admin.samplePropertyPrice")}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
-                      {t("admin.pending")}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg bg-green-50 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
+                    <Users className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600">{t("admin.users")}</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {stats.totalUsers}
+                    </p>
+                  </div>
+                </div>
+                {stats.userGrowthRate !== 0 && (
+                  <div
+                    className={`flex items-center gap-1 ${stats.userGrowthRate > 0 ? "text-green-600" : "text-red-600"}`}
+                  >
+                    {stats.userGrowthRate > 0 ? (
+                      <ArrowUpRight className="h-4 w-4" />
+                    ) : (
+                      <ArrowDownRight className="h-4 w-4" />
+                    )}
+                    <span className="text-sm font-semibold">
+                      {stats.userGrowthRate > 0 ? "+" : ""}
+                      {stats.userGrowthRate.toFixed(1)}%
                     </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
-                    {t("admin.sampleDate")}
-                  </td>
-                  <td className="px-6 py-4 text-sm whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <button className="rounded px-2 py-1 text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-900">
-                        {t("admin.view")}
-                      </button>
-                      <button className="rounded px-2 py-1 text-green-600 transition-colors hover:bg-green-50 hover:text-green-900">
-                        {t("admin.approve")}
-                      </button>
-                      <button className="rounded px-2 py-1 text-orange-600 transition-colors hover:bg-orange-50 hover:text-orange-900">
-                        {t("admin.reject")}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg bg-yellow-50 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600">
+                      {t("admin.approvedThisMonth")}
+                    </p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {stats.approvedPropertiesThisMonth}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Pending Properties Table */}
+      <Card
+        title={
+          <div className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-yellow-600" />
+            <span className="text-lg font-semibold">
+              {t("admin.pendingApproval")}
+            </span>
+            <Tag color="yellow">{stats.pendingProperties}</Tag>
+          </div>
+        }
+        extra={
+          <Link
+            href={`/${locale}/admin/properties`}
+            className="text-sm font-medium text-blue-600 hover:text-blue-700"
+          >
+            {t("admin.viewAll")} →
+          </Link>
+        }
+      >
+        <Table
+          columns={[
+            {
+              title: t("property.image"),
+              dataIndex: "mainImage",
+              key: "image",
+              width: 80,
+              render: (_: unknown, record: Property) => (
+                <div className="relative h-12 w-16 overflow-hidden rounded">
+                  <Image
+                    src={getImageURL(record)}
+                    alt={record.title}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
+              ),
+            },
+            {
+              title: t("property.title"),
+              dataIndex: "title",
+              key: "title",
+              render: (text: string, record: Property) => (
+                <div className="max-w-xs">
+                  <div className="truncate font-medium">{text}</div>
+                  <div className="text-xs text-gray-500">
+                    {record.location?.address ?? t("admin.noAddress")}
+                  </div>
+                </div>
+              ),
+            },
+            {
+              title: t("admin.type"),
+              dataIndex: "type",
+              key: "type",
+              render: (type: { name: string } | null) => (
+                <Tag color="blue">{type?.name ?? t("admin.unknown")}</Tag>
+              ),
+            },
+            {
+              title: t("property.price"),
+              dataIndex: "price",
+              key: "price",
+              render: (price: unknown) => (
+                <div className="font-semibold text-green-600">
+                  {numberToString(
+                    price as number,
+                    locale as SupportedLocale,
+                    getCurrencyByLocale(locale as SupportedLocale),
+                  )}
+                </div>
+              ),
+            },
+            {
+              title: t("admin.owner"),
+              dataIndex: "owner",
+              key: "owner",
+              render: (owner: Property["owner"]) => (
+                <div>
+                  <div className="text-sm font-medium">
+                    {owner?.fullName ?? t("admin.unknown")}
+                  </div>
+                  <div className="text-xs text-gray-500">{owner?.email}</div>
+                </div>
+              ),
+            },
+            {
+              title: t("property.createdAt"),
+              dataIndex: "createdAt",
+              key: "createdAt",
+              width: 120,
+              render: (date: string) => (
+                <div className="text-sm text-gray-600">
+                  {new Date(date).toLocaleDateString()}
+                </div>
+              ),
+            },
+            {
+              title: t("admin.actions"),
+              key: "actions",
+              width: 200,
+              render: (_: unknown, record: Property) => (
+                <Space>
+                  <Button
+                    type="link"
+                    size="small"
+                    onClick={() =>
+                      window.open(`/${locale}/property/${record.id}`, "_blank")
+                    }
+                  >
+                    {t("admin.view")}
+                  </Button>
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={() => handleApproveProperty(record)}
+                    icon={<CheckCircle className="h-3 w-3" />}
+                  >
+                    {t("admin.approve")}
+                  </Button>
+                  <Button
+                    danger
+                    size="small"
+                    onClick={() => handleRejectProperty(record)}
+                    icon={<XCircle className="h-3 w-3" />}
+                  >
+                    {t("admin.reject")}
+                  </Button>
+                </Space>
+              ),
+            },
+          ]}
+          dataSource={pendingPropertiesData?.data ?? []}
+          rowKey="id"
+          loading={loadingPendingProperties}
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: false,
+            showTotal: (total) => `${total} ${t("admin.properties")}`,
+          }}
+          size="small"
+          scroll={{ x: 1000 }}
+        />
+      </Card>
     </div>
   );
 };

@@ -16,7 +16,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { numberToString } from "@/share/helper/number-to-string";
 import { Button } from "antd";
-import { useState } from "react";
 import { formatCreatedDate } from "@/share/helper/format-date";
 import { useUrlLocale } from "@/utils/locale";
 import {
@@ -26,13 +25,48 @@ import {
 
 export default function PropertyCard({ property }: { property: Property }) {
   const t = useTranslations();
-  const [isPhoneRevealed, setIsPhoneRevealed] = useState(false);
   const locale = useUrlLocale() as SupportedLocale;
 
-  const hiddenPhone = property.owner?.phone?.slice(0, -4) + "****";
+  // Helper function to get main image URL
+  const getValidImageUrl = (property: Property): string => {
+    // Check mainImage first
+    if (property.mainImage && typeof property.mainImage === "string") {
+      try {
+        new URL(property.mainImage);
+        return property.mainImage;
+      } catch {
+        if (property.mainImage.startsWith("/")) {
+          return property.mainImage;
+        }
+      }
+    }
 
-  // Helper function to validate image URLs
-  const getValidImageUrl = (
+    // Check additional images
+    if (
+      property.images &&
+      property.images.length > 0 &&
+      typeof property.images[0] === "string"
+    ) {
+      try {
+        new URL(property.images[0]);
+        return property.images[0];
+      } catch {
+        if (property.images[0].startsWith("/")) {
+          return property.images[0];
+        }
+      }
+    }
+
+    // Return default based on transaction type
+    if (property.transactionType === "project") {
+      return "/images/landingpage/project/project-1.jpg";
+    }
+
+    return "/images/landingpage/apartment/apart-1.jpg";
+  };
+
+  // Helper to validate individual image URLs
+  const validateImageUrl = (
     url: string | undefined,
     fallback: string,
   ): string => {
@@ -46,10 +80,6 @@ export default function PropertyCard({ property }: { property: Property }) {
       }
     }
     return fallback;
-  };
-
-  const handleRevealPhone = () => {
-    setIsPhoneRevealed(true);
   };
 
   return (
@@ -66,10 +96,7 @@ export default function PropertyCard({ property }: { property: Property }) {
           <div className="relative flex w-full overflow-hidden">
             <div className="relative h-[240px] w-[60%] flex-shrink-0">
               <Image
-                src={getValidImageUrl(
-                  property.mainImage ?? undefined,
-                  "/images/landingpage/apartment/apart-1.jpg",
-                )}
+                src={getValidImageUrl(property)}
                 alt={property.title}
                 fill
                 className="object-cover"
@@ -82,9 +109,11 @@ export default function PropertyCard({ property }: { property: Property }) {
               {/* Top Image - Full Width */}
               <div className="relative h-[120px] overflow-hidden">
                 <Image
-                  src={getValidImageUrl(
+                  src={validateImageUrl(
                     property.images?.[0],
-                    "/images/landingpage/apartment/apart-2.jpg",
+                    property.transactionType === "project"
+                      ? "/images/landingpage/project/project-2.jpg"
+                      : "/images/landingpage/apartment/apart-2.jpg",
                   )}
                   alt="Property image 2"
                   fill
@@ -97,9 +126,11 @@ export default function PropertyCard({ property }: { property: Property }) {
               <div className="flex h-[120px]">
                 <div className="relative w-[50%] overflow-hidden">
                   <Image
-                    src={getValidImageUrl(
+                    src={validateImageUrl(
                       property.images?.[1],
-                      "/images/landingpage/apartment/apart-3.jpg",
+                      property.transactionType === "project"
+                        ? "/images/landingpage/project/project-3.jpg"
+                        : "/images/landingpage/apartment/apart-3.jpg",
                     )}
                     alt="Property image 3"
                     fill
@@ -109,9 +140,11 @@ export default function PropertyCard({ property }: { property: Property }) {
                 </div>
                 <div className="relative w-[50%] overflow-hidden">
                   <Image
-                    src={getValidImageUrl(
+                    src={validateImageUrl(
                       property.images?.[2],
-                      "/images/landingpage/apartment/apart-4.jpg",
+                      property.transactionType === "project"
+                        ? "/images/landingpage/project/project-1.jpg"
+                        : "/images/landingpage/apartment/apart-4.jpg",
                     )}
                     alt="Property image 4"
                     fill
@@ -184,7 +217,7 @@ export default function PropertyCard({ property }: { property: Property }) {
           </div>
 
           {/* Footer */}
-          <div className="flex flex-col items-start justify-between gap-4 border-t border-gray-200 p-4 lg:flex-row lg:items-center">
+          <div className="flex flex-row items-start justify-between gap-4 border-t border-gray-200 p-4 lg:items-center">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-600 shadow-lg">
                 <span className="text-sm font-bold text-white">T</span>
@@ -203,21 +236,15 @@ export default function PropertyCard({ property }: { property: Property }) {
               </div>
             </div>
 
-            <div className="flex w-full items-center gap-3 lg:w-auto">
+            {property.owner?.phone && (
               <Button
                 type="primary"
-                onClick={handleRevealPhone}
-                className="flex w-full items-center gap-2"
+                className="flex h-12 w-1/2 items-center gap-2"
               >
                 <Phone className="h-4 w-4" />
-                <span>
-                  {isPhoneRevealed ? property.owner?.phone : hiddenPhone}
-                </span>
-                <span className="hidden text-xs opacity-90 sm:inline">
-                  - {t("property.showNumber")}
-                </span>
+                <span>{property.owner?.phone}</span>
               </Button>
-            </div>
+            )}
           </div>
         </div>
       </div>
