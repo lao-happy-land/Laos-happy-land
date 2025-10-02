@@ -14,6 +14,9 @@ import { Multer } from 'multer';
 import { CloudinaryService } from 'src/service/cloudinary.service';
 import { LocationInfo } from 'src/entities/location-info.entity';
 import { LocationDto } from '../property/dto/create_property.dto';
+import { instanceToPlain } from 'class-transformer';
+import { PropertyStatusEnum } from 'src/common/enum/enum';
+import { Property } from 'src/entities/property.entity';
 
 @Injectable()
 export class UserService {
@@ -73,11 +76,20 @@ export class UserService {
     return { user, message: 'User created successfully' };
   }
 
-  async getAll(params: GetUserDto): Promise<ResponsePaginate<User>> {
+  async getAll(params: GetUserDto) {
     const query = this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.role', 'role')
       .leftJoinAndSelect('user.locationInfo', 'locationInfo')
+      .addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(p.id)', 'approvedPropertyCount')
+          .from(Property, 'p')
+          .where('p.owner_id = user.id')
+          .andWhere('p.status = :status', {
+            status: PropertyStatusEnum.APPROVED,
+          });
+      }, 'approvedPropertyCount')
       .skip(params.skip)
       .take(params.perPage)
       .orderBy('user.createdAt', params.OrderSort);
@@ -121,41 +133,80 @@ export class UserService {
       });
     }
 
-    const [result, total] = await query.getManyAndCount();
+    const result = await query.getRawAndEntities();
+
+    const finalResult = result.entities.map((user, idx) => ({
+      ...user,
+      propertyCount:
+        parseInt(result.raw[idx]['approvedPropertyCount'], 10) || 0,
+    }));
 
     const pageMetaDto = new PageMetaDto({
-      itemCount: total,
+      itemCount: finalResult.length,
       pageOptionsDto: params,
     });
 
-    return new ResponsePaginate(result, pageMetaDto, 'Success');
+    return new ResponsePaginate(finalResult, pageMetaDto, 'Success');
   }
 
   async get(id: string) {
-    const user = await this.userRepository
+    const query = this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.role', 'role')
       .leftJoinAndSelect('user.locationInfo', 'locationInfo')
-      .where('user.id = :id', { id })
-      .getOne();
-    if (!user) {
+      .addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(p.id)', 'approvedPropertyCount')
+          .from(Property, 'p')
+          .where('p.owner_id = user.id')
+          .andWhere('p.status = :status', {
+            status: PropertyStatusEnum.APPROVED,
+          });
+      }, 'approvedPropertyCount')
+      .where('user.id = :id', { id });
+
+    const result = await query.getRawAndEntities();
+
+    if (!result.entities.length) {
       throw new BadRequestException('User not found');
     }
+
+    const user = {
+      ...result.entities[0],
+      propertyCount: parseInt(result.raw[0]['approvedPropertyCount'], 10) || 0,
+    };
+
     return { user, message: 'Success' };
   }
 
   async getRandomUsersFromBank(limit = 10) {
-    const users = await this.userRepository
+    const query = this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.locationInfo', 'locationInfo')
-      .where("user.fromBank ->> 'isFromBank' = :fromBank", { fromBank: 'true' })
-      .getMany();
+      .addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(p.id)', 'approvedPropertyCount')
+          .from(Property, 'p')
+          .where('p.owner_id = user.id')
+          .andWhere('p.status = :status', {
+            status: PropertyStatusEnum.APPROVED,
+          });
+      }, 'approvedPropertyCount')
+      .where("user.fromBank ->> 'isFromBank' = :fromBank", {
+        fromBank: 'true',
+      });
 
-    if (!users.length) {
-      return [];
-    }
+    const result = await query.getRawAndEntities();
 
-    const shuffled = users.sort(() => 0.5 - Math.random());
+    if (!result.entities.length) return [];
+
+    const usersWithCount = result.entities.map((user, idx) => ({
+      ...user,
+      propertyCount:
+        parseInt(result.raw[idx]['approvedPropertyCount'], 10) || 0,
+    }));
+
+    const shuffled = usersWithCount.sort(() => 0.5 - Math.random());
 
     return shuffled.slice(0, limit);
   }
@@ -295,6 +346,15 @@ export class UserService {
     const query = this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.role', 'role')
+      .addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(p.id)', 'approvedPropertyCount')
+          .from(Property, 'p')
+          .where('p.owner_id = user.id')
+          .andWhere('p.status = :status', {
+            status: PropertyStatusEnum.APPROVED,
+          });
+      }, 'approvedPropertyCount')
       .where(`"user"."fromBank"->>'requested' = :requested`, {
         requested: 'true',
       })
@@ -322,17 +382,20 @@ export class UserService {
       query.andWhere('role.name = :role', { role: params.role });
     }
 
-    const [result, total] = await query
-      .skip(params.skip)
-      .take(params.perPage)
-      .getManyAndCount();
+    const result = await query.getRawAndEntities();
+
+    const finalResult = result.entities.map((user, idx) => ({
+      ...user,
+      propertyCount:
+        parseInt(result.raw[idx]['approvedPropertyCount'], 10) || 0,
+    }));
 
     const pageMetaDto = new PageMetaDto({
-      itemCount: total,
+      itemCount: finalResult.length,
       pageOptionsDto: params,
     });
 
-    return new ResponsePaginate(result, pageMetaDto, 'Success');
+    return new ResponsePaginate(finalResult, pageMetaDto, 'Success');
   }
 
   async requestRoleUpgrade(

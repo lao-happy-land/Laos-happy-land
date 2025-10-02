@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { PropertySubscriber } from 'src/entities/property.subscriber';
 
 @Module({
   imports: [
@@ -17,8 +16,7 @@ import { PropertySubscriber } from 'src/entities/property.subscriber';
         synchronize: true,
         ssl: {
           rejectUnauthorized: false,
-        },
-        subscribers: [PropertySubscriber],
+        }
       }),
       inject: [ConfigService],
     }),
