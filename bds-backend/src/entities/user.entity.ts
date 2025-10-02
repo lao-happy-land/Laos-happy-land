@@ -90,9 +90,6 @@ export class User extends AbstractEntity {
   @Column({ nullable: true })
   company?: string;
 
-  @Column({ type: 'boolean', default: false })
-  verified: boolean;
-
   @OneToMany(() => UserFeedback, (fb) => fb.user)
   feedbacks: UserFeedback[];
 

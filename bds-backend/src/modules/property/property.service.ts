@@ -236,12 +236,6 @@ export class PropertyService {
       );
     }
 
-    if (params.isVerified !== undefined) {
-      properties.andWhere('property.isVerified = :isVerified', {
-        isVerified: params.isVerified,
-      });
-    }
-
     if (params.location) {
       properties.andWhere(
         `(property.location ->> 'address') ILIKE :location OR 
