@@ -7,6 +7,7 @@ import { Breadcrumb, Tag, Button, Typography } from "antd";
 import { MapPin, Shield } from "lucide-react";
 import MapboxModal from "@/components/business/common/mapbox-modal";
 import { useUrlLocale } from "@/utils/locale";
+import { useRouter } from "next/navigation";
 
 const { Text } = Typography;
 
@@ -57,6 +58,7 @@ export default function HeaderBar({
   const t = useTranslations();
   const [mapModalOpen, setMapModalOpen] = useState(false);
   const locale = useUrlLocale();
+  const router = useRouter();
   return (
     <>
       <div className="mb-4">
@@ -64,31 +66,36 @@ export default function HeaderBar({
           items={[
             {
               title: (
-                <Link href="/">
-                  <span className="inline-flex items-center gap-1">
-                    {t("navigation.home")}
-                  </span>
-                </Link>
+                <button
+                  className="cursor-pointer font-semibold text-gray-400 hover:text-blue-500"
+                  onClick={() => router.push(`/${locale}`)}
+                >
+                  {t("navigation.home")}
+                </button>
               ),
             },
             {
               title: (
-                <Link
-                  href={
+                <button
+                  type="button"
+                  className="cursor-pointer font-semibold text-gray-400 hover:text-blue-500"
+                  onClick={() =>
                     transactionType === "project"
-                      ? `${locale}/properties-for-project`
+                      ? router.push(`/${locale}/properties-for-project`)
                       : transactionType === "rent"
-                        ? `${locale}/properties-for-rent`
-                        : `${locale}/properties-for-sale`
+                        ? router.push(`/${locale}/properties-for-rent`)
+                        : router.push(`/${locale}/properties-for-sale`)
                   }
                 >
                   {t("navigation.properties")}
-                </Link>
+                </button>
               ),
             },
             {
               title: (
-                <span className="text-gray-700">{t("common.details")}</span>
+                <span className="font-bold text-blue-500">
+                  {t("common.details")}
+                </span>
               ),
             },
           ]}
