@@ -22,6 +22,7 @@ COPY --from=builder /app/package.json /app/pnpm-lock.yaml* ./
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/next.config.js ./
 
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
