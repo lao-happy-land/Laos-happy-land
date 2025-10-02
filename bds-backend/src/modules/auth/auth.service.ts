@@ -73,9 +73,48 @@ export class AuthService {
       fullName: user.fullName,
       role: user.role.name,
     };
-    return {
-      access_token: await this.jwtService.signAsync(payload),
-    };
+
+    const access_token = await this.jwtService.signAsync(payload, {
+      secret: process.env.JWT_LOGIN_SECRET,
+      expiresIn: '7d',
+    });
+
+    const refresh_token = await this.jwtService.signAsync(payload, {
+      secret: process.env.JWT_REFRESH_SECRET,
+      expiresIn: '7d',
+    });
+    return { access_token, refresh_token };
+  }
+
+  async refreshToken(refreshToken: string) {
+    try {
+      const payload = await this.jwtService.verifyAsync(refreshToken, {
+        secret: process.env.JWT_REFRESH_SECRET,
+      });
+
+      const user = await this.userRepository.findOne({
+        where: { id: payload.sub },
+        relations: ['role'],
+      });
+
+      if (!user) throw new UnauthorizedException('User not found');
+
+      const newPayload = {
+        sub: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role.name,
+      };
+
+      const newAccessToken = await this.jwtService.signAsync(newPayload, {
+        secret: process.env.JWT_LOGIN_SECRET,
+        expiresIn: '7d',
+      });
+
+      return { access_token: newAccessToken };
+    } catch {
+      throw new UnauthorizedException('Refresh token expired or invalid');
+    }
   }
 
   hashPassword(password: string, salt: string): string {
@@ -114,7 +153,7 @@ export class AuthService {
 
   async validateUserFromGoogle(
     profile: Profile,
-  ): Promise<{ access_token: string }> {
+  ): Promise<{ access_token: string; refresh_token: string }> {
     const { emails, displayName } = profile;
     const salt = crypto.randomBytes(16).toString('hex');
     const email = emails[0].value;
@@ -147,13 +186,22 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       fullName: user.fullName,
-      role: user.role.name
+      role: user.role.name,
     };
 
-    const access_token = await this.jwtService.signAsync(payload);
+    const access_token = await this.jwtService.signAsync(payload, {
+      secret: process.env.JWT_LOGIN_SECRET,
+      expiresIn: '2h',
+    });
+
+    const refresh_token = await this.jwtService.signAsync(payload, {
+      secret: process.env.JWT_REFRESH_SECRET,
+      expiresIn: '7d',
+    });
 
     return {
       access_token,
+      refresh_token,
     };
   }
 

@@ -23,6 +23,7 @@ import { ExchangeRateService } from '../exchange-rate/exchange-rate.service';
 import { LocationInfo } from 'src/entities/location-info.entity';
 import { GetPropertyDetailDto } from './dto/get_property_id.dto';
 import { GetPropertyByUserDto } from './dto/get_property_by_user.dto';
+import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
 export class PropertyService {
@@ -133,6 +134,7 @@ export class PropertyService {
     const properties = this.propertyRepository
       .createQueryBuilder('property')
       .leftJoinAndSelect('property.owner', 'owner')
+      .leftJoinAndSelect('owner.role', 'role')
       .leftJoinAndSelect('property.type', 'type')
       .leftJoinAndSelect('property.locationInfo', 'locationInfo')
       .skip(params.skip)
@@ -238,11 +240,17 @@ export class PropertyService {
       ? result.map((item) => this.formatProperty(item, params.currency))
       : result;
 
+    const serializedResult = instanceToPlain(finalResult);
+
     const pageMetaDto = new PageMetaDto({
       itemCount: total,
       pageOptionsDto: params,
     });
-    return new ResponsePaginate(finalResult as any, pageMetaDto, 'Success');
+    return new ResponsePaginate(
+      serializedResult as any,
+      pageMetaDto,
+      'Success',
+    );
   }
 
   async getSimilarProperties(propertyId: string, params: GetPropertyByUserDto) {
@@ -259,6 +267,8 @@ export class PropertyService {
       .createQueryBuilder('p')
       .leftJoinAndSelect('p.type', 'type')
       .leftJoinAndSelect('p.locationInfo', 'locationInfo')
+      .leftJoinAndSelect('p.owner', 'owner')
+      .leftJoinAndSelect('owner.role', 'role')
       .where('p.id != :propertyId', { propertyId });
 
     if (property.type?.id) {
@@ -275,23 +285,29 @@ export class PropertyService {
 
     const [result, total] = await qb.getManyAndCount();
 
-    // Chỉ định currency khi format, không filter trực tiếp JSONB
     const finalResult = params.currency
       ? result.map((item) => this.formatProperty(item, params.currency))
       : result;
+
+    const serializedResult = instanceToPlain(finalResult);
 
     const pageMetaDto = new PageMetaDto({
       itemCount: total,
       pageOptionsDto: params,
     });
 
-    return new ResponsePaginate(finalResult as any, pageMetaDto, 'Success');
+    return new ResponsePaginate(
+      serializedResult as any,
+      pageMetaDto,
+      'Success',
+    );
   }
 
   async get(id: string, params: GetPropertyDetailDto) {
     const qb = this.propertyRepository
       .createQueryBuilder('property')
       .leftJoinAndSelect('property.owner', 'owner')
+      .leftJoinAndSelect('owner.role', 'role')
       .leftJoinAndSelect('property.type', 'type')
       .leftJoinAndSelect('property.locationInfo', 'locationInfo')
       .where('property.id = :id', { id });
@@ -317,8 +333,11 @@ export class PropertyService {
       }
     }
 
+    const formattedProperty = this.formatProperty(property, params.currency);
+    const serializedProperty = instanceToPlain(formattedProperty);
+
     return {
-      property: this.formatProperty(property, params.currency),
+      property: serializedProperty,
       message: 'Success',
     };
   }
@@ -331,6 +350,8 @@ export class PropertyService {
       .createQueryBuilder('property')
       .leftJoinAndSelect('property.type', 'type')
       .leftJoinAndSelect('property.locationInfo', 'locationInfo')
+      .leftJoinAndSelect('property.owner', 'owner')
+      .leftJoinAndSelect('owner.role', 'role')
       .where('property.owner_id = :userId', { userId })
       .orderBy('property.createdAt', 'DESC')
       .skip(params.skip)
@@ -342,11 +363,17 @@ export class PropertyService {
       ? properties.map((item) => this.formatProperty(item, params.currency))
       : properties;
 
+    const serializedResult = instanceToPlain(finalResult);
+
     const pageMetaDto = new PageMetaDto({
       itemCount: total,
       pageOptionsDto: params,
     });
-    return new ResponsePaginate(finalResult as any, pageMetaDto, 'Success');
+    return new ResponsePaginate(
+      serializedResult as any,
+      pageMetaDto,
+      'Success',
+    );
   }
 
   async getByUserId(userId: string, params: GetPropertyByUserDto) {
@@ -354,6 +381,7 @@ export class PropertyService {
       .createQueryBuilder('property')
       .leftJoinAndSelect('property.type', 'type')
       .leftJoinAndSelect('property.owner', 'owner')
+      .leftJoinAndSelect('owner.role', 'role')
       .leftJoinAndSelect('property.locationInfo', 'locationInfo')
       .where('property.owner_id = :userId', { userId })
       .orderBy('property.createdAt', 'DESC')
@@ -365,13 +393,18 @@ export class PropertyService {
     const finalResult = params.currency
       ? properties.map((item) => this.formatProperty(item, params.currency))
       : properties;
+    const serializedResult = instanceToPlain(finalResult);
 
     const pageMetaDto = new PageMetaDto({
       itemCount: total,
       pageOptionsDto: params,
     });
 
-    return new ResponsePaginate(finalResult as any, pageMetaDto, 'Success');
+    return new ResponsePaginate(
+      serializedResult as any,
+      pageMetaDto,
+      'Success',
+    );
   }
 
   async update(id: string, updatePropertyDto: UpdatePropertyDto) {
