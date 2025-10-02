@@ -227,32 +227,76 @@ export default function Header({
                 ))}
 
                 {/* More menu for remaining items */}
-                {NAV_ITEMS.length > 3 && (
-                  <Dropdown
-                    menu={{
-                      items: NAV_ITEMS.slice(3).map((item) => ({
-                        key: item.key,
-                        icon: item.icon,
-                        label: item.href ? (
-                          <Link href={item.href}>{item.title}</Link>
-                        ) : (
-                          <span className="cursor-not-allowed text-neutral-400">
+                <div className="hidden lg:block 2xl:hidden">
+                  {NAV_ITEMS.length > 3 && (
+                    <Dropdown
+                      menu={{
+                        items: NAV_ITEMS.slice(3).map((item) => ({
+                          key: item.key,
+                          icon: item.icon,
+                          label: item.href ? (
+                            <Link href={item.href}>{item.title}</Link>
+                          ) : (
+                            <span className="cursor-not-allowed text-neutral-400">
+                              {item.title}
+                            </span>
+                          ),
+                          disabled: !item.href,
+                        })),
+                      }}
+                      trigger={["click"]}
+                      placement="bottom"
+                    >
+                      <Tooltip placement="right" title={t("navigation.more")}>
+                        <Button type="text">
+                          <MoreHorizontal className="h-4 w-4 text-neutral-500" />
+                        </Button>
+                      </Tooltip>
+                    </Dropdown>
+                  )}
+                </div>
+                <div className="hidden items-center space-x-1 2xl:flex">
+                  {NAV_ITEMS.slice(3).map((item) => (
+                    <div key={item.key}>
+                      {item.href ? (
+                        <Link
+                          href={item.href}
+                          className={`hover:bg-primary-50 hover:text-primary-500 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                            getSelectedKeys().includes(item.key)
+                              ? "bg-primary-50 text-primary-500"
+                              : "text-neutral-600"
+                          }`}
+                        >
+                          <span
+                            className={
+                              getSelectedKeys().includes(item.key)
+                                ? "text-primary-500"
+                                : "text-neutral-500"
+                            }
+                          >
+                            {item.icon}
+                          </span>
+                          <span
+                            className={`whitespace-nowrap ${
+                              getSelectedKeys().includes(item.key)
+                                ? "text-primary-500"
+                                : "text-neutral-600"
+                            }`}
+                          >
                             {item.title}
                           </span>
-                        ),
-                        disabled: !item.href,
-                      })),
-                    }}
-                    trigger={["click"]}
-                    placement="bottom"
-                  >
-                    <Tooltip placement="right" title={t("navigation.more")}>
-                      <Button type="text">
-                        <MoreHorizontal className="h-4 w-4 text-neutral-500" />
-                      </Button>
-                    </Tooltip>
-                  </Dropdown>
-                )}
+                        </Link>
+                      ) : (
+                        <span className="flex cursor-not-allowed items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-500 opacity-60">
+                          <span className="text-neutral-400">{item.icon}</span>
+                          <span className="whitespace-nowrap">
+                            {item.title}
+                          </span>
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </nav>
             </div>
 
@@ -340,8 +384,23 @@ export default function Header({
       <Drawer
         title={
           <div className="flex items-center space-x-3">
-            <Building2 className="h-6 w-6 text-orange-600" />
-            <span className="text-lg font-bold text-orange-600">Lào BDS</span>
+            <div className="flex h-8 w-8 items-center justify-center">
+              <Image
+                src="/images/logo.png"
+                alt="Logo"
+                width={32}
+                height={32}
+                className="h-full w-full object-contain"
+              />
+            </div>
+            <div>
+              <div className="text-primary-500 text-base font-bold">
+                Laohappyland
+              </div>
+              <div className="text-xs text-gray-500">
+                No.1 property platform
+              </div>
+            </div>
           </div>
         }
         placement="right"

@@ -101,7 +101,7 @@ export type PropertyPrice = {
 
 export type PropertyPriceHistory = {
   date: string;
-  rates: string;
+  rates: string | PropertyPrice;
 };
 
 export type Property = {
