@@ -1,5 +1,5 @@
 import { AbstractEntity } from 'src/common/entities';
-import { RoleEnum } from 'src/common/enum/enum';
+import { PropertyStatusEnum, RoleEnum } from 'src/common/enum/enum';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -66,8 +66,6 @@ export class User extends AbstractEntity {
     processedAt?: Date;
   };
 
-  @Column({ type: 'int', default: 0 })
-  propertyCount: number;
 
   @Column({ type: 'int', default: 0 })
   experienceYears: number;
@@ -102,6 +100,11 @@ export class User extends AbstractEntity {
   @Expose()
   get isBroker(): boolean {
     return this.role?.name === 'Broker'; // hoặc RoleEnum.BROKER
+  }
+
+  @Expose()
+  get approvedPropertyCount(): number {
+    return this.properties?.filter(p => p.status === PropertyStatusEnum.APPROVED).length || 0;
   }
 
   constructor(user: Partial<User>) {
