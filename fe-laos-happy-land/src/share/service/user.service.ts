@@ -49,23 +49,8 @@ export const userService = {
     return response.data as unknown as UserRole[];
   },
 
-  updateProfile: async (id: string, formData: FormData) => {
+  updateProfile: async (id: string, updateData: UpdateUserDto) => {
     try {
-      const updateData: UpdateUserDto = {};
-      for (const [key, value] of formData.entries()) {
-        if (key === "image" && value instanceof File) {
-          updateData.image = value;
-        } else if (key === "fullName") {
-          updateData.fullName = value as string;
-        } else if (key === "phone") {
-          updateData.phone = value as string;
-        } else if (key === "location") {
-          // Note: The UpdateUserDto doesn't include location field
-          // For now we'll skip it, but in a real scenario we'd need to update the API
-          // updateData.location = value as string;
-        }
-      }
-
       const response = await api.userControllerUpdate(id, updateData);
 
       return response.data as unknown as { user: User; message: string };

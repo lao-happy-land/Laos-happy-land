@@ -12,7 +12,6 @@ import DetailsSection from "@/components/business/property-details/details-secti
 import ContactCard from "@/components/business/property-details/contact-card";
 import LoanCalculator from "@/components/business/loan-calculator/loan-calculator";
 import SimilarProperties from "@/components/business/property-details/similar-properties";
-import BankUsers from "@/components/business/property-details/bank-users";
 import { useRequest } from "ahooks";
 import propertyService from "@/share/service/property.service";
 
