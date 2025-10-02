@@ -49,41 +49,11 @@ export class UserService {
     });
     if (!role) throw new BadRequestException('Role not found');
 
-    let locationData: any = null;
-    if (createUserDto.location) {
-      if (typeof createUserDto.location === 'string') {
-        try {
-          locationData = JSON.parse(createUserDto.location);
-        } catch {
-          throw new BadRequestException('Invalid location format');
-        }
-      } else {
-        locationData = createUserDto.location;
-      }
-    }
-
-    let locationInfo: LocationInfo = null;
-    if (locationData?.province && locationData?.district) {
-      let provinceInfo = await this.entityManager.findOne(LocationInfo, {
-        where: { name: locationData.province },
-      });
-
-      if (!provinceInfo) {
-        provinceInfo = this.entityManager.create(LocationInfo, {
-          name: locationData.province,
-          strict: [locationData.district],
-          viewCount: 0,
-        });
-        await this.entityManager.save(provinceInfo);
-      } else {
-        const strictList = provinceInfo.strict || [];
-        if (!strictList.includes(locationData.district)) {
-          provinceInfo.strict = [...strictList, locationData.district];
-          await this.entityManager.save(provinceInfo);
-        }
-      }
-
-      locationInfo = provinceInfo;
+    const locationInfo = await this.entityManager.findOneBy(LocationInfo, {
+      id: createUserDto.locationInfoId,
+    });
+    if (!locationInfo) {
+      throw new BadRequestException('Location info not found');
     }
 
     let avatarUrl: string | null = null;
@@ -165,6 +135,7 @@ export class UserService {
     const user = await this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.role', 'role')
+      .leftJoinAndSelect('user.locationInfo', 'locationInfo')
       .where('user.id = :id', { id })
       .getOne();
     if (!user) {
@@ -176,6 +147,7 @@ export class UserService {
   async getRandomUsersFromBank(limit = 10) {
     const users = await this.userRepository
       .createQueryBuilder('user')
+      .leftJoinAndSelect('user.locationInfo', 'locationInfo')
       .where("user.fromBank ->> 'isFromBank' = :fromBank", { fromBank: 'true' })
       .getMany();
 
@@ -208,44 +180,13 @@ export class UserService {
         user.role = role;
       }
 
-      if (updateUserDto.location) {
-        let locationData: LocationDto;
-
-        if (typeof updateUserDto.location === 'string') {
-          try {
-            locationData = JSON.parse(updateUserDto.location);
-          } catch {
-            throw new BadRequestException('Invalid location format');
-          }
-        } else {
-          locationData = updateUserDto.location;
+      if (updateUserDto.locationInfoId) {
+        const locationInfo = await this.entityManager.findOneBy(LocationInfo, {
+          id: updateUserDto.locationInfoId,
+        });
+        if (!locationInfo) {
+          throw new BadRequestException('Location info not found');
         }
-
-        let locationInfo: LocationInfo = null;
-
-        if (locationData.province && locationData.district) {
-          let provinceInfo = await this.entityManager.findOne(LocationInfo, {
-            where: { name: locationData.province },
-          });
-
-          if (!provinceInfo) {
-            provinceInfo = this.entityManager.create(LocationInfo, {
-              name: locationData.province,
-              strict: [locationData.district],
-              viewCount: 0,
-            });
-            await this.entityManager.save(provinceInfo);
-          } else {
-            const strictList = provinceInfo.strict || [];
-            if (!strictList.includes(locationData.district)) {
-              provinceInfo.strict = [...strictList, locationData.district];
-              await this.entityManager.save(provinceInfo);
-            }
-          }
-
-          locationInfo = provinceInfo;
-        }
-
         user.locationInfo = locationInfo;
       }
       if (image) {
@@ -269,6 +210,9 @@ export class UserService {
       }
       if (updateUserDto.certifications) {
         user.certifications = updateUserDto.certifications;
+      }
+      if (updateUserDto.company) {
+        user.company = updateUserDto.company;
       }
     }
     return await this.entityManager.save(user);
@@ -391,7 +335,12 @@ export class UserService {
     return new ResponsePaginate(result, pageMetaDto, 'Success');
   }
 
-  async requestRoleUpgrade(id: string, note?: string) {
+  async requestRoleUpgrade(
+    id: string,
+    image?: Multer.File,
+    note?: string,
+    phone?: string,
+  ) {
     const user = await this.userRepository.findOne({
       where: { id },
       relations: ['role'],
@@ -409,8 +358,19 @@ export class UserService {
         'User already has a pending role upgrade request',
       );
     }
+
+    let imageUrl: string | null = null;
+    if (image) {
+      imageUrl = await this.cloudinaryService.uploadAndReturnImageUrl(image);
+    }
+
+    if (phone && !user.phone) {
+      user.phone = phone;
+    }
     user.roleRequests = {
       requested: true,
+      imageUrl: imageUrl || null,
+      phone: phone || null,
       note: note || null,
       requestedAt: new Date(),
     };
@@ -444,6 +404,7 @@ export class UserService {
     }
 
     user.roleRequests = {
+      ...roleRequests,
       requested: false,
       note: approve ? 'Approved by admin' : 'Rejected by admin',
       processedAt: new Date(),
