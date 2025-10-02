@@ -15,8 +15,8 @@ const config = {
   },
   // Enable experimental features for better image handling
   experimental: {
-    // Optimize images better
-    optimizeCss: true,
+    // Note: optimizeCss requires critters package which may cause build issues
+    // optimizeCss: true,
   },
   images: {
     remotePatterns: [

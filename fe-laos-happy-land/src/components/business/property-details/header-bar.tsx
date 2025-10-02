@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Breadcrumb, Tag, Button, Typography } from "antd";
