@@ -6,31 +6,6 @@
  * ----------------------------------------------------------------------
  */
 
-export interface LocationDto {
-  /** @example 21.028511 */
-  latitude?: number;
-  /** @example 105.804817 */
-  longitude?: number;
-  /** @example "123 Nguyễn Huệ, Quận 1, TP.HCM" */
-  address?: string;
-  /** @example "Hà Nội" */
-  city?: string;
-  /** @example "Vietnam" */
-  country?: string;
-  /** @example "12A" */
-  buildingNumber?: string;
-  /** @example "Nguyễn Huệ" */
-  street?: string;
-  /** @example "Quận 1" */
-  district?: string;
-  /** @example "TP.HCM" */
-  province?: string;
-  /** @example "700000" */
-  postalCode?: string;
-  /** @example "Bến Nghé" */
-  neighborhood?: string;
-}
-
 export interface CreateUserDto {
   /**
    * Full name of the user
@@ -57,8 +32,11 @@ export interface CreateUserDto {
    * @example "f2f6f4f0-6b6b-4b8c-9b87-5f6a6c6a6c6a"
    */
   roleId: string;
-  /** Location info of the user */
-  location?: LocationDto;
+  /**
+   * Location Info ID of the user
+   * @example "f2f6f4f0-6b6b-4b8c-9b87-5f6a6c6a6c6a"
+   */
+  locationInfoId?: string;
   /**
    * Avatar of the user
    * @format binary
@@ -89,11 +67,6 @@ export interface CreateUserDto {
    * @example "ABC Real Estate"
    */
   company?: string;
-  /**
-   * Verified status of the user
-   * @example true
-   */
-  verified?: boolean;
 }
 
 export interface UpdateUserDto {
@@ -117,8 +90,11 @@ export interface UpdateUserDto {
    * @example "f2f6f4f0-6b6b-4b8c-9b87-5f6a6c6a6c6a"
    */
   roleId?: string;
-  /** Location info of the user */
-  location?: LocationDto;
+  /**
+   * Location Info ID of the user
+   * @example "f2f6f4f0-6b6b-4b8c-9b87-5f6a6c6a6c6a"
+   */
+  locationInfoId?: string;
   /**
    * Avatar of the user
    * @format binary
@@ -149,11 +125,6 @@ export interface UpdateUserDto {
    * @example "ABC Real Estate"
    */
   company?: string;
-  /**
-   * Verified status of the user
-   * @example true
-   */
-  verified?: boolean;
 }
 
 export interface RegisterDto {
@@ -192,11 +163,41 @@ export interface LoginDto {
   password: string;
 }
 
+export interface RefreshTokenDto {
+  /** Refresh token JWT */
+  refresh_token: string;
+}
+
 export interface ResetPasswordDto {
   /** Email of the user */
   email: string;
   /** New password for the user */
   newPassword: string;
+}
+
+export interface LocationDto {
+  /** @example 21.028511 */
+  latitude?: number;
+  /** @example 105.804817 */
+  longitude?: number;
+  /** @example "123 Nguyễn Huệ, Quận 1, TP.HCM" */
+  address?: string;
+  /** @example "Hà Nội" */
+  city?: string;
+  /** @example "Vietnam" */
+  country?: string;
+  /** @example "12A" */
+  buildingNumber?: string;
+  /** @example "Nguyễn Huệ" */
+  street?: string;
+  /** @example "Quận 1" */
+  district?: string;
+  /** @example "TP.HCM" */
+  province?: string;
+  /** @example "700000" */
+  postalCode?: string;
+  /** @example "Bến Nghé" */
+  neighborhood?: string;
 }
 
 export interface CreatePropertyDto {
@@ -205,6 +206,11 @@ export interface CreatePropertyDto {
    * @example "f2f6f4f0-6b6b-4b8c-9b87-5f6a6c6a6c6a"
    */
   typeId: string;
+  /**
+   * ID của LocationInfo
+   * @example "d7f6a6a0-1234-5678-9876-abcdefabcdef"
+   */
+  locationInfoId: string;
   /**
    * Tiêu đề tin rao
    * @example "Căn hộ cao cấp 2PN tại Quận 1, view sông tuyệt đẹp"
@@ -249,6 +255,11 @@ export interface UpdatePropertyDto {
    * @example "f2f6f4f0-6b6b-4b8c-9b87-5f6a6c6a6c6a"
    */
   typeId?: string;
+  /**
+   * ID của LocationInfo
+   * @example "d7f6a6a0-1234-5678-9876-abcdefabcdef"
+   */
+  locationInfoId?: string;
   /**
    * Tiêu đề tin rao
    * @example "Căn hộ cao cấp 2PN tại Quận 1, view sông tuyệt đẹp"
@@ -833,6 +844,9 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       id: string,
       data: {
         note?: string | null;
+        phone?: string | null;
+        /** @format binary */
+        image?: File | null;
       },
       params: RequestParams = {},
     ) =>
@@ -840,7 +854,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         path: `/api/user/${id}/request-role-upgrade`,
         method: "PATCH",
         body: data,
-        type: ContentType.Json,
+        type: ContentType.FormData,
         ...params,
       }),
 
@@ -896,6 +910,23 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     authControllerLogin: (data: LoginDto, params: RequestParams = {}) =>
       this.request<void, void>({
         path: `/api/auth/login`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Auth
+     * @name AuthControllerRefresh
+     * @summary Refresh access token
+     * @request POST:/api/auth/refresh
+     */
+    authControllerRefresh: (data: RefreshTokenDto, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/auth/refresh`,
         method: "POST",
         body: data,
         type: ContentType.Json,
@@ -1001,8 +1032,6 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         location?: string;
         /** Trạng thái bán/cho thuê */
         transaction?: "rent" | "sale" | "project";
-        /** Trạng thái xác minh */
-        isVerified?: boolean;
         /** Trạng thái hệ thống */
         status?: "pending" | "approved" | "rejected";
       },
@@ -1885,6 +1914,21 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       this.request<void, any>({
         path: `/api/bank/${id}`,
         method: "DELETE",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Dashboard
+     * @name DashboardControllerGetDashboard
+     * @summary Get Dashboard
+     * @request GET:/api/dashboard
+     */
+    dashboardControllerGetDashboard: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/dashboard`,
+        method: "GET",
         ...params,
       }),
   };

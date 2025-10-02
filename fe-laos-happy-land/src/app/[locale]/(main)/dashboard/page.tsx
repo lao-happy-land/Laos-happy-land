@@ -9,7 +9,6 @@ import { Button, Tag, Breadcrumb, App } from "antd";
 import {
   Plus,
   Building2,
-  FileText,
   Eye,
   DollarSign,
   ArrowUpRight,
@@ -19,7 +18,6 @@ import {
 } from "lucide-react";
 import type { Property } from "@/@types/types";
 import propertyService from "@/share/service/property.service";
-import { newsService } from "@/share/service/news.service";
 import Image from "next/image";
 import {
   Card,
@@ -30,7 +28,6 @@ import {
   Space,
   Typography,
   Dropdown,
-  Empty,
   Spin,
 } from "antd";
 import { useTranslations } from "next-intl";
@@ -46,7 +43,6 @@ interface DashboardStats {
   totalProperties: number;
   totalViews: number;
   totalFavorites: number;
-  totalNews: number;
   propertiesThisMonth: number;
   viewsThisMonth: number;
   revenue: number;
@@ -63,14 +59,6 @@ export default function DashboardPage() {
   const t = useTranslations();
 
   const [properties, setProperties] = useState<Property[]>([]);
-  const [news, setNews] = useState<
-    Array<{
-      id: string;
-      title: string;
-      imageURL?: string;
-      createdAt: string;
-    }>
-  >([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
     current: 1,
@@ -93,7 +81,7 @@ export default function DashboardPage() {
   } = useRequest(
     async () => {
       if (!isAuthenticated) return null;
-      return propertyService.getProperties({
+      return propertyService.getPropertiesByUser({
         page: pagination.current,
         perPage: pagination.pageSize,
         currency: getCurrencyByLocale(locale as SupportedLocale),
@@ -116,21 +104,6 @@ export default function DashboardPage() {
     },
   );
 
-  const { data: newsData, loading: newsLoading } = useRequest(
-    async () => {
-      if (!isAuthenticated) return null;
-      return newsService.getAllNews({ page: 1, perPage: 5 });
-    },
-    {
-      refreshDeps: [isAuthenticated],
-      onSuccess: (data) => {
-        if (data?.data) {
-          setNews(data.data);
-        }
-      },
-    },
-  );
-
   // Calculate dashboard stats
   const stats: DashboardStats = useMemo(() => {
     const totalProperties = propertiesData?.meta?.itemCount ?? pagination.total;
@@ -139,17 +112,6 @@ export default function DashboardPage() {
       0,
     );
     const totalFavorites = properties.reduce((_sum, _prop) => 0, 0); // Assuming no favorites field
-    const totalNews =
-      (newsData &&
-      typeof newsData === "object" &&
-      "meta" in newsData &&
-      newsData.meta &&
-      typeof newsData.meta === "object" &&
-      "itemCount" in newsData.meta
-        ? (newsData.meta as { itemCount?: number }).itemCount
-        : undefined) ??
-      newsData?.data?.length ??
-      0;
 
     const propertiesThisMonth = properties.filter((prop) => {
       const propDate = new Date(prop.createdAt);
@@ -170,7 +132,6 @@ export default function DashboardPage() {
       totalProperties,
       totalViews,
       totalFavorites,
-      totalNews,
       propertiesThisMonth,
       viewsThisMonth,
       revenue,
@@ -178,15 +139,15 @@ export default function DashboardPage() {
       viewsGrowth,
       propertiesGrowth,
     };
-  }, [propertiesData, properties, newsData, pagination.total]);
+  }, [propertiesData, properties, pagination.total]);
 
   useEffect(() => {
-    if (propertiesLoading || newsLoading) {
+    if (propertiesLoading) {
       setLoading(true);
     } else {
       setLoading(false);
     }
-  }, [propertiesLoading, newsLoading]);
+  }, [propertiesLoading]);
 
   if (!isAuthenticated) {
     return null;
@@ -201,12 +162,12 @@ export default function DashboardPage() {
   }
 
   const getImageURL = (property: Property): string => {
-    if (property.transactionType === "project") {
-      return "/images/landingpage/project/project-1.jpg";
-    }
+    // Check if mainImage exists first (works for all transaction types)
     if (property.mainImage && typeof property.mainImage === "string") {
       return property.mainImage;
     }
+
+    // Check additional images
     if (
       property.images &&
       property.images.length > 0 &&
@@ -214,6 +175,12 @@ export default function DashboardPage() {
     ) {
       return property.images[0];
     }
+
+    // Fallback to default images based on transaction type
+    if (property.transactionType === "project") {
+      return "/images/landingpage/project/project-1.jpg";
+    }
+
     return "/images/landingpage/apartment/apart-1.jpg";
   };
 
@@ -423,123 +390,25 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <Row gutter={[16, 16]} className="mb-8">
-          <Col xs={24} sm={12} lg={6}>
-            <Card>
-              <Statistic
-                title={t("property.totalProperties")}
-                value={stats.totalProperties}
-                prefix={<Building2 className="h-4 w-4 text-blue-500" />}
-                suffix={
-                  <div className="flex items-center text-green-500">
-                    <ArrowUpRight className="h-3 w-3" />
-                    <span className="text-xs">+{stats.propertiesGrowth}%</span>
-                  </div>
-                }
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={6}>
-            <Card>
-              <Statistic
-                title={t("property.totalViews")}
-                value={stats.totalViews}
-                prefix={<Eye className="h-4 w-4 text-green-500" />}
-                suffix={
-                  <div className="flex items-center text-green-500">
-                    <ArrowUpRight className="h-3 w-3" />
-                    <span className="text-xs">+{stats.viewsGrowth}%</span>
-                  </div>
-                }
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={6}>
-            <Card>
-              <Statistic
-                title={t("property.totalNews")}
-                value={stats.totalNews}
-                prefix={<FileText className="h-4 w-4 text-purple-500" />}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={6}>
-            <Card>
-              <Statistic
-                title={t("property.revenue")}
-                value={stats.revenue}
-                prefix={<DollarSign className="h-4 w-4 text-orange-500" />}
-                suffix={
-                  <div className="flex items-center text-green-500">
-                    <ArrowUpRight className="h-3 w-3" />
-                    <span className="text-xs">+{stats.revenueGrowth}%</span>
-                  </div>
-                }
-              />
-            </Card>
-          </Col>
-        </Row>
-
-        {/* Charts and Tables */}
-        <Row gutter={[16, 16]}>
-          <Col xs={24} lg={16}>
-            <Card title={t("property.latestProperties")} className="mb-6">
-              <Table
-                columns={propertyColumns}
-                dataSource={properties}
-                rowKey="id"
-                loading={propertiesLoading}
-                pagination={{
-                  current: pagination.current,
-                  pageSize: pagination.pageSize,
-                  total: pagination.total,
-                  position: ["bottomCenter"],
-                  onChange: handleTableChange,
-                  onShowSizeChange: handleTableChange,
-                }}
-                size="small"
-                scroll={{ x: 800 }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} lg={8}>
-            <Card title={t("property.latestNews")} className="mb-6">
-              <div className="space-y-4">
-                {news.length > 0 ? (
-                  news.map((item) => (
-                    <div key={item.id} className="flex gap-3">
-                      <div className="h-12 w-12 overflow-hidden rounded">
-                        <Image
-                          src={
-                            item.imageURL && typeof item.imageURL === "string"
-                              ? item.imageURL
-                              : "/images/landingpage/market-news/market-new-1.jpg"
-                          }
-                          alt={item.title}
-                          width={48}
-                          height={48}
-                          className="h-full w-full object-cover"
-                          unoptimized
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <div className="line-clamp-2 text-sm font-medium">
-                          {item.title}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {new Date(item.createdAt).toLocaleDateString("vi-VN")}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <Empty description="Chưa có tin tức" />
-                )}
-              </div>
-            </Card>
-          </Col>
-        </Row>
+        {/* Properties Table */}
+        <Card title={t("property.latestProperties")} className="mb-6">
+          <Table
+            columns={propertyColumns}
+            dataSource={properties}
+            rowKey="id"
+            loading={propertiesLoading}
+            pagination={{
+              current: pagination.current,
+              pageSize: pagination.pageSize,
+              total: pagination.total,
+              position: ["bottomCenter"],
+              onChange: handleTableChange,
+              onShowSizeChange: handleTableChange,
+            }}
+            size="small"
+            scroll={{ x: 800 }}
+          />
+        </Card>
       </div>
     </div>
   );
