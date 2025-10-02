@@ -5,7 +5,7 @@ import { useRequest } from "ahooks";
 import { useRouter } from "next/navigation";
 import { useUrlLocale } from "@/utils/locale";
 import { useAuthStore } from "@/share/store/auth.store";
-import { Button, Tag, Breadcrumb } from "antd";
+import { Button, Tag, Breadcrumb, App } from "antd";
 import {
   Plus,
   Building2,
@@ -16,7 +16,6 @@ import {
   MoreHorizontal,
   Edit,
   Trash2,
-  Eye as EyeIcon,
 } from "lucide-react";
 import type { Property } from "@/@types/types";
 import propertyService from "@/share/service/property.service";
@@ -30,12 +29,16 @@ import {
   Table,
   Space,
   Typography,
-  Tooltip,
   Dropdown,
   Empty,
   Spin,
 } from "antd";
 import { useTranslations } from "next-intl";
+import { numberToString } from "@/share/helper/number-to-string";
+import {
+  getCurrencyByLocale,
+  type SupportedLocale,
+} from "@/share/helper/locale.helper";
 
 const { Title, Text } = Typography;
 
@@ -53,6 +56,7 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
+  const { message, modal } = App.useApp();
   const { user, isAuthenticated } = useAuthStore();
   const router = useRouter();
   const locale = useUrlLocale();
@@ -68,6 +72,11 @@ export default function DashboardPage() {
     }>
   >([]);
   const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -77,16 +86,31 @@ export default function DashboardPage() {
   }, [isAuthenticated, router, locale]);
 
   // Fetch dashboard data
-  const { data: propertiesData, loading: propertiesLoading } = useRequest(
+  const {
+    data: propertiesData,
+    loading: propertiesLoading,
+    run: refetchProperties,
+  } = useRequest(
     async () => {
       if (!isAuthenticated) return null;
-      return propertyService.getProperties({ page: 1, perPage: 10 });
+      return propertyService.getProperties({
+        page: pagination.current,
+        perPage: pagination.pageSize,
+        currency: getCurrencyByLocale(locale as SupportedLocale),
+      });
     },
     {
-      refreshDeps: [isAuthenticated],
+      refreshDeps: [isAuthenticated, pagination.current, pagination.pageSize],
       onSuccess: (data) => {
         if (data?.data) {
           setProperties(data.data);
+          // Update total count from API response
+          if (data.meta) {
+            setPagination((prev) => ({
+              ...prev,
+              total: data.meta.itemCount || 0,
+            }));
+          }
         }
       },
     },
@@ -109,13 +133,23 @@ export default function DashboardPage() {
 
   // Calculate dashboard stats
   const stats: DashboardStats = useMemo(() => {
-    const totalProperties = propertiesData?.data?.length ?? 0;
+    const totalProperties = propertiesData?.meta?.itemCount ?? pagination.total;
     const totalViews = properties.reduce(
       (sum, prop) => sum + (prop.viewsCount || 0),
       0,
     );
     const totalFavorites = properties.reduce((_sum, _prop) => 0, 0); // Assuming no favorites field
-    const totalNews = newsData?.data?.length ?? 0;
+    const totalNews =
+      (newsData &&
+      typeof newsData === "object" &&
+      "meta" in newsData &&
+      newsData.meta &&
+      typeof newsData.meta === "object" &&
+      "itemCount" in newsData.meta
+        ? (newsData.meta as { itemCount?: number }).itemCount
+        : undefined) ??
+      newsData?.data?.length ??
+      0;
 
     const propertiesThisMonth = properties.filter((prop) => {
       const propDate = new Date(prop.createdAt);
@@ -144,7 +178,7 @@ export default function DashboardPage() {
       viewsGrowth,
       propertiesGrowth,
     };
-  }, [propertiesData, properties, newsData]);
+  }, [propertiesData, properties, newsData, pagination.total]);
 
   useEffect(() => {
     if (propertiesLoading || newsLoading) {
@@ -166,23 +200,21 @@ export default function DashboardPage() {
     );
   }
 
-  const formatPrice = (price: unknown) => {
-    if (!price) return t("common.contact");
-    if (typeof price === "object" && price && "LAK" in price) {
-      const lakPrice = (price as { LAK: number }).LAK;
-      return `${(lakPrice / 1000000).toFixed(1)}M LAK`;
+  const getImageURL = (property: Property): string => {
+    if (property.transactionType === "project") {
+      return "/images/landingpage/project/project-1.jpg";
     }
-    return t("common.contact");
-  };
-
-  const getImageURL = (property: Property) => {
-    if (property.mainImage) {
+    if (property.mainImage && typeof property.mainImage === "string") {
       return property.mainImage;
     }
-    if (property.images && property.images.length > 0) {
+    if (
+      property.images &&
+      property.images.length > 0 &&
+      typeof property.images[0] === "string"
+    ) {
       return property.images[0];
     }
-    return "/images/placeholder-property.jpg";
+    return "/images/landingpage/apartment/apart-1.jpg";
   };
 
   const getStatusColor = (status: string) => {
@@ -211,6 +243,35 @@ export default function DashboardPage() {
     }
   };
 
+  const handleTableChange = (page: number, pageSize: number) => {
+    setPagination({
+      current: page,
+      pageSize,
+      total: pagination.total,
+    });
+  };
+
+  const handleDeleteProperty = (property: Property) => {
+    modal.confirm({
+      title: t("common.deleteConfirm"),
+      content: `${t("common.deleteConfirmMessage")} "${property.title}"?`,
+      okText: t("common.delete"),
+      cancelText: t("common.cancel"),
+      okType: "danger",
+      onOk: async () => {
+        try {
+          await propertyService.deleteProperty(property.id);
+          message.success(t("common.deleteSuccess"));
+          // Refetch properties after successful deletion
+          refetchProperties();
+        } catch (error) {
+          console.error("Error deleting property:", error);
+          message.error(t("common.deleteFailed"));
+        }
+      },
+    });
+  };
+
   const propertyColumns = [
     {
       title: t("property.image"),
@@ -220,10 +281,11 @@ export default function DashboardPage() {
       render: (_: unknown, record: Property) => (
         <div className="relative h-12 w-16 overflow-hidden rounded">
           <Image
-            src={getImageURL(record) ?? "/images/placeholder-property.jpg"}
+            src={getImageURL(record)}
             alt={record.title}
             fill
             className="object-cover"
+            unoptimized
           />
         </div>
       ),
@@ -246,7 +308,13 @@ export default function DashboardPage() {
       dataIndex: "price",
       key: "price",
       render: (price: unknown) => (
-        <div className="font-semibold text-green-600">{formatPrice(price)}</div>
+        <div className="font-semibold text-green-600">
+          {numberToString(
+            price as number,
+            locale as SupportedLocale,
+            getCurrencyByLocale(locale as SupportedLocale),
+          )}
+        </div>
       ),
     },
     {
@@ -283,32 +351,29 @@ export default function DashboardPage() {
       key: "actions",
       render: (_: unknown, record: Property) => (
         <Space>
-          <Tooltip title={t("common.view")}>
-            <Button
-              type="text"
-              size="small"
-              icon={<EyeIcon className="h-4 w-4" />}
-              onClick={() => router.push(`/${locale}/property/${record.id}`)}
-            />
-          </Tooltip>
-          <Tooltip title={t("common.edit")}>
-            <Button
-              type="text"
-              size="small"
-              icon={<Edit className="h-4 w-4" />}
-              onClick={() =>
-                router.push(`/${locale}/edit-property/${record.id}`)
-              }
-            />
-          </Tooltip>
           <Dropdown
             menu={{
               items: [
+                {
+                  key: "edit",
+                  label: t("common.edit"),
+                  icon: <Edit className="h-4 w-4" />,
+                  onClick: () =>
+                    router.push(`/${locale}/edit-property/${record.id}`),
+                },
+                {
+                  key: "view",
+                  label: t("common.view"),
+                  icon: <Eye className="h-4 w-4" />,
+                  onClick: () =>
+                    router.push(`/${locale}/property/${record.id}`),
+                },
                 {
                   key: "delete",
                   label: t("common.delete"),
                   icon: <Trash2 className="h-4 w-4" />,
                   danger: true,
+                  onClick: () => handleDeleteProperty(record),
                 },
               ],
             }}
@@ -424,7 +489,15 @@ export default function DashboardPage() {
                 columns={propertyColumns}
                 dataSource={properties}
                 rowKey="id"
-                pagination={false}
+                loading={propertiesLoading}
+                pagination={{
+                  current: pagination.current,
+                  pageSize: pagination.pageSize,
+                  total: pagination.total,
+                  position: ["bottomCenter"],
+                  onChange: handleTableChange,
+                  onShowSizeChange: handleTableChange,
+                }}
                 size="small"
                 scroll={{ x: 800 }}
               />
@@ -438,11 +511,16 @@ export default function DashboardPage() {
                     <div key={item.id} className="flex gap-3">
                       <div className="h-12 w-12 overflow-hidden rounded">
                         <Image
-                          src={item.imageURL ?? "/images/placeholder-news.jpg"}
+                          src={
+                            item.imageURL && typeof item.imageURL === "string"
+                              ? item.imageURL
+                              : "/images/landingpage/market-news/market-new-1.jpg"
+                          }
                           alt={item.title}
                           width={48}
                           height={48}
                           className="h-full w-full object-cover"
+                          unoptimized
                         />
                       </div>
                       <div className="flex-1">

@@ -16,7 +16,7 @@ interface AuthState {
   ) => Promise<void>;
   googleLogin: (redirectUrl?: string) => Promise<void>;
   handleGoogleCallback: (code: string, redirectUrl?: string) => Promise<void>;
-  logout: () => void;
+  logout: (redirectUrl?: string) => void;
   initialize: () => void;
 }
 
@@ -152,10 +152,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  logout: () => {
+  logout: (redirectUrl?: string) => {
     const locale = useLocaleStore.getState().getLocale();
     authService.logout();
-    window.location.href = `/${locale}/`;
+
+    // Use provided redirect URL or default to home page
+    const finalRedirectUrl = redirectUrl ?? `/${locale}/`;
+    window.location.href = finalRedirectUrl;
 
     set({
       user: null,

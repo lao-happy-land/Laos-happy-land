@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Breadcrumb, Tag, Button, Typography } from "antd";
 import { MapPin, Shield } from "lucide-react";
 import MapboxModal from "@/components/business/common/mapbox-modal";
+import { useUrlLocale } from "@/utils/locale";
 
 const { Text } = Typography;
 
@@ -55,7 +56,7 @@ export default function HeaderBar({
 }: Props) {
   const t = useTranslations();
   const [mapModalOpen, setMapModalOpen] = useState(false);
-
+  const locale = useUrlLocale();
   return (
     <>
       <div className="mb-4">
@@ -75,10 +76,10 @@ export default function HeaderBar({
                 <Link
                   href={
                     transactionType === "project"
-                      ? "/properties-for-project"
+                      ? `${locale}/properties-for-project`
                       : transactionType === "rent"
-                        ? "/properties-for-rent"
-                        : "/properties-for-sale"
+                        ? `${locale}/properties-for-rent`
+                        : `${locale}/properties-for-sale`
                   }
                 >
                   {t("navigation.properties")}

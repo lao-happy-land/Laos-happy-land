@@ -19,6 +19,7 @@ import {
   Upload as UploadIcon,
 } from "lucide-react";
 import uploadService from "@/share/service/upload.service";
+import { useTranslations } from "next-intl";
 
 // Internal block type to support both text/value callers
 type Block =
@@ -44,6 +45,7 @@ export default function ProjectContentBuilder({
     ? name
     : [name];
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
+  const t = useTranslations();
 
   const openAndUploadImage = async (fieldIndex: number) => {
     try {
@@ -54,13 +56,13 @@ export default function ProjectContentBuilder({
         const file = input.files?.[0];
         if (!file) return;
         if (file.size / 1024 / 1024 > 5) {
-          message.error("Hình ảnh phải nhỏ hơn 5MB");
+          message.error(t("property.imageSizeError"));
           return;
         }
         setUploadingIndex(fieldIndex);
         try {
           const data = await uploadService.uploadImage(file);
-          if (!data?.url) throw new Error("Không nhận được URL ảnh");
+          if (!data?.url) throw new Error(t("property.imageUploadError"));
           // Set the URL for this block
           if (typeof form.setFieldValue === "function") {
             form.setFieldValue([...listPathArr, fieldIndex, "url"], data.url);
@@ -76,9 +78,10 @@ export default function ProjectContentBuilder({
             }
             form.setFieldsValue({ [listPathArr[0] as string]: newList });
           }
-          message.success("Tải ảnh thành công");
+          message.success(t("property.imageUploadedSuccessfully"));
         } catch (err) {
-          const msg = err instanceof Error ? err.message : "Lỗi tải ảnh";
+          const msg =
+            err instanceof Error ? err.message : t("property.imageUploadError");
           message.error(msg);
         } finally {
           setUploadingIndex(null);
@@ -86,7 +89,8 @@ export default function ProjectContentBuilder({
       };
       input.click();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Lỗi tải ảnh";
+      const msg =
+        err instanceof Error ? err.message : t("property.imageUploadError");
       message.error(msg);
     }
   };
@@ -99,7 +103,7 @@ export default function ProjectContentBuilder({
           validator: async (_, value) => {
             if (!Array.isArray(value) || value.length === 0) {
               return Promise.reject(
-                new Error("Vui lòng thêm ít nhất 1 nội dung"),
+                new Error(t("property.pleaseAddAtLeast1Content")),
               );
             }
           },
@@ -135,9 +139,9 @@ export default function ProjectContentBuilder({
         };
 
         const blockMenuItems = [
-          { key: "heading", label: "Tiêu đề" },
-          { key: "paragraph", label: "Đoạn văn" },
-          { key: "image", label: "Hình ảnh" },
+          { key: "heading", label: t("property.heading") },
+          { key: "paragraph", label: t("property.paragraph") },
+          { key: "image", label: t("property.image") },
         ];
 
         return (
@@ -173,14 +177,24 @@ export default function ProjectContentBuilder({
                                 rules={[
                                   {
                                     required: true,
-                                    message: "Chọn loại nội dung",
+                                    message: t("property.pleaseSelectContent"),
                                   },
                                 ]}
                               >
-                                <Select placeholder="Chọn loại nội dung">
-                                  <Option value="heading">Tiêu đề</Option>
-                                  <Option value="paragraph">Đoạn văn</Option>
-                                  <Option value="image">Hình ảnh</Option>
+                                <Select
+                                  placeholder={t(
+                                    "property.pleaseSelectContent",
+                                  )}
+                                >
+                                  <Option value="heading">
+                                    {t("property.heading")}
+                                  </Option>
+                                  <Option value="paragraph">
+                                    {t("property.paragraph")}
+                                  </Option>
+                                  <Option value="image">
+                                    {t("property.image")}
+                                  </Option>
                                 </Select>
                               </Form.Item>
                             )}
@@ -188,11 +202,14 @@ export default function ProjectContentBuilder({
                               <Form.Item
                                 name={[field.name, textFieldName]}
                                 rules={[
-                                  { required: true, message: "Nhập tiêu đề" },
+                                  {
+                                    required: true,
+                                    message: t("property.pleaseEnterHeading"),
+                                  },
                                 ]}
                               >
                                 <Input
-                                  placeholder="Tiêu đề..."
+                                  placeholder={t("property.pleaseEnterHeading")}
                                   className="border-0 p-0 text-2xl font-semibold shadow-none focus:shadow-none"
                                 />
                               </Form.Item>
@@ -201,12 +218,15 @@ export default function ProjectContentBuilder({
                               <Form.Item
                                 name={[field.name, textFieldName]}
                                 rules={[
-                                  { required: true, message: "Nhập nội dung" },
+                                  {
+                                    required: true,
+                                    message: t("property.pleaseEnterContent"),
+                                  },
                                 ]}
                               >
                                 <TextArea
                                   autoSize={{ minRows: 2, maxRows: 8 }}
-                                  placeholder="Nhập nội dung..."
+                                  placeholder={t("property.pleaseEnterContent")}
                                   className="border-0 p-0 shadow-none focus:shadow-none"
                                 />
                               </Form.Item>
@@ -218,13 +238,17 @@ export default function ProjectContentBuilder({
                                   rules={[
                                     {
                                       required: true,
-                                      message: "Nhập URL hình ảnh",
+                                      message: t(
+                                        "property.pleaseEnterImageUrl",
+                                      ),
                                     },
                                   ]}
                                 >
                                   <Input
                                     readOnly
-                                    placeholder="Dán URL hình ảnh..."
+                                    placeholder={t(
+                                      "property.pleaseEnterImageUrl",
+                                    )}
                                   />
                                 </Form.Item>
                                 <Button
@@ -238,7 +262,7 @@ export default function ProjectContentBuilder({
                                     top: 0,
                                   }}
                                 >
-                                  Tải ảnh
+                                  {t("property.uploadImage")}
                                 </Button>
                               </div>
                             )}
@@ -281,7 +305,7 @@ export default function ProjectContentBuilder({
                 trigger={["click"]}
               >
                 <Button type="primary" icon={<Plus className="h-4 w-4" />}>
-                  Thêm nội dung
+                  {t("property.addContent")}
                 </Button>
               </Dropdown>
             </div>

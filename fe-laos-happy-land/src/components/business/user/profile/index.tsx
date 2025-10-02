@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useUrlLocale } from "@/utils/locale";
 import { useAuthStore } from "@/share/store/auth.store";
-import { Button, Input, Breadcrumb } from "antd";
+import { Button, Input, Breadcrumb, Modal, Upload, App } from "antd";
 import {
   User,
   MapPin,
@@ -14,6 +14,8 @@ import {
   Shield,
   Calendar,
   X,
+  Landmark,
+  Upload as UploadIcon,
 } from "lucide-react";
 import { useRequest } from "ahooks";
 import { userService } from "@/share/service/user.service";
@@ -22,12 +24,15 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import MapboxLocationSelector from "@/components/business/common/mapbox-location-selector";
 import type { LocationDto } from "@/@types/types";
+import type { UploadFile } from "antd";
+import type { UpdateUserDto } from "@/@types/gentype-axios";
 
 export default function Profile() {
   const { isAuthenticated, user: extendedUser } = useAuthStore();
   const router = useRouter();
   const t = useTranslations();
   const locale = useUrlLocale();
+  const { message: antMessage } = App.useApp();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -52,6 +57,19 @@ export default function Profile() {
     type: "success" | "error";
     text: string;
   } | null>(null);
+
+  // Bank request modal states
+  const [isBankModalOpen, setIsBankModalOpen] = useState(false);
+  const [bankRequestNote, setBankRequestNote] = useState("");
+  const [bankRequestPhone, setBankRequestPhone] = useState("");
+  const [bankRequestImage, setBankRequestImage] = useState<File | null>(null);
+  const [bankRequestFileList, setBankRequestFileList] = useState<UploadFile[]>(
+    [],
+  );
+
+  // Broker request modal states
+  const [isBrokerModalOpen, setIsBrokerModalOpen] = useState(false);
+  const [brokerRequestNote, setBrokerRequestNote] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -108,45 +126,20 @@ export default function Profile() {
       languages?: string[];
       certifications?: string[];
     }) => {
-      const formData = new FormData();
-
-      // Only include fields that are defined in UpdateUserDto
-      formData.append("fullName", values.fullName ?? "");
-      formData.append("email", values.email ?? "");
-      formData.append("phone", values.phone ?? "");
-
-      // Use location data from mapbox if available, otherwise use address
-      const locationToSave = values.location?.address ?? values.address ?? "";
-      if (locationToSave) {
-        formData.append("location", locationToSave);
-      }
-
-      // Add new fields
-      if (values.experienceYears !== undefined) {
-        formData.append("experienceYears", values.experienceYears.toString());
-      }
-      if (values.company) {
-        formData.append("company", values.company);
-      }
-      if (values.specialties && values.specialties.length > 0) {
-        formData.append("specialties", JSON.stringify(values.specialties));
-      }
-      if (values.languages && values.languages.length > 0) {
-        formData.append("languages", JSON.stringify(values.languages));
-      }
-      if (values.certifications && values.certifications.length > 0) {
-        formData.append(
-          "certifications",
-          JSON.stringify(values.certifications),
-        );
-      }
-
-      if (values.image) {
-        formData.append("image", values.image);
-      }
+      const updateData: UpdateUserDto = {
+        fullName: values.fullName,
+        phone: values.phone,
+        experienceYears: values.experienceYears,
+        company: values.company,
+        specialties: values.specialties,
+        languages: values.languages,
+        certifications: values.certifications,
+        ...(values.location?.address && { location: values.location }),
+        ...(values.image && { image: values.image }),
+      };
 
       const userId = userData?.user.id ?? "current";
-      return await userService.updateProfile(userId, formData);
+      return await userService.updateProfile(userId, updateData);
     },
     {
       manual: true,
@@ -340,6 +333,92 @@ export default function Profile() {
     }
     setAvatarFile(null);
     setIsEditing(false);
+  };
+
+  // Bank request handler
+  const { loading: submittingBankRequest, run: submitBankRequest } = useRequest(
+    async () => {
+      if (!userData?.user?.id) {
+        throw new Error("User ID not found");
+      }
+
+      await userService.requestIsFromBank(userData.user.id, {
+        note: bankRequestNote,
+        phone: bankRequestPhone,
+        image: bankRequestImage!,
+      });
+    },
+    {
+      manual: true,
+      onSuccess: () => {
+        antMessage.success(t("profile.bankRequestSent"));
+        setIsBankModalOpen(false);
+        setBankRequestNote("");
+        setBankRequestPhone("");
+        setBankRequestImage(null);
+        setBankRequestFileList([]);
+      },
+      onError: (error) => {
+        console.error("Bank request error:", error);
+        antMessage.error(t("profile.bankRequestFailed"));
+      },
+    },
+  );
+
+  const handleBankRequestSubmit = () => {
+    if (!bankRequestPhone.trim()) {
+      antMessage.error(t("profile.phoneRequired"));
+      return;
+    }
+    submitBankRequest();
+  };
+
+  // Broker request handler
+  const { loading: submittingBrokerRequest, run: submitBrokerRequest } =
+    useRequest(
+      async () => {
+        if (!userData?.user?.id) {
+          throw new Error("User ID not found");
+        }
+
+        await userService.requestRoleUpgrade(userData.user.id, {
+          note: brokerRequestNote || null,
+        });
+      },
+      {
+        manual: true,
+        onSuccess: () => {
+          antMessage.success(t("profile.brokerRequestSent"));
+          setIsBrokerModalOpen(false);
+          setBrokerRequestNote("");
+        },
+        onError: (error) => {
+          console.error("Broker request error:", error);
+          antMessage.error(t("profile.brokerRequestFailed"));
+        },
+      },
+    );
+
+  const handleBrokerRequestSubmit = () => {
+    if (!brokerRequestNote.trim()) {
+      antMessage.error(t("profile.noteRequired"));
+      return;
+    }
+    submitBrokerRequest();
+  };
+
+  const isFromBank = (): boolean => {
+    const fromBank = userData?.user?.fromBank;
+
+    if (fromBank === null || fromBank === undefined) {
+      return false;
+    }
+
+    if (typeof fromBank === "string") {
+      return false;
+    }
+
+    return fromBank.isFromBank === true;
   };
 
   if (!isAuthenticated) {
@@ -600,6 +679,39 @@ export default function Profile() {
                 </div>
               </div>
             </div>
+
+            {/* Request Buttons */}
+            <div className="mt-4 space-y-3">
+              {/* Bank Request Button - Show for user and broker roles who are NOT already from bank */}
+              {!isFromBank() &&
+                (userData?.user?.role?.name?.toLowerCase() === "user" ||
+                  userData?.user?.role?.name?.toLowerCase() === "broker") && (
+                  <Button
+                    type="primary"
+                    icon={<Landmark size={16} />}
+                    size="large"
+                    block
+                    onClick={() => setIsBankModalOpen(true)}
+                    className="bg-gradient-to-r from-blue-500 to-indigo-600 font-semibold shadow-md hover:from-blue-600 hover:to-indigo-700"
+                  >
+                    {t("profile.requestBankStatus")}
+                  </Button>
+                )}
+
+              {/* Broker Request Button - Show only for user role */}
+              {userData?.user?.role?.name?.toLowerCase() === "user" && (
+                <Button
+                  type="primary"
+                  icon={<Shield size={16} />}
+                  size="large"
+                  block
+                  onClick={() => setIsBrokerModalOpen(true)}
+                  className="bg-gradient-to-r from-green-500 to-emerald-600 font-semibold shadow-md hover:from-green-600 hover:to-emerald-700"
+                >
+                  {t("profile.requestBrokerStatus")}
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Profile Form */}
@@ -753,7 +865,7 @@ export default function Profile() {
                 </div>
 
                 {/* Professional Information */}
-                {userData?.user.role?.name === "broker" && (
+                {userData?.user.role?.name?.toLowerCase() === "broker" && (
                   <div className="rounded-2xl bg-white p-8 shadow-sm">
                     <h3 className="mb-6 text-xl font-bold text-neutral-900">
                       {t("common.professionalInfo")}
@@ -989,6 +1101,154 @@ export default function Profile() {
           </div>
         </div>
       </div>
+
+      {/* Bank Request Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <Landmark className="h-5 w-5 text-blue-600" />
+            <span>{t("profile.requestBankStatus")}</span>
+          </div>
+        }
+        open={isBankModalOpen}
+        onCancel={() => {
+          setIsBankModalOpen(false);
+          setBankRequestNote("");
+          setBankRequestPhone("");
+          setBankRequestImage(null);
+          setBankRequestFileList([]);
+        }}
+        onOk={handleBankRequestSubmit}
+        confirmLoading={submittingBankRequest}
+        okText={t("common.submit")}
+        cancelText={t("common.cancel")}
+        width={600}
+      >
+        <div className="space-y-4 py-4">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-neutral-700">
+              {t("common.phone")} <span className="text-red-500">*</span>
+            </label>
+            <Input
+              placeholder={t("common.enterPhone")}
+              value={bankRequestPhone}
+              onChange={(e) => setBankRequestPhone(e.target.value)}
+              size="large"
+              maxLength={20}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-neutral-700">
+              {t("profile.bankRequestNote")}
+            </label>
+            <Input.TextArea
+              placeholder={t("profile.enterBankRequestNote")}
+              value={bankRequestNote}
+              onChange={(e) => setBankRequestNote(e.target.value)}
+              rows={4}
+              maxLength={500}
+              showCount
+              required
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-neutral-700">
+              {t("profile.bankRequestDocument")}
+            </label>
+            <Upload
+              listType="picture-card"
+              fileList={bankRequestFileList}
+              beforeUpload={(file) => {
+                const isImage = file.type.startsWith("image/");
+                if (!isImage) {
+                  antMessage.error(t("common.onlyImageAllowed"));
+                  return false;
+                }
+                const isLt5M = file.size / 1024 / 1024 < 5;
+                if (!isLt5M) {
+                  antMessage.error(t("profile.imageSizeLimit5MB"));
+                  return false;
+                }
+
+                setBankRequestImage(file);
+                setBankRequestFileList([
+                  {
+                    uid: "-1",
+                    name: file.name,
+                    status: "done",
+                    url: URL.createObjectURL(file),
+                  },
+                ]);
+                return false;
+              }}
+              onRemove={() => {
+                setBankRequestImage(null);
+                setBankRequestFileList([]);
+              }}
+              maxCount={1}
+            >
+              {bankRequestFileList.length === 0 && (
+                <div>
+                  <UploadIcon className="mx-auto h-8 w-8 text-gray-400" />
+                  <div className="mt-2 text-sm text-gray-600">
+                    {t("profile.uploadDocument")}
+                  </div>
+                </div>
+              )}
+            </Upload>
+            <p className="mt-2 text-xs text-gray-500">
+              {t("profile.bankRequestDocumentHelper")}
+            </p>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Broker Request Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-green-600" />
+            <span>{t("profile.requestBrokerStatus")}</span>
+          </div>
+        }
+        open={isBrokerModalOpen}
+        onCancel={() => {
+          setIsBrokerModalOpen(false);
+          setBrokerRequestNote("");
+        }}
+        onOk={handleBrokerRequestSubmit}
+        confirmLoading={submittingBrokerRequest}
+        okText={t("common.submit")}
+        cancelText={t("common.cancel")}
+        width={600}
+      >
+        <div className="space-y-4 py-4">
+          <div className="rounded-lg bg-blue-50 p-4">
+            <p className="text-sm text-blue-800">
+              {t("profile.brokerRequestInfo")}
+            </p>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-neutral-700">
+              {t("profile.brokerRequestNote")}{" "}
+              <span className="text-red-500">*</span>
+            </label>
+            <Input.TextArea
+              placeholder={t("profile.enterBrokerRequestNote")}
+              value={brokerRequestNote}
+              onChange={(e) => setBrokerRequestNote(e.target.value)}
+              rows={4}
+              maxLength={500}
+              showCount
+              required
+            />
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

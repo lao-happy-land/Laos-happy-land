@@ -21,7 +21,6 @@ import {
   Home,
   Building2,
   FileText,
-  BarChart3,
   Users,
   LogIn,
   UserPlus,
@@ -143,7 +142,7 @@ export default function Header({
       key: "logout",
       icon: <LogOut className="h-4 w-4" />,
       label: t("navigation.logout"),
-      onClick: logout,
+      onClick: () => logout(),
       danger: true,
     },
   ];
