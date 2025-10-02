@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar, Button, Popconfirm, Space, Tag, Typography } from "antd";
+import { Avatar, Button, Popconfirm, Space, Typography } from "antd";
 import { Edit, Trash2, User } from "lucide-react";
 
 const { Text } = Typography;

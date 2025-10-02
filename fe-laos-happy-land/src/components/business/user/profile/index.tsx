@@ -25,6 +25,7 @@ import { useTranslations } from "next-intl";
 import MapboxLocationSelector from "@/components/business/common/mapbox-location-selector";
 import type { LocationDto } from "@/@types/types";
 import type { UploadFile } from "antd";
+import type { UpdateUserDto } from "@/@types/gentype-axios";
 
 export default function Profile() {
   const { isAuthenticated, user: extendedUser } = useAuthStore();
@@ -125,45 +126,20 @@ export default function Profile() {
       languages?: string[];
       certifications?: string[];
     }) => {
-      const formData = new FormData();
-
-      // Only include fields that are defined in UpdateUserDto
-      formData.append("fullName", values.fullName ?? "");
-      formData.append("email", values.email ?? "");
-      formData.append("phone", values.phone ?? "");
-
-      // Use location data from mapbox if available, otherwise use address
-      const locationToSave = values.location?.address ?? values.address ?? "";
-      if (locationToSave) {
-        formData.append("location", locationToSave);
-      }
-
-      // Add new fields
-      if (values.experienceYears !== undefined) {
-        formData.append("experienceYears", values.experienceYears.toString());
-      }
-      if (values.company) {
-        formData.append("company", values.company);
-      }
-      if (values.specialties && values.specialties.length > 0) {
-        formData.append("specialties", JSON.stringify(values.specialties));
-      }
-      if (values.languages && values.languages.length > 0) {
-        formData.append("languages", JSON.stringify(values.languages));
-      }
-      if (values.certifications && values.certifications.length > 0) {
-        formData.append(
-          "certifications",
-          JSON.stringify(values.certifications),
-        );
-      }
-
-      if (values.image) {
-        formData.append("image", values.image);
-      }
+      const updateData: UpdateUserDto = {
+        fullName: values.fullName,
+        phone: values.phone,
+        experienceYears: values.experienceYears,
+        company: values.company,
+        specialties: values.specialties,
+        languages: values.languages,
+        certifications: values.certifications,
+        ...(values.location?.address && { location: values.location }),
+        ...(values.image && { image: values.image }),
+      };
 
       const userId = userData?.user.id ?? "current";
-      return await userService.updateProfile(userId, formData);
+      return await userService.updateProfile(userId, updateData);
     },
     {
       manual: true,
@@ -431,6 +407,20 @@ export default function Profile() {
     submitBrokerRequest();
   };
 
+  const isFromBank = (): boolean => {
+    const fromBank = userData?.user?.fromBank;
+
+    if (fromBank === null || fromBank === undefined) {
+      return false;
+    }
+
+    if (typeof fromBank === "string") {
+      return false;
+    }
+
+    return fromBank.isFromBank === true;
+  };
+
   if (!isAuthenticated) {
     return null;
   }
@@ -692,20 +682,21 @@ export default function Profile() {
 
             {/* Request Buttons */}
             <div className="mt-4 space-y-3">
-              {/* Bank Request Button - Show for user and broker roles */}
-              {(userData?.user?.role?.name?.toLowerCase() === "user" ||
-                userData?.user?.role?.name?.toLowerCase() === "broker") && (
-                <Button
-                  type="primary"
-                  icon={<Landmark size={16} />}
-                  size="large"
-                  block
-                  onClick={() => setIsBankModalOpen(true)}
-                  className="bg-gradient-to-r from-blue-500 to-indigo-600 font-semibold shadow-md hover:from-blue-600 hover:to-indigo-700"
-                >
-                  {t("profile.requestBankStatus")}
-                </Button>
-              )}
+              {/* Bank Request Button - Show for user and broker roles who are NOT already from bank */}
+              {!isFromBank() &&
+                (userData?.user?.role?.name?.toLowerCase() === "user" ||
+                  userData?.user?.role?.name?.toLowerCase() === "broker") && (
+                  <Button
+                    type="primary"
+                    icon={<Landmark size={16} />}
+                    size="large"
+                    block
+                    onClick={() => setIsBankModalOpen(true)}
+                    className="bg-gradient-to-r from-blue-500 to-indigo-600 font-semibold shadow-md hover:from-blue-600 hover:to-indigo-700"
+                  >
+                    {t("profile.requestBankStatus")}
+                  </Button>
+                )}
 
               {/* Broker Request Button - Show only for user role */}
               {userData?.user?.role?.name?.toLowerCase() === "user" && (
@@ -874,7 +865,7 @@ export default function Profile() {
                 </div>
 
                 {/* Professional Information */}
-                {userData?.user.role?.name === "broker" && (
+                {userData?.user.role?.name?.toLowerCase() === "broker" && (
                   <div className="rounded-2xl bg-white p-8 shadow-sm">
                     <h3 className="mb-6 text-xl font-bold text-neutral-900">
                       {t("common.professionalInfo")}
