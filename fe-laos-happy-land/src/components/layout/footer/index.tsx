@@ -286,11 +286,11 @@ const Footer = () => {
                 </li>
                 <li>
                   <Link
-                    href={`/${locale}/profile`}
+                    href={`/${locale}/about`}
                     className="group flex items-center transition-all duration-300 hover:translate-x-2 hover:text-blue-400"
                   >
                     <div className="mr-3 h-1 w-1 rounded-full bg-blue-400 transition-all duration-300 group-hover:scale-150 group-hover:bg-blue-300"></div>
-                    {t("footer.userProfile")}
+                    {t("footer.aboutUs")}
                   </Link>
                 </li>
               </ul>
@@ -369,6 +369,12 @@ const Footer = () => {
                 {t("footer.copyright")}
               </p>
               <div className="flex flex-wrap justify-center gap-4 text-sm md:justify-start">
+                <Link
+                  href={`/${locale}/about`}
+                  className="text-gray-400 transition-all duration-300 hover:scale-105 hover:text-blue-400 hover:underline"
+                >
+                  {t("footer.aboutUs")}
+                </Link>
                 <Link
                   href={`/${locale}/terms`}
                   className="text-gray-400 transition-all duration-300 hover:scale-105 hover:text-blue-400 hover:underline"
