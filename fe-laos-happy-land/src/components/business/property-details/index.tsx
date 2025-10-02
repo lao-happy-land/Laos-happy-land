@@ -12,6 +12,7 @@ import DetailsSection from "@/components/business/property-details/details-secti
 import ContactCard from "@/components/business/property-details/contact-card";
 import LoanCalculator from "@/components/business/loan-calculator/loan-calculator";
 import SimilarProperties from "@/components/business/property-details/similar-properties";
+import PriceHistoryChart from "@/components/business/property-details/price-history-chart";
 import { useRequest } from "ahooks";
 import propertyService from "@/share/service/property.service";
 
@@ -160,11 +161,28 @@ export default function PropertyDetails({ propertyId }: Props) {
 
             <LoanCalculator />
           </Card>
+
+          {/* Price History Chart */}
+          {property.priceHistory && property.priceHistory.length > 0 && (
+            <PriceHistoryChart
+              priceHistory={property.priceHistory}
+              currentPrice={property.price as PropertyPrice | null}
+            />
+          )}
         </Col>
 
         <Col xs={24} lg={8} style={{ padding: 0 }}>
           <ContactCard
-            owner={property.owner}
+            owner={
+              property.owner
+                ? {
+                    ...property.owner,
+                    isBroker:
+                      property.owner.role?.name?.toLowerCase() === "broker",
+                    image: property.owner.avatarUrl ?? property.owner.image,
+                  }
+                : null
+            }
             onShare={handleShare}
             onCall={handleContactOwner}
             onEmail={handleEmailOwner}

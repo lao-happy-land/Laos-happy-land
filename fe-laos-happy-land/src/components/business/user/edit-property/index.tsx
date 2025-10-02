@@ -79,11 +79,20 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
     [],
   );
   const [locationData, setLocationData] = useState<{
-    latitude: number;
-    longitude: number;
-    address: string;
-    city?: string;
-    country?: string;
+    locationInfoId?: string;
+    location?: {
+      latitude?: number;
+      longitude?: number;
+      address?: string;
+      city?: string;
+      country?: string;
+      district?: string;
+      province?: string;
+      postalCode?: string;
+      neighborhood?: string;
+      buildingNumber?: string;
+      street?: string;
+    } | null;
   } | null>(null);
   const initializedRef = useRef(false);
 
@@ -133,15 +142,11 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
       setSelectedTransactionType(property.transactionType);
 
       // Set location data if available
-      if (property.location) {
-        const newLocationData = {
-          latitude: property.location.latitude,
-          longitude: property.location.longitude,
-          address: property.location.address,
-          city: property.location.city,
-          country: property.location.country,
-        };
-        setLocationData(newLocationData);
+      if (property.location || property.locationInfo) {
+        setLocationData({
+          locationInfoId: property.locationInfo?.id,
+          location: property.location,
+        });
       }
 
       form.setFieldsValue({
@@ -177,8 +182,8 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
 
   // Sync locationData with form field
   useEffect(() => {
-    if (locationData?.address) {
-      form.setFieldValue("location", locationData.address);
+    if (locationData?.location) {
+      form.setFieldValue("location", locationData.location);
     }
   }, [locationData, form]);
 
@@ -211,11 +216,12 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
 
       const formData: UpdatePropertyDto = {
         typeId: values.typeId,
+        locationInfoId: locationData?.locationInfoId,
         title: values.title,
         description: values.description,
         price: values.price,
         legalStatus: values.legalStatus ?? "",
-        location: locationData,
+        location: locationData?.location ?? undefined,
         transactionType: values.transactionType,
         mainImage: mainImageUrl ?? existingMainImage,
         images: [
@@ -941,13 +947,11 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                   value={locationData}
                   onChange={(newLocationData) => {
                     setLocationData(newLocationData);
-                    // Update the form field with the location address
-                    if (newLocationData?.address) {
-                      form.setFieldValue("location", newLocationData.address);
+                    // Update the form field with the location object
+                    if (newLocationData?.location) {
+                      form.setFieldValue("location", newLocationData.location);
                     }
                   }}
-                  placeholder={t("property.selectLocationOnMap")}
-                  initialSearchValue={property?.location?.address}
                 />
               </div>
             </div>
