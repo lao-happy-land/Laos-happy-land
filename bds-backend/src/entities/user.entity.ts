@@ -59,6 +59,8 @@ export class User extends AbstractEntity {
   roleRequests?: {
     requested?: boolean;
     note?: string;
+    imageUrl?: string;
+    phone?: string;
     requestedAt?: Date;
     processedAt?: Date;
   };

@@ -146,22 +146,46 @@ export class UserController {
   }
 
   @Patch(':id/request-role-upgrade')
+  @ApiConsumes('multipart/form-data')
   @ApiBody({
-    schema: { type: 'object', properties: { note: { type: 'string', nullable: true } } },
+    schema: {
+      type: 'object',
+      properties: {
+        note: { type: 'string', nullable: true },
+        phone: { type: 'string', nullable: true },
+        image: { type: 'string', format: 'binary', nullable: true },
+      },
+    },
   })
-  @ApiResponse({ status: 200, description: 'Role upgrade request submitted successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Role upgrade request submitted successfully',
+  })
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'image', maxCount: 1 }]))
   async requestRoleUpgrade(
     @Param('id') id: string,
     @Body('note') note?: string,
+    @Body('phone') phone?: string,
+    @UploadedFiles() files?: { image?: Multer.File[] },
   ) {
-    return this.userService.requestRoleUpgrade(id, note);
+    return this.userService.requestRoleUpgrade( 
+      id,
+      files?.image?.[0],
+      note,
+      phone,
+    );
   }
 
   @Patch(':id/approve-role-upgrade')
   @UseGuards(AdminGuard)
   @ApiBearerAuth()
-  @ApiBody({ schema: { type: 'object', properties: { approve: { type: 'boolean' } } } })
-  @ApiResponse({ status: 200, description: 'Admin approved/rejected role upgrade' })
+  @ApiBody({
+    schema: { type: 'object', properties: { approve: { type: 'boolean' } } },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Admin approved/rejected role upgrade',
+  })
   async approveRoleUpgrade(
     @Param('id') id: string,
     @Body('approve') approve: boolean,
