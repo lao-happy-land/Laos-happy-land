@@ -10,6 +10,7 @@ COPY package.json pnpm-lock.yaml* ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
+COPY next.config.js ./
 
 RUN pnpm build
 
