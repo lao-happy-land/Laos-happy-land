@@ -48,7 +48,7 @@ const config = {
     // Ensure images are properly optimized
     formats: ["image/webp", "image/avif"],
     // Allow unoptimized images if needed (set to true if issues persist)
-    unoptimized: process.env.NODE_ENV === "production" ? false : false,
+    unoptimized: true,
     // Set minimum cache TTL
     minimumCacheTTL: 60,
     // Add device sizes for better optimization
