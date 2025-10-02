@@ -64,17 +64,20 @@ interface PropertyFormProps {
 }
 
 interface LocationData {
-  latitude: number;
-  longitude: number;
-  address: string;
-  city?: string;
-  country?: string;
-  buildingNumber?: string;
-  street?: string;
-  district?: string;
-  province?: string;
-  postalCode?: string;
-  neighborhood?: string;
+  locationInfoId?: string;
+  location?: {
+    latitude?: number;
+    longitude?: number;
+    address?: string;
+    city?: string;
+    country?: string;
+    buildingNumber?: string;
+    street?: string;
+    district?: string;
+    province?: string;
+    postalCode?: string;
+    neighborhood?: string;
+  } | null;
 }
 
 const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
@@ -152,19 +155,10 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
       setSelectedTransactionType(currentProperty.transactionType);
 
       // Set location data if available
-      if (currentProperty.location) {
+      if (currentProperty.location || currentProperty.locationInfo) {
         setLocationData({
-          latitude: currentProperty.location.latitude,
-          longitude: currentProperty.location.longitude,
-          address: currentProperty.location.address,
-          city: currentProperty.location.city,
-          country: currentProperty.location.country,
-          buildingNumber: currentProperty.location.buildingNumber,
-          street: currentProperty.location.street,
-          district: currentProperty.location.district,
-          province: currentProperty.location.province,
-          postalCode: currentProperty.location.postalCode,
-          neighborhood: currentProperty.location.neighborhood,
+          locationInfoId: currentProperty.locationInfo?.id,
+          location: currentProperty.location,
         });
       }
 
@@ -202,8 +196,8 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
 
   // Sync locationData with form field
   useEffect(() => {
-    if (locationData?.address) {
-      form.setFieldValue("location", locationData);
+    if (locationData?.location) {
+      form.setFieldValue("location", locationData.location);
     }
   }, [locationData, form]);
 
@@ -233,6 +227,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
     }) => {
       const formData: CreatePropertyDto | UpdatePropertyDto = {
         typeId: values.typeId,
+        locationInfoId: locationData?.locationInfoId,
         title: values.title,
         description: values.description,
         price: values.price,
@@ -249,7 +244,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
           content: values.content ?? [],
         },
         legalStatus: values.legalStatus,
-        location: locationData as LocationDto | undefined,
+        location: locationData?.location ?? undefined,
       };
 
       // Use already uploaded image URLs
@@ -344,7 +339,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
     }
 
     // Check location from state (not form field)
-    if (!locationData) {
+    if (!locationData?.locationInfoId || !locationData?.location) {
       message.error(t("admin.pleaseSelectLocationOnMap"));
       return;
     }
@@ -790,15 +785,11 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                 value={locationData}
                 onChange={(newLocationData) => {
                   setLocationData(newLocationData);
-                  // Update the form field with the location address
-                  if (newLocationData?.address) {
-                    form.setFieldValue("location", newLocationData.address);
+                  // Update the form field with the location object
+                  if (newLocationData?.location) {
+                    form.setFieldValue("location", newLocationData.location);
                   }
                 }}
-                placeholder={t("property.selectLocation")}
-                initialSearchValue={currentProperty?.location?.address}
-                mode={mode}
-                hasExistingLocation={!!currentProperty?.location}
               />
             </div>
           </div>

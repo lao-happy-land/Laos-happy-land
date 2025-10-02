@@ -92,19 +92,30 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         }`}
       >
         {/* Logo */}
-        <div className="flex h-20 items-center justify-center border-b border-neutral-200">
+        <Link
+          href={`/${locale}/admin`}
+          className="flex h-20 items-center justify-center border-b border-neutral-200 transition-transform duration-200 hover:scale-105"
+        >
           <div className="flex items-center gap-3">
-            <div className="bg-primary-500 flex h-10 w-10 items-center justify-center rounded-xl">
-              <span className="text-lg font-bold text-white">A</span>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white p-1">
+              <Image
+                src="/images/logo.png"
+                alt="Laohappyland Logo"
+                width={40}
+                height={40}
+                className="h-full w-full object-contain"
+              />
             </div>
             {!sidebarCollapsed && (
               <div>
-                <h1 className="text-lg font-bold text-neutral-900">Admin</h1>
-                <p className="text-xs text-neutral-500">Dashboard</p>
+                <h1 className="text-primary-500 text-base font-bold">
+                  Laohappyland
+                </h1>
+                <p className="text-xs text-neutral-500">Admin Dashboard</p>
               </div>
             )}
           </div>
-        </div>
+        </Link>
 
         {/* Enhanced Navigation */}
         <nav className="flex-1 border-r border-neutral-200 p-4">

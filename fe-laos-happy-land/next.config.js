@@ -13,6 +13,11 @@ const config = {
   env: {
     PORT: "3001",
   },
+  // Enable experimental features for better image handling
+  experimental: {
+    // Note: optimizeCss requires critters package which may cause build issues
+    // optimizeCss: true,
+  },
   images: {
     remotePatterns: [
       {
@@ -40,6 +45,16 @@ const config = {
         pathname: "/**",
       },
     ],
+    // Ensure images are properly optimized
+    formats: ["image/webp", "image/avif"],
+    // Allow unoptimized images if needed (set to true if issues persist)
+    unoptimized: process.env.NODE_ENV === "production" ? false : false,
+    // Set minimum cache TTL
+    minimumCacheTTL: 60,
+    // Add device sizes for better optimization
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    // Add image sizes
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
 };
 

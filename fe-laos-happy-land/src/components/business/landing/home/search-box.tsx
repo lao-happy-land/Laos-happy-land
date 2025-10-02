@@ -37,6 +37,7 @@ import Image from "next/image";
 import { numberToString } from "@/share/helper/number-to-string";
 import locationInfoService from "@/share/service/location-info.service";
 import propertyTypeService from "@/share/service/property-type.service";
+import { settingService } from "@/share/service/setting.service";
 import type { LocationInfo, PropertyType } from "@/@types/types";
 import { useTranslations } from "next-intl";
 const { Title, Text } = Typography;
@@ -53,6 +54,24 @@ const SearchBox = () => {
     async () => {
       const response = await locationInfoService.getAllLocationInfo();
       return response.data ?? [];
+    },
+  );
+
+  // Fetch settings for carousel images
+  const { data: settingsData } = useRequest(
+    async () => {
+      try {
+        const response = await settingService.getSetting();
+        return response;
+      } catch (error) {
+        console.error("Error fetching settings:", error);
+        return null;
+      }
+    },
+    {
+      onError: () => {
+        // Silently fail, use default images
+      },
     },
   );
 
@@ -187,16 +206,24 @@ const SearchBox = () => {
     { target: typeof window !== "undefined" ? document : undefined },
   );
 
-  // Background images for carousel
-  const backgroundImages = [
+  // Background images for carousel - use from settings or fallback to defaults
+  const defaultImages = [
     "/images/landingpage/hero-slider/hero-banner-1.jpg",
     "/images/landingpage/hero-slider/hero-banner-2.jpg",
     "/images/landingpage/hero-slider/hero-banner-3.jpg",
     "/images/landingpage/hero-slider/hero-banner-4.jpg",
   ];
 
+  const backgroundImages: string[] =
+    settingsData?.images && settingsData.images.length > 0
+      ? settingsData.images.filter(
+          (img: unknown): img is string =>
+            typeof img === "string" && img.length > 0,
+        )
+      : defaultImages;
+
   // Create popular cities from trending locations API data
-  const popularCities = allLocationsData?.slice(0, 5).map((locationInfo) => ({
+  const popularCities = allLocationsData?.slice(0, 6).map((locationInfo) => ({
     id: locationInfo.id,
     name: locationInfo.name,
     imageURL: locationInfo.imageURL ?? "/images/landingpage/cities/default.jpg",
@@ -522,7 +549,7 @@ const SearchBox = () => {
           accessibility={true}
           pauseOnHover={true}
         >
-          {backgroundImages.map((image, index) => (
+          {backgroundImages.map((image: string, index: number) => (
             <Image
               key={index}
               src={image}
@@ -716,10 +743,10 @@ const SearchBox = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="space-y-2">
+                    <div className="grid grid-cols-3 gap-2 space-y-2 lg:grid-cols-6">
                       {allLocationsLoading
                         ? // Loading skeleton for trending locations
-                          Array.from({ length: 5 }).map((_, index) => (
+                          Array.from({ length: 6 }).map((_, index) => (
                             <div
                               key={index}
                               className="h-16 animate-pulse rounded-xl bg-gray-200"
