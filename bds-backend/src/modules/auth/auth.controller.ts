@@ -15,6 +15,7 @@ import { log } from 'console';
 import { GoogleAuthGuard } from './guard/google.guard';
 import { ResetPasswordDto } from './dto/reset_pass.dto';
 import { Response } from 'express';
+import { RefreshTokenDto } from './dto/refersh.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -41,12 +42,34 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
+  @Post('refresh')
+  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiResponse({ status: 200, description: 'New access token generated' })
+  @ApiBody({ type: RefreshTokenDto })
+  async refresh(@Body() body: RefreshTokenDto) {
+    return this.authService.refreshToken(body.refresh_token);
+  }
+
   @Get('google/login')
   @ApiOperation({ summary: 'Login via Google' })
   @UseGuards(GoogleAuthGuard)
   handleGoogleLogin() {
     return { message: 'Redirecting to Google login...' };
   }
+
+  
+  // @Get('google/redirect')
+  // @ApiOperation({ summary: 'Google OAuth callback' })
+  // @UseGuards(GoogleAuthGuard)
+  // async googleAuthRedirect(@Req() req, @Res() res: Response) {
+  //   const { access_token, refresh_token } = req.user;
+  //   const FE_URL = process.env.FRONTEND_URL;
+
+  //   return res.redirect(
+  //     `${FE_URL}?access_token=${access_token}&refresh_token=${refresh_token}`,
+  //   );
+  // }
+
 
   @Get('google/redirect')
   @ApiOperation({ summary: 'Google OAuth callback' })

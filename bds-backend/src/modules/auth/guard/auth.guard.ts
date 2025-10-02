@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
-import { jwtConstants } from '../../../common/constants/constant';
 import { Reflector } from '@nestjs/core';
 
 @Injectable()
@@ -22,7 +21,7 @@ export class AuthGuard implements CanActivate {
     }
     try {
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: jwtConstants.secret,
+        secret: process.env.JWT_LOGIN_SECRET,
       });
       request.user = payload;
     } catch {
@@ -51,7 +50,7 @@ export class OptionalAuthGuard implements CanActivate {
 
     try {
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: jwtConstants.secret,
+        secret: process.env.JWT_LOGIN_SECRET,
       });
       request.user = payload;
       return true;
@@ -80,7 +79,7 @@ export class AdminGuard implements CanActivate {
 
     try {
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: jwtConstants.secret,
+        secret: process.env.JWT_LOGIN_SECRET,
       });
 
       request.user = payload;

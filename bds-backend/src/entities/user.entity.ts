@@ -15,6 +15,7 @@ import { Property } from './property.entity';
 import { UserRole } from './user-role.entity';
 import { LocationInfo } from './location-info.entity';
 import { UserFeedback } from './user-feedback.entity';
+import { Expose } from 'class-transformer';
 
 @Entity({ name: 'users' })
 export class User extends AbstractEntity {
@@ -97,6 +98,11 @@ export class User extends AbstractEntity {
 
   @OneToMany(() => UserFeedback, (fb) => fb.reviewer)
   sentFeedbacks: UserFeedback[];
+
+  @Expose()
+  get isBroker(): boolean {
+    return this.role?.name === 'Broker'; // hoặc RoleEnum.BROKER
+  }
 
   constructor(user: Partial<User>) {
     super();
