@@ -47,7 +47,7 @@ const Footer = () => {
       <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
 
       <div className="relative container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-3 2xl:grid-cols-4">
           {/* Company Info */}
           <div className="space-y-6 md:col-span-1">
             <Link
@@ -298,12 +298,12 @@ const Footer = () => {
           </div>
 
           {/* Contact Info */}
-          <div className="space-y-6">
+          <div className="col-span-1 space-y-6 md:col-span-3 2xl:col-span-1">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
               <h3 className="mb-6 bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-xl font-bold text-transparent">
                 {t("footer.contactInfo")}
               </h3>
-              <div className="space-y-6 text-gray-300">
+              <div className="grid grid-cols-1 gap-6 text-gray-300 lg:grid-cols-3 2xl:grid-cols-1">
                 <div className="group flex items-start space-x-4 rounded-xl bg-white/5 p-4 transition-all duration-300 hover:bg-white/10">
                   <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/20 to-indigo-600/20 ring-1 ring-blue-400/30 backdrop-blur-sm transition-all duration-300 group-hover:ring-blue-400/50">
                     <MapPin className="h-6 w-6 text-blue-400 transition-colors duration-300 group-hover:text-blue-300" />
