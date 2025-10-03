@@ -32,6 +32,7 @@ import {
 } from "antd";
 import { useTranslations } from "next-intl";
 import { numberToString } from "@/share/helper/number-to-string";
+import { formatLocation } from "@/share/helper/format-location";
 import {
   getCurrencyByLocale,
   type SupportedLocale,
@@ -265,7 +266,7 @@ export default function DashboardPage() {
         <div className="max-w-48">
           <div className="truncate font-medium">{text}</div>
           <div className="text-xs text-gray-500">
-            {record.location?.address}
+            {formatLocation(record, t("common.notUpdated"))}
           </div>
         </div>
       ),

@@ -15,6 +15,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { numberToString } from "@/share/helper/number-to-string";
+import { formatShortLocation } from "@/share/helper/format-location";
 import { Button } from "antd";
 import { formatCreatedDate } from "@/share/helper/format-date";
 import { useUrlLocale } from "@/utils/locale";
@@ -181,7 +182,7 @@ export default function PropertyCard({ property }: { property: Property }) {
               <div className="flex items-center gap-1">
                 <MapPin className="h-4 w-4" />
                 <span className="text-sm text-gray-600">
-                  {property.location?.address ?? t("common.notUpdated")}
+                  {formatShortLocation(property, t("common.notUpdated"))}
                 </span>
               </div>
             </div>

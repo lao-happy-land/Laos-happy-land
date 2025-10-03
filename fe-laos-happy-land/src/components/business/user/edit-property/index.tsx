@@ -168,7 +168,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
         kitchen: property.details?.kitchen ?? false,
         security: property.details?.security ?? false,
         legalStatus: property.legalStatus ?? "",
-        location: property.location?.address ?? "",
+        location: property.location ?? undefined,
         transactionType: property.transactionType,
         typeId: property.type?.id,
         locationInfoId: property.locationInfo?.id ?? "",

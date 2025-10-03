@@ -323,7 +323,16 @@
     "propertyTypeMaxLength": "Property type name cannot exceed 100 characters",
     "priceHistory": "Price History",
     "priceChangeOverTime": "change over time",
-    "noPriceHistory": "No price history available"
+    "noPriceHistory": "No price history available",
+    "createPropertySuccess": "Property created successfully!",
+    "createPropertyError": "Failed to create property",
+    "pleaseUploadMainImage": "Please upload main image",
+    "pleaseUploadAtLeast3Images": "Please upload at least 3 additional images",
+    "mainImageUploadedSuccessfully": "Main image uploaded successfully!",
+    "cannotUploadMainImage": "Cannot upload main image",
+    "maximum9AdditionalImages": "Maximum 9 additional images allowed!",
+    "uploadImageSuccessWithIndex": "Image {index} uploaded successfully!",
+    "cannotUploadImageWithIndex": "Cannot upload image {index}"
   },
   "news": {
     "title": "News",
@@ -463,7 +472,7 @@
     "instructions": "Click on the map to select location",
     "instructionsText": "Or use the search box above to find specific places",
     "buildingNumber": "Building Number",
-    "street": "Street",
+    "street": "Street / Address",
     "neighborhood": "Neighborhood",
     "district": "District",
     "city": "City",
