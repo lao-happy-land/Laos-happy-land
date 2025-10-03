@@ -5,6 +5,7 @@ import Link from "next/link";
 import { MapPin, Home, Eye } from "lucide-react";
 import type { Property } from "@/@types/types";
 import { numberToString } from "@/share/helper/number-to-string";
+import { formatShortLocation } from "@/share/helper/format-location";
 import { useTranslations } from "next-intl";
 import { useUrlLocale } from "@/utils/locale";
 import {
@@ -203,7 +204,7 @@ export default function ProjectCard({
             <span className="truncate text-sm">
               {typeof project.location === "string"
                 ? project.location
-                : (project.location?.address ?? t("common.notUpdated"))}
+                : formatShortLocation(project, t("common.notUpdated"))}
             </span>
           </div>
 

@@ -11,6 +11,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { Property } from "@/@types/types";
+import { formatShortLocation } from "@/share/helper/format-location";
 
 interface PropertiesMapProps {
   properties: Property[];
@@ -232,7 +233,7 @@ export default function PropertiesMap({
                       {selectedProperty.title}
                     </h3>
                     <p className="mt-1 line-clamp-1 text-sm text-gray-600">
-                      {selectedProperty.location?.address}
+                      {formatShortLocation(selectedProperty, "")}
                     </p>
                   </div>
                 </div>
