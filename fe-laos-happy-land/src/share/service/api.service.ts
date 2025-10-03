@@ -1,20 +1,29 @@
 import { Api } from "@/@types/gentype-axios";
 import { useLocaleStore } from "../store/locale.store";
+import { getCurrencyByLocale, getLangByLocale, getValidLocale } from "../helper/locale.helper";
 
 // Tạo instance API với base URL từ environment
 const api = new Api({
   baseURL: process.env.NEXT_PUBLIC_API_URL!,
 });
 
-// Add request interceptor to include auth token
+// Add request interceptor to include auth token, currency, and lang
 api.instance.interceptors.request.use(
   (config) => {
     // Only run on client side
     if (typeof window !== "undefined") {
+      // Add auth token
       const token = localStorage.getItem("access_token");
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+
+      // Add currency and lang headers based on current locale
+      const locale = useLocaleStore.getState().getLocale();
+      const validLocale = getValidLocale(locale);
+      
+      config.headers.currency = getCurrencyByLocale(validLocale);
+      config.headers.lang = getLangByLocale(validLocale);
     }
 
     if (config.data instanceof FormData) {

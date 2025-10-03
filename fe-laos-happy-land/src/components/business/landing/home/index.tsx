@@ -21,6 +21,8 @@ import PropertyCardSkeleton from "@/components/business/common/property-card-ske
 import { useUrlLocale } from "@/utils/locale";
 import {
   getCurrencyByLocale,
+  getLangByLocale,
+  getValidLocale,
   type SupportedLocale,
 } from "@/share/helper/locale.helper";
 import { useTranslations } from "next-intl";
@@ -93,6 +95,7 @@ const LandingPage = () => {
       newsService.getAllNews({
         page: 1,
         perPage: 3,
+        lang: getLangByLocale(getValidLocale(locale)),
       }),
     {
       refreshDeps: [],

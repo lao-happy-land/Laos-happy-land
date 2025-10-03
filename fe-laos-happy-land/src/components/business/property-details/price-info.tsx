@@ -26,14 +26,12 @@ export default function PriceInfo({
 }: Props) {
   const t = useTranslations();
   const locale = useUrlLocale() as SupportedLocale;
-  const priceCurrency = getCurrencyByLocale(locale);
-  const priceFormatted = price?.[priceCurrency];
   return (
     <div className="mb-6 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 p-6">
       <div className="flex flex-col items-center gap-2 text-center sm:flex-row sm:justify-between">
         <div>
           <div className="text-3xl font-bold text-blue-600 sm:text-4xl">
-            {numberToString(Number(priceFormatted))} {priceCurrency}
+            {numberToString(Number(price), locale, getCurrencyByLocale(locale))}
           </div>
           <Text className="text-sm text-gray-600">
             {transactionType === "rent"

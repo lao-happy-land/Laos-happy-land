@@ -49,6 +49,8 @@ import Image from "next/image";
 import { useUrlLocale } from "@/utils/locale";
 import {
   getPropertyParamsByLocale,
+  getLangByLocale,
+  getValidLocale,
   type SupportedLocale,
 } from "@/share/helper/locale.helper";
 
@@ -126,6 +128,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
     async () => {
       const response = await propertyTypeService.getPropertyTypes({
         transaction: transaction,
+        lang: getLangByLocale(getValidLocale(locale)),
       });
       return response.data ?? [];
     },
@@ -143,7 +146,9 @@ const Properties = ({ transaction }: PropertiesProps) => {
   // Fetch location infos
   const { loading: locationInfosLoading } = useRequest(
     async () => {
-      const response = await locationInfoService.getAllLocationInfo();
+      const response = await locationInfoService.getAllLocationInfo({
+        lang: getLangByLocale(getValidLocale(locale)),
+      });
       return response.data ?? [];
     },
     {
@@ -160,7 +165,9 @@ const Properties = ({ transaction }: PropertiesProps) => {
   // Fetch trending locations
   const { loading: trendingLocationsLoading } = useRequest(
     async () => {
-      const response = await locationInfoService.getTrendingLocations();
+      const response = await locationInfoService.getTrendingLocations(
+        getLangByLocale(getValidLocale(locale)),
+      );
       return response.data ?? [];
     },
     {

@@ -22,6 +22,8 @@ import {
 import { Plus, Search, Edit, Trash2 } from "lucide-react";
 import propertyTypeService from "@/share/service/property-type.service";
 import PropertyTypeModal from "./property-type-modal";
+import { getLangByLocale, getValidLocale } from "@/share/helper/locale.helper";
+import { useUrlLocale } from "@/utils/locale";
 import type { PropertyType } from "@/@types/types";
 
 const { Title, Text } = Typography;
@@ -33,6 +35,7 @@ export default function PropertyTypes() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const locale = useUrlLocale();
 
   const [selectedPropertyType, setSelectedPropertyType] =
     useState<PropertyType | null>(null);
@@ -84,6 +87,7 @@ export default function PropertyTypes() {
           filterTransaction === "all"
             ? undefined
             : (filterTransaction as "rent" | "sale" | "project" | undefined),
+        lang: getLangByLocale(getValidLocale(locale)),
         page: currentPage,
         perPage: pageSize,
       });

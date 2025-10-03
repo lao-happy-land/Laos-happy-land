@@ -153,14 +153,16 @@ export default function ContactCard({
                       </div>
 
                       {/* Professional Badge */}
-                      <div className="mb-3">
-                        <div className="flex w-fit items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1">
-                          <Shield size={12} className="text-white" />
-                          <span className="text-sm font-semibold text-white">
-                            {t("property.professionalBroker")}
-                          </span>
+                      {owner.isBroker && (
+                        <div className="mb-3">
+                          <div className="flex w-fit items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1">
+                            <Shield size={12} className="text-white" />
+                            <span className="text-sm font-semibold text-white">
+                              {t("property.professionalBroker")}
+                            </span>
+                          </div>
                         </div>
-                      </div>
+                      )}
 
                       {/* Stats Row */}
                       <div className="mb-3 grid grid-cols-3 gap-4">

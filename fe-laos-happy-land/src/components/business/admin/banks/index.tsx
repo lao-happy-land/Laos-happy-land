@@ -23,12 +23,15 @@ import { Plus, Search, Edit, Trash2 } from "lucide-react";
 import bankService from "@/share/service/bank.service";
 import type { Bank } from "@/share/service/bank.service";
 import BankModal from "./bank-modal";
+import { getLangByLocale, getValidLocale } from "@/share/helper/locale.helper";
+import { useUrlLocale } from "@/utils/locale";
 import { useTranslations } from "next-intl";
 
 const { Title, Text } = Typography;
 
 export default function Banks() {
   const t = useTranslations();
+  const locale = useUrlLocale();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -71,6 +74,7 @@ export default function Banks() {
         search: searchTerm || undefined,
         page: currentPage,
         perPage: pageSize,
+        lang: getLangByLocale(getValidLocale(locale)),
       });
       return response;
     },

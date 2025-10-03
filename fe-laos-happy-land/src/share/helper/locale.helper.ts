@@ -22,6 +22,21 @@ export const getCurrencyByLocale = (
 };
 
 /**
+ * Maps locale to appropriate language parameter for API calls
+ */
+export const getLangByLocale = (
+  locale: SupportedLocale,
+): "VND" | "USD" | "LAK" => {
+  const localeToLang: Record<SupportedLocale, "VND" | "USD" | "LAK"> = {
+    la: "LAK", // Laos - Lao language
+    en: "USD", // English - English language
+    vn: "VND", // Vietnamese - Vietnamese language
+  };
+
+  return localeToLang[locale];
+};
+
+/**
  * Gets property service parameters based on locale
  */
 export const getPropertyParamsByLocale = (

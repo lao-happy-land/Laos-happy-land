@@ -182,18 +182,26 @@ export interface NewsType {
   deletedBy?: string;
 }
 
+export interface NewsDetail {
+  type: "paragraph" | "image" | "heading";
+  value?: string;
+  url?: string;
+  level?: 1 | 2 | 3;
+}
+
 export interface News {
   id: string;
   title: string;
   description?: string;
-  details?: Content[];
+  details?: NewsDetail[];
+  viewCount?: number;
   viewsCount?: number;
   createdAt: string;
   updatedAt: string;
-  createdBy?: string;
-  updatedBy?: string;
-  deletedAt?: string;
-  deletedBy?: string;
+  createdBy?: string | null;
+  updatedBy?: string | null;
+  deletedAt?: string | null;
+  deletedBy?: string | null;
   newsType?: NewsType;
   newsTypeId?: string;
   type?: NewsType;

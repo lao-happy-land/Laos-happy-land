@@ -10,6 +10,8 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { useTranslations } from "next-intl";
 import { useRequest } from "ahooks";
 import locationInfoService from "@/share/service/location-info.service";
+import { getLangByLocale, getValidLocale } from "@/share/helper/locale.helper";
+import { useUrlLocale } from "@/utils/locale";
 import type { LocationDto } from "@/@types/gentype-axios";
 
 const { Text } = Typography;
@@ -44,6 +46,7 @@ export default function MapboxLocationSelector({
   disabled = false,
 }: MapboxLocationSelectorProps) {
   const t = useTranslations();
+  const locale = useUrlLocale();
 
   // Separate state for locationInfoId and location
   const [selectedLocationInfoId, setSelectedLocationInfoId] = useState<
@@ -97,7 +100,9 @@ export default function MapboxLocationSelector({
   // Fetch all location info for dropdown
   const { data: locationInfoData, loading: loadingLocations } = useRequest(
     async () => {
-      const response = await locationInfoService.getAllLocationInfo();
+      const response = await locationInfoService.getAllLocationInfo({
+        lang: getLangByLocale(getValidLocale(locale)),
+      });
       console.log("Location Info loaded:", response.data);
       return response.data;
     },
@@ -426,7 +431,6 @@ export default function MapboxLocationSelector({
             {locationInfoData && (
               <Text className="mt-1 text-xs text-neutral-500">
                 {locationInfoData.length} {t("map.area").toLowerCase()}{" "}
-                available
               </Text>
             )}
           </div>

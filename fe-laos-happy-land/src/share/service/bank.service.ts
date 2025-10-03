@@ -20,6 +20,7 @@ const bankService = {
     page?: number;
     perPage?: number;
     search?: string;
+    lang?: "VND" | "USD" | "LAK";
   }): Promise<APIResponse<Bank[]>> => {
     try {
       const response = await api.bankControllerGetAll(query);
@@ -46,9 +47,15 @@ const bankService = {
     }
   },
 
-  getBankById: async (id: string): Promise<Bank> => {
+  getBankById: async (
+    id: string,
+    lang?: "VND" | "USD" | "LAK",
+  ): Promise<Bank> => {
     try {
-      const response = await api.bankControllerGet(id);
+      const response = await api.bankControllerGet(
+        id,
+        lang ? { lang } : undefined,
+      );
 
       const data = response.data as unknown as {
         bank: Bank;

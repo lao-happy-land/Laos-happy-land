@@ -100,6 +100,18 @@ export const userService = {
     return response.data as unknown as APIResponse<User[]>;
   },
 
+  getRoleUpgradeRequests: async (params?: {
+    page?: number;
+    perPage?: number;
+    search?: string;
+  }): Promise<APIResponse<User[]>> => {
+    const response = await api.userControllerGetAll({
+      ...params,
+      requestedRoleUpgrade: true,
+    });
+    return response.data as unknown as APIResponse<User[]>;
+  },
+
   approveIsFromBank: async (id: string, approve: boolean): Promise<void> => {
     await api.userControllerApproveIsFromBank(id, { approve });
   },

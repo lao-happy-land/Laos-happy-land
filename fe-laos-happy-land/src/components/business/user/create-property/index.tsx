@@ -48,6 +48,7 @@ import MapboxLocationSelector from "@/components/business/common/mapbox-location
 import propertyService from "@/share/service/property.service";
 import propertyTypeService from "@/share/service/property-type.service";
 import uploadService from "@/share/service/upload.service";
+import { getLangByLocale, getValidLocale } from "@/share/helper/locale.helper";
 import Image from "next/image";
 
 const { TextArea } = Input;
@@ -93,6 +94,7 @@ export default function CreateProperty() {
     async () => {
       const response = await propertyTypeService.getPropertyTypes({
         transaction: selectedTransactionType,
+        lang: getLangByLocale(getValidLocale(locale)),
       });
       return response.data;
     },

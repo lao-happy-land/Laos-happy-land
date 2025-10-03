@@ -68,6 +68,13 @@ export const ADMIN_NAV_ITEMS = (
   },
   {
     id: 10,
+    label: t("admin.sidebar.exchangeRates"),
+    icon: "/images/admin/sidebar/triangle-li.svg",
+    href: `/admin/exchange-rates`,
+    active: pathname === `/${locale}/admin/exchange-rates`,
+  },
+  {
+    id: 11,
     label: t("admin.sidebar.settings"),
     icon: "/images/admin/sidebar/triangle-li.svg",
     href: `/admin/settings`,
