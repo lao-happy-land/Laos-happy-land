@@ -4,18 +4,7 @@ import { useRequest } from "ahooks";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useUrlLocale } from "@/utils/locale";
-import {
-  Spin,
-  Card,
-  Row,
-  Col,
-  Statistic,
-  Table,
-  Button,
-  Space,
-  Tag,
-  App,
-} from "antd";
+import { Spin, Card, Row, Col, Table, Button, Space, Tag, App } from "antd";
 import {
   Building2,
   Users,
@@ -38,6 +27,7 @@ import {
   getCurrencyByLocale,
   type SupportedLocale,
 } from "@/share/helper/locale.helper";
+import { formatLocation } from "@/share/helper/format-location";
 
 const AdminDashboard = () => {
   const t = useTranslations();

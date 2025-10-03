@@ -123,14 +123,23 @@ export default function HeaderBar({
                     {property?.location?.district && (
                       <Text className="text-xs text-blue-600">
                         {property.location.district}
-                        {property.location.address &&
-                          ` > ${property.location.address}`}
+                        {(property.location.buildingNumber ??
+                          property.location.street ??
+                          property.location.address) &&
+                          ` > ${property.location.buildingNumber ? property.location.buildingNumber + " " : ""}${property.location.street ?? property.location.address}`}
                       </Text>
                     )}
                     {!property?.location?.district &&
-                      (property?.location?.address ?? location) && (
+                      (property?.location?.buildingNumber ??
+                        property?.location?.street ??
+                        property?.location?.address ??
+                        location) && (
                         <Text className="text-sm font-medium text-blue-700">
-                          {property?.location?.address ?? location}
+                          {property?.location?.buildingNumber &&
+                            `${property.location.buildingNumber} `}
+                          {property?.location?.street ??
+                            property?.location?.address ??
+                            location}
                         </Text>
                       )}
                   </div>

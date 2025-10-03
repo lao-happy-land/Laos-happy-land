@@ -62,11 +62,25 @@ export default function DetailsSection({
             </div>
           </Descriptions.Item>
         )}
-        {property?.location?.address && (
-          <Descriptions.Item label={t("map.street")} span={2}>
+        {(property?.location?.buildingNumber ??
+          property?.location?.street ??
+          property?.location?.address) && (
+          <Descriptions.Item label={t("map.address")} span={2}>
             <div className="flex items-center gap-2">
               <MapPin size={16} className="text-blue-600" />
-              {property.location.address}
+              <span>
+                {property.location.buildingNumber &&
+                  `${property.location.buildingNumber} `}
+                {property.location.street ?? property.location.address}
+              </span>
+            </div>
+          </Descriptions.Item>
+        )}
+        {property?.location?.neighborhood && (
+          <Descriptions.Item label={t("map.neighborhood")} span={2}>
+            <div className="flex items-center gap-2">
+              <MapPin size={16} className="text-cyan-600" />
+              {property.location.neighborhood}
             </div>
           </Descriptions.Item>
         )}
@@ -83,6 +97,31 @@ export default function DetailsSection({
             <div className="flex items-center gap-2">
               <MapPin size={16} className="text-gray-600" />
               {property.location.province}
+            </div>
+          </Descriptions.Item>
+        )}
+        {property?.location?.country && (
+          <Descriptions.Item label={t("map.country")}>
+            <div className="flex items-center gap-2">
+              <MapPin size={16} className="text-gray-600" />
+              {property.location.country}
+            </div>
+          </Descriptions.Item>
+        )}
+        {property?.location?.postalCode && (
+          <Descriptions.Item label={t("map.postalCode")}>
+            <div className="flex items-center gap-2">
+              <MapPin size={16} className="text-gray-600" />
+              {property.location.postalCode}
+            </div>
+          </Descriptions.Item>
+        )}
+        {property?.location?.latitude && property?.location?.longitude && (
+          <Descriptions.Item label={t("map.coordinates")} span={2}>
+            <div className="flex items-center gap-2">
+              <MapPin size={16} className="text-green-600" />
+              {property.location.latitude.toFixed(6)},{" "}
+              {property.location.longitude.toFixed(6)}
             </div>
           </Descriptions.Item>
         )}
