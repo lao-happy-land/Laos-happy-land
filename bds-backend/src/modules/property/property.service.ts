@@ -142,6 +142,26 @@ export class PropertyService {
     }
   }
 
+  private async transalteProperties(
+    item: any,
+    targetLang: string,
+  ): Promise<any> {
+    if (item.title) {
+      item.title = await this.translateService.translateText(
+        item.title,
+        targetLang,
+      );
+    }
+
+    if (item.description) {
+      item.description = await this.translateService.translateText(
+        item.description,
+        targetLang,
+      );
+    }
+
+    return item;
+  }
   private async translateProperty(item: any, targetLang: string): Promise<any> {
     if (item.title) {
       item.title = await this.translateService.translateText(
@@ -231,7 +251,6 @@ export class PropertyService {
     const properties = this.propertyRepository
       .createQueryBuilder('property')
       .leftJoinAndSelect('property.owner', 'owner')
-      .leftJoinAndSelect('owner.role', 'role')
       .leftJoinAndSelect('property.type', 'type')
       .leftJoinAndSelect('property.locationInfo', 'locationInfo')
       .addSelect(
@@ -340,10 +359,14 @@ export class PropertyService {
 
     const [result, total] = await properties.getManyAndCount();
 
-    const finalResult = params.currency
-      ? result.map((item) => this.formatProperty(item, params.currency))
-      : result;
+    const targetLang = this.mapLang(params.currency || params.currency);
 
+    const finalResult = await Promise.all(
+      (params.currency
+        ? result.map((item) => this.formatProperty(item, params.currency))
+        : result
+      ).map((item) => this.transalteProperties(item, targetLang)),
+    );
     const serializedResult = instanceToPlain(finalResult);
 
     const pageMetaDto = new PageMetaDto({
@@ -389,10 +412,14 @@ export class PropertyService {
 
     const [result, total] = await qb.getManyAndCount();
 
-    const finalResult = params.currency
-      ? result.map((item) => this.formatProperty(item, params.currency))
-      : result;
+    const targetLang = this.mapLang(params.currency);
 
+    const finalResult = await Promise.all(
+      (params.currency
+        ? result.map((item) => this.formatProperty(item, params.currency))
+        : result
+      ).map((item) => this.transalteProperties(item, targetLang)),
+    );
     const serializedResult = instanceToPlain(finalResult);
 
     const pageMetaDto = new PageMetaDto({
@@ -468,10 +495,14 @@ export class PropertyService {
 
     const [properties, total] = await qb.getManyAndCount();
 
-    const finalResult = params.currency
-      ? properties.map((item) => this.formatProperty(item, params.currency))
-      : properties;
+    const targetLang = this.mapLang(params.currency);
 
+    const finalResult = await Promise.all(
+      (params.currency
+        ? properties.map((item) => this.formatProperty(item, params.currency))
+        : properties
+      ).map((item) => this.transalteProperties(item, targetLang)),
+    );
     const serializedResult = instanceToPlain(finalResult);
 
     const pageMetaDto = new PageMetaDto({

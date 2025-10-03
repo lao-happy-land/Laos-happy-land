@@ -61,7 +61,18 @@ export class NewsService {
       });
     }
 
+    if (params.newsTypeId) {
+      newsQuery.andWhere('newsType.id = :newsTypeId', {
+        newsTypeId: params.newsTypeId,
+      });
+    }
+
     const [result, total] = await newsQuery.getManyAndCount();
+
+    const targetLang = this.mapLang(params.lang || 'VND');
+    for (const r of result) {
+      r.title = await this.translateService.translateText(r.title, targetLang);
+    }
     const pageMetaDto = new PageMetaDto({
       itemCount: total,
       pageOptionsDto: params,
