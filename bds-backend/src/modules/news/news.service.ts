@@ -76,7 +76,7 @@ export class NewsService {
       if (Array.isArray(r.details)) {
         r.details = await Promise.all(
           r.details.map(async (item) => {
-            if (item.type === 'p' && item.value) {
+            if (item.value && item.type !== 'image') {
               return {
                 ...item,
                 value: await this.translateService.translateText(
@@ -130,7 +130,7 @@ export class NewsService {
     if (Array.isArray(news.details)) {
       news.details = await Promise.all(
         news.details.map(async (item) => {
-          if (item.type === 'p' && item.value) {
+          if (item.value && item.type !== 'image') {
             return {
               ...item,
               value: await this.translateService.translateText(
