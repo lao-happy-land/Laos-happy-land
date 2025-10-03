@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Card, Button, Typography, Select, Input, Row, Col } from "antd";
-import { MapPin, Check } from "lucide-react";
+import { MapPin, Check, Search } from "lucide-react";
 import Map from "react-map-gl/mapbox";
 import { Marker, Popup } from "react-map-gl/mapbox";
 import type { MapRef } from "react-map-gl/mapbox";
@@ -61,9 +61,15 @@ export default function MapboxLocationSelector({
     value?.location?.buildingNumber ?? "",
   );
 
-  const [street, setStreet] = useState<string>(
-    value?.location?.street ?? value?.location?.address ?? "",
+  const [street, setStreet] = useState<string>(value?.location?.street ?? "");
+
+  const [address, setAddress] = useState<string>(
+    value?.location?.address ?? "",
   );
+
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchResults, setSearchResults] = useState<MapboxFeature[]>([]);
+  const [isSearching, setIsSearching] = useState<boolean>(false);
 
   const [mapLocation, setMapLocation] = useState<{
     latitude: number;
@@ -134,6 +140,35 @@ export default function MapboxLocationSelector({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
+  // Forward geocode to search for locations
+  const forwardGeocode = useCallback(
+    async (query: string): Promise<MapboxFeature[]> => {
+      if (!MAPBOX_TOKEN || !query.trim()) {
+        return [];
+      }
+
+      try {
+        const response = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+            query,
+          )}.json?access_token=${MAPBOX_TOKEN}&limit=5&country=LA`,
+        );
+
+        if (!response.ok) {
+          console.error("Geocoding API error:", response.status);
+          return [];
+        }
+
+        const data = (await response.json()) as MapboxGeocodingResponse;
+        return data.features || [];
+      } catch (error) {
+        console.error("Geocoding error:", error);
+        return [];
+      }
+    },
+    [MAPBOX_TOKEN],
+  );
+
   // Reverse geocode to get address details from lat/lng
   const reverseGeocode = useCallback(
     async (lat: number, lng: number): Promise<LocationDto | null> => {
@@ -202,7 +237,7 @@ export default function MapboxLocationSelector({
         return {
           latitude: lat,
           longitude: lng,
-          address: address, // Street name is now the primary address
+          address: address,
           street: street || undefined,
           buildingNumber: buildingNumber || undefined,
           city: city || undefined,
@@ -245,25 +280,18 @@ export default function MapboxLocationSelector({
         zoom: 15,
       });
 
-      // Get address details from reverse geocoding
+      // Get address details from reverse geocoding (for city/province info only)
       void reverseGeocode(lngLat.lat, lngLat.lng).then((locationData) => {
         if (locationData) {
-          // Preserve the selected strict (district) value and manual inputs
+          // Only use reverse geocoding for city/province, keep manual inputs for address fields
           const updatedLocation = {
             ...locationData,
             district: selectedStrict ?? locationData.district,
-            buildingNumber: buildingNumber || locationData.buildingNumber,
-            street: street || locationData.street,
-            address: street || locationData.address,
+            buildingNumber: buildingNumber, // Keep manual input
+            street: street, // Keep manual input
+            address: address, // Keep manual input
           };
           setLocationDetails(updatedLocation);
-          // Update street input if geocoding found a street
-          if (!street && locationData.street) {
-            setStreet(locationData.street);
-          }
-          if (!buildingNumber && locationData.buildingNumber) {
-            setBuildingNumber(locationData.buildingNumber);
-          }
           // Auto-update parent with new location
           onChange?.({
             locationInfoId: selectedLocationInfoId,
@@ -295,6 +323,7 @@ export default function MapboxLocationSelector({
       selectedStrict,
       buildingNumber,
       street,
+      address,
     ],
   );
 
@@ -351,7 +380,6 @@ export default function MapboxLocationSelector({
       ? {
           ...locationDetails,
           street: value || undefined,
-          address: value || locationDetails.address,
         }
       : null;
     setLocationDetails(updatedLocation);
@@ -359,6 +387,90 @@ export default function MapboxLocationSelector({
       locationInfoId: selectedLocationInfoId,
       location: updatedLocation,
     });
+  };
+
+  const handleAddressChange = (value: string) => {
+    setAddress(value);
+    // Update location details
+    const updatedLocation = locationDetails
+      ? {
+          ...locationDetails,
+          address: value || undefined,
+        }
+      : null;
+    setLocationDetails(updatedLocation);
+    onChange?.({
+      locationInfoId: selectedLocationInfoId,
+      location: updatedLocation,
+    });
+  };
+
+  const handleSearch = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const results = await forwardGeocode(query);
+      setSearchResults(results);
+    } catch (error) {
+      console.error("Search error:", error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSearchResultSelect = (feature: MapboxFeature) => {
+    const [lng, lat] = feature.center;
+    const newLocation = { latitude: lat, longitude: lng };
+
+    setMapLocation(newLocation);
+    setViewState({
+      longitude: lng,
+      latitude: lat,
+      zoom: 15,
+    });
+
+    // Get address details from reverse geocoding
+    void reverseGeocode(lat, lng).then((locationData) => {
+      if (locationData) {
+        const updatedLocation = {
+          ...locationData,
+          district: selectedStrict ?? locationData.district,
+          buildingNumber: buildingNumber,
+          street: street,
+          address: address,
+        };
+        setLocationDetails(updatedLocation);
+        onChange?.({
+          locationInfoId: selectedLocationInfoId,
+          location: updatedLocation,
+        });
+      } else {
+        // Fallback if reverse geocoding fails
+        const fallbackLocation: LocationDto = {
+          latitude: lat,
+          longitude: lng,
+          address: address,
+          street: street || undefined,
+          buildingNumber: buildingNumber || undefined,
+          district: selectedStrict ?? undefined,
+          country: "Laos",
+        };
+        setLocationDetails(fallbackLocation);
+        onChange?.({
+          locationInfoId: selectedLocationInfoId,
+          location: fallbackLocation,
+        });
+      }
+    });
+
+    // Clear search results
+    setSearchResults([]);
+    setSearchQuery("");
   };
 
   // Get selected location info to access strict array
@@ -468,7 +580,7 @@ export default function MapboxLocationSelector({
             </div>
           )}
 
-          {/* Street and Building Number Inputs */}
+          {/* Street, Building Number and Address Inputs */}
           {selectedLocationInfoId && selectedStrict && (
             <Row gutter={16}>
               <Col xs={24} sm={8}>
@@ -498,84 +610,151 @@ export default function MapboxLocationSelector({
             </Row>
           )}
 
-          {/* Map */}
+          {/* Address Input - Manual entry */}
+          {selectedLocationInfoId && selectedStrict && (
+            <div>
+              <Text className="mb-2 block text-sm font-medium text-neutral-700">
+                {t("common.address")} <span className="text-red-500">*</span>
+              </Text>
+              <Input
+                placeholder={t("common.enterAddress")}
+                value={address}
+                onChange={(e) => handleAddressChange(e.target.value)}
+                disabled={disabled}
+                size="large"
+              />
+              <Text className="mt-1 text-xs text-neutral-500">
+                {t("map.enterAddressManually")}
+              </Text>
+            </div>
+          )}
+
+          {/* Map with Search */}
           <div>
             <Text className="mb-2 block text-sm font-medium text-neutral-700">
               {t("map.selectLocationOnMap")} ({t("map.coordinates")}){" "}
               <span className="text-red-500">*</span>
             </Text>
-            <div className="h-[50vh] w-full overflow-hidden rounded-lg border border-neutral-200">
-              <Map
-                ref={mapRef}
-                {...viewState}
-                onMove={(evt: { viewState: typeof viewState }) =>
-                  setViewState(evt.viewState)
-                }
-                onClick={disabled ? undefined : handleMapClick}
-                mapStyle="mapbox://styles/mapbox/streets-v12"
-                mapboxAccessToken={MAPBOX_TOKEN}
-                style={{ width: "100%", height: "100%" }}
-              >
-                {mapLocation && (
-                  <Marker
-                    longitude={mapLocation.longitude}
-                    latitude={mapLocation.latitude}
-                    anchor="bottom"
-                  >
-                    <div className="bg-primary-500 flex h-8 w-8 items-center justify-center rounded-full text-white shadow-lg">
-                      <MapPin className="h-4 w-4" />
-                    </div>
-                  </Marker>
-                )}
+            <div className="relative">
+              {/* Search Input - Absolute positioned on top of map */}
+              <div className="absolute top-4 left-4 z-10 w-80 max-w-[calc(100%-2rem)]">
+                <Input
+                  placeholder={t("map.searchPlaceholder")}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onPressEnter={() => handleSearch(searchQuery)}
+                  disabled={disabled}
+                  size="large"
+                  prefix={<Search className="h-4 w-4 text-neutral-400" />}
+                  suffix={
+                    <Button
+                      type="text"
+                      size="small"
+                      loading={isSearching}
+                      onClick={() => handleSearch(searchQuery)}
+                      className="text-primary-500 hover:text-primary-600"
+                    >
+                      {t("map.search")}
+                    </Button>
+                  }
+                />
 
-                {mapLocation && locationDetails && (
-                  <Popup
-                    longitude={mapLocation.longitude}
-                    latitude={mapLocation.latitude}
-                    anchor="top"
-                    closeButton={false}
-                    closeOnClick={false}
-                  >
-                    <div className="max-w-[250px] p-3">
-                      <Text className="text-sm font-medium">
-                        {locationDetails.address}
-                      </Text>
-                      <div className="mt-2 space-y-1">
-                        {locationDetails.district && (
-                          <div className="text-xs text-neutral-600">
-                            <strong>{t("map.district")}:</strong>{" "}
-                            {locationDetails.district}
-                          </div>
-                        )}
-                        {locationDetails.city && (
-                          <div className="text-xs text-neutral-600">
-                            <strong>{t("map.city")}:</strong>{" "}
-                            {locationDetails.city}
-                          </div>
-                        )}
-                        {locationDetails.province && (
-                          <div className="text-xs text-neutral-600">
-                            <strong>{t("map.province")}:</strong>{" "}
-                            {locationDetails.province}
-                          </div>
-                        )}
+                {/* Search Results - Absolute positioned below input */}
+                {searchResults.length > 0 && (
+                  <div className="absolute top-full right-0 left-0 z-20 mt-2 max-h-48 overflow-y-auto rounded-lg border border-neutral-200 bg-white shadow-lg">
+                    {searchResults.map((result, index) => (
+                      <div
+                        key={index}
+                        className="cursor-pointer border-b border-neutral-100 p-3 last:border-b-0 hover:bg-neutral-50"
+                        onClick={() => handleSearchResultSelect(result)}
+                      >
+                        <div className="text-sm font-medium text-neutral-900">
+                          {result.place_name}
+                        </div>
+                        <div className="text-xs text-neutral-500">
+                          {result.center[1].toFixed(6)},{" "}
+                          {result.center[0].toFixed(6)}
+                        </div>
                       </div>
-                      <div className="mt-2 text-xs text-neutral-500">
-                        {mapLocation.latitude.toFixed(6)},{" "}
-                        {mapLocation.longitude.toFixed(6)}
-                      </div>
-                    </div>
-                  </Popup>
+                    ))}
+                  </div>
                 )}
-              </Map>
+              </div>
+
+              {/* Map */}
+              <div className="h-[50vh] w-full overflow-hidden rounded-lg border border-neutral-200">
+                <Map
+                  ref={mapRef}
+                  {...viewState}
+                  onMove={(evt: { viewState: typeof viewState }) =>
+                    setViewState(evt.viewState)
+                  }
+                  onClick={disabled ? undefined : handleMapClick}
+                  mapStyle="mapbox://styles/mapbox/streets-v12"
+                  mapboxAccessToken={MAPBOX_TOKEN}
+                  style={{ width: "100%", height: "100%" }}
+                >
+                  {mapLocation && (
+                    <Marker
+                      longitude={mapLocation.longitude}
+                      latitude={mapLocation.latitude}
+                      anchor="bottom"
+                    >
+                      <div className="bg-primary-500 flex h-8 w-8 items-center justify-center rounded-full text-white shadow-lg">
+                        <MapPin className="h-4 w-4" />
+                      </div>
+                    </Marker>
+                  )}
+
+                  {mapLocation && locationDetails && (
+                    <Popup
+                      longitude={mapLocation.longitude}
+                      latitude={mapLocation.latitude}
+                      anchor="top"
+                      closeButton={false}
+                      closeOnClick={false}
+                    >
+                      <div className="max-w-[250px] p-3">
+                        <Text className="text-sm font-medium">
+                          {address || t("map.coordinatesOnly")}
+                        </Text>
+                        <div className="mt-2 space-y-1">
+                          {locationDetails.district && (
+                            <div className="text-xs text-neutral-600">
+                              <strong>{t("map.district")}:</strong>{" "}
+                              {locationDetails.district}
+                            </div>
+                          )}
+                          {locationDetails.city && (
+                            <div className="text-xs text-neutral-600">
+                              <strong>{t("map.city")}:</strong>{" "}
+                              {locationDetails.city}
+                            </div>
+                          )}
+                          {locationDetails.province && (
+                            <div className="text-xs text-neutral-600">
+                              <strong>{t("map.province")}:</strong>{" "}
+                              {locationDetails.province}
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-2 text-xs text-neutral-500">
+                          {mapLocation.latitude.toFixed(6)},{" "}
+                          {mapLocation.longitude.toFixed(6)}
+                        </div>
+                      </div>
+                    </Popup>
+                  )}
+                </Map>
+              </div>
             </div>
           </div>
 
           <div className="flex flex-col items-center justify-between gap-2 lg:flex-row">
             <Text className="text-sm text-neutral-600">
               💡 <strong>{t("map.instructions")}:</strong> {t("map.selectArea")}{" "}
-              → {t("map.district")} → {t("map.street")} →{" "}
-              {t("map.clickOnMapToSelectLocation")}
+              → {t("map.district")} → {t("map.street")} → {t("common.address")}{" "}
+              → {t("map.clickOnMapToSelectLocation")}
             </Text>
             <div className="flex justify-end gap-2">
               {(mapLocation ?? selectedLocationInfoId) && (
@@ -591,6 +770,7 @@ export default function MapboxLocationSelector({
                   !selectedLocationInfoId ||
                   !selectedStrict ||
                   !street ||
+                  !address ||
                   disabled
                 }
                 icon={<Check className="h-4 w-4" />}
