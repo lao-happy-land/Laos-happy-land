@@ -48,6 +48,7 @@ import type { PropertyType, Property } from "@/@types/types";
 import propertyService from "@/share/service/property.service";
 import propertyTypeService from "@/share/service/property-type.service";
 import uploadService from "@/share/service/upload.service";
+import { getLangByLocale, getValidLocale } from "@/share/helper/locale.helper";
 import ProjectContentBuilder from "@/components/business/common/project-content-builder";
 import MapboxLocationSelector from "@/components/business/common/mapbox-location-selector";
 import { useAuthStore } from "@/share/store/auth.store";
@@ -107,6 +108,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
     async () => {
       const response = await propertyTypeService.getPropertyTypes({
         transaction: selectedTransactionType,
+        lang: getLangByLocale(getValidLocale(locale)),
       });
       return response;
     },
@@ -173,6 +175,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
             ? parseFloat(currentProperty.price.USD)
             : parseFloat(currentProperty.price.toString())
           : undefined,
+        priority: currentProperty.priority ?? 0,
         area: currentProperty.details?.area ?? undefined,
         bedrooms: currentProperty.details?.bedrooms ?? undefined,
         bathrooms: currentProperty.details?.bathrooms ?? undefined,
@@ -207,6 +210,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
       title: string;
       description?: string;
       price?: number;
+      priority?: number;
       area?: number;
       bedrooms?: number;
       bathrooms?: number;
@@ -231,6 +235,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
         title: values.title,
         description: values.description,
         price: values.price,
+        priority: values.priority,
         details: {
           area: values.area,
           bedrooms: values.bedrooms,
@@ -309,6 +314,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
     title: string;
     description?: string;
     price?: number;
+    priority?: number;
     area?: number;
     bedrooms?: number;
     bathrooms?: number;
@@ -462,6 +468,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
           className="space-y-8"
           initialValues={{
             transactionType: "sale",
+            priority: 0,
           }}
         >
           {/* Basic Information */}
@@ -559,6 +566,23 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                   placeholder={t("property.enterLegalStatus")}
                   size="large"
                   className="rounded-lg"
+                />
+              </Form.Item>
+
+              <Form.Item
+                name="priority"
+                label={
+                  <Text className="font-medium">{t("property.priority")}</Text>
+                }
+                tooltip={t("property.priorityTooltip")}
+                initialValue={0}
+              >
+                <InputNumber
+                  min={1}
+                  max={10}
+                  placeholder={t("property.enterPriority")}
+                  size="large"
+                  className="w-full rounded-lg"
                 />
               </Form.Item>
             </div>

@@ -19,6 +19,7 @@ export const newsService = {
     perPage?: number;
     newsTypeId?: string;
     search?: string;
+    lang?: "VND" | "USD" | "LAK";
   }) => {
     const response = await api.newsControllerGetAll(params);
     return response.data as unknown as NewsResponse;
@@ -27,9 +28,13 @@ export const newsService = {
   /**
    * Get a news by ID
    */
-  getNewsById: async (id: string) => {
-    const response = await api.newsControllerGet(id);
-    return response.data as unknown as News;
+  getNewsById: async (id: string, lang?: "VND" | "USD" | "LAK") => {
+    const response = await api.newsControllerGet(
+      id,
+      lang ? { lang } : undefined,
+    );
+    const data = response.data as unknown as { news: News; message: string };
+    return data.news;
   },
 
   /**

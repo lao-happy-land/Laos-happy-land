@@ -19,6 +19,8 @@ import { Plus, Edit, Trash2, Search } from "lucide-react";
 import { useRequest } from "ahooks";
 import { newsService } from "@/share/service/news.service";
 import { newsTypeService } from "@/share/service/news-type.service";
+import { getLangByLocale, getValidLocale } from "@/share/helper/locale.helper";
+import { useUrlLocale } from "@/utils/locale";
 import type { News, NewsType } from "@/@types/types";
 import NewsModal from "./news-modal";
 import { useTranslations } from "next-intl";
@@ -28,6 +30,7 @@ const { Option } = Select;
 
 const NewsAdmin: React.FC = () => {
   const t = useTranslations();
+  const locale = useUrlLocale();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedNewsType, setSelectedNewsType] = useState<string>("");
   const [modalVisible, setModalVisible] = useState(false);
@@ -39,13 +42,26 @@ const NewsAdmin: React.FC = () => {
     data: newsData,
     loading,
     refresh,
-  } = useRequest(() => newsService.getAllNews({ page: 1, perPage: 100 }), {
-    refreshDeps: [],
-  });
+  } = useRequest(
+    () =>
+      newsService.getAllNews({
+        page: 1,
+        perPage: 100,
+        lang: getLangByLocale(getValidLocale(locale)),
+      }),
+    {
+      refreshDeps: [],
+    },
+  );
 
   // Fetch news types for filter
   const { data: newsTypesData } = useRequest(
-    () => newsTypeService.getAllNewsTypes({ page: 1, perPage: 100 }),
+    () =>
+      newsTypeService.getAllNewsTypes({
+        page: 1,
+        perPage: 100,
+        lang: getLangByLocale(getValidLocale(locale)),
+      }),
     {
       refreshDeps: [],
     },

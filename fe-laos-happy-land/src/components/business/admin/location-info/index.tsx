@@ -20,12 +20,15 @@ import { Plus, Search, Trash2, Edit, MapPin } from "lucide-react";
 import locationInfoService from "@/share/service/location-info.service";
 import type { LocationInfo } from "@/share/service/location-info.service";
 import LocationInfoModal from "./location-info-modal";
+import { getLangByLocale, getValidLocale } from "@/share/helper/locale.helper";
+import { useUrlLocale } from "@/utils/locale";
 
 const { Title, Text } = Typography;
 
 const AdminLocationInfo = () => {
   const t = useTranslations();
   const { modal, message } = App.useApp();
+  const locale = useUrlLocale();
 
   const [locationInfos, setLocationInfos] = useState<LocationInfo[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -37,7 +40,9 @@ const AdminLocationInfo = () => {
   // Fetch location infos
   const { loading: loadingLocationInfos, run: fetchLocationInfos } = useRequest(
     async () => {
-      const response = await locationInfoService.getAllLocationInfo();
+      const response = await locationInfoService.getAllLocationInfo({
+        lang: getLangByLocale(getValidLocale(locale)),
+      });
       return response.data || response;
     },
     {

@@ -35,6 +35,7 @@ import {
 
 import Image from "next/image";
 import { numberToString } from "@/share/helper/number-to-string";
+import { getLangByLocale, getValidLocale } from "@/share/helper/locale.helper";
 import locationInfoService from "@/share/service/location-info.service";
 import propertyTypeService from "@/share/service/property-type.service";
 import { settingService } from "@/share/service/setting.service";
@@ -52,7 +53,9 @@ const SearchBox = () => {
   // Fetch all locations
   const { data: allLocationsData, loading: allLocationsLoading } = useRequest(
     async () => {
-      const response = await locationInfoService.getAllLocationInfo();
+      const response = await locationInfoService.getAllLocationInfo({
+        lang: getLangByLocale(getValidLocale(locale)),
+      });
       return response.data ?? [];
     },
   );
@@ -82,6 +85,7 @@ const SearchBox = () => {
         transaction: searchType as "rent" | "sale" | "project",
         page: 1,
         perPage: 100,
+        lang: getLangByLocale(getValidLocale(locale)),
       });
       return response.data;
     },

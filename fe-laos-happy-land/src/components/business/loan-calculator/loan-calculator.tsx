@@ -29,6 +29,8 @@ import bankService from "@/share/service/bank.service";
 import type { TermRate } from "@/share/service/bank.service";
 import {
   getCurrencyByLocale,
+  getLangByLocale,
+  getValidLocale,
   type SupportedLocale,
 } from "@/share/helper/locale.helper";
 import { useUrlLocale } from "@/utils/locale";
@@ -71,7 +73,11 @@ const LoanCalculator = () => {
   // Fetch banks data
   const { data: banksData, loading: banksLoading } = useRequest(
     async () => {
-      const response = await bankService.getBanks({ page: 1, perPage: 100 });
+      const response = await bankService.getBanks({
+        page: 1,
+        perPage: 100,
+        lang: getLangByLocale(getValidLocale(locale)),
+      });
       return response.data ?? [];
     },
     {
