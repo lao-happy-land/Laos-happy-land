@@ -14,7 +14,11 @@ export const newsTypeService = {
   /**
    * Get all news types with pagination
    */
-  getAllNewsTypes: async (params?: { page?: number; perPage?: number }) => {
+  getAllNewsTypes: async (params?: {
+    page?: number;
+    perPage?: number;
+    lang?: "VND" | "USD" | "LAK";
+  }) => {
     const response = await api.newsTypeControllerGetAll(params);
     return response.data as unknown as NewsTypeResponse;
   },
@@ -22,8 +26,11 @@ export const newsTypeService = {
   /**
    * Get a news type by ID
    */
-  getNewsTypeById: async (id: string) => {
-    const response = await api.newsTypeControllerGet(id);
+  getNewsTypeById: async (id: string, lang?: "VND" | "USD" | "LAK") => {
+    const response = await api.newsTypeControllerGet(
+      id,
+      lang ? { lang } : undefined,
+    );
     return response.data as unknown as NewsType;
   },
 

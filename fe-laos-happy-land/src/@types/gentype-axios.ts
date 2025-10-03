@@ -236,6 +236,11 @@ export interface CreatePropertyDto {
    * @example "Sổ hồng đầy đủ"
    */
   legalStatus?: string;
+  /**
+   * Độ ưu tiên
+   * @example 0
+   */
+  priority?: number;
   /** Vị trí bất động sản (Mapbox object) */
   location?: LocationDto;
   /**
@@ -285,6 +290,11 @@ export interface UpdatePropertyDto {
    * @example "Sổ hồng đầy đủ"
    */
   legalStatus?: string;
+  /**
+   * Độ ưu tiên
+   * @example 0
+   */
+  priority?: number;
   /** Vị trí bất động sản (Mapbox object) */
   location?: LocationDto;
   /**
@@ -475,6 +485,8 @@ export interface CreateBankDto {
   name: string;
   /** Danh sách kỳ hạn và lãi suất */
   termRates: TermRateDto[];
+  /** image Bank */
+  imageUrl?: string;
 }
 
 export interface UpdateBankDto {
@@ -485,6 +497,8 @@ export interface UpdateBankDto {
   name?: string;
   /** Danh sách kỳ hạn và lãi suất */
   termRates?: TermRateDto[];
+  /** image Bank */
+  imageUrl?: string;
 }
 
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, HeadersDefaults, ResponseType } from "axios";
@@ -1229,6 +1243,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         transaction?: "rent" | "sale" | "project";
         /** Từ khóa tìm kiếm tên bất động sản */
         search?: string;
+        /**
+         * Ngôn ngữ hiển thị (VND = Tiếng Việt, USD = English, LAK = Lao)
+         * @example "USD"
+         */
+        lang?: "VND" | "USD" | "LAK";
       },
       params: RequestParams = {},
     ) =>
@@ -1247,10 +1266,21 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get a property type by ID
      * @request GET:/api/property-type/{id}
      */
-    propertyTypeControllerGet: (id: string, params: RequestParams = {}) =>
+    propertyTypeControllerGet: (
+      id: string,
+      query?: {
+        /**
+         * Ngôn ngữ hiển thị (VND = Tiếng Việt, USD = English, LAK = Lao)
+         * @example "USD"
+         */
+        lang?: "VND" | "USD" | "LAK";
+      },
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/property-type/${id}`,
         method: "GET",
+        query: query,
         ...params,
       }),
 
@@ -1501,10 +1531,24 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @name LocationInfoControllerGetAll
      * @request GET:/api/location-info
      */
-    locationInfoControllerGetAll: (params: RequestParams = {}) =>
+    locationInfoControllerGetAll: (
+      query?: {
+        page?: number;
+        perPage?: number;
+        /** Search of the location Info */
+        search?: string;
+        /**
+         * Ngôn ngữ hiển thị (VND = Tiếng Việt, USD = English, LAK = Lao)
+         * @example "USD"
+         */
+        lang?: "VND" | "USD" | "LAK";
+      },
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/location-info`,
         method: "GET",
+        query: query,
         ...params,
       }),
 
@@ -1515,10 +1559,20 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @name LocationInfoControllerGetTrendingLocations
      * @request GET:/api/location-info/trending
      */
-    locationInfoControllerGetTrendingLocations: (params: RequestParams = {}) =>
+    locationInfoControllerGetTrendingLocations: (
+      query?: {
+        /**
+         * Ngôn ngữ hiển thị (VND = Tiếng Việt, USD = English, LAK = Lao)
+         * @example "USD"
+         */
+        lang?: "VND" | "USD" | "LAK";
+      },
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/location-info/trending`,
         method: "GET",
+        query: query,
         ...params,
       }),
 
@@ -1529,10 +1583,21 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @name LocationInfoControllerGet
      * @request GET:/api/location-info/{id}
      */
-    locationInfoControllerGet: (id: string, params: RequestParams = {}) =>
+    locationInfoControllerGet: (
+      id: string,
+      query?: {
+        /**
+         * Ngôn ngữ hiển thị (VND = Tiếng Việt, USD = English, LAK = Lao)
+         * @example "USD"
+         */
+        lang?: "VND" | "USD" | "LAK";
+      },
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/location-info/${id}`,
         method: "GET",
+        query: query,
         ...params,
       }),
 
@@ -1595,6 +1660,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: {
         page?: number;
         perPage?: number;
+        /**
+         * Ngôn ngữ hiển thị (VND = Tiếng Việt, USD = English, LAK = Lao)
+         * @example "USD"
+         */
+        lang?: "VND" | "USD" | "LAK";
       },
       params: RequestParams = {},
     ) =>
@@ -1613,10 +1683,21 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get news type by id
      * @request GET:/api/news-type/{id}
      */
-    newsTypeControllerGet: (id: string, params: RequestParams = {}) =>
+    newsTypeControllerGet: (
+      id: string,
+      query?: {
+        /**
+         * Ngôn ngữ hiển thị (VND = Tiếng Việt, USD = English, LAK = Lao)
+         * @example "USD"
+         */
+        lang?: "VND" | "USD" | "LAK";
+      },
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/news-type/${id}`,
         method: "GET",
+        query: query,
         ...params,
       }),
 
@@ -1685,6 +1766,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         newsTypeId?: string;
         /** Từ khóa tìm kiếm tên tin tức */
         search?: string;
+        /**
+         * Ngôn ngữ hiển thị (VND = Tiếng Việt, USD = English, LAK = Lao)
+         * @example "USD"
+         */
+        lang?: "VND" | "USD" | "LAK";
       },
       params: RequestParams = {},
     ) =>
@@ -1703,10 +1789,21 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get news by id
      * @request GET:/api/news/{id}
      */
-    newsControllerGet: (id: string, params: RequestParams = {}) =>
+    newsControllerGet: (
+      id: string,
+      query?: {
+        /**
+         * Ngôn ngữ hiển thị (VND = Tiếng Việt, USD = English, LAK = Lao)
+         * @example "USD"
+         */
+        lang?: "VND" | "USD" | "LAK";
+      },
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/news/${id}`,
         method: "GET",
+        query: query,
         ...params,
       }),
 
@@ -1860,6 +1957,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         perPage?: number;
         /** Search of the bank */
         search?: string;
+        /**
+         * Ngôn ngữ hiển thị (VND = Tiếng Việt, USD = English, LAK = Lao)
+         * @example "USD"
+         */
+        lang?: "VND" | "USD" | "LAK";
       },
       params: RequestParams = {},
     ) =>
@@ -1878,10 +1980,21 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get bank by id
      * @request GET:/api/bank/{id}
      */
-    bankControllerGet: (id: string, params: RequestParams = {}) =>
+    bankControllerGet: (
+      id: string,
+      query?: {
+        /**
+         * Ngôn ngữ hiển thị (VND = Tiếng Việt, USD = English, LAK = Lao)
+         * @example "USD"
+         */
+        lang?: "VND" | "USD" | "LAK";
+      },
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/bank/${id}`,
         method: "GET",
+        query: query,
         ...params,
       }),
 

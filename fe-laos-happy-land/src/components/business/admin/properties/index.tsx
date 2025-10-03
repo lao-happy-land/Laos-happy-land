@@ -42,6 +42,7 @@ import {
   getCurrencyByLocale,
   getPropertyParamsByLocale,
   getValidLocale,
+  getLangByLocale,
   type SupportedLocale,
 } from "@/share/helper/locale.helper";
 
@@ -81,6 +82,7 @@ const AdminProperties = () => {
     async () => {
       const response = await propertyTypeService.getPropertyTypes({
         transaction: selectedTransactionType as "rent" | "sale" | "project",
+        lang: getLangByLocale(getValidLocale(locale)),
       });
       return response.data ?? [];
     },

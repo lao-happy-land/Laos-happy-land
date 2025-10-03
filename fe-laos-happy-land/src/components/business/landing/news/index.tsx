@@ -25,6 +25,7 @@ import {
 import { useRequest } from "ahooks";
 import { newsService } from "@/share/service/news.service";
 import { newsTypeService } from "@/share/service/news-type.service";
+import { getLangByLocale, getValidLocale } from "@/share/helper/locale.helper";
 import type { News, NewsType } from "@/@types/types";
 import { useTranslations } from "next-intl";
 
@@ -74,6 +75,7 @@ const NewsPage = () => {
         search: filters.search,
         newsTypeId:
           filters.newsTypeId !== "all" ? filters.newsTypeId : undefined,
+        lang: getLangByLocale(getValidLocale(locale)),
       }),
     {
       refreshDeps: [filters.newsTypeId, filters.search, filters.page],
@@ -82,7 +84,9 @@ const NewsPage = () => {
 
   // Fetch news types for category filter
   const { data: newsTypesData } = useRequest(() =>
-    newsTypeService.getAllNewsTypes(),
+    newsTypeService.getAllNewsTypes({
+      lang: getLangByLocale(getValidLocale(locale)),
+    }),
   );
 
   // Process news data
@@ -143,7 +147,11 @@ const NewsPage = () => {
     if (content) {
       const image = content.find((item) => item.type === "image");
       if (image) {
-        return image.url;
+        return (
+          image.url ??
+          image.value ??
+          "/images/landingpage/project/project-1.jpg"
+        );
       }
     }
     return "/images/landingpage/project/project-1.jpg";
@@ -293,21 +301,22 @@ const NewsPage = () => {
                             <div className="flex items-center gap-2">
                               <Eye size={16} />
                               <span>
-                                {featuredNews.viewsCount ?? 0}{" "}
+                                {featuredNews.viewCount ?? 0}{" "}
                                 {t("news.readCount")}
                               </span>
                             </div>
                           </div>
-                          <Link href={`/news/${featuredNews.id}`}>
-                            <Button
-                              type="primary"
-                              size="large"
-                              icon={<ArrowRight size={16} />}
-                              className="font-semibold"
-                            >
-                              {t("news.readMore")}
-                            </Button>
-                          </Link>
+                          <Button
+                            type="primary"
+                            size="large"
+                            icon={<ArrowRight size={16} />}
+                            className="font-semibold"
+                            onClick={() =>
+                              router.push(`/${locale}/news/${featuredNews.id}`)
+                            }
+                          >
+                            {t("news.readMore")}
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -364,19 +373,20 @@ const NewsPage = () => {
                               </div>
                               <div className="flex items-center gap-1">
                                 <Eye size={12} />
-                                <span>{news.viewsCount ?? 0}</span>
+                                <span>{news.viewCount ?? 0}</span>
                               </div>
                             </div>
-                            <Link href={`/news/${news.id}`}>
-                              <Button
-                                type="link"
-                                size="small"
-                                icon={<ArrowRight size={12} />}
-                                className="text-primary-500 hover:text-primary-600 p-0 font-semibold"
-                              >
-                                {t("news.readMore")}
-                              </Button>
-                            </Link>
+                            <Button
+                              type="link"
+                              size="small"
+                              icon={<ArrowRight size={12} />}
+                              className="text-primary-500 hover:text-primary-600 p-0 font-semibold"
+                              onClick={() =>
+                                router.push(`/${locale}/news/${news.id}`)
+                              }
+                            >
+                              {t("news.readMore")}
+                            </Button>
                           </div>
                         </div>
                       </div>

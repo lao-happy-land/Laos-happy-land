@@ -46,6 +46,7 @@ import { useRequest } from "ahooks";
 import propertyService from "@/share/service/property.service";
 import propertyTypeService from "@/share/service/property-type.service";
 import uploadService from "@/share/service/upload.service";
+import { getLangByLocale, getValidLocale } from "@/share/helper/locale.helper";
 import ProjectContentBuilder from "@/components/business/common/project-content-builder";
 import MapboxLocationSelector from "@/components/business/common/mapbox-location-selector";
 import Image from "next/image";
@@ -106,6 +107,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
     async () => {
       const response = await propertyTypeService.getPropertyTypes({
         transaction: selectedTransactionType,
+        lang: getLangByLocale(getValidLocale(locale)),
       });
       return response.data;
     },

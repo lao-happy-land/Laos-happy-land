@@ -7,6 +7,7 @@ const propertyTypeService = {
     search?: string;
     page?: number;
     perPage?: number;
+    lang?: "VND" | "USD" | "LAK";
   }) => {
     // Filter out empty parameters
     const filteredQuery: Record<string, string | number> = {};
@@ -23,6 +24,14 @@ const propertyTypeService = {
       Object.keys(filteredQuery).length > 0 ? filteredQuery : undefined,
     );
     return response.data as unknown as APIResponse<PropertyType[]>;
+  },
+
+  getPropertyTypeById: async (id: string, lang?: "VND" | "USD" | "LAK") => {
+    const response = await api.propertyTypeControllerGet(
+      id,
+      lang ? { lang } : undefined,
+    );
+    return response.data as unknown as APIResponse<PropertyType>;
   },
 
   createPropertyType: async (data: {
