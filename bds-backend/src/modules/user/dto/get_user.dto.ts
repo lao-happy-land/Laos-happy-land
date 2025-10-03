@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsBoolean, IsIn, IsOptional, IsString } from 'class-validator';
 import { PageOptionsDto } from 'src/common/dtos/pageOption';
 import { RoleEnum } from 'src/common/enum/enum';
 
@@ -25,9 +25,22 @@ export class GetUserDto extends PageOptionsDto {
   @IsString()
   locationInfoId?: string;
 
-  @ApiPropertyOptional({ description: 'Filter users who requested role upgrade' })
+  @ApiPropertyOptional({
+    description: 'Filter users who requested role upgrade',
+  })
   @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
   requestedRoleUpgrade?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Ngôn ngữ hiển thị (VND = Tiếng Việt, USD = English, LAK = Lao)',
+    enum: ['VND', 'USD', 'LAK'],
+    example: 'USD',
+  })
+  @IsOptional()
+  @IsString()
+  @IsIn(['VND', 'USD', 'LAK'])
+  lang?: string;
 }

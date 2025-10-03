@@ -26,6 +26,7 @@ import { UpdateUserDto } from './dto/update_user.dto';
 import { AdminGuard } from '../auth/guard/auth.guard';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { Multer } from 'multer';
+import { GetOneUserDto } from './dto/get_user_id.dto';
 
 @Controller('user')
 export class UserController {
@@ -72,8 +73,8 @@ export class UserController {
 
   @Get(':id')
   @ApiResponse({ status: 200, description: 'User found successfully' })
-  async get(@Param('id') id: string) {
-    return this.userService.get(id);
+  async get(@Param('id') id: string, @Query() params: GetOneUserDto) {
+    return this.userService.get(id, params);
   }
 
   @Patch(':id')

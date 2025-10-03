@@ -17,12 +17,15 @@ import { LocationDto } from '../property/dto/create_property.dto';
 import { instanceToPlain } from 'class-transformer';
 import { PropertyStatusEnum } from 'src/common/enum/enum';
 import { Property } from 'src/entities/property.entity';
+import { TranslateService } from 'src/service/translate.service';
+import { GetOneUserDto } from './dto/get_user_id.dto';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly translateService: TranslateService,
     private readonly entityManager: EntityManager,
     private readonly cloudinaryService: CloudinaryService,
     @InjectRepository(UserRole)
@@ -37,6 +40,18 @@ export class UserService {
       .pbkdf2Sync(password, salt, 10000, 64, 'sha512')
       .toString('hex');
     return `${hash}.${salt}`;
+  }
+
+  private mapLang(param: string): string {
+    switch (param?.toUpperCase()) {
+      case 'USD':
+        return 'en';
+      case 'LAK':
+        return 'lo';
+      case 'VND':
+      default:
+        return 'vi';
+    }
   }
 
   async create(createUserDto: CreateUserDto, image?: Multer.File) {
@@ -154,7 +169,7 @@ export class UserService {
     return new ResponsePaginate(finalResult, pageMetaDto, 'Success');
   }
 
-  async get(id: string) {
+  async get(id: string, params: GetOneUserDto) {
     const query = this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.role', 'role')
@@ -171,15 +186,53 @@ export class UserService {
       .where('user.id = :id', { id });
 
     const result = await query.getRawAndEntities();
-
-    if (!result.entities.length) {
+    if (!result.entities.length)
       throw new BadRequestException('User not found');
-    }
 
+    const targetLang = this.mapLang(params.lang);
     const user = {
       ...result.entities[0],
       propertyCount: parseInt(result.raw[0]['approvedPropertyCount'], 10) || 0,
     };
+
+    if (targetLang) {
+      if (user.fullName)
+        user.fullName = await this.translateService.translateText(
+          user.fullName,
+          targetLang,
+        );
+
+      if (Array.isArray(user.specialties)) {
+        user.specialties = await Promise.all(
+          user.specialties.map((s) =>
+            s ? this.translateService.translateText(s, targetLang) : s,
+          ),
+        );
+      }
+
+      if (Array.isArray(user.certifications)) {
+        user.certifications = await Promise.all(
+          user.certifications.map((c) =>
+            c ? this.translateService.translateText(c, targetLang) : c,
+          ),
+        );
+      }
+
+      if (Array.isArray(user.languages)) {
+        user.languages = await Promise.all(
+          user.languages.map((c) =>
+            c ? this.translateService.translateText(c, targetLang) : c,
+          ),
+        );
+      }
+
+      if (user.locationInfo?.name) {
+        user.locationInfo.name = await this.translateService.translateText(
+          user.locationInfo.name,
+          targetLang,
+        );
+      }
+    }
 
     return { user, message: 'Success' };
   }
