@@ -100,19 +100,7 @@ export class UserService {
     const query = this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.role', 'role')
-      .leftJoinAndSelect('user.locationInfo', 'locationInfo')
-      .addSelect((subQuery) => {
-        return subQuery
-          .select('COUNT(p.id)', 'approvedPropertyCount')
-          .from(Property, 'p')
-          .where('p.owner_id = user.id')
-          .andWhere('p.status = :status', {
-            status: PropertyStatusEnum.APPROVED,
-          });
-      }, 'approvedPropertyCount')
-      .skip(params.skip)
-      .take(params.perPage)
-      .orderBy('user.createdAt', params.OrderSort);
+      .leftJoinAndSelect('user.locationInfo', 'locationInfo');
 
     if (params.role) {
       query.andWhere('role.name = :role', { role: params.role });
@@ -137,7 +125,9 @@ export class UserService {
     if (params.specialty) {
       query.andWhere(
         "COALESCE(CAST(user.specialties AS text), '') ILIKE :specialty",
-        { specialty: `%${params.specialty}%` },
+        {
+          specialty: `%${params.specialty}%`,
+        },
       );
     }
 
@@ -153,16 +143,36 @@ export class UserService {
       });
     }
 
-    const result = await query.getRawAndEntities();
+    query.skip(params.skip).take(params.perPage);
+    query.orderBy('user.createdAt', params.OrderSort);
 
-    const finalResult = result.entities.map((user, idx) => ({
-      ...user,
-      propertyCount:
-        parseInt(result.raw[idx]['approvedPropertyCount'], 10) || 0,
+    const [users, total] = await query.getManyAndCount();
+
+    const userIds = users.map((u) => u.id);
+    const counts = await this.userRepository.manager
+      .createQueryBuilder(Property, 'p')
+      .select('p.owner_id', 'ownerId')
+      .addSelect('COUNT(p.id)', 'approvedPropertyCount')
+      .where('p.owner_id IN (:...userIds)', { userIds })
+      .andWhere('p.status = :status', { status: PropertyStatusEnum.APPROVED })
+      .groupBy('p.owner_id')
+      .getRawMany();
+
+    const countMap = counts.reduce(
+      (acc, cur) => {
+        acc[cur.ownerId] = parseInt(cur.approvedPropertyCount, 10);
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    const finalResult = users.map((u) => ({
+      ...u,
+      propertyCount: countMap[u.id] || 0,
     }));
 
     const pageMetaDto = new PageMetaDto({
-      itemCount: finalResult.length,
+      itemCount: total,
       pageOptionsDto: params,
     });
 
