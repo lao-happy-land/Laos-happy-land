@@ -6,30 +6,29 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 export class PageOptionsDto {
   @IsString()
   @IsOptional()
-  search?: string = '';
+  search?: string;
 
   @IsEnum(OrderSort)
   @IsOptional()
-  OrderSort?: OrderSort = OrderSort.DESC;
+  OrderSort?: OrderSort;
 
-  OrderSortBy?: string = 'id';
+  OrderSortBy?: string;
 
   @Type(() => Number)
   @IsInt()
   @Min(1)
   @IsOptional()
-  @ApiPropertyOptional()
-  page?: number = 1;
+  page?: number;
 
   @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(100)
   @IsOptional()
-  @ApiPropertyOptional()
-  perPage?: number = 6;
+  perPage?: number;
 
   get skip(): number {
+    if (!this.page || !this.perPage) return 0;
     return (this.page - 1) * this.perPage;
   }
 }

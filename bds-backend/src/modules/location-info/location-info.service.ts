@@ -69,15 +69,6 @@ export class LocationInfoService {
             item.name,
             targetLang,
           );
-          if (Array.isArray(item.strict)) {
-            item.strict = await Promise.all(
-              item.strict.map(async (s) =>
-                s
-                  ? await this.translateService.translateText(s, targetLang)
-                  : s,
-              ),
-            );
-          }
         }
         return item;
       }),
@@ -103,16 +94,7 @@ export class LocationInfoService {
           item.name = await this.translateService.translateText(
             item.name,
             targetLang,
-          );
-          if (Array.isArray(item.strict)) {
-            item.strict = await Promise.all(
-              item.strict.map(async (s) =>
-                s
-                  ? await this.translateService.translateText(s, targetLang)
-                  : s,
-              ),
-            );
-          }
+          )
         }
         return item;
       }),
