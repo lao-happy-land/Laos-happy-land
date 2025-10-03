@@ -61,48 +61,11 @@ export class NewsService {
       });
     }
 
-    if (params.newsTypeId) {
-      newsQuery.andWhere('newsType.id = :newsTypeId', {
-        newsTypeId: params.newsTypeId,
-      });
-    }
-
     const [result, total] = await newsQuery.getManyAndCount();
-
-    const targetLang = this.mapLang(params.lang || 'VND');
-    for (const r of result) {
-      r.title = await this.translateService.translateText(r.title, targetLang);
-
-      if (Array.isArray(r.details)) {
-        r.details = await Promise.all(
-          r.details.map(async (item) => {
-            if (item.value && item.type !== 'image') {
-              return {
-                ...item,
-                value: await this.translateService.translateText(
-                  item.value,
-                  targetLang,
-                ),
-              };
-            }
-            return item;
-          }),
-        );
-      }
-
-      if (r.type && r.type.name) {
-        r.type.name = await this.translateService.translateText(
-          r.type.name,
-          targetLang,
-        );
-      }
-    }
-
     const pageMetaDto = new PageMetaDto({
       itemCount: total,
       pageOptionsDto: params,
     });
-
     return new ResponsePaginate(result, pageMetaDto, 'Success');
   }
 

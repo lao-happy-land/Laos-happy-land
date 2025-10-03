@@ -16,15 +16,4 @@ export class GetNewsDto extends PageOptionsDto {
   @IsOptional()
   @IsString()
   search?: string;
-
-  @ApiPropertyOptional({
-    description:
-      'Ngôn ngữ hiển thị (VND = Tiếng Việt, USD = English, LAK = Lao)',
-    enum: ['VND', 'USD', 'LAK'],
-    example: 'USD',
-  })
-  @IsOptional()
-  @IsString()
-  @IsIn(['VND', 'USD', 'LAK'])
-  lang?: string;
 }

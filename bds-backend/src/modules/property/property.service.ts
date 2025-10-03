@@ -340,14 +340,9 @@ export class PropertyService {
 
     const [result, total] = await properties.getManyAndCount();
 
-    const targetLang = this.mapLang(params.currency || params.currency);
-
-    const finalResult = await Promise.all(
-      (params.currency
-        ? result.map((item) => this.formatProperty(item, params.currency))
-        : result
-      ).map((item) => this.translateProperty(item, targetLang)),
-    );
+    const finalResult = params.currency
+      ? result.map((item) => this.formatProperty(item, params.currency))
+      : result;
 
     const serializedResult = instanceToPlain(finalResult);
 
@@ -394,14 +389,9 @@ export class PropertyService {
 
     const [result, total] = await qb.getManyAndCount();
 
-    const targetLang = this.mapLang(params.currency);
-
-    const finalResult = await Promise.all(
-      (params.currency
-        ? result.map((item) => this.formatProperty(item, params.currency))
-        : result
-      ).map((item) => this.translateProperty(item, targetLang)),
-    );
+    const finalResult = params.currency
+      ? result.map((item) => this.formatProperty(item, params.currency))
+      : result;
 
     const serializedResult = instanceToPlain(finalResult);
 
@@ -478,14 +468,9 @@ export class PropertyService {
 
     const [properties, total] = await qb.getManyAndCount();
 
-    const targetLang = this.mapLang(params.currency);
-
-    const finalResult = await Promise.all(
-      (params.currency
-        ? properties.map((item) => this.formatProperty(item, params.currency))
-        : properties
-      ).map((item) => this.translateProperty(item, targetLang)),
-    );
+    const finalResult = params.currency
+      ? properties.map((item) => this.formatProperty(item, params.currency))
+      : properties;
 
     const serializedResult = instanceToPlain(finalResult);
 
@@ -514,14 +499,9 @@ export class PropertyService {
 
     const [properties, total] = await qb.getManyAndCount();
 
-    const targetLang = this.mapLang(params.currency);
-
-    const finalResult = await Promise.all(
-      (params.currency
-        ? properties.map((item) => this.formatProperty(item, params.currency))
-        : properties
-      ).map((item) => this.translateProperty(item, targetLang)),
-    );
+    const finalResult = params.currency
+      ? properties.map((item) => this.formatProperty(item, params.currency))
+      : properties;
 
     const serializedResult = instanceToPlain(finalResult);
 
