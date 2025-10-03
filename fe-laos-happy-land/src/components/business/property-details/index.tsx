@@ -87,6 +87,7 @@ export default function PropertyDetails({ propertyId }: Props) {
     <div className="container mx-auto my-4 px-4">
       <HeaderBar
         title={property.title ?? ""}
+        property={property}
         location={property.location?.address ?? ""}
         status={property.status ?? "pending"}
         transactionType={property.transactionType as TransactionEnum}
@@ -151,6 +152,7 @@ export default function PropertyDetails({ propertyId }: Props) {
             <Divider />
 
             <DetailsSection
+              property={property}
               typeName={property.type?.name}
               legalStatus={property.legalStatus as string | undefined}
               createdAt={property?.createdAt}

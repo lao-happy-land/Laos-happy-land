@@ -368,7 +368,7 @@ const AdminDashboard = () => {
                 <div className="max-w-xs">
                   <div className="truncate font-medium">{text}</div>
                   <div className="text-xs text-gray-500">
-                    {record.location?.address ?? t("admin.noAddress")}
+                    {formatLocation(record, t("admin.noAddress"))}
                   </div>
                 </div>
               ),
