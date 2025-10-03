@@ -8,6 +8,7 @@ import {
   IsUUID,
   IsEnum,
   ValidateNested,
+  IsInt,
 } from 'class-validator';
 import { TransactionEnum } from 'src/common/enum/enum';
 import { Multer } from 'multer';
@@ -75,6 +76,14 @@ export class UpdatePropertyDto {
   @IsOptional()
   @IsString()
   legalStatus?: string;
+
+  @ApiPropertyOptional({
+    description: 'Độ ưu tiên',
+    example: 0,
+  })
+  @IsOptional()
+  @IsInt()
+  priority?: number;
 
   @ApiPropertyOptional({
     description: 'Vị trí bất động sản (Mapbox object)',

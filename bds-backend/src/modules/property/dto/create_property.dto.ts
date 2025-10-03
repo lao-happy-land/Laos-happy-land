@@ -23,7 +23,6 @@ export class LocationDto {
 
   @ApiPropertyOptional({ example: 105.804817 })
   @IsOptional()
-
   @IsNumber()
   longitude: number;
 
@@ -134,6 +133,14 @@ export class CreatePropertyDto {
   @IsOptional()
   @IsString()
   legalStatus?: string;
+
+  @ApiPropertyOptional({
+    description: 'Độ ưu tiên',
+    example: 0,
+  })
+  @IsOptional()
+  @IsInt()
+  priority?: number;
 
   @ApiProperty({
     description: 'Vị trí bất động sản (Mapbox object)',

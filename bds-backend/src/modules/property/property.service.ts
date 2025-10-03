@@ -224,6 +224,8 @@ export class PropertyService {
   }
 
   async getAll(params: GetPropertiesFilterDto, user: User) {
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
     const isAdmin = !!user?.role && user.role.toString() === 'Admin';
 
     const properties = this.propertyRepository
@@ -232,10 +234,17 @@ export class PropertyService {
       .leftJoinAndSelect('owner.role', 'role')
       .leftJoinAndSelect('property.type', 'type')
       .leftJoinAndSelect('property.locationInfo', 'locationInfo')
+      .addSelect(
+        `CASE WHEN property."createdAt" >= :oneMonthAgo THEN 1 ELSE 0 END`,
+        'recent',
+      )
+      .setParameter('oneMonthAgo', oneMonthAgo)
       .skip(params.skip)
       .take(params.perPage)
-      .orderBy('property.createdAt', params.OrderSort);
-
+      .orderBy('recent', 'DESC')
+      .addOrderBy('property.priority', 'DESC')
+      .addOrderBy('property.viewsCount', 'DESC')
+      .addOrderBy('property.createdAt', 'DESC');
     if (!isAdmin) {
       properties.andWhere('property.status = :status', {
         status: PropertyStatusEnum.APPROVED,
