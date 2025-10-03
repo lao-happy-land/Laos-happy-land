@@ -2,11 +2,13 @@
 
 import { Descriptions, Typography } from "antd";
 import { useTranslations } from "next-intl";
-import { Building, Shield, Calendar, Clock } from "lucide-react";
+import { Building, Shield, Calendar, Clock, MapPin } from "lucide-react";
+import type { Property } from "@/@types/types";
 
 const { Title } = Typography;
 
 type Props = {
+  property?: Property | null;
   typeName?: string | null;
   legalStatus?: string | null;
   createdAt: string;
@@ -14,6 +16,7 @@ type Props = {
 };
 
 export default function DetailsSection({
+  property,
   typeName,
   legalStatus,
   createdAt,
@@ -43,6 +46,85 @@ export default function DetailsSection({
             {legalStatus}
           </div>
         </Descriptions.Item>
+        {property?.locationInfo?.name && (
+          <Descriptions.Item label={t("map.area")} span={2}>
+            <div className="flex items-center gap-2">
+              <MapPin size={16} className="text-purple-600" />
+              {property.locationInfo.name}
+            </div>
+          </Descriptions.Item>
+        )}
+        {property?.location?.district && (
+          <Descriptions.Item label={t("map.district")} span={2}>
+            <div className="flex items-center gap-2">
+              <MapPin size={16} className="text-indigo-600" />
+              {property.location.district}
+            </div>
+          </Descriptions.Item>
+        )}
+        {(property?.location?.buildingNumber ??
+          property?.location?.street ??
+          property?.location?.address) && (
+          <Descriptions.Item label={t("map.address")} span={2}>
+            <div className="flex items-center gap-2">
+              <MapPin size={16} className="text-blue-600" />
+              <span>
+                {property.location.buildingNumber &&
+                  `${property.location.buildingNumber} `}
+                {property.location.street ?? property.location.address}
+              </span>
+            </div>
+          </Descriptions.Item>
+        )}
+        {property?.location?.neighborhood && (
+          <Descriptions.Item label={t("map.neighborhood")} span={2}>
+            <div className="flex items-center gap-2">
+              <MapPin size={16} className="text-cyan-600" />
+              {property.location.neighborhood}
+            </div>
+          </Descriptions.Item>
+        )}
+        {property?.location?.city && (
+          <Descriptions.Item label={t("map.city")}>
+            <div className="flex items-center gap-2">
+              <MapPin size={16} className="text-gray-600" />
+              {property.location.city}
+            </div>
+          </Descriptions.Item>
+        )}
+        {property?.location?.province && (
+          <Descriptions.Item label={t("map.province")}>
+            <div className="flex items-center gap-2">
+              <MapPin size={16} className="text-gray-600" />
+              {property.location.province}
+            </div>
+          </Descriptions.Item>
+        )}
+        {property?.location?.country && (
+          <Descriptions.Item label={t("map.country")}>
+            <div className="flex items-center gap-2">
+              <MapPin size={16} className="text-gray-600" />
+              {property.location.country}
+            </div>
+          </Descriptions.Item>
+        )}
+        {property?.location?.postalCode && (
+          <Descriptions.Item label={t("map.postalCode")}>
+            <div className="flex items-center gap-2">
+              <MapPin size={16} className="text-gray-600" />
+              {property.location.postalCode}
+            </div>
+          </Descriptions.Item>
+        )}
+        {property?.location?.latitude && property?.location?.longitude && (
+          <Descriptions.Item label={t("map.coordinates")} span={2}>
+            <div className="flex items-center gap-2">
+              <MapPin size={16} className="text-green-600" />
+              {property.location.latitude.toFixed(6)},{" "}
+              {property.location.longitude.toFixed(6)}
+            </div>
+          </Descriptions.Item>
+        )}
         <Descriptions.Item label={t("property.postedDate")}>
           <div className="flex items-center gap-2">
             <Calendar size={16} className="text-blue-600" />

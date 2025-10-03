@@ -7,11 +7,13 @@ import { MapPin, Shield } from "lucide-react";
 import MapboxModal from "@/components/business/common/mapbox-modal";
 import { useUrlLocale } from "@/utils/locale";
 import { useRouter } from "next/navigation";
+import type { Property } from "@/@types/types";
 
 const { Text } = Typography;
 
 type Props = {
   title: string;
+  property?: Property | null;
   location?: string | null;
   status?: string | null;
   transactionType: "rent" | "sale" | "project";
@@ -49,6 +51,7 @@ const getTransactionTypeText = (type: string, t: (key: string) => string) => {
 
 export default function HeaderBar({
   title,
+  property,
   location,
   status,
   transactionType,
@@ -107,20 +110,48 @@ export default function HeaderBar({
             {title}
           </h1>
           <div className="flex flex-wrap items-center gap-3">
-            {location && (
-              <div className="flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1">
-                <MapPin size={16} className="text-blue-600" />
-                <Text className="text-sm font-medium text-blue-700">
-                  {location}
-                </Text>
-                <Button
-                  size="small"
-                  type="link"
-                  onClick={() => setMapModalOpen(true)}
-                  className="px-1"
-                >
-                  {t("map.viewMap")}
-                </Button>
+            {(property?.locationInfo ?? property?.location ?? location) && (
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1">
+                  <MapPin size={16} className="text-blue-600" />
+                  <div className="flex flex-col">
+                    {property?.locationInfo?.name && (
+                      <Text className="text-sm font-semibold text-blue-800">
+                        {property.locationInfo.name}
+                      </Text>
+                    )}
+                    {property?.location?.district && (
+                      <Text className="text-xs text-blue-600">
+                        {property.location.district}
+                        {(property.location.buildingNumber ??
+                          property.location.street ??
+                          property.location.address) &&
+                          ` > ${property.location.buildingNumber ? property.location.buildingNumber + " " : ""}${property.location.street ?? property.location.address}`}
+                      </Text>
+                    )}
+                    {!property?.location?.district &&
+                      (property?.location?.buildingNumber ??
+                        property?.location?.street ??
+                        property?.location?.address ??
+                        location) && (
+                        <Text className="text-sm font-medium text-blue-700">
+                          {property?.location?.buildingNumber &&
+                            `${property.location.buildingNumber} `}
+                          {property?.location?.street ??
+                            property?.location?.address ??
+                            location}
+                        </Text>
+                      )}
+                  </div>
+                  <Button
+                    size="small"
+                    type="link"
+                    onClick={() => setMapModalOpen(true)}
+                    className="px-1"
+                  >
+                    {t("map.viewMap")}
+                  </Button>
+                </div>
               </div>
             )}
             {status === "approved" && (
@@ -147,6 +178,7 @@ export default function HeaderBar({
       <MapboxModal
         open={mapModalOpen}
         onClose={() => setMapModalOpen(false)}
+        property={property}
         location={location}
         coordinates={coordinates}
       />

@@ -323,7 +323,16 @@
     "propertyTypeMaxLength": "",
     "priceHistory": "ປະຫວັດລາຄາ",
     "priceChangeOverTime": "ການປ່ຽນແປງຕາມເວລາ",
-    "noPriceHistory": "ບໍ່ມີປະຫວັດລາຄາ"
+    "noPriceHistory": "ບໍ່ມີປະຫວັດລາຄາ",
+    "createPropertySuccess": "ສ້າງການປະກາດສຳເລັດ!",
+    "createPropertyError": "ບໍ່ສາມາດສ້າງການປະກາດໄດ້",
+    "pleaseUploadMainImage": "ກະລຸນາອັບໂຫຼດຮູບຫຼັກ",
+    "pleaseUploadAtLeast3Images": "ກະລຸນາອັບໂຫຼດຢ່າງໜ້ອຍ 3 ຮູບພາບເພີ່ມເຕີມ",
+    "mainImageUploadedSuccessfully": "ອັບໂຫຼດຮູບຫຼັກສຳເລັດ!",
+    "cannotUploadMainImage": "ບໍ່ສາມາດອັບໂຫຼດຮູບຫຼັກ",
+    "maximum9AdditionalImages": "ສາມາດອັບໂຫຼດຮູບເພີ່ມເຕີມສູງສຸດ 9 ຮູບ!",
+    "uploadImageSuccessWithIndex": "ອັບໂຫລດຮູບ {index} ສຳເລັດແລ້ວ!",
+    "cannotUploadImageWithIndex": "ບໍ່ສາມາດອັບໂຫລດຮູບ {index}"
   },
   "news": {
     "title": "ຂ່າວ",
@@ -461,6 +470,7 @@
     "noResultsFound": "ບໍ່ພົບຜົນການຊອກຫາສຳລັບ \"{query}\"",
     "search": "ຊອກຫາ",
     "buildingNumber": "ເລກທີ່ອາຄານ",
+    "street": "ຖະໜົນ / ທີ່ຢູ່",
     "neighborhood": "ຊຸມຊົນ",
     "district": "ເມືອງ",
     "city": "ນະຄອນ",
@@ -483,7 +493,6 @@
     "markers": "ຕົວຫມາຍ",
     "layers": "ຊັ້ນ",
     "satellite": "ດາວທຽມ",
-    "street": "ຖະໜົນ",
     "terrain": "ພູມສັນຖານ",
     "selectLocation": "ເລືອກສະຖານທີ່ໃນແຜນທີ່",
     "searchPlaceholder": "ຄົ້ນຫາສະຖານທີ່...",

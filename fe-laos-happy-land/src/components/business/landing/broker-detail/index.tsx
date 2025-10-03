@@ -27,6 +27,7 @@ import {
   getCurrencyByLocale,
   getValidLocale,
 } from "@/share/helper/locale.helper";
+import { formatShortLocation } from "@/share/helper/format-location";
 
 const { TabPane } = Tabs;
 
@@ -710,8 +711,10 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
                             <div className="mb-3 flex items-center gap-2 text-gray-600">
                               <MapPin className="h-4 w-4 text-gray-400" />
                               <span className="text-sm">
-                                {property?.location?.address ??
-                                  t("common.notUpdated")}
+                                {formatShortLocation(
+                                  property,
+                                  t("common.notUpdated"),
+                                )}
                               </span>
                             </div>
                             <div className="mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-2xl font-bold text-transparent">

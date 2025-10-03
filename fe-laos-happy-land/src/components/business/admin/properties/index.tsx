@@ -35,6 +35,7 @@ import propertyService from "@/share/service/property.service";
 import propertyTypeService from "@/share/service/property-type.service";
 import type { Property, User, PropertyType } from "@/@types/types";
 import { numberToString } from "@/share/helper/number-to-string";
+import { formatLocation } from "@/share/helper/format-location";
 import { useTranslations } from "next-intl";
 import { useUrlLocale } from "@/utils/locale";
 import {
@@ -706,7 +707,7 @@ const AdminProperties = () => {
                       {title}
                     </div>
                     <div className="mt-1 text-sm text-gray-500">
-                      📍 {property.location?.address ?? t("admin.noAddress")}
+                      📍 {formatLocation(property, t("admin.noAddress"))}
                     </div>
                   </div>
                 </div>

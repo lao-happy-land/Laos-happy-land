@@ -52,7 +52,7 @@ const AdminLocationInfo = () => {
   );
 
   // Delete location info
-  const { loading: deleting, run: deleteLocationInfo } = useRequest(
+  const { run: deleteLocationInfo } = useRequest(
     async (id: string) => {
       await locationInfoService.deleteLocationInfo(id);
     },
@@ -214,6 +214,7 @@ const AdminLocationInfo = () => {
 
   useEffect(() => {
     fetchLocationInfos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

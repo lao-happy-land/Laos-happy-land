@@ -250,10 +250,10 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
       // Use already uploaded image URLs
       if (mode === "create") {
         if (!mainImageUrl && mainImageFile) {
-          throw new Error(t("admin.mainImageUploadError"));
+          throw new Error(t("property.mainImageUploadError"));
         }
         if (imageUrls.length !== imageFiles.length) {
-          throw new Error(t("admin.additionalImagesUploadError"));
+          throw new Error(t("property.additionalImagesUploadError"));
         }
       }
 
@@ -288,7 +288,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
       onSuccess: () => {
         message.success(
           mode === "create"
-            ? t("admin.createPropertySuccess")
+            ? t("property.createPropertySuccess")
             : t("admin.updatePropertySuccess"),
         );
         router.push(`/${locale}/admin/properties`);
@@ -297,8 +297,8 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
         console.error("Failed to submit form:", error);
         message.error(
           mode === "create"
-            ? t("admin.createPropertyError")
-            : t("admin.updatePropertyError"),
+            ? t("property.createPropertyError")
+            : t("property.updatePropertyError"),
         );
       },
     },
@@ -326,21 +326,21 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
       // Check main image - either new upload or existing image
       const hasMainImage = mainImageFile ?? mainImageUrl ?? existingMainImage;
       if (!hasMainImage) {
-        message.error(t("admin.pleaseUploadMainImage"));
+        message.error(t("property.pleaseUploadMainImage"));
         return;
       }
 
       // Check additional images - count existing images + new uploads
       const totalImages = existingImages.length + imageUrls.length;
       if (totalImages < 3) {
-        message.error(t("admin.pleaseUploadAtLeast3Images"));
+        message.error(t("property.pleaseUploadAtLeast3Images"));
         return;
       }
     }
 
     // Check location from state (not form field)
     if (!locationData?.locationInfoId || !locationData?.location) {
-      message.error(t("admin.pleaseSelectLocationOnMap"));
+      message.error(t("property.pleaseSelectLocationOnMap"));
       return;
     }
 
@@ -350,12 +350,12 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
   const handleMainImageUpload = async (file: File) => {
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
-      message.error(t("admin.onlyImageFilesAllowed"));
+      message.error(t("property.onlyImageFilesAllowed"));
       return false;
     }
     const isLt5M = file.size / 1024 / 1024 < 5;
     if (!isLt5M) {
-      message.error(t("admin.imageMustBeLessThan5MB"));
+      message.error(t("property.imageMustBeLessThan5MB"));
       return false;
     }
 
@@ -365,10 +365,10 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
     try {
       const result = await uploadService.uploadImage(file);
       setMainImageUrl(result.url);
-      message.success(t("admin.mainImageUploadedSuccessfully"));
+      message.success(t("property.mainImageUploadedSuccessfully"));
     } catch (error) {
       console.error("Failed to upload main image:", error);
-      message.error(t("admin.cannotUploadMainImage"));
+      message.error(t("property.cannotUploadMainImage"));
       setMainImageFile(null);
     } finally {
       setUploadingMainImage(false);
@@ -380,16 +380,16 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
   const handleImagesUpload = async (file: File) => {
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
-      message.error(t("admin.onlyImageFilesAllowed"));
+      message.error(t("property.onlyImageFilesAllowed"));
       return false;
     }
     const isLt5M = file.size / 1024 / 1024 < 5;
     if (!isLt5M) {
-      message.error(t("admin.imageMustBeLessThan5MB"));
+      message.error(t("property.imageMustBeLessThan5MB"));
       return false;
     }
     if (imageFiles.length >= 9) {
-      message.error(t("admin.maximum9AdditionalImages"));
+      message.error(t("property.maximum9AdditionalImages"));
       return false;
     }
 
@@ -401,12 +401,12 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
       const result = await uploadService.uploadImage(file);
       setImageUrls([...imageUrls, result.url]);
       message.success(
-        t("admin.uploadImageSuccessWithIndex", { index: newIndex + 1 }),
+        t("property.uploadImageSuccessWithIndex", { index: newIndex + 1 }),
       );
     } catch (error) {
       console.error("Failed to upload image:", error);
       message.error(
-        t("admin.cannotUploadImageWithIndex", { index: newIndex + 1 }),
+        t("property.cannotUploadImageWithIndex", { index: newIndex + 1 }),
       );
       // Remove the failed file
       setImageFiles(imageFiles.filter((_, i) => i !== newIndex));

@@ -1,55 +1,25 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRequest } from "ahooks";
 import { useRouter } from "next/navigation";
 import { useUrlLocale } from "@/utils/locale";
 import { useAuthStore } from "@/share/store/auth.store";
 import { Button, Tag, Breadcrumb, App } from "antd";
-import {
-  Plus,
-  Building2,
-  Eye,
-  DollarSign,
-  ArrowUpRight,
-  MoreHorizontal,
-  Edit,
-  Trash2,
-} from "lucide-react";
+import { Plus, Eye, MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import type { Property } from "@/@types/types";
 import propertyService from "@/share/service/property.service";
 import Image from "next/image";
-import {
-  Card,
-  Row,
-  Col,
-  Statistic,
-  Table,
-  Space,
-  Typography,
-  Dropdown,
-  Spin,
-} from "antd";
+import { Card, Table, Space, Typography, Dropdown, Spin } from "antd";
 import { useTranslations } from "next-intl";
 import { numberToString } from "@/share/helper/number-to-string";
+import { formatLocation } from "@/share/helper/format-location";
 import {
   getCurrencyByLocale,
   type SupportedLocale,
 } from "@/share/helper/locale.helper";
 
 const { Title, Text } = Typography;
-
-interface DashboardStats {
-  totalProperties: number;
-  totalViews: number;
-  totalFavorites: number;
-  propertiesThisMonth: number;
-  viewsThisMonth: number;
-  revenue: number;
-  revenueGrowth: number;
-  viewsGrowth: number;
-  propertiesGrowth: number;
-}
 
 export default function DashboardPage() {
   const { message, modal } = App.useApp();
@@ -74,11 +44,7 @@ export default function DashboardPage() {
   }, [isAuthenticated, router, locale]);
 
   // Fetch dashboard data
-  const {
-    data: propertiesData,
-    loading: propertiesLoading,
-    run: refetchProperties,
-  } = useRequest(
+  const { loading: propertiesLoading, run: refetchProperties } = useRequest(
     async () => {
       if (!isAuthenticated) return null;
       return propertyService.getPropertiesByUser({
@@ -103,43 +69,6 @@ export default function DashboardPage() {
       },
     },
   );
-
-  // Calculate dashboard stats
-  const stats: DashboardStats = useMemo(() => {
-    const totalProperties = propertiesData?.meta?.itemCount ?? pagination.total;
-    const totalViews = properties.reduce(
-      (sum, prop) => sum + (prop.viewsCount || 0),
-      0,
-    );
-    const totalFavorites = properties.reduce((_sum, _prop) => 0, 0); // Assuming no favorites field
-
-    const propertiesThisMonth = properties.filter((prop) => {
-      const propDate = new Date(prop.createdAt);
-      const now = new Date();
-      return (
-        propDate.getMonth() === now.getMonth() &&
-        propDate.getFullYear() === now.getFullYear()
-      );
-    }).length;
-
-    const viewsThisMonth = Math.floor(totalViews * 0.3); // Mock calculation
-    const revenue = totalProperties * 1000000; // Mock revenue calculation
-    const revenueGrowth = 12.5;
-    const viewsGrowth = 8.2;
-    const propertiesGrowth = 15.3;
-
-    return {
-      totalProperties,
-      totalViews,
-      totalFavorites,
-      propertiesThisMonth,
-      viewsThisMonth,
-      revenue,
-      revenueGrowth,
-      viewsGrowth,
-      propertiesGrowth,
-    };
-  }, [propertiesData, properties, pagination.total]);
 
   useEffect(() => {
     if (propertiesLoading) {
@@ -265,7 +194,7 @@ export default function DashboardPage() {
         <div className="max-w-48">
           <div className="truncate font-medium">{text}</div>
           <div className="text-xs text-gray-500">
-            {record.location?.address}
+            {formatLocation(record, t("common.notUpdated"))}
           </div>
         </div>
       ),

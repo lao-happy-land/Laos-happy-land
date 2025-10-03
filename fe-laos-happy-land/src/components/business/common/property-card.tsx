@@ -5,6 +5,7 @@ import Link from "next/link";
 import { MapPin, Home, Bed, Bath, Eye } from "lucide-react";
 import type { Property } from "@/@types/types";
 import { numberToString } from "@/share/helper/number-to-string";
+import { formatShortLocation } from "@/share/helper/format-location";
 import { useUrlLocale } from "@/utils/locale";
 import { useTranslations } from "next-intl";
 import {
@@ -183,7 +184,7 @@ export default function PropertyCard({
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <MapPin className="h-4 w-4 flex-shrink-0 text-gray-400" />
               <span className="truncate text-sm">
-                {property.location?.address ?? t("property.notUpdated")}
+                {formatShortLocation(property, t("property.notUpdated"))}
               </span>
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-600">
