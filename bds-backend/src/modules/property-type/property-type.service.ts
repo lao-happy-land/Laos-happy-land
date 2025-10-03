@@ -73,10 +73,6 @@ export class PropertyTypeService {
     if (targetLang) {
       for (const r of result) {
         r.name = await this.translateService.translateText(r.name, targetLang);
-        r.transactionType = ((await this.translateService.translateText(
-          r.transactionType,
-          targetLang,
-        )) as TransactionEnum) || null;
       }
     }
 
@@ -103,11 +99,7 @@ export class PropertyTypeService {
       propertyType.name = await this.translateService.translateText(
         propertyType.name,
         targetLang,
-      );
-      propertyType.transactionType = (await this.translateService.translateText(
-        propertyType.transactionType,
-        targetLang,
-      )) as TransactionEnum;
+      )
     }
 
     return { propertyType, message: 'Success' };

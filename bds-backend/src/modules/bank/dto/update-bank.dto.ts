@@ -1,5 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsArray, ValidateNested, IsNumber, IsOptional } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsArray,
+  ValidateNested,
+  IsNumber,
+  IsOptional,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 class TermRateDto {
@@ -38,4 +45,11 @@ export class UpdateBankDto {
   @ValidateNested({ each: true })
   @Type(() => TermRateDto)
   termRates: TermRateDto[];
+
+  @ApiPropertyOptional({
+    description: 'image Bank',
+  })
+  @IsString()
+  @IsOptional()
+  imageUrl?: string;
 }

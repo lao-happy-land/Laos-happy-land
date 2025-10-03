@@ -115,7 +115,6 @@ export class BankService {
 
     return { bank, message: 'Success' };
   }
-  //abc
 
   async update(id: string, updateBankDto: UpdateBankDto) {
     const bank = await this.bankRepository.findOneBy({ id });
@@ -124,6 +123,7 @@ export class BankService {
     }
     if (updateBankDto.name) bank.name = updateBankDto.name;
     if (updateBankDto.termRates) bank.termRates = updateBankDto.termRates;
+    if (updateBankDto.imageUrl) bank.imageUrl = updateBankDto.imageUrl;
     await this.bankRepository.save(bank);
     return { bank, message: 'Bank updated successfully' };
   }

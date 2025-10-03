@@ -52,11 +52,14 @@ export class UserService {
     });
     if (!role) throw new BadRequestException('Role not found');
 
-    const locationInfo = await this.entityManager.findOneBy(LocationInfo, {
-      id: createUserDto.locationInfoId,
-    });
-    if (!locationInfo) {
-      throw new BadRequestException('Location info not found');
+    let locationInfo: LocationInfo | null = null;
+    if (createUserDto.locationInfoId) {
+      locationInfo = await this.entityManager.findOneBy(LocationInfo, {
+        id: createUserDto.locationInfoId,
+      });
+      if (!locationInfo) {
+        throw new BadRequestException('Location info not found');
+      }
     }
 
     let avatarUrl: string | null = null;
@@ -67,12 +70,14 @@ export class UserService {
     const user = this.userRepository.create({
       ...createUserDto,
       password: hashedPassword,
-      role,
-      locationInfo,
       avatarUrl,
     });
 
-    await this.entityManager.save(user);
+    user.role = role;
+    user.locationInfo = locationInfo;
+
+    await this.userRepository.save(user);
+
     return { user, message: 'User created successfully' };
   }
 
@@ -212,7 +217,10 @@ export class UserService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto, image?: Multer.File) {
-    const user = await this.userRepository.findOneBy({ id });
+    const user = await this.userRepository.findOne({
+      where: { id },
+      relations: ['role', 'locationInfo'],
+    });
     if (!user) {
       throw new BadRequestException('User not found');
     }
@@ -231,7 +239,7 @@ export class UserService {
         user.role = role;
       }
 
-      if (updateUserDto.locationInfoId) {
+      if (updateUserDto.locationInfoId !== undefined) {
         const locationInfo = await this.entityManager.findOneBy(LocationInfo, {
           id: updateUserDto.locationInfoId,
         });
@@ -266,7 +274,7 @@ export class UserService {
         user.company = updateUserDto.company;
       }
     }
-    return await this.entityManager.save(user);
+    return await this.userRepository.save(user);
   }
 
   async remove(id: string) {

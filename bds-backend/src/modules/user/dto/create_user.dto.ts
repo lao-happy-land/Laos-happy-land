@@ -56,6 +56,8 @@ export class CreateUserDto {
     example: 'f2f6f4f0-6b6b-4b8c-9b87-5f6a6c6a6c6a',
     description: 'Location Info ID of the user',
   })
+  @IsString()
+  @IsOptional()
   locationInfoId?: string;
 
   @ApiPropertyOptional({

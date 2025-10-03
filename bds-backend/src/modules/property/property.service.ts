@@ -173,17 +173,6 @@ export class PropertyService {
         item.type.name,
         targetLang,
       );
-      item.type.transactionType = (await this.translateService.translateText(
-        item.type.transactionType,
-        targetLang,
-      )) as TransactionEnum;
-    }
-
-    if (item.transactionType) {
-      item.transactionType = (await this.translateService.translateText(
-        item.transactionType,
-        targetLang,
-      )) as TransactionEnum;
     }
 
     if (item.locationInfo) {
