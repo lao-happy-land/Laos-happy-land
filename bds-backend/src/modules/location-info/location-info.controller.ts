@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
@@ -14,6 +15,8 @@ import { ApiBody, ApiConsumes, ApiResponse } from '@nestjs/swagger';
 import { CreateLocationInfoDto } from './dto/create_location_info.dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { Multer } from 'multer';
+import { GetOneLocationInfoDto } from './dto/get-location-info-id.dto';
+import { GetLocationInfoDto } from './dto/get_location_info.dto';
 
 @Controller('location-info')
 export class LocationInfoController {
@@ -35,19 +38,19 @@ export class LocationInfoController {
   }
 
   @Get('trending')
-  async getTrendingLocations() {
-    return this.locationInfoService.getTrendingLocations();
+  async getTrendingLocations(@Query() params: GetOneLocationInfoDto) {
+    return this.locationInfoService.getTrendingLocations(5,params);
   }
 
   @Get()
-  async getAll(@Body() params: any) {
+  async getAll(@Query() params: GetLocationInfoDto) {
     return this.locationInfoService.getAll(params);
   }
 
   @Get(':id')
   @ApiResponse({ status: 200, description: 'Location found successfully' })
-  async get(@Param('id') id: string) {
-    return this.locationInfoService.get(id);
+  async get(@Param('id') id: string, @Query() params: GetOneLocationInfoDto) {
+    return this.locationInfoService.get(id, params);
   }
 
   @Patch(':id')

@@ -1,11 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsOptional, IsString } from 'class-validator';
-import { PageOptionsDto } from 'src/common/dtos/pageOption';
 
-export class GetNewsTypeDto extends PageOptionsDto {
+export class GetOneNewDto  {
   @ApiPropertyOptional({
-    description:
-      'Ngôn ngữ hiển thị (VND = Tiếng Việt, USD = English, LAK = Lao)',
+    description: 'Ngôn ngữ hiển thị (VND = Tiếng Việt, USD = English, LAK = Lao)',
     enum: ['VND', 'USD', 'LAK'],
     example: 'USD',
   })

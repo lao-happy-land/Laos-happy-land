@@ -3,6 +3,7 @@ import { NewsTypeService } from './news-type.service';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { CreateNewsTypeDto } from './dto/create-news-type.dto';
 import { GetNewsTypeDto } from './dto/get-news-type.dto';
+import { GetOneNewDto } from './dto/get-new-type-id.dto';
 
 @Controller('news-type')
 export class NewsTypeController {
@@ -34,8 +35,8 @@ export class NewsTypeController {
         status: 200,
         description: 'Success',
     })
-    async get(@Param('id') id: string) {
-      return this.newsTypeService.get(id);
+    async get(@Param('id') id: string, @Query() params: GetOneNewDto) {
+      return this.newsTypeService.get(id, params);
     }
 
     @Patch(':id')

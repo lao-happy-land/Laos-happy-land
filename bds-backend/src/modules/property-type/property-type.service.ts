@@ -5,14 +5,33 @@ import { Repository } from 'typeorm';
 import { CreatePropertyTypeDto } from './dto/create_property_type.dto';
 import { GetPropertyTypeDto } from './dto/get_property_type.dto';
 import { PageMetaDto } from 'src/common/dtos/pageMeta';
-import { ResponsePaginate, ResponsePaginateObject } from 'src/common/dtos/reponsePaginate';
+import {
+  ResponsePaginate,
+  ResponsePaginateObject,
+} from 'src/common/dtos/reponsePaginate';
+import { TranslateService } from 'src/service/translate.service';
+import { GetOnePropertyTypeDto } from './dto/get_property_type_id.dto';
+import { TransactionEnum } from 'src/common/enum/enum';
 
 @Injectable()
 export class PropertyTypeService {
   constructor(
     @InjectRepository(PropertyType)
     private readonly propertyTypeRepository: Repository<PropertyType>,
+    private readonly translateService: TranslateService,
   ) {}
+
+  private mapLang(param: string): string {
+    switch (param?.toUpperCase()) {
+      case 'USD':
+        return 'en';
+      case 'LAK':
+        return 'lo';
+      case 'VND':
+      default:
+        return 'vi';
+    }
+  }
 
   async create(createPropertyTypeDto: CreatePropertyTypeDto) {
     const { name } = createPropertyTypeDto;
@@ -36,15 +55,30 @@ export class PropertyTypeService {
       .take(params.perPage)
       .orderBy('propertyType.createdAt', params.OrderSort);
 
-    if(params.search) {
-      queryBuilder.andWhere('propertyType.name ILIKE :search', { search: `%${params.search}%` });
+    if (params.search) {
+      queryBuilder.andWhere('propertyType.name ILIKE :search', {
+        search: `%${params.search}%`,
+      });
     }
 
-    if(params.transaction){
-      queryBuilder.andWhere('propertyType.transactionType = :transaction', { transaction: params.transaction });
+    if (params.transaction) {
+      queryBuilder.andWhere('propertyType.transactionType = :transaction', {
+        transaction: params.transaction,
+      });
     }
 
     const [result, total] = await queryBuilder.getManyAndCount();
+
+    const targetLang = this.mapLang(params.lang);
+    if (targetLang) {
+      for (const r of result) {
+        r.name = await this.translateService.translateText(r.name, targetLang);
+        r.transactionType = ((await this.translateService.translateText(
+          r.transactionType,
+          targetLang,
+        )) as TransactionEnum) || null;
+      }
+    }
 
     const pageMetaDto = new PageMetaDto({
       itemCount: total,
@@ -54,14 +88,28 @@ export class PropertyTypeService {
     return new ResponsePaginate(result, pageMetaDto, 'Success');
   }
 
-  async get(id: string) {
+  async get(id: string, params: GetOnePropertyTypeDto) {
     const propertyType = await this.propertyTypeRepository
       .createQueryBuilder('propertyType')
       .where('propertyType.id = :id', { id })
       .getOne();
+
     if (!propertyType) {
       throw new BadRequestException('Property type not found');
     }
+
+    const targetLang = this.mapLang(params.lang);
+    if (targetLang) {
+      propertyType.name = await this.translateService.translateText(
+        propertyType.name,
+        targetLang,
+      );
+      propertyType.transactionType = (await this.translateService.translateText(
+        propertyType.transactionType,
+        targetLang,
+      )) as TransactionEnum;
+    }
+
     return { propertyType, message: 'Success' };
   }
 

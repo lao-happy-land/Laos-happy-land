@@ -17,13 +17,14 @@ import { Multer } from 'multer';
 import { CloudinaryService } from 'src/service/cloudinary.service';
 import { PropertyType } from 'src/entities/property-type.entity';
 import { PageOptionsDto } from 'src/common/dtos/pageOption';
-import { PropertyStatusEnum } from 'src/common/enum/enum';
+import { PropertyStatusEnum, TransactionEnum } from 'src/common/enum/enum';
 import { RejectPropertyDto } from './dto/reject_property.dto';
 import { ExchangeRateService } from '../exchange-rate/exchange-rate.service';
 import { LocationInfo } from 'src/entities/location-info.entity';
 import { GetPropertyDetailDto } from './dto/get_property_id.dto';
 import { GetPropertyByUserDto } from './dto/get_property_by_user.dto';
 import { instanceToPlain } from 'class-transformer';
+import { TranslateService } from 'src/service/translate.service';
 
 @Injectable()
 export class PropertyService {
@@ -32,6 +33,7 @@ export class PropertyService {
     private readonly propertyRepository: Repository<Property>,
     private readonly cloudinaryService: CloudinaryService,
     private readonly exchangeRateService: ExchangeRateService,
+    private readonly translateService: TranslateService,
     private readonly entityManager: EntityManager,
   ) {}
 
@@ -126,6 +128,110 @@ export class PropertyService {
         rates: this.formatPrice(ph.rates?.[cur] ?? null),
       })),
     };
+  }
+
+  private mapLang(param: string): string {
+    switch (param?.toUpperCase()) {
+      case 'USD':
+        return 'en';
+      case 'LAK':
+        return 'lo';
+      case 'VND':
+      default:
+        return 'vi';
+    }
+  }
+
+  private async translateProperty(item: any, targetLang: string): Promise<any> {
+    if (item.title) {
+      item.title = await this.translateService.translateText(
+        item.title,
+        targetLang,
+      );
+    }
+
+    if (item.description) {
+      item.description = await this.translateService.translateText(
+        item.description,
+        targetLang,
+      );
+    }
+
+    if (item.details?.content) {
+      item.details.content = await Promise.all(
+        item.details.content.map(async (c) => ({
+          ...c,
+          value: c.value
+            ? await this.translateService.translateText(c.value, targetLang)
+            : c.value,
+        })),
+      );
+    }
+
+    if (item.type) {
+      item.type.name = await this.translateService.translateText(
+        item.type.name,
+        targetLang,
+      );
+      item.type.transactionType = (await this.translateService.translateText(
+        item.type.transactionType,
+        targetLang,
+      )) as TransactionEnum;
+    }
+
+    if (item.transactionType) {
+      item.transactionType = (await this.translateService.translateText(
+        item.transactionType,
+        targetLang,
+      )) as TransactionEnum;
+    }
+
+    if (item.locationInfo) {
+      if (item.locationInfo.name) {
+        item.locationInfo.name = await this.translateService.translateText(
+          item.locationInfo.name,
+          targetLang,
+        );
+      }
+      if (Array.isArray(item.locationInfo.strict)) {
+        item.locationInfo.strict = await Promise.all(
+          item.locationInfo.strict.map(async (s) =>
+            s ? await this.translateService.translateText(s, targetLang) : s,
+          ),
+        );
+      }
+    }
+
+    if (item.location) {
+      for (const key of ['address', 'city', 'district', 'country']) {
+        if (item.location[key]) {
+          item.location[key] = await this.translateService.translateText(
+            item.location[key],
+            targetLang,
+          );
+        }
+      }
+    }
+
+    if (item.owner) {
+      for (const key of ['specialties', 'languages', 'certifications']) {
+        if (Array.isArray(item.owner[key])) {
+          item.owner[key] = await Promise.all(
+            item.owner[key].map(async (v) =>
+              v ? await this.translateService.translateText(v, targetLang) : v,
+            ),
+          );
+        }
+      }
+      if (item.owner.role?.name) {
+        item.owner.role.name = await this.translateService.translateText(
+          item.owner.role.name,
+          targetLang,
+        );
+      }
+    }
+
+    return item;
   }
 
   async getAll(params: GetPropertiesFilterDto, user: User) {
@@ -236,9 +342,14 @@ export class PropertyService {
 
     const [result, total] = await properties.getManyAndCount();
 
-    const finalResult = params.currency
-      ? result.map((item) => this.formatProperty(item, params.currency))
-      : result;
+    const targetLang = this.mapLang(params.currency || params.currency);
+
+    const finalResult = await Promise.all(
+      (params.currency
+        ? result.map((item) => this.formatProperty(item, params.currency))
+        : result
+      ).map((item) => this.translateProperty(item, targetLang)),
+    );
 
     const serializedResult = instanceToPlain(finalResult);
 
@@ -285,9 +396,14 @@ export class PropertyService {
 
     const [result, total] = await qb.getManyAndCount();
 
-    const finalResult = params.currency
-      ? result.map((item) => this.formatProperty(item, params.currency))
-      : result;
+    const targetLang = this.mapLang(params.currency);
+
+    const finalResult = await Promise.all(
+      (params.currency
+        ? result.map((item) => this.formatProperty(item, params.currency))
+        : result
+      ).map((item) => this.translateProperty(item, targetLang)),
+    );
 
     const serializedResult = instanceToPlain(finalResult);
 
@@ -333,8 +449,13 @@ export class PropertyService {
       }
     }
 
+    const targetLang = this.mapLang(params.currency);
     const formattedProperty = this.formatProperty(property, params.currency);
-    const serializedProperty = instanceToPlain(formattedProperty);
+    const translatedProperty = await this.translateProperty(
+      formattedProperty,
+      targetLang,
+    );
+    const serializedProperty = instanceToPlain(translatedProperty);
 
     return {
       property: serializedProperty,
@@ -359,9 +480,14 @@ export class PropertyService {
 
     const [properties, total] = await qb.getManyAndCount();
 
-    const finalResult = params.currency
-      ? properties.map((item) => this.formatProperty(item, params.currency))
-      : properties;
+    const targetLang = this.mapLang(params.currency);
+
+    const finalResult = await Promise.all(
+      (params.currency
+        ? properties.map((item) => this.formatProperty(item, params.currency))
+        : properties
+      ).map((item) => this.translateProperty(item, targetLang)),
+    );
 
     const serializedResult = instanceToPlain(finalResult);
 
@@ -390,9 +516,15 @@ export class PropertyService {
 
     const [properties, total] = await qb.getManyAndCount();
 
-    const finalResult = params.currency
-      ? properties.map((item) => this.formatProperty(item, params.currency))
-      : properties;
+    const targetLang = this.mapLang(params.currency);
+
+    const finalResult = await Promise.all(
+      (params.currency
+        ? properties.map((item) => this.formatProperty(item, params.currency))
+        : properties
+      ).map((item) => this.translateProperty(item, targetLang)),
+    );
+
     const serializedResult = instanceToPlain(finalResult);
 
     const pageMetaDto = new PageMetaDto({

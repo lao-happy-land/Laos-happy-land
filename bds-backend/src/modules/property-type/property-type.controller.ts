@@ -1,8 +1,18 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { PropertyTypeService } from './property-type.service';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { CreatePropertyTypeDto } from './dto/create_property_type.dto';
 import { GetPropertyTypeDto } from './dto/get_property_type.dto';
+import { GetOnePropertyTypeDto } from './dto/get_property_type_id.dto';
 
 @Controller('property-type')
 export class PropertyTypeController {
@@ -31,8 +41,8 @@ export class PropertyTypeController {
   @Get(':id')
   @ApiOperation({ summary: 'Get a property type by ID' })
   @ApiResponse({ status: 200, description: 'Single property type' })
-  async get(@Param('id') id: string) {
-    return this.propertyTypeService.get(id);
+  async get(@Param('id') id: string, @Query() params: GetOnePropertyTypeDto) {
+    return this.propertyTypeService.get(id, params);
   }
 
   @Patch(':id')

@@ -8,6 +8,8 @@ import { Multer } from 'multer';
 import { GetLocationInfoDto } from './dto/get_location_info.dto';
 import { PageMetaDto } from 'src/common/dtos/pageMeta';
 import { ResponsePaginate } from 'src/common/dtos/reponsePaginate';
+import { TranslateService } from 'src/service/translate.service';
+import { GetOneLocationInfoDto } from './dto/get-location-info-id.dto';
 
 @Injectable()
 export class LocationInfoService {
@@ -16,7 +18,20 @@ export class LocationInfoService {
     private readonly locationInfoRepository: Repository<LocationInfo>,
     private readonly entityManager: EntityManager,
     private readonly cloudinaryService: CloudinaryService,
+    private readonly translateService: TranslateService,
   ) {}
+
+  private mapLang(param?: string): string {
+    switch (param?.toUpperCase()) {
+      case 'USD':
+        return 'en';
+      case 'LAK':
+        return 'lo';
+      case 'VND':
+      default:
+        return 'vi';
+    }
+  }
 
   async create(
     createLocationInfoDto: CreateLocationInfoDto,
@@ -46,31 +61,73 @@ export class LocationInfoService {
       });
     }
     const [result, total] = await locationInfo.getManyAndCount();
+    const targetLang = this.mapLang(params.lang);
+    const translatedResult = await Promise.all(
+      result.map(async (item) => {
+        if (item.name) {
+          item.name = await this.translateService.translateText(
+            item.name,
+            targetLang,
+          );
+          if (Array.isArray(item.strict)) {
+            item.strict = await Promise.all(
+              item.strict.map(async (s) =>
+                s
+                  ? await this.translateService.translateText(s, targetLang)
+                  : s,
+              ),
+            );
+          }
+        }
+        return item;
+      }),
+    );
     const pageMetaDto = new PageMetaDto({
       itemCount: total,
       pageOptionsDto: params,
     });
-    return new ResponsePaginate(result, pageMetaDto, 'Success');
+    return new ResponsePaginate(translatedResult, pageMetaDto, 'Success');
   }
 
-  async getTrendingLocations(limit = 5) {
+  async getTrendingLocations(limit = 5, params: GetOneLocationInfoDto) {
     const locations = this.locationInfoRepository
       .createQueryBuilder('locationInfo')
       .orderBy('locationInfo.viewCount', 'DESC')
-      .take(limit)
+      .take(limit);
 
     const [result, total] = await locations.getManyAndCount();
+    const targetLang = this.mapLang(params.lang);
+    const translatedResult = await Promise.all(
+      result.map(async (item) => {
+        if (item.name) {
+          item.name = await this.translateService.translateText(
+            item.name,
+            targetLang,
+          );
+          if (Array.isArray(item.strict)) {
+            item.strict = await Promise.all(
+              item.strict.map(async (s) =>
+                s
+                  ? await this.translateService.translateText(s, targetLang)
+                  : s,
+              ),
+            );
+          }
+        }
+        return item;
+      }),
+    );
     const pageMetaDto = new PageMetaDto({
       itemCount: limit,
       pageOptionsDto: {
         perPage: limit,
-        skip: 0
+        skip: 0,
       },
     });
-    return new ResponsePaginate(result, pageMetaDto, 'Success');
+    return new ResponsePaginate(translatedResult, pageMetaDto, 'Success');
   }
 
-  async get(id: string) {
+  async get(id: string, params: GetOneLocationInfoDto) {
     const locationInfo = await this.locationInfoRepository
       .createQueryBuilder('locationInfo')
       .where('locationInfo.id = :id', { id })
@@ -80,6 +137,21 @@ export class LocationInfoService {
     }
     locationInfo.viewCount = (locationInfo.viewCount || 0) + 1;
     await this.locationInfoRepository.save(locationInfo);
+    const targetLang = this.mapLang(params.lang);
+    if (locationInfo.name) {
+      locationInfo.name = await this.translateService.translateText(
+        locationInfo.name,
+        targetLang,
+      );
+      if (Array.isArray(locationInfo.strict)) {
+        locationInfo.strict = await Promise.all(
+          locationInfo.strict.map(async (s) =>
+            s ? await this.translateService.translateText(s, targetLang) : s,
+          ),
+        );
+      }
+    }
+
     return { locationInfo, message: 'Success' };
   }
 

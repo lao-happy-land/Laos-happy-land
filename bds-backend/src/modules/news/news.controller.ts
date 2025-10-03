@@ -4,6 +4,7 @@ import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { CreateNewsDto } from './dto/create-news.dto';
 import { GetNewsDto } from './dto/get-news.dto';
 import { UpdateNewsDto } from './dto/update-news.dto';
+import { GetOneNewDto } from './dto/get-new-id.dto';
 
 @Controller('news')
 export class NewsController {
@@ -26,8 +27,8 @@ export class NewsController {
     @Get(':id')
     @ApiOperation({ summary: 'Get news by id' })
     @ApiResponse({ status: 200, description: 'Get news by id' })
-    async get(@Param('id') id: string) {
-        return this.newsService.get(id);
+    async get(@Param('id') id: string, @Query() params: GetOneNewDto) {
+        return this.newsService.get(id, params);
     }
 
     @Patch(':id')

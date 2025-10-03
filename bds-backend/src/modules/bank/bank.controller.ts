@@ -4,6 +4,7 @@ import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { CreateBankDto } from './dto/create-bank.dto';
 import { GetBankDto } from './dto/get-bank.dto';
 import { UpdateBankDto } from './dto/update-bank.dto';
+import { GetOneBankDto } from './dto/get-bank-id.dto';
 
 @Controller('bank')
 export class BankController {
@@ -35,8 +36,8 @@ export class BankController {
         status: 200,
         description: 'Get bank by id successfully',
     })
-    async get(@Param('id') id: string) {
-        return this.bankService.get(id);
+    async get(@Param('id') id: string, @Query() params: GetOneBankDto) {
+        return this.bankService.get(id, params);
     }
 
     @Patch(':id')

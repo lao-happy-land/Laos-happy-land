@@ -8,93 +8,184 @@ import { PageMetaDto } from 'src/common/dtos/pageMeta';
 import { ResponsePaginate } from 'src/common/dtos/reponsePaginate';
 import { UpdateNewsDto } from './dto/update-news.dto';
 import { NewsType } from 'src/entities/news-type.entity';
+import { TranslateService } from 'src/service/translate.service';
+import { GetOneNewDto } from './dto/get-new-id.dto';
 
 @Injectable()
 export class NewsService {
-    constructor(
-        @InjectRepository (News)
-        private readonly newsRepository: Repository<News>,
-        private readonly entityManager: EntityManager,
-    ) {}
+  constructor(
+    @InjectRepository(News)
+    private readonly newsRepository: Repository<News>,
+    private readonly translateService: TranslateService,
+    private readonly entityManager: EntityManager,
+  ) {}
 
-    async create(createNewsDto: CreateNewsDto) {
-        const newsType = await this.entityManager.findOneBy(NewsType, { id: createNewsDto.newsTypeId });
-        if (!newsType) {
-            throw new Error('News type not found');
-        }
-        const news = this.newsRepository.create({...createNewsDto, type: newsType});
-        await this.entityManager.save(news);
-        return { news, message: 'News created successfully' };
+  private mapLang(param: string): string {
+    switch (param?.toUpperCase()) {
+      case 'USD':
+        return 'en';
+      case 'LAK':
+        return 'lo';
+      case 'VND':
+      default:
+        return 'vi';
+    }
+  }
+
+  async create(createNewsDto: CreateNewsDto) {
+    const newsType = await this.entityManager.findOneBy(NewsType, {
+      id: createNewsDto.newsTypeId,
+    });
+    if (!newsType) {
+      throw new Error('News type not found');
+    }
+    const news = this.newsRepository.create({
+      ...createNewsDto,
+      type: newsType,
+    });
+    await this.entityManager.save(news);
+    return { news, message: 'News created successfully' };
+  }
+
+  async getAll(params: GetNewsDto) {
+    const newsQuery = this.newsRepository
+      .createQueryBuilder('news')
+      .leftJoinAndSelect('news.type', 'newsType')
+      .skip(params.skip)
+      .take(params.perPage)
+      .orderBy('news.createdAt', params.OrderSort);
+
+    if (params.search) {
+      newsQuery.andWhere('news.title ILIKE :search', {
+        search: `%${params.search}%`,
+      });
     }
 
-    async getAll(params: GetNewsDto) {
-        const news = this.newsRepository
-            .createQueryBuilder('news')
-            .leftJoinAndSelect('news.type', 'newsType')
-            .skip(params.skip)
-            .take(params.perPage)
-            .orderBy('news.createdAt', params.OrderSort);
+    if (params.newsTypeId) {
+      newsQuery.andWhere('newsType.id = :newsTypeId', {
+        newsTypeId: params.newsTypeId,
+      });
+    }
 
-        if (params.search) {
-            news.andWhere('news.title ILIKE :search', { search: `%${params.search}%` });
-        }
+    const [result, total] = await newsQuery.getManyAndCount();
 
-        if (params.newsTypeId) {
-            news.andWhere('newsType.id = :newsTypeId', { newsTypeId: params.newsTypeId });
-        }
-            
-        const [result, total] = await news.getManyAndCount();
-        const pageMetaDto = new PageMetaDto({
-            itemCount: total,
-            pageOptionsDto: params,
+    const targetLang = this.mapLang(params.lang || 'VND');
+    for (const r of result) {
+      r.title = await this.translateService.translateText(r.title, targetLang);
+
+      if (Array.isArray(r.details)) {
+        r.details = await Promise.all(
+          r.details.map(async (item) => {
+            if (item.type === 'p' && item.value) {
+              return {
+                ...item,
+                value: await this.translateService.translateText(
+                  item.value,
+                  targetLang,
+                ),
+              };
+            }
+            return item;
+          }),
+        );
+      }
+
+      if (r.type && r.type.name) {
+        r.type.name = await this.translateService.translateText(
+          r.type.name,
+          targetLang,
+        );
+      }
+    }
+
+    const pageMetaDto = new PageMetaDto({
+      itemCount: total,
+      pageOptionsDto: params,
+    });
+
+    return new ResponsePaginate(result, pageMetaDto, 'Success');
+  }
+
+  async get(id: string, params: GetOneNewDto) {
+    const news = await this.newsRepository
+      .createQueryBuilder('news')
+      .leftJoinAndSelect('news.type', 'newsType')
+      .where('news.id = :id', { id })
+      .getOne();
+
+    if (!news) {
+      throw new Error('News not found');
+    }
+
+    news.viewCount = (news.viewCount || 0) + 1;
+    await this.entityManager.save(news);
+
+    const targetLang = this.mapLang(params.lang || 'VND');
+
+    news.title = await this.translateService.translateText(
+      news.title,
+      targetLang,
+    );
+
+    if (Array.isArray(news.details)) {
+      news.details = await Promise.all(
+        news.details.map(async (item) => {
+          if (item.type === 'p' && item.value) {
+            return {
+              ...item,
+              value: await this.translateService.translateText(
+                item.value,
+                targetLang,
+              ),
+            };
+          }
+          return item;
+        }),
+      );
+    }
+
+    if (news.type && news.type.name) {
+      news.type.name = await this.translateService.translateText(
+        news.type.name,
+        targetLang,
+      );
+    }
+
+    return { news, message: 'Success' };
+  }
+
+  async update(id: string, updateNewsDto: UpdateNewsDto) {
+    const news = await this.newsRepository.findOneBy({ id });
+    if (!news) {
+      throw new Error('News not found');
+    }
+    if (news) {
+      if (updateNewsDto.title) {
+        news.title = updateNewsDto.title;
+      }
+      if (updateNewsDto.details) {
+        news.details = updateNewsDto.details;
+      }
+      if (updateNewsDto.newsTypeId) {
+        const newsType = await this.entityManager.findOneBy(NewsType, {
+          id: updateNewsDto.newsTypeId,
         });
-        return new ResponsePaginate(result, pageMetaDto, 'Success');
+        if (!newsType) {
+          throw new Error('News type not found');
+        }
+        news.type = newsType;
+      }
     }
+    await this.entityManager.save(news);
+    return { news, message: 'News updated successfully' };
+  }
 
-    async get(id:string) {
-        const news = await this.newsRepository
-            .createQueryBuilder('news')
-            .leftJoinAndSelect('news.type', 'newsType')
-            .where('news.id = :id', { id })
-            .getOne();
-        if (!news) {
-            throw new Error('News not found');
-        }
-        news.viewCount = (news.viewCount || 0) + 1;
-        await this.entityManager.save(news);
-        return { news, message: 'Success' };
+  async remove(id: string) {
+    const news = await this.newsRepository.findOneBy({ id });
+    if (!news) {
+      throw new Error('News not found');
     }
-
-    async update(id: string, updateNewsDto: UpdateNewsDto) {
-        const news = await this.newsRepository.findOneBy({ id });
-        if (!news) {
-            throw new Error('News not found');
-        }
-        if (news) {
-            if (updateNewsDto.title) {
-                news.title = updateNewsDto.title;
-            }
-            if (updateNewsDto.details) {
-                news.details = updateNewsDto.details;
-            }
-            if (updateNewsDto.newsTypeId) {
-                const newsType = await this.entityManager.findOneBy(NewsType, { id: updateNewsDto.newsTypeId });
-                if (!newsType) {
-                    throw new Error('News type not found');
-                }
-                news.type = newsType;
-            }
-        }
-        await this.entityManager.save(news);
-        return { news, message: 'News updated successfully' };
-    }
-
-    async remove(id: string) {
-        const news = await this.newsRepository.findOneBy({ id });
-        if (!news) {
-            throw new Error('News not found');
-        }
-        await this.entityManager.remove(news);
-        return { message: 'News deleted successfully' };
-    }
+    await this.entityManager.remove(news);
+    return { message: 'News deleted successfully' };
+  }
 }

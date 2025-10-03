@@ -6,10 +6,11 @@ import { PropertyController } from './property.controller';
 import { CloudinaryService } from 'src/service/cloudinary.service';
 import { ExchangeRateService } from '../exchange-rate/exchange-rate.service';
 import { ExchangeRate } from 'src/entities/exchange-rates.entity';
+import { TranslateService } from 'src/service/translate.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Property, ExchangeRate])],
-  providers: [PropertyService, CloudinaryService, ExchangeRateService],
+  providers: [PropertyService, CloudinaryService, ExchangeRateService, TranslateService],
   controllers: [PropertyController]
 })
 export class PropertyModule {}
