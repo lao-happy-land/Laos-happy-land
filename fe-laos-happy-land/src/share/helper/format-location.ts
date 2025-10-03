@@ -2,7 +2,7 @@ import type { Property } from "@/@types/types";
 
 /**
  * Format location for display
- * Returns: "LocationInfo > District > Street"
+ * Returns: "LocationInfo > District > Building# Street"
  * @param property - Property object with location and locationInfo
  * @param fallback - Fallback text if no location available
  * @returns Formatted location string
@@ -20,11 +20,18 @@ export function formatLocation(property: Property, fallback = "N/A"): string {
     parts.push(property.location.district);
   }
 
-  // Add Street/Address
-  if (property.location?.address) {
-    parts.push(property.location.address);
-  } else if (property.location?.street) {
-    parts.push(property.location.street);
+  // Add Building Number + Street/Address
+  const addressParts: string[] = [];
+  if (property.location?.buildingNumber) {
+    addressParts.push(property.location.buildingNumber);
+  }
+  if (property.location?.street) {
+    addressParts.push(property.location.street);
+  } else if (property.location?.address) {
+    addressParts.push(property.location.address);
+  }
+  if (addressParts.length > 0) {
+    parts.push(addressParts.join(" "));
   }
 
   return parts.length > 0 ? parts.join(" > ") : fallback;
@@ -32,7 +39,7 @@ export function formatLocation(property: Property, fallback = "N/A"): string {
 
 /**
  * Format short location for cards (just area and street)
- * Returns: "LocationInfo - Street"
+ * Returns: "LocationInfo - Building# Street"
  */
 export function formatShortLocation(
   property: Property,
@@ -45,11 +52,18 @@ export function formatShortLocation(
     parts.push(property.locationInfo.name);
   }
 
-  // Add Street
-  if (property.location?.address) {
-    parts.push(property.location.address);
-  } else if (property.location?.street) {
-    parts.push(property.location.street);
+  // Add Building Number + Street
+  const addressParts: string[] = [];
+  if (property.location?.buildingNumber) {
+    addressParts.push(property.location.buildingNumber);
+  }
+  if (property.location?.street) {
+    addressParts.push(property.location.street);
+  } else if (property.location?.address) {
+    addressParts.push(property.location.address);
+  }
+  if (addressParts.length > 0) {
+    parts.push(addressParts.join(" "));
   }
 
   return parts.length > 0 ? parts.join(" - ") : fallback;

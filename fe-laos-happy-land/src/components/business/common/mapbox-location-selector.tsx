@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { Card, Button, Typography, Select } from "antd";
+import { Card, Button, Typography, Select, Input, Row, Col } from "antd";
 import { MapPin, Check } from "lucide-react";
 import Map from "react-map-gl/mapbox";
 import { Marker, Popup } from "react-map-gl/mapbox";
@@ -52,6 +52,14 @@ export default function MapboxLocationSelector({
 
   const [selectedStrict, setSelectedStrict] = useState<string | undefined>(
     value?.location?.district,
+  );
+
+  const [buildingNumber, setBuildingNumber] = useState<string>(
+    value?.location?.buildingNumber ?? "",
+  );
+
+  const [street, setStreet] = useState<string>(
+    value?.location?.street ?? value?.location?.address ?? "",
   );
 
   const [mapLocation, setMapLocation] = useState<{
@@ -109,6 +117,8 @@ export default function MapboxLocationSelector({
         setMapLocation(newMapLocation);
         setLocationDetails(value.location);
         setSelectedStrict(value.location.district);
+        setBuildingNumber(value.location.buildingNumber ?? "");
+        setStreet(value.location.street ?? value.location.address ?? "");
         setViewState({
           longitude: newMapLocation.longitude,
           latitude: newMapLocation.latitude,
@@ -233,12 +243,22 @@ export default function MapboxLocationSelector({
       // Get address details from reverse geocoding
       void reverseGeocode(lngLat.lat, lngLat.lng).then((locationData) => {
         if (locationData) {
-          // Preserve the selected strict (district) value
+          // Preserve the selected strict (district) value and manual inputs
           const updatedLocation = {
             ...locationData,
             district: selectedStrict ?? locationData.district,
+            buildingNumber: buildingNumber || locationData.buildingNumber,
+            street: street || locationData.street,
+            address: street || locationData.address,
           };
           setLocationDetails(updatedLocation);
+          // Update street input if geocoding found a street
+          if (!street && locationData.street) {
+            setStreet(locationData.street);
+          }
+          if (!buildingNumber && locationData.buildingNumber) {
+            setBuildingNumber(locationData.buildingNumber);
+          }
           // Auto-update parent with new location
           onChange?.({
             locationInfoId: selectedLocationInfoId,
@@ -249,7 +269,10 @@ export default function MapboxLocationSelector({
           const fallbackLocation: LocationDto = {
             latitude: lngLat.lat,
             longitude: lngLat.lng,
-            address: `${lngLat.lat.toFixed(6)}, ${lngLat.lng.toFixed(6)}`,
+            address:
+              street || `${lngLat.lat.toFixed(6)}, ${lngLat.lng.toFixed(6)}`,
+            street: street || undefined,
+            buildingNumber: buildingNumber || undefined,
             district: selectedStrict,
           };
           setLocationDetails(fallbackLocation);
@@ -260,7 +283,14 @@ export default function MapboxLocationSelector({
         }
       });
     },
-    [reverseGeocode, onChange, selectedLocationInfoId, selectedStrict],
+    [
+      reverseGeocode,
+      onChange,
+      selectedLocationInfoId,
+      selectedStrict,
+      buildingNumber,
+      street,
+    ],
   );
 
   const handleLocationInfoChange = (newLocationInfoId: string) => {
@@ -280,10 +310,46 @@ export default function MapboxLocationSelector({
     setSelectedStrict(newStrict);
     // Update location details with the selected district
     const updatedLocation = locationDetails
-      ? { ...locationDetails, district: newStrict }
+      ? {
+          ...locationDetails,
+          district: newStrict,
+          buildingNumber: buildingNumber || locationDetails.buildingNumber,
+          street: street || locationDetails.street,
+          address: street || locationDetails.address,
+        }
       : null;
     setLocationDetails(updatedLocation);
     // Update parent immediately
+    onChange?.({
+      locationInfoId: selectedLocationInfoId,
+      location: updatedLocation,
+    });
+  };
+
+  const handleBuildingNumberChange = (value: string) => {
+    setBuildingNumber(value);
+    // Update location details
+    const updatedLocation = locationDetails
+      ? { ...locationDetails, buildingNumber: value || undefined }
+      : null;
+    setLocationDetails(updatedLocation);
+    onChange?.({
+      locationInfoId: selectedLocationInfoId,
+      location: updatedLocation,
+    });
+  };
+
+  const handleStreetChange = (value: string) => {
+    setStreet(value);
+    // Update location details
+    const updatedLocation = locationDetails
+      ? {
+          ...locationDetails,
+          street: value || undefined,
+          address: value || locationDetails.address,
+        }
+      : null;
+    setLocationDetails(updatedLocation);
     onChange?.({
       locationInfoId: selectedLocationInfoId,
       location: updatedLocation,
@@ -309,6 +375,8 @@ export default function MapboxLocationSelector({
     setLocationDetails(null);
     setSelectedLocationInfoId(undefined);
     setSelectedStrict(undefined);
+    setBuildingNumber("");
+    setStreet("");
     onChange?.(null);
   };
 
@@ -396,10 +464,40 @@ export default function MapboxLocationSelector({
             </div>
           )}
 
+          {/* Street and Building Number Inputs */}
+          {selectedLocationInfoId && selectedStrict && (
+            <Row gutter={16}>
+              <Col xs={24} sm={8}>
+                <Text className="mb-2 block text-sm font-medium text-neutral-700">
+                  {t("map.buildingNumber")}
+                </Text>
+                <Input
+                  placeholder={t("map.buildingNumber")}
+                  value={buildingNumber}
+                  onChange={(e) => handleBuildingNumberChange(e.target.value)}
+                  disabled={disabled}
+                  size="large"
+                />
+              </Col>
+              <Col xs={24} sm={16}>
+                <Text className="mb-2 block text-sm font-medium text-neutral-700">
+                  {t("map.street")} <span className="text-red-500">*</span>
+                </Text>
+                <Input
+                  placeholder={t("map.street")}
+                  value={street}
+                  onChange={(e) => handleStreetChange(e.target.value)}
+                  disabled={disabled}
+                  size="large"
+                />
+              </Col>
+            </Row>
+          )}
+
           {/* Map */}
           <div>
             <Text className="mb-2 block text-sm font-medium text-neutral-700">
-              {t("map.street")} ({t("map.selectLocationOnMap")}){" "}
+              {t("map.selectLocationOnMap")} ({t("map.coordinates")}){" "}
               <span className="text-red-500">*</span>
             </Text>
             <div className="h-[50vh] w-full overflow-hidden rounded-lg border border-neutral-200">
@@ -472,7 +570,8 @@ export default function MapboxLocationSelector({
           <div className="flex flex-col items-center justify-between gap-2 lg:flex-row">
             <Text className="text-sm text-neutral-600">
               💡 <strong>{t("map.instructions")}:</strong> {t("map.selectArea")}{" "}
-              → {t("map.district")} → {t("map.street")}
+              → {t("map.district")} → {t("map.street")} →{" "}
+              {t("map.clickOnMapToSelectLocation")}
             </Text>
             <div className="flex justify-end gap-2">
               {(mapLocation ?? selectedLocationInfoId) && (
@@ -487,6 +586,7 @@ export default function MapboxLocationSelector({
                   !mapLocation ||
                   !selectedLocationInfoId ||
                   !selectedStrict ||
+                  !street ||
                   disabled
                 }
                 icon={<Check className="h-4 w-4" />}
@@ -529,25 +629,54 @@ export default function MapboxLocationSelector({
                   </div>
                 </div>
               )}
-              {locationDetails && (
+              {(buildingNumber || street || locationDetails) && (
                 <div className="flex items-center gap-2">
                   <div className="text-primary-600 bg-primary-50 flex rounded-full p-2">
                     <MapPin className="h-4 w-4" />
                   </div>
                   <div className="flex-1">
                     <p className="text-xs text-neutral-500">
-                      {t("map.street")}:
+                      {t("map.address")}:
                     </p>
                     <p className="text-sm font-medium text-neutral-900">
-                      {locationDetails.address}
+                      {buildingNumber && `${buildingNumber} `}
+                      {street || locationDetails?.address}
                     </p>
-                    {mapLocation && (
-                      <p className="text-xs text-neutral-500">
-                        {t("map.coordinates")}:{" "}
-                        {mapLocation.latitude.toFixed(6)},{" "}
-                        {mapLocation.longitude.toFixed(6)}
-                      </p>
-                    )}
+                    <div className="mt-2 space-y-1 border-t border-neutral-200 pt-2">
+                      {mapLocation && (
+                        <p className="text-xs text-neutral-500">
+                          📍 {t("map.coordinates")}:{" "}
+                          {mapLocation.latitude.toFixed(6)},{" "}
+                          {mapLocation.longitude.toFixed(6)}
+                        </p>
+                      )}
+                      {locationDetails?.neighborhood && (
+                        <p className="text-xs text-neutral-500">
+                          📍 {t("map.neighborhood")}:{" "}
+                          {locationDetails.neighborhood}
+                        </p>
+                      )}
+                      {locationDetails?.city && (
+                        <p className="text-xs text-neutral-500">
+                          📍 {t("map.city")}: {locationDetails.city}
+                        </p>
+                      )}
+                      {locationDetails?.province && (
+                        <p className="text-xs text-neutral-500">
+                          📍 {t("map.province")}: {locationDetails.province}
+                        </p>
+                      )}
+                      {locationDetails?.country && (
+                        <p className="text-xs text-neutral-500">
+                          📍 {t("map.country")}: {locationDetails.country}
+                        </p>
+                      )}
+                      {locationDetails?.postalCode && (
+                        <p className="text-xs text-neutral-500">
+                          📍 {t("map.postalCode")}: {locationDetails.postalCode}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}

@@ -94,6 +94,7 @@ export default function MapboxModal({
         });
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, location, coordinates]);
 
   return (
@@ -115,7 +116,6 @@ export default function MapboxModal({
           </Button>,
         ]}
         className="mapbox-modal"
-        destroyOnClose={false}
         maskClosable={true}
         keyboard={true}
       >
@@ -140,10 +140,32 @@ export default function MapboxModal({
                     📍 {t("map.district")}: {property.location.district}
                   </p>
                 )}
-                {(property?.location?.address ?? location) && (
+                {(property?.location?.buildingNumber ??
+                  property?.location?.street ??
+                  property?.location?.address ??
+                  location) && (
                   <p className="text-sm text-blue-600">
-                    📍 {t("map.street")}:{" "}
-                    {property?.location?.address ?? location}
+                    📍 {t("map.address")}:{" "}
+                    {property?.location?.buildingNumber &&
+                      `${property.location.buildingNumber} `}
+                    {property?.location?.street ??
+                      property?.location?.address ??
+                      location}
+                  </p>
+                )}
+                {property?.location?.neighborhood && (
+                  <p className="text-xs text-blue-500">
+                    📍 {t("map.neighborhood")}: {property.location.neighborhood}
+                  </p>
+                )}
+                {property?.location?.city && (
+                  <p className="text-xs text-blue-500">
+                    📍 {t("map.city")}: {property.location.city}
+                  </p>
+                )}
+                {property?.location?.province && (
+                  <p className="text-xs text-blue-500">
+                    📍 {t("map.province")}: {property.location.province}
                   </p>
                 )}
               </div>
@@ -216,11 +238,11 @@ export default function MapboxModal({
                       )}
                       {mapLocation.address && (
                         <p className="text-sm leading-relaxed text-gray-700">
-                          {t("map.street")}: {mapLocation.address}
+                          {t("map.address")}: {mapLocation.address}
                         </p>
                       )}
                     </div>
-                    <div className="mt-2 border-t border-gray-100 pt-2">
+                    <div className="mt-2 space-y-1 border-t border-gray-100 pt-2">
                       <p className="text-xs text-gray-500">
                         {t("map.coordinates")}:{" "}
                         {mapLocation.latitude.toFixed(6)},{" "}
@@ -255,13 +277,15 @@ export default function MapboxModal({
                 )}
                 {mapLocation.address && (
                   <p className="text-sm text-blue-600">
-                    {t("map.street")}: {mapLocation.address}
+                    {t("map.address")}: {mapLocation.address}
                   </p>
                 )}
-                <p className="mt-2 text-xs text-blue-500">
-                  {t("map.coordinates")}: {mapLocation.latitude.toFixed(6)},{" "}
-                  {mapLocation.longitude.toFixed(6)}
-                </p>
+                <div className="mt-2 space-y-1 border-t border-blue-200 pt-2">
+                  <p className="text-xs text-blue-500">
+                    {t("map.coordinates")}: {mapLocation.latitude.toFixed(6)},{" "}
+                    {mapLocation.longitude.toFixed(6)}
+                  </p>
+                </div>
               </div>
             </div>
           )}
