@@ -15,7 +15,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: isProduction
-        ? 'https://laos-happy-land.onrender.com/api/auth/google/redirect'
+        ? 'https://api.laohappyland.com/api/auth/google/redirect'
         : 'http://localhost:3000/api/auth/google/redirect',
       scope: ['profile', 'email'],
     });
