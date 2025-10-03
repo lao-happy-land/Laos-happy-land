@@ -7,24 +7,12 @@ export class TranslateService {
 
   constructor() {
     this.translate = new Translate({
-      keyFilename: 'service-account.json', // hoặc GOOGLE_APPLICATION_CREDENTIALS
+      key: process.env.GOOGLE_TRANSLATE_API_KEY,
     });
   }
 
-  async translateText(
-    text: string | null | undefined,
-    targetLang: string,
-  ): Promise<string> {
-    if (!text) return '';
-
-    const input = typeof text === 'string' ? text : String(text);
-
-    try {
-      const [translation] = await this.translate.translate(input, targetLang);
-      return translation || input;
-    } catch (error) {
-      console.error('Translate API error:', error);
-      return input;
-    }
+  async translateText(text: string, targetLang: string) {
+    const [translation] = await this.translate.translate(text, targetLang);
+    return translation;
   }
 }
