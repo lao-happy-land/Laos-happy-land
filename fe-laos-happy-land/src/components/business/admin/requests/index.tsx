@@ -62,11 +62,10 @@ export default function AdminRequests() {
     run: fetchBrokerRequests,
   } = useRequest(
     async () => {
-      return await userService.getBankRequests({
+      return await userService.getRoleUpgradeRequests({
         page: brokerRequestsPage,
         perPage: pageSize,
         search: searchText,
-        requestedRoleUpgrade: true,
       });
     },
     {
