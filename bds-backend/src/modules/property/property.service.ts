@@ -287,12 +287,6 @@ export class PropertyService {
       }
     }
 
-    if (params.keyword) {
-      properties.andWhere(
-        '(property.title ILIKE :keyword OR property.description ILIKE :keyword)',
-        { keyword: `%${params.keyword}%` },
-      );
-    }
     if (params.currency) {
       if (params.minPrice !== undefined) {
         properties.andWhere(
@@ -361,12 +355,22 @@ export class PropertyService {
 
     const targetLang = this.mapLang(params.currency || params.currency);
 
-    const finalResult = await Promise.all(
+    let finalResult = await Promise.all(
       (params.currency
         ? result.map((item) => this.formatProperty(item, params.currency))
         : result
       ).map((item) => this.transalteProperties(item, targetLang)),
     );
+
+    if (params.keyword) {
+      const keywordLower = params.keyword.toLowerCase();
+      finalResult = finalResult.filter(
+        (item) =>
+          item.title?.toLowerCase().includes(keywordLower) ||
+          item.description?.toLowerCase().includes(keywordLower),
+      );
+    }
+
     const serializedResult = instanceToPlain(finalResult);
 
     const pageMetaDto = new PageMetaDto({

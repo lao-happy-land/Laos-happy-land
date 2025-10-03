@@ -55,12 +55,6 @@ export class NewsService {
       .take(params.perPage)
       .orderBy('news.createdAt', params.OrderSort);
 
-    if (params.search) {
-      newsQuery.andWhere('news.title ILIKE :search', {
-        search: `%${params.search}%`,
-      });
-    }
-
     if (params.newsTypeId) {
       newsQuery.andWhere('newsType.id = :newsTypeId', {
         newsTypeId: params.newsTypeId,
@@ -70,14 +64,24 @@ export class NewsService {
     const [result, total] = await newsQuery.getManyAndCount();
 
     const targetLang = this.mapLang(params.lang || 'VND');
+
     for (const r of result) {
       r.title = await this.translateService.translateText(r.title, targetLang);
     }
+    let finalResult = result;
+    if (params.search) {
+      const searchLower = params.search.toLowerCase();
+      finalResult = result.filter((r) =>
+        r.title?.toLowerCase().includes(searchLower),
+      );
+    }
+
     const pageMetaDto = new PageMetaDto({
       itemCount: total,
       pageOptionsDto: params,
     });
-    return new ResponsePaginate(result, pageMetaDto, 'Success');
+
+    return new ResponsePaginate(finalResult, pageMetaDto, 'Success');
   }
 
   async get(id: string, params: GetOneNewDto) {
