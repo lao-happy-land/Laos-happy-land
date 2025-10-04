@@ -204,17 +204,6 @@ export class PropertyService {
       }
     }
 
-    if (item.location) {
-      for (const key of ['address', 'city', 'country']) {
-        if (item.location[key]) {
-          item.location[key] = await this.translateService.translateText(
-            item.location[key],
-            targetLang,
-          );
-        }
-      }
-    }
-
     if (item.owner) {
       for (const key of ['specialties', 'languages', 'certifications']) {
         if (Array.isArray(item.owner[key])) {
