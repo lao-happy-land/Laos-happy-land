@@ -8,7 +8,7 @@ export const numberToString = (
     value = ["billion", "million", "thousand"];
   }
   if (currency === "LAK") {
-    value = ["kips", "millions", "thousands"];
+    value = ["ຕື້", "ລ້ານ", "thousands"];
   }
 
   let language = "vi-VN";

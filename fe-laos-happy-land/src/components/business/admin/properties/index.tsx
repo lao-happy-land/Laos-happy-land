@@ -33,7 +33,13 @@ import {
 } from "lucide-react";
 import propertyService from "@/share/service/property.service";
 import propertyTypeService from "@/share/service/property-type.service";
-import type { Property, User, PropertyType } from "@/@types/types";
+import locationInfoService from "@/share/service/location-info.service";
+import type {
+  Property,
+  User,
+  PropertyType,
+  LocationInfo,
+} from "@/@types/types";
 import { numberToString } from "@/share/helper/number-to-string";
 import { formatLocation } from "@/share/helper/format-location";
 import { useTranslations } from "next-intl";
@@ -69,6 +75,7 @@ const AdminProperties = () => {
     0, 100000000000,
   ]);
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
+  const [locationInfos, setLocationInfos] = useState<LocationInfo[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -98,12 +105,38 @@ const AdminProperties = () => {
     },
   );
 
+  // Fetch location infos
+  const { loading: locationInfosLoading, run: fetchLocationInfos } = useRequest(
+    async () => {
+      const response = await locationInfoService.getAllLocationInfo({
+        lang: getLangByLocale(getValidLocale(locale)),
+      });
+      return response.data ?? [];
+    },
+    {
+      manual: true,
+      onSuccess: (data) => {
+        setLocationInfos(data);
+      },
+      onError: (error) => {
+        console.error("Failed to fetch location infos:", error);
+        message.error(t("admin.cannotLoadLocations"));
+      },
+    },
+  );
+
   useEffect(() => {
     if (selectedTransactionType !== "all") {
       fetchPropertyTypes();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTransactionType]);
+
+  // Fetch location infos on mount
+  useEffect(() => {
+    fetchLocationInfos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Update URL parameters
   const updateSearchParams = useCallback(
@@ -462,9 +495,9 @@ const AdminProperties = () => {
 
     if (selectedTransactionType !== "all") {
       const transactionMap = {
-        sale: t("admin.sale"),
-        rent: t("admin.forRent"),
-        project: t("admin.projects"),
+        sale: t("property.sale"),
+        rent: t("property.forRent"),
+        project: t("navigation.projects"),
       };
       filters.push(
         transactionMap[
@@ -474,12 +507,15 @@ const AdminProperties = () => {
     }
 
     if (selectedLocation !== "all") {
-      filters.push(selectedLocation);
+      const locationName = locationInfos.find(
+        (location) => location.id === selectedLocation,
+      )?.name;
+      filters.push(locationName ?? selectedLocation);
     }
 
     if (priceRange[0] > 0 || priceRange[1] < 100000000000) {
       filters.push(
-        `${numberToString(priceRange[0])} - ${numberToString(priceRange[1])} LAK`,
+        `${numberToString(priceRange[0])} - ${numberToString(priceRange[1])} ${getCurrencyByLocale(locale as SupportedLocale)}`,
       );
     }
 
@@ -579,9 +615,9 @@ const AdminProperties = () => {
                     loading={propertyTypesLoading}
                   >
                     <Option value="all">{t("common.all")}</Option>
-                    <Option value="sale">{t("admin.sale")}</Option>
-                    <Option value="rent">{t("admin.forRent")}</Option>
-                    <Option value="project">{t("admin.projects")}</Option>
+                    <Option value="sale">{t("property.sale")}</Option>
+                    <Option value="rent">{t("property.forRent")}</Option>
+                    <Option value="project">{t("property.project")}</Option>
                   </Select>
                 </Form.Item>
 
@@ -630,9 +666,21 @@ const AdminProperties = () => {
                       onChange={handlePriceRangeChange}
                     />
                     <div className="flex gap-2 text-xs text-gray-500">
-                      <span>{numberToString(priceRange[0])} LAK</span>
+                      <span>
+                        {numberToString(
+                          priceRange[0],
+                          locale,
+                          getCurrencyByLocale(locale as SupportedLocale),
+                        )}{" "}
+                      </span>
                       <span>-</span>
-                      <span>{numberToString(priceRange[1])} LAK</span>
+                      <span>
+                        {numberToString(
+                          priceRange[1],
+                          locale,
+                          getCurrencyByLocale(locale as SupportedLocale),
+                        )}{" "}
+                      </span>
                     </div>
                   </div>
                 </Form.Item>
@@ -643,14 +691,14 @@ const AdminProperties = () => {
                     value={selectedLocation}
                     onChange={handleLocationChange}
                     allowClear
+                    loading={locationInfosLoading}
                   >
                     <Option value="all">{t("common.all")}</Option>
-                    <Option value="vientiane">Vientiane</Option>
-                    <Option value="luang-prabang">Luang Prabang</Option>
-                    <Option value="pakse">Pakse</Option>
-                    <Option value="savannakhet">Savannakhet</Option>
-                    <Option value="thakhek">Thakhek</Option>
-                    <Option value="xam-nua">Xam Nua</Option>
+                    {locationInfos.map((location) => (
+                      <Option key={location.id} value={location.id}>
+                        {location.name}
+                      </Option>
+                    ))}
                   </Select>
                 </Form.Item>
               </div>
@@ -771,17 +819,18 @@ const AdminProperties = () => {
               ),
             },
             {
-              title: t("property.views"),
+              title: <div className="capitalize">{t("property.views")}</div>,
               dataIndex: "viewsCount",
               key: "viewsCount",
-              width: 80,
+              width: 100,
+              align: "center",
               render: (count: number) => count || 0,
             },
             {
               title: t("property.createdAt"),
               dataIndex: "createdAt",
               key: "createdAt",
-              width: 120,
+              width: 80,
               render: (date: string) => {
                 try {
                   return new Date(date).toLocaleDateString("vi-VN", {
@@ -797,7 +846,7 @@ const AdminProperties = () => {
             {
               title: t("admin.actions"),
               key: "actions",
-              width: 200,
+              width: 120,
               render: (_: unknown, property: Property) => (
                 <Space size="small">
                   <Tooltip title={t("admin.viewEditProperty")}>
