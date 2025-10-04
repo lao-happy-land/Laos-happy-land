@@ -206,12 +206,6 @@ export class UserService {
     };
 
     if (targetLang) {
-      if (user.fullName)
-        user.fullName = await this.translateService.translateText(
-          user.fullName,
-          targetLang,
-        );
-
       if (Array.isArray(user.specialties)) {
         user.specialties = await Promise.all(
           user.specialties.map((s) =>
