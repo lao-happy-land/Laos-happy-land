@@ -1,6 +1,6 @@
 import { generateMetadata as generateMetadataHelper } from "@/share/helper/metadata.helper";
 import { getTranslations } from "next-intl/server";
-import AboutPageClient from "./about-client";
+import AboutPageClient from "../../../../components/business/user/about";
 import type { Metadata } from "next";
 
 export async function generateMetadata({
