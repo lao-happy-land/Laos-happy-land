@@ -104,7 +104,7 @@ export default function CreateProperty() {
         setPropertyTypes(data);
       },
       onError: () => {
-        message.error(t("admin.cannotLoadPropertyTypes"));
+        message.error(t("property.cannotLoadPropertyTypes"));
       },
     },
   );
@@ -148,7 +148,7 @@ export default function CreateProperty() {
       )[];
     }) => {
       if (!mainImageFile && selectedTransactionType !== "project") {
-        throw new Error(t("admin.pleaseUploadMainImage"));
+        throw new Error(t("property.pleaseUploadMainImage"));
       }
 
       const userId = user?.id;
@@ -162,14 +162,16 @@ export default function CreateProperty() {
         mainImageFile &&
         selectedTransactionType !== "project"
       ) {
-        throw new Error(t("admin.mainImageNotUploadedSuccessfully"));
+        throw new Error(t("property.mainImageNotUploadedSuccessfully"));
       }
 
       if (
         imageUrls.length !== imageFiles.length &&
         selectedTransactionType !== "project"
       ) {
-        throw new Error(t("admin.someAdditionalImagesNotUploadedSuccessfully"));
+        throw new Error(
+          t("property.someAdditionalImagesNotUploadedSuccessfully"),
+        );
       }
 
       const formData: CreatePropertyDto = {
@@ -202,12 +204,12 @@ export default function CreateProperty() {
     {
       manual: true,
       onSuccess: () => {
-        message.success(t("admin.createPropertySuccess"));
+        message.success(t("property.createPropertySuccess"));
         router.push(`/${locale}/dashboard`);
       },
       onError: (error) => {
         console.error("Failed to submit form:", error);
-        message.error(t("admin.createPropertyError"));
+        message.error(t("property.createPropertyError"));
       },
     },
   );
@@ -232,15 +234,15 @@ export default function CreateProperty() {
     transactionType: "rent" | "sale" | "project";
   }) => {
     if (selectedTransactionType !== "project" && !mainImageUrl) {
-      message.error(t("admin.pleaseUploadMainImage"));
+      message.error(t("property.pleaseUploadMainImage"));
       return;
     }
     if (selectedTransactionType !== "project" && imageUrls.length < 3) {
-      message.error(t("admin.pleaseUploadAtLeast3Images"));
+      message.error(t("property.pleaseUploadAtLeast3Images"));
       return;
     }
     if (!locationData?.locationInfoId || !locationData?.location) {
-      message.error(t("admin.pleaseSelectLocationOnMap"));
+      message.error(t("property.pleaseSelectLocationOnMap"));
       return;
     }
     submitForm(values);
@@ -249,12 +251,12 @@ export default function CreateProperty() {
   const handleMainImageUpload = async (file: File) => {
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
-      message.error(t("admin.onlyImagesAllowed"));
+      message.error(t("property.onlyImagesAllowed"));
       return false;
     }
     const isLt5M = file.size / 1024 / 1024 < 5;
     if (!isLt5M) {
-      message.error(t("admin.imageSizeLimit"));
+      message.error(t("property.imageSizeLimit"));
       return false;
     }
 
@@ -264,10 +266,10 @@ export default function CreateProperty() {
     try {
       const result = await uploadService.uploadImage(file);
       setMainImageUrl(result.url);
-      message.success(t("admin.mainImageUploadedSuccessfully"));
+      message.success(t("property.mainImageUploadedSuccessfully"));
     } catch (error) {
       console.error("Failed to upload main image:", error);
-      message.error(t("admin.cannotUploadMainImage"));
+      message.error(t("property.cannotUploadMainImage"));
       setMainImageFile(null);
     } finally {
       setUploadingMainImage(false);
@@ -279,16 +281,16 @@ export default function CreateProperty() {
   const handleImagesUpload = async (file: File) => {
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
-      message.error(t("admin.onlyImagesAllowed"));
+      message.error(t("property.onlyImagesAllowed"));
       return false;
     }
     const isLt5M = file.size / 1024 / 1024 < 5;
     if (!isLt5M) {
-      message.error(t("admin.imageSizeLimit"));
+      message.error(t("property.imageSizeLimit"));
       return false;
     }
     if (imageFiles.length >= 9) {
-      message.error(t("admin.max9Images"));
+      message.error(t("property.max9Images"));
       return false;
     }
 
@@ -299,10 +301,10 @@ export default function CreateProperty() {
     try {
       const result = await uploadService.uploadImage(file);
       setImageUrls([...imageUrls, result.url]);
-      message.success(t("admin.imageUploadedSuccessfully"));
+      message.success(t("property.imageUploadedSuccessfully"));
     } catch (error) {
       console.error("Failed to upload image:", error);
-      message.error(t("admin.cannotUploadImage"));
+      message.error(t("property.cannotUploadImage"));
       // Remove the failed file
       setImageFiles(imageFiles.filter((_, i) => i !== newIndex));
     } finally {

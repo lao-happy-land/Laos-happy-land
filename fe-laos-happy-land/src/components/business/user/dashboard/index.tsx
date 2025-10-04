@@ -50,7 +50,6 @@ export default function DashboardUser() {
       return propertyService.getPropertiesByUser({
         page: pagination.current,
         perPage: pagination.pageSize,
-        currency: getCurrencyByLocale(locale as SupportedLocale),
       });
     },
     {

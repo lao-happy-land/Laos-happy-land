@@ -18,6 +18,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { useUrlLocale } from "@/utils/locale";
 import BankUsers from "./bank-users";
+import BrokerUsers from "./broker-users";
 
 const { Title, Text } = Typography;
 
@@ -357,8 +358,9 @@ export default function ContactCard({
           </Space>
         </div>
       </Card>
-      <div className="mt-4">
-        <BankUsers />
+      <div className="mt-4 grid grid-cols-1 gap-4">
+        <BrokerUsers />
+        {/* <BankUsers /> */}
       </div>
     </div>
   );

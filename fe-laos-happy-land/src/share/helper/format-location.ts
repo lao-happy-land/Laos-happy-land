@@ -1,8 +1,8 @@
-import type { Property } from "@/@types/types";
+import type { Property, LocationDto } from "@/@types/types";
 
 /**
  * Format location for display
- * Returns: "LocationInfo > District > Building# Street"
+ * Returns: "LocationInfo > District > Address"
  * @param property - Property object with location and locationInfo
  * @param fallback - Fallback text if no location available
  * @returns Formatted location string
@@ -15,31 +15,22 @@ export function formatLocation(property: Property, fallback = "N/A"): string {
     parts.push(property.locationInfo.name);
   }
 
-  // Add District (from location.district or strict)
+  // Add District (from location.district)
   if (property.location?.district) {
     parts.push(property.location.district);
   }
 
-  // Add Building Number + Street/Address
-  const addressParts: string[] = [];
-  if (property.location?.buildingNumber) {
-    addressParts.push(property.location.buildingNumber);
-  }
-  if (property.location?.street) {
-    addressParts.push(property.location.street);
-  } else if (property.location?.address) {
-    addressParts.push(property.location.address);
-  }
-  if (addressParts.length > 0) {
-    parts.push(addressParts.join(" "));
+  // Add Address (primary field - manually entered by user)
+  if (property.location?.address) {
+    parts.push(property.location.address);
   }
 
   return parts.length > 0 ? parts.join(" > ") : fallback;
 }
 
 /**
- * Format short location for cards (just area and street)
- * Returns: "LocationInfo - Building# Street"
+ * Format short location for cards (just area and address)
+ * Returns: "LocationInfo - Address"
  */
 export function formatShortLocation(
   property: Property,
@@ -47,23 +38,16 @@ export function formatShortLocation(
 ): string {
   const parts: string[] = [];
 
-  // Add LocationInfo name
-  if (property.locationInfo?.name) {
-    parts.push(property.locationInfo.name);
+  if (property.location?.address) {
+    parts.push(property.location.address);
   }
 
-  // Add Building Number + Street
-  const addressParts: string[] = [];
-  if (property.location?.buildingNumber) {
-    addressParts.push(property.location.buildingNumber);
+  if (property.location?.district) {
+    parts.push(property.location.district);
   }
-  if (property.location?.street) {
-    addressParts.push(property.location.street);
-  } else if (property.location?.address) {
-    addressParts.push(property.location.address);
-  }
-  if (addressParts.length > 0) {
-    parts.push(addressParts.join(" "));
+
+  if (property.locationInfo?.name) {
+    parts.push(property.locationInfo.name);
   }
 
   return parts.length > 0 ? parts.join(" - ") : fallback;
@@ -71,7 +55,7 @@ export function formatShortLocation(
 
 /**
  * Format full location with all details
- * Returns full address including city, province, country
+ * Returns full address including district, city, province, country
  */
 export function formatFullLocation(
   property: Property,
@@ -79,18 +63,9 @@ export function formatFullLocation(
 ): string {
   const parts: string[] = [];
 
-  // Building number + Street
-  const streetParts: string[] = [];
-  if (property.location?.buildingNumber) {
-    streetParts.push(property.location.buildingNumber);
-  }
-  if (property.location?.street || property.location?.address) {
-    streetParts.push(
-      property.location.street ?? property.location.address ?? "",
-    );
-  }
-  if (streetParts.length > 0) {
-    parts.push(streetParts.join(" "));
+  // Address (primary field - manually entered by user)
+  if (property.location?.address) {
+    parts.push(property.location.address);
   }
 
   // District
@@ -98,7 +73,7 @@ export function formatFullLocation(
     parts.push(property.location.district);
   }
 
-  // LocationInfo (main area)
+  // LocationInfo (main area/province)
   if (property.locationInfo?.name) {
     parts.push(property.locationInfo.name);
   }
@@ -116,6 +91,77 @@ export function formatFullLocation(
   // Country
   if (property.location?.country) {
     parts.push(property.location.country);
+  }
+
+  return parts.length > 0 ? parts.join(", ") : fallback;
+}
+
+/**
+ * Format location data directly (without Property object)
+ * Returns: "Address, District, City, Country"
+ * @param location - LocationDto object
+ * @param fallback - Fallback text if no location available
+ * @returns Formatted location string
+ */
+export function formatLocationData(
+  location: LocationDto | null,
+  fallback = "N/A",
+): string {
+  if (!location) return fallback;
+
+  const parts: string[] = [];
+
+  // Address (primary field - manually entered by user)
+  if (location.address) {
+    parts.push(location.address);
+  }
+
+  // District
+  if (location.district) {
+    parts.push(location.district);
+  }
+
+  // City
+  if (location.city) {
+    parts.push(location.city);
+  }
+
+  // Province
+  if (location.province) {
+    parts.push(location.province);
+  }
+
+  // Country
+  if (location.country) {
+    parts.push(location.country);
+  }
+
+  return parts.length > 0 ? parts.join(", ") : fallback;
+}
+
+/**
+ * Format short location data (address and district only)
+ * Returns: "Address, District"
+ * @param location - LocationDto object
+ * @param fallback - Fallback text if no location available
+ * @returns Formatted location string
+ */
+export function formatShortLocationData(
+  location: LocationDto | null,
+  fallback = "N/A",
+): string {
+  if (!location) return fallback;
+
+  const parts: string[] = [];
+
+  // Address (primary field - manually entered by user)
+  if (location.address) {
+    parts.push(location.address);
+  }
+
+  // District
+  if (location.district) {
+    parts.push(location.district);
   }
 
   return parts.length > 0 ? parts.join(", ") : fallback;
