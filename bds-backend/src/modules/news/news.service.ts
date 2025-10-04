@@ -51,8 +51,6 @@ export class NewsService {
     const newsQuery = this.newsRepository
       .createQueryBuilder('news')
       .leftJoinAndSelect('news.type', 'newsType')
-      .skip(params.skip)
-      .take(params.perPage)
       .orderBy('news.createdAt', params.OrderSort);
 
     if (params.newsTypeId) {
@@ -61,27 +59,38 @@ export class NewsService {
       });
     }
 
-    const [result, total] = await newsQuery.getManyAndCount();
+    const allNews = await newsQuery.getMany();
 
     const targetLang = this.mapLang(params.lang || 'VND');
 
-    for (const r of result) {
-      r.title = await this.translateService.translateText(r.title, targetLang);
-    }
-    let finalResult = result;
+    let translatedNews = await Promise.all(
+      allNews.map(async (r) => {
+        r.title = await this.translateService.translateText(
+          r.title,
+          targetLang,
+        );
+        return r;
+      }),
+    );
+
     if (params.search) {
       const searchLower = params.search.toLowerCase();
-      finalResult = result.filter((r) =>
+      translatedNews = translatedNews.filter((r) =>
         r.title?.toLowerCase().includes(searchLower),
       );
     }
+    const page = params.page || 1;
+    const perPage = params.perPage || 10;
+    const startIndex = (page - 1) * perPage;
+    const endIndex = startIndex + perPage;
+    const paginatedResult = translatedNews.slice(startIndex, endIndex);
 
     const pageMetaDto = new PageMetaDto({
-      itemCount: total,
+      itemCount: translatedNews.length,
       pageOptionsDto: params,
     });
 
-    return new ResponsePaginate(finalResult, pageMetaDto, 'Success');
+    return new ResponsePaginate(paginatedResult, pageMetaDto, 'Success');
   }
 
   async get(id: string, params: GetOneNewDto) {

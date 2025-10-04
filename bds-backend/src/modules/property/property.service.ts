@@ -258,8 +258,6 @@ export class PropertyService {
         'recent',
       )
       .setParameter('oneMonthAgo', oneMonthAgo)
-      .skip(params.skip)
-      .take(params.perPage)
       .orderBy('recent', 'DESC')
       .addOrderBy('property.priority', 'DESC')
       .addOrderBy('property.viewsCount', 'DESC')
@@ -351,37 +349,41 @@ export class PropertyService {
       });
     }
 
-    const [result, total] = await properties.getManyAndCount();
+    const allProperties = await properties.getMany();
 
     const targetLang = this.mapLang(params.currency || params.currency);
 
-    let finalResult = await Promise.all(
-      (params.currency
-        ? result.map((item) => this.formatProperty(item, params.currency))
-        : result
-      ).map((item) => this.transalteProperties(item, targetLang)),
+    let translated = await Promise.all(
+      allProperties.map((item) => {
+        const formatted = params.currency
+          ? this.formatProperty(item, params.currency)
+          : item;
+        return this.transalteProperties(formatted, targetLang);
+      }),
     );
 
     if (params.keyword) {
       const keywordLower = params.keyword.toLowerCase();
-      finalResult = finalResult.filter(
+      translated = translated.filter(
         (item) =>
           item.title?.toLowerCase().includes(keywordLower) ||
           item.description?.toLowerCase().includes(keywordLower),
       );
     }
 
-    const serializedResult = instanceToPlain(finalResult);
+    const page = params.page || 1;
+    const perPage = params.perPage || 10;
+    const startIndex = (page - 1) * perPage;
+    const endIndex = startIndex + perPage;
+
+    const paginatedResult = translated.slice(startIndex, endIndex);
 
     const pageMetaDto = new PageMetaDto({
-      itemCount: total,
+      itemCount: translated.length,
       pageOptionsDto: params,
     });
-    return new ResponsePaginate(
-      serializedResult as any,
-      pageMetaDto,
-      'Success',
-    );
+
+    return new ResponsePaginate(paginatedResult, pageMetaDto, 'Success');
   }
 
   async getSimilarProperties(propertyId: string, params: GetPropertyByUserDto) {
