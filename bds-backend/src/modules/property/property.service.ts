@@ -202,17 +202,10 @@ export class PropertyService {
           targetLang,
         );
       }
-      if (Array.isArray(item.locationInfo.strict)) {
-        item.locationInfo.strict = await Promise.all(
-          item.locationInfo.strict.map(async (s) =>
-            s ? await this.translateService.translateText(s, targetLang) : s,
-          ),
-        );
-      }
     }
 
     if (item.location) {
-      for (const key of ['address', 'city', 'district', 'country']) {
+      for (const key of ['address', 'city', 'country']) {
         if (item.location[key]) {
           item.location[key] = await this.translateService.translateText(
             item.location[key],
