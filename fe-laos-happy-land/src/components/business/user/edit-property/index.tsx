@@ -285,29 +285,29 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
 
     // Validate required fields
     if (!values.title || values.title.trim().length < 10) {
-      errors.push(t("admin.titleMinLength"));
+      errors.push(t("property.titleMinLength"));
     }
     if (!values.description || values.description.trim().length < 50) {
-      errors.push(t("admin.descriptionMinLength"));
+      errors.push(t("property.descriptionMinLength"));
     }
     if (!values.typeId) {
-      errors.push(t("admin.pleaseSelectPropertyType"));
+      errors.push(t("property.pleaseSelectPropertyType"));
     }
     // Check locationInfoId from form or state
     const currentLocationInfoId =
       values.locationInfoId || selectedLocationInfoId;
     if (!currentLocationInfoId) {
-      errors.push(t("admin.pleaseSelectArea"));
+      errors.push(t("property.pleaseSelectArea"));
     }
     if (!values.price || values.price <= 0) {
-      errors.push(t("admin.pleaseEnterValidPrice"));
+      errors.push(t("property.pleaseEnterValidPrice"));
     }
     if (!values.area || values.area <= 0) {
-      errors.push(t("admin.pleaseEnterValidArea"));
+      errors.push(t("property.pleaseEnterValidArea"));
     }
     // Check location from form field
     if (!values.location) {
-      errors.push(t("admin.pleaseSelectLocationOnMap"));
+      errors.push(t("property.pleaseSelectLocationOnMap"));
     }
 
     // Validate images for non-project types
@@ -315,7 +315,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
       // Check main image - either new upload or existing image
       const hasMainImage = mainImageFile ?? mainImageUrl ?? property?.mainImage;
       if (!hasMainImage) {
-        errors.push(t("admin.pleaseUploadMainImage"));
+        errors.push(t("property.pleaseUploadMainImage"));
       }
 
       // Check additional images - count existing images that weren't removed + new uploads
@@ -325,20 +325,20 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
         ).length ?? 0;
       const totalImages = remainingExistingImages + imageUrls.length;
       if (totalImages < 3) {
-        errors.push(t("admin.pleaseUploadAtLeast3Images"));
+        errors.push(t("property.pleaseUploadAtLeast3Images"));
       }
 
       // Check if images are still uploading
       if (uploadingMainImage) {
-        errors.push(t("admin.mainImageUploading"));
+        errors.push(t("property.mainImageUploading"));
       }
       if (uploadingImages.some((uploading) => uploading)) {
-        errors.push(t("admin.additionalImagesUploading"));
+        errors.push(t("property.additionalImagesUploading"));
       }
 
       // Check if main image upload failed
       if (mainImageFile && !mainImageUrl && !uploadingMainImage) {
-        errors.push(t("admin.mainImageUploadFailed"));
+        errors.push(t("property.mainImageUploadFailed"));
       }
 
       // Check if any additional image upload failed
@@ -348,7 +348,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
       );
       if (failedUploads.length > 0) {
         errors.push(
-          `${failedUploads.length} ${t("admin.additionalImagesUploadFailed")}`,
+          `${failedUploads.length} ${t("property.additionalImagesUploadFailed")}`,
         );
       }
     }
@@ -356,11 +356,11 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
     // Show validation errors if any
     if (errors.length > 0) {
       modal.error({
-        title: t("admin.validationError"),
+        title: t("property.validationError"),
         content: (
           <div className="space-y-2">
             <p className="font-medium text-red-600">
-              {t("admin.pleaseCheckTheInformationYouEntered")}
+              {t("property.pleaseCheckTheInformationYouEntered")}
             </p>
             <ul className="list-inside list-disc space-y-1 text-sm">
               {errors.map((error, index) => (
@@ -371,45 +371,45 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
             </ul>
           </div>
         ),
-        okText: t("admin.understood"),
+        okText: t("property.understood"),
       });
       return;
     }
 
     // Show confirmation dialog
     modal.confirm({
-      title: t("admin.confirmUpdate"),
+      title: t("property.confirmUpdate"),
       content: (
         <div className="space-y-2">
-          <p>{t("admin.confirmUpdateContent")}</p>
+          <p>{t("property.confirmUpdateContent")}</p>
           <div className="text-sm text-gray-600">
             <p>
-              <strong>{t("admin.title")}:</strong> {values.title}
+              <strong>{t("property.title")}:</strong> {values.title}
             </p>
             <p>
-              <strong>{t("admin.transactionType")}:</strong>{" "}
+              <strong>{t("property.transactionType")}:</strong>{" "}
               {values.transactionType === "sale"
-                ? t("admin.sale")
+                ? t("property.sale")
                 : values.transactionType === "rent"
-                  ? t("admin.rent")
-                  : t("admin.project")}
+                  ? t("property.rent")
+                  : t("property.project")}
             </p>
             {values.price && (
               <p>
-                <strong>{t("admin.price")}:</strong>{" "}
+                <strong>{t("property.price")}:</strong>{" "}
                 {values.price.toLocaleString()} USD
               </p>
             )}
           </div>
         </div>
       ),
-      okText: t("admin.update"),
-      cancelText: t("admin.cancel"),
+      okText: t("property.update"),
+      cancelText: t("property.cancel"),
       onOk: () => {
         submitForm(values);
       },
       onCancel: () => {
-        message.info(t("admin.updateCancelled"));
+        message.info(t("property.updateCancelled"));
       },
     });
   };
@@ -417,12 +417,12 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
   const handleMainImageUpload = async (file: File) => {
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
-      message.error(t("admin.onlyImageFilesAllowed"));
+      message.error(t("property.onlyImageFilesAllowed"));
       return false;
     }
     const isLt5M = file.size / 1024 / 1024 < 5;
     if (!isLt5M) {
-      message.error(t("admin.imageMustBeLessThan5MB"));
+      message.error(t("property.imageMustBeLessThan5MB"));
       return false;
     }
 
@@ -432,10 +432,10 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
     try {
       const result = await uploadService.uploadImage(file);
       setMainImageUrl(result.url);
-      message.success(t("admin.mainImageUploadedSuccessfully"));
+      message.success(t("property.mainImageUploadedSuccessfully"));
     } catch (error) {
       console.error("Failed to upload main image:", error);
-      message.error(t("admin.cannotUploadMainImage"));
+      message.error(t("property.cannotUploadMainImage"));
       setMainImageFile(null);
     } finally {
       setUploadingMainImage(false);

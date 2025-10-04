@@ -128,6 +128,13 @@ export default function MapboxLocationSelector({
           zoom: 15,
         });
       }
+    } else {
+      // Reset all state when value is null
+      setMapLocation(null);
+      setLocationDetails(null);
+      setSelectedLocationInfoId(undefined);
+      setSelectedStrict(undefined);
+      setAddress("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
@@ -344,18 +351,30 @@ export default function MapboxLocationSelector({
 
   const handleAddressChange = (value: string) => {
     setAddress(value);
+
     // Update location details
     const updatedLocation = locationDetails
       ? {
           ...locationDetails,
           address: value || undefined,
         }
-      : null;
+      : mapLocation
+        ? {
+            latitude: mapLocation.latitude,
+            longitude: mapLocation.longitude,
+            address: value || undefined,
+            district: selectedStrict,
+          }
+        : null;
+
     setLocationDetails(updatedLocation);
-    onChange?.({
+
+    // Always trigger onChange to update the parent component
+    const newValue = {
       locationInfoId: selectedLocationInfoId,
       location: updatedLocation,
-    });
+    };
+    onChange?.(newValue);
   };
 
   const handleSearch = async (query: string) => {
@@ -538,7 +557,11 @@ export default function MapboxLocationSelector({
               <Input
                 placeholder={t("common.enterAddress")}
                 value={address}
-                onChange={(e) => handleAddressChange(e.target.value)}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  console.log("Address input changed:", newValue);
+                  handleAddressChange(newValue);
+                }}
                 disabled={disabled}
                 size="large"
               />

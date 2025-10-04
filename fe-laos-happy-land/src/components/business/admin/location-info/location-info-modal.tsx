@@ -291,14 +291,14 @@ const LocationInfoModal = ({
               <div className="text-center">
                 <UploadIcon className="mx-auto mb-2 h-8 w-8 text-gray-400" />
                 <div className="text-sm text-gray-600">
-                  {t("admin.uploadImage")}
+                  {t("common.uploadImage")}
                 </div>
               </div>
             )}
           </Upload>
           <Text className="mt-2 block text-xs text-gray-500">
-            {t("admin.supportedFormats")}: {t("admin.jpg")}, {t("admin.png")},{" "}
-            {t("admin.gif")}. {t("admin.maxSize")}: 5MB
+            {t("admin.supportedFormats")}:{" "}
+            {t("admin.supportedFormatsDescription")}
           </Text>
         </Form.Item>
 
@@ -322,7 +322,7 @@ const LocationInfoModal = ({
                 onClick={handleStrictAdd}
                 disabled={!strictInput.trim()}
               >
-                {t("admin.add")}
+                {t("common.add")}
               </Button>
             </div>
 
@@ -347,10 +347,6 @@ const LocationInfoModal = ({
               </div>
             )}
           </div>
-          <Text className="mt-2 block text-xs text-gray-500">
-            {t("admin.addSubAreas")} ({t("admin.example")}:{" "}
-            {t("admin.district")}, {t("admin.county")},{t("admin.ward")})
-          </Text>
         </Form.Item>
       </Form>
     </Modal>

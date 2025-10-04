@@ -45,37 +45,46 @@ export default function PriceHistoryChart({
       let price = 0;
 
       try {
-        // Check if rates is already an object (PropertyPrice) or a string
-        if (typeof item.rates === "object" && item.rates !== null) {
-          // rates is already an object
+        // Handle different rates formats
+        if (typeof item.rates === "string") {
+          // Check if it's a JSON string or a simple number string
+          if (item.rates.startsWith("{") || item.rates.startsWith("[")) {
+            // Try to parse as JSON string
+            const parsedRates = JSON.parse(item.rates) as PropertyPrice;
+            const rateValue = parsedRates[selectedCurrency];
+            price = parseFloat(rateValue?.toString() ?? "0");
+          } else {
+            // Simple number string - use directly
+            price = parseFloat(item.rates || "0");
+          }
+        } else if (typeof item.rates === "object" && item.rates !== null) {
+          // rates is already an object (PropertyPrice)
           const rates = item.rates;
           const rateValue = rates[selectedCurrency];
-          price = parseFloat(rateValue?.toString() ?? "0");
-        } else if (typeof item.rates === "string") {
-          // Try to parse rates as JSON string
-          const parsedRates = JSON.parse(item.rates) as PropertyPrice;
-          const rateValue = parsedRates[selectedCurrency];
           price = parseFloat(rateValue?.toString() ?? "0");
         } else {
           // Fallback: treat as a simple number
           price = parseFloat(String(item.rates) || "0");
         }
       } catch {
-        // If parsing fails, treat as a simple number string
-        if (typeof item.rates === "object" && item.rates !== null) {
-          // If it's an object but parsing failed, try to get the selected currency value
-          const rates = item.rates;
-          const rateValue = rates[selectedCurrency];
-          price = parseFloat(rateValue?.toString() ?? "0");
+        // If parsing fails, try to extract a number from the rates value
+        if (typeof item.rates === "string") {
+          price = parseFloat(item.rates || "0");
+        } else if (typeof item.rates === "number") {
+          price = item.rates;
         } else {
-          price = parseFloat(String(item.rates) || "0");
+          price = 0;
         }
       }
 
       return {
         date: new Date(item.date).toLocaleDateString("en-US", {
           month: "short",
+          day: "numeric",
           year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
         }),
         price: price,
         fullDate: item.date,
@@ -110,17 +119,19 @@ export default function PriceHistoryChart({
     }
   };
 
-  // Format price for display
+  // Format price for display - no formatting, just return the raw value
   const formatPrice = (value: number) => {
     if (selectedCurrency === "USD") {
-      return new Intl.NumberFormat("en-US", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(value);
+      return new Intl.NumberFormat("en-US", {}).format(value);
+    }
+    if (selectedCurrency === "VND") {
+      return new Intl.NumberFormat("vi-VN", {}).format(value);
+    }
+    if (selectedCurrency === "LAK") {
+      return new Intl.NumberFormat("la-LA", {}).format(value);
     }
     return new Intl.NumberFormat("en-US", {
       notation: "compact",
-      maximumFractionDigits: 1,
     }).format(value);
   };
 
@@ -170,10 +181,12 @@ export default function PriceHistoryChart({
                       : "bg-red-100 text-red-700"
                   }`}
                 >
-                  <TrendIcon size={14} />
-                  <span className="text-sm font-semibold">
-                    {isPositiveTrend ? "+" : ""}
-                    {priceChange.toFixed(2)}%
+                  <span className="flex items-center gap-1">
+                    <TrendIcon size={14} />
+                    <span className="text-sm font-semibold">
+                      {isPositiveTrend ? "+" : ""}
+                      {priceChange.toFixed(2)}%
+                    </span>
                   </span>
                 </div>
               }
@@ -205,7 +218,7 @@ export default function PriceHistoryChart({
           <ResponsiveContainer width="100%" height={320}>
             <AreaChart
               data={chartData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+              margin={{ top: 20, right: 60, left: 20, bottom: 60 }}
             >
               <defs>
                 <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">

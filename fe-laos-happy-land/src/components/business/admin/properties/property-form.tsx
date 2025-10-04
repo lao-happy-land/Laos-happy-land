@@ -350,7 +350,13 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
       return;
     }
 
-    submitForm(values);
+    // Ensure location data is included in the values
+    const valuesWithLocation = {
+      ...values,
+      location: locationData.location,
+    };
+
+    submitForm(valuesWithLocation);
   };
 
   const handleMainImageUpload = async (file: File) => {
