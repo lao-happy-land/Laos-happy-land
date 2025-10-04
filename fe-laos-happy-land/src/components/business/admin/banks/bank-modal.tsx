@@ -75,16 +75,27 @@ const BankModal: React.FC<BankModalProps> = ({
   useEffect(() => {
     if (visible) {
       if (mode === "edit" && bank) {
+        // Set form values for edit mode
+        console.log("Setting form values for edit mode:", bank);
         form.setFieldsValue({
           name: bank.name,
-          termRates: bank.termRates || [{ term: "", interestRate: 0 }],
+          termRates:
+            bank.termRates?.length > 0
+              ? bank.termRates
+              : [{ term: "", interestRate: 0 }],
         });
       } else {
+        // Reset form for create mode
+        console.log("Setting form values for create mode");
         form.resetFields();
         form.setFieldsValue({
+          name: "",
           termRates: [{ term: "", interestRate: 0 }],
         });
       }
+    } else {
+      // Reset form when modal is closed
+      form.resetFields();
     }
   }, [visible, mode, bank, form]);
 

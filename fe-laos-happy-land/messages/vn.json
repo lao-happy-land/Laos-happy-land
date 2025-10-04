@@ -94,6 +94,63 @@
     "createdAt": "Ngày tạo",
     "upload": "Tải lên"
   },
+  "loading": {
+    "connecting": "Đang kết nối...",
+    "loadingData": "Đang tải dữ liệu...",
+    "completing": "Hoàn thành...",
+    "authenticating": "Đang xác thực...",
+    "loadingPage": "Đang tải trang...",
+    "processing": "Đang xử lý...",
+    "uploading": "Đang tải lên...",
+    "downloading": "Đang tải xuống..."
+  },
+  "metadata": {
+    "home": {
+      "title": "Laohappyland - Bất động sản Lào",
+      "description": "Website bất động sản Lào tốt nhất - Tìm nhà đất, căn hộ, dự án bất động sản tại Lào",
+      "keywords": "bất động sản Lào, nhà đất Lào, căn hộ Lào, dự án Lào, đầu tư Lào, mua nhà, thuê nhà, bất động sản, Laohappyland"
+    },
+    "about": {
+      "title": "Về chúng tôi - Laohappyland",
+      "description": "Tìm hiểu về Laohappyland - Website bất động sản Lào uy tín và có kinh nghiệm",
+      "keywords": "về chúng tôi, Laohappyland, bất động sản Lào, lịch sử công ty, đội ngũ"
+    },
+    "properties": {
+      "title": "Bất động sản - Laohappyland",
+      "description": "Tìm bất động sản phù hợp - Nhà đất, căn hộ, dự án tại Lào",
+      "keywords": "bất động sản Lào, nhà đất, căn hộ, dự án, mua, thuê"
+    },
+    "news": {
+      "title": "Tin tức bất động sản - Laohappyland",
+      "description": "Cập nhật tin tức bất động sản Lào mới nhất - Tin đầu tư, dự án mới, thị trường bất động sản",
+      "keywords": "tin tức bất động sản, tin tức Lào, đầu tư, dự án mới, thị trường bất động sản"
+    },
+    "brokers": {
+      "title": "Môi giới bất động sản - Laohappyland",
+      "description": "Tìm môi giới bất động sản chuyên nghiệp - Chuyên gia giúp bạn tìm bất động sản phù hợp",
+      "keywords": "môi giới bất động sản, broker, bất động sản Lào, đội ngũ chuyên nghiệp"
+    },
+    "login": {
+      "title": "Đăng nhập - Laohappyland",
+      "description": "Đăng nhập Laohappyland để truy cập các bất động sản bạn quan tâm",
+      "keywords": "đăng nhập, Laohappyland, bất động sản"
+    },
+    "register": {
+      "title": "Đăng ký - Laohappyland",
+      "description": "Đăng ký Laohappyland để truy cập bất động sản tốt nhất",
+      "keywords": "đăng ký, Laohappyland, bất động sản"
+    },
+    "dashboard": {
+      "title": "Trang chủ - Laohappyland",
+      "description": "Trang chủ Laohappyland - Quản lý bất động sản của bạn",
+      "keywords": "trang chủ, dashboard, Laohappyland, quản lý bất động sản"
+    },
+    "profile": {
+      "title": "Hồ sơ - Laohappyland",
+      "description": "Quản lý hồ sơ của bạn trên Laohappyland",
+      "keywords": "hồ sơ, profile, Laohappyland, thông tin cá nhân"
+    }
+  },
   "home": {
     "featuredProperties": "Bất động sản dành cho bạn",
     "featuredPropertiesDescription": "Khám phá những căn hộ, nhà đất chất lượng tại các khu vực nổi bật",
@@ -334,7 +391,9 @@
     "cannotUploadMainImage": "Không thể tải lên ảnh chính",
     "maximum9AdditionalImages": "Chỉ có thể tải lên tối đa 9 ảnh phụ!",
     "uploadImageSuccessWithIndex": "Tải ảnh {index} thành công!",
-    "cannotUploadImageWithIndex": "Không thể tải ảnh {index}"
+    "cannotUploadImageWithIndex": "Không thể tải ảnh {index}",
+    "property": "Bất động sản",
+    "owner": "Chủ sở hữu"
   },
   "news": {
     "title": "Tin tức",
@@ -386,7 +445,8 @@
       "luangPrabang": "Luang Prabang",
       "buyHouse": "Mua nhà",
       "rent": "Cho thuê"
-    }
+    },
+    "share": "Chia sẻ"
   },
   "search": {
     "searchFilters": "Bộ lọc tìm kiếm",
@@ -472,14 +532,14 @@
     }
   },
   "map": {
-    "area": "Khu vực",
+    "area": "Tỉnh",
     "searching": "Đang tìm kiếm...",
     "noResultsFound": "Không tìm thấy kết quả cho \"{query}\"",
     "search": "Tìm",
     "buildingNumber": "Số nhà",
     "street": "Đường",
     "neighborhood": "Khu phố",
-    "district": "Khu vực",
+    "district": "Huyện",
     "city": "Thành phố",
     "province": "Tỉnh",
     "country": "Quốc gia",
@@ -492,6 +552,10 @@
     "enterAddressManually": "Nhập địa chỉ thủ công (không tự động tạo từ bản đồ)",
     "coordinatesOnly": "Chỉ Tọa Độ",
     "searchLocation": "Tìm Kiếm Vị Trí",
+    "addressWillBeAutoFilled": "Địa chỉ sẽ được tự động điền từ tìm kiếm/bản đồ",
+    "addressAutoFilledFromSearch": "Địa chỉ sẽ được tự động điền từ kết quả tìm kiếm hoặc click trên bản đồ",
+    "searchOrClickMap": "Tìm kiếm vị trí hoặc click trên bản đồ",
+    "addressAutoFilled": "Địa chỉ tự động điền",
     "viewMap": "Xem bản đồ",
     "listView": "Chế độ danh sách",
     "gridView": "Chế độ lưới",
@@ -605,6 +669,9 @@
     "contactSupportLink": "Liên hệ hỗ trợ"
   },
   "admin": {
+    "property": "Bất động sản",
+    "owner": "Chủ sở hữu",
+    "unknown": "Không xác định",
     "title": "Bảng quản trị",
     "manageNews": "Quản lý tin tức",
     "addNews": "Thêm tin tức",
@@ -1223,6 +1290,7 @@
     "cannotLoadProperties": "Không thể tải danh sách bất động sản",
     "cannotLoadReviews": "Không thể tải danh sách đánh giá",
     "cannotLoadPropertyTypes": "Không thể tải danh sách loại bất động sản",
+    "cannotLoadLocations": "Không thể tải danh sách địa điểm",
     "cannotLoadBrokers": "Không thể tải danh sách môi giới. Vui lòng thử lại."
   },
   "brokerDetail": {

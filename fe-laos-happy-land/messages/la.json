@@ -94,6 +94,63 @@
     "createdAt": "ສ້າງວັນທີ",
     "upload": "ອັບໂຫລດຮູບ"
   },
+  "loading": {
+    "connecting": "ກຳລັງເຊື່ອມຕໍ່...",
+    "loadingData": "ກຳລັງໂຫຼດຂໍ້ມູນ...",
+    "completing": "ສຳເລັດ...",
+    "authenticating": "ກຳລັງຢັ້ງຢືນ...",
+    "loadingPage": "ກຳລັງໂຫຼດໜ້າ...",
+    "processing": "ກຳລັງປະມວນຜົນ...",
+    "uploading": "ກຳລັງອັບໂຫລດ...",
+    "downloading": "ກຳລັງດາວໂຫລດ..."
+  },
+  "metadata": {
+    "home": {
+      "title": "Laohappyland - ອະສັງຫາລິມະສັບລາວ",
+      "description": "ເວັບໄຊທ໌ອະສັງຫາລິມະສັບລາວທີ່ດີທີ່ສຸດ - ຊອກຫາບ້ານ, ອາພາດເມັນ, ແລະໂຄງການອະສັງຫາລິມະສັບໃນລາວ",
+      "keywords": "ອະສັງຫາລິມະສັບລາວ, ບ້ານລາວ, ອາພາດເມັນລາວ, ໂຄງການລາວ, ການລົງທຶນລາວ, ຊື້ບ້ານ, ເຊົ່າບ້ານ, ອະສັງຫາລິມະສັບ, Laohappyland"
+    },
+    "about": {
+      "title": "ກ່ຽວກັບພວກເຮົາ - Laohappyland",
+      "description": "ຮູ້ຈັກກ່ຽວກັບ Laohappyland - ເວັບໄຊທ໌ອະສັງຫາລິມະສັບລາວທີ່ມີຄວາມເຊື່ອຖືແລະມີປະສົບການ",
+      "keywords": "ກ່ຽວກັບພວກເຮົາ, Laohappyland, ອະສັງຫາລິມະສັບລາວ, ປະຫວັດຄວາມເປັນມາ, ທີມງານ"
+    },
+    "properties": {
+      "title": "ອະສັງຫາລິມະສັບ - Laohappyland",
+      "description": "ຊອກຫາອະສັງຫາລິມະສັບທີ່ເໝາະສົມ - ບ້ານ, ອາພາດເມັນ, ໂຄງການໃນລາວ",
+      "keywords": "ອະສັງຫາລິມະສັບລາວ, ບ້ານ, ອາພາດເມັນ, ໂຄງການ, ຊື້, ເຊົ່າ"
+    },
+    "news": {
+      "title": "ຂ່າວອະສັງຫາລິມະສັບ - Laohappyland",
+      "description": "ອັບເດດຂ່າວສານອະສັງຫາລິມະສັບລາວລ່າສຸດ - ຂ່າວການລົງທຶນ, ໂຄງການໃໝ່, ຕະຫຼາດອະສັງຫາລິມະສັບ",
+      "keywords": "ຂ່າວອະສັງຫາລິມະສັບ, ຂ່າວລາວ, ການລົງທຶນ, ໂຄງການໃໝ່, ຕະຫຼາດອະສັງຫາລິມະສັບ"
+    },
+    "brokers": {
+      "title": "ມືອາຊີບອະສັງຫາລິມະສັບ - Laohappyland",
+      "description": "ຊອກຫາມືອາຊີບອະສັງຫາລິມະສັບມືອາຊີບ - ຜູ້ຊ່ວຍຊອກຫາອະສັງຫາລິມະສັບທີ່ເໝາະສົມ",
+      "keywords": "ມືອາຊີບອະສັງຫາລິມະສັບ, broker, ອະສັງຫາລິມະສັບລາວ, ທີມງານມືອາຊີບ"
+    },
+    "login": {
+      "title": "ເຂົ້າສູ່ລະບົບ - Laohappyland",
+      "description": "ເຂົ້າສູ່ລະບົບ Laohappyland ເພື່ອເຂົ້າເຖິງອະສັງຫາລິມະສັບທີ່ທ່ານສົນໃຈ",
+      "keywords": "ເຂົ້າສູ່ລະບົບ, login, Laohappyland, ອະສັງຫາລິມະສັບ"
+    },
+    "register": {
+      "title": "ສະໝັກສະມາຊິກ - Laohappyland",
+      "description": "ສະໝັກສະມາຊິກ Laohappyland ເພື່ອເຂົ້າເຖິງອະສັງຫາລິມະສັບທີ່ດີທີ່ສຸດ",
+      "keywords": "ສະໝັກສະມາຊິກ, register, Laohappyland, ອະສັງຫາລິມະສັບ"
+    },
+    "dashboard": {
+      "title": "ໜ້າຫຼັກ - Laohappyland",
+      "description": "ໜ້າຫຼັກ Laohappyland - ຈັດການອະສັງຫາລິມະສັບຂອງທ່ານ",
+      "keywords": "ໜ້າຫຼັກ, dashboard, Laohappyland, ຈັດການອະສັງຫາລິມະສັບ"
+    },
+    "profile": {
+      "title": "ໂປຣໄຟລ໌ - Laohappyland",
+      "description": "ຈັດການໂປຣໄຟລ໌ຂອງທ່ານໃນ Laohappyland",
+      "keywords": "ໂປຣໄຟລ໌, profile, Laohappyland, ຂໍ້ມູນສ່ວນຕົວ"
+    }
+  },
   "home": {
     "featuredProperties": "ອະສັງຫາລິມະສັບສໍາລັບທ່ານ",
     "featuredPropertiesDescription": "ສໍາຫຼວດອາພາດເມັນແລະອະສັງຫາລິມະສັບທີ່ມີຄຸນນະພາບຢູ່ໃນເຂດທີ່ໂດດເດັ່ນ",
@@ -386,7 +443,8 @@
       "luangPrabang": "ຫຼວງພະບາງ",
       "buyHouse": "ຊື້ເຮືອນ",
       "rent": "ເຊົ່າ"
-    }
+    },
+    "share": "ການຫ່າງເຊື່ອມ"
   },
   "search": {
     "searchFilters": "ຕົວກອງການຄົ້ນຫາ",
@@ -473,14 +531,14 @@
     }
   },
   "map": {
-    "area": "ພື້ນທີ່",
+    "area": "ແຂວງ",
     "searching": "ກຳລັງຊອກຫາ...",
     "noResultsFound": "ບໍ່ພົບຜົນການຊອກຫາສຳລັບ \"{query}\"",
     "search": "ຊອກຫາ",
     "buildingNumber": "ເລກທີ່ອາຄານ",
     "street": "ຖະໜົນ",
     "neighborhood": "ຊຸມຊົນ",
-    "district": "ເມືອງ",
+    "district": "ອຳເພີ",
     "city": "ນະຄອນ",
     "province": "ແຂວງ",
     "country": "ປະເທດ",
@@ -497,6 +555,10 @@
     "enterAddressManually": "ປ້ອນທີ່ຢູ່ດ້ວຍຕົນເອງ (ບໍ່ສ້າງອັດຕະໂນມັດຈາກແຜນທີ່)",
     "coordinatesOnly": "ພິກັດເທົ່ານັ້ນ",
     "searchLocation": "ຊອກຫາສະຖານທີ່",
+    "addressWillBeAutoFilled": "ທີ່ຢູ່ຈະຖືກເຂົ້າຂໍ້ມູນອັດຕະໂນມັດຈາກການຊອກຫາ/ແຜນທີ່",
+    "addressAutoFilledFromSearch": "ທີ່ຢູ່ຈະຖືກເຂົ້າຂໍ້ມູນອັດຕະໂນມັດຈາກຜົນການຊອກຫາຫຼືການກົດໃສ່ແຜນທີ່",
+    "searchOrClickMap": "ຊອກຫາສະຖານທີ່ຫຼືກົດໃສ່ແຜນທີ່",
+    "addressAutoFilled": "ທີ່ຢູ່ເຂົ້າຂໍ້ມູນອັດຕະໂນມັດ",
     "viewMap": "ເບິ່ງແຜນທີ່",
     "listView": "ແບບລາຍການ",
     "gridView": "ແບບຕາຕະລາງ",
@@ -1224,7 +1286,10 @@
     "pleaseAddAtLeast1Content": "ກະລຸນາເພີ່ມເນື້ອຫາຢ່າງໜ້ອຍ 1 ບລັອກ",
     "locationOnMap": "ທີ່ຕັ້ງໃນແຜນທີ່",
     "selectLocationOnMap": "ເລືອກທີ່ຕັ້ງໃນແຜນທີ່",
-    "additionalImagesUploadFailed": "ອັບໂຫລດຮູບເພີ່ມເຕີມບໍ່ສຳເລັດ"
+    "additionalImagesUploadFailed": "ອັບໂຫລດຮູບເພີ່ມເຕີມບໍ່ສຳເລັດ",
+    "property": "ອະສັງຫາລິມະສັບ",
+    "owner": "ເຈົ້າຂອງ",
+    "unknown": "ບໍ່ຮູ້"
   },
   "errors": {
     "userIdNotFound": "ບໍ່ພົບ ID ຜູ້ໃຊ້. ກະລຸນາເຂົ້າສູ່ລະບົບອີກຄັ້ງ.",
@@ -1232,6 +1297,7 @@
     "cannotLoadProperties": "ບໍ່ສາມາດໂຫຼດລາຍການອະສັງຫາລິມະສັບ",
     "cannotLoadReviews": "ບໍ່ສາມາດໂຫຼດລາຍການບົດວິຈານ",
     "cannotLoadPropertyTypes": "ບໍ່ສາມາດໂຫຼດລາຍການປະເພດອະສັງຫາລິມະສັບ",
+    "cannotLoadLocations": "ບໍ່ສາມາດໂຫຼດລາຍການສະຖານທີ່",
     "cannotLoadBrokers": "ບໍ່ສາມາດໂຫຼດລາຍການນາຍໜ້າ. ກະລຸນາລອງອີກຄັ້ງ."
   },
   "brokerDetail": {
