@@ -94,6 +94,63 @@
     "createdAt": "Created At",
     "upload": "Upload"
   },
+  "loading": {
+    "connecting": "Connecting...",
+    "loadingData": "Loading data...",
+    "completing": "Completing...",
+    "authenticating": "Authenticating...",
+    "loadingPage": "Loading page...",
+    "processing": "Processing...",
+    "uploading": "Uploading...",
+    "downloading": "Downloading..."
+  },
+  "metadata": {
+    "home": {
+      "title": "Laohappyland - Real Estate in Laos",
+      "description": "The best Laos real estate website - Find houses, apartments, and real estate projects in Laos",
+      "keywords": "Laos real estate, houses Laos, apartments Laos, projects Laos, investment Laos, buy house, rent house, real estate, Laohappyland"
+    },
+    "about": {
+      "title": "About Us - Laohappyland",
+      "description": "Learn about Laohappyland - Trusted and experienced Laos real estate website",
+      "keywords": "about us, Laohappyland, Laos real estate, company history, team"
+    },
+    "properties": {
+      "title": "Properties - Laohappyland",
+      "description": "Find suitable real estate - Houses, apartments, projects in Laos",
+      "keywords": "Laos real estate, houses, apartments, projects, buy, rent"
+    },
+    "news": {
+      "title": "Real Estate News - Laohappyland",
+      "description": "Latest Laos real estate news updates - Investment news, new projects, real estate market",
+      "keywords": "real estate news, Laos news, investment, new projects, real estate market"
+    },
+    "brokers": {
+      "title": "Real Estate Brokers - Laohappyland",
+      "description": "Find professional real estate brokers - Experts to help you find suitable properties",
+      "keywords": "real estate brokers, broker, Laos real estate, professional team"
+    },
+    "login": {
+      "title": "Login - Laohappyland",
+      "description": "Login to Laohappyland to access properties you're interested in",
+      "keywords": "login, Laohappyland, real estate"
+    },
+    "register": {
+      "title": "Register - Laohappyland",
+      "description": "Register for Laohappyland to access the best real estate",
+      "keywords": "register, Laohappyland, real estate"
+    },
+    "dashboard": {
+      "title": "Dashboard - Laohappyland",
+      "description": "Laohappyland Dashboard - Manage your properties",
+      "keywords": "dashboard, Laohappyland, manage properties"
+    },
+    "profile": {
+      "title": "Profile - Laohappyland",
+      "description": "Manage your profile on Laohappyland",
+      "keywords": "profile, Laohappyland, personal information"
+    }
+  },
   "home": {
     "featuredProperties": "Featured Properties",
     "featuredPropertiesDescription": "Discover quality apartments and real estate in prominent areas",
@@ -334,7 +391,8 @@
     "cannotUploadMainImage": "Cannot upload main image",
     "maximum9AdditionalImages": "Maximum 9 additional images allowed!",
     "uploadImageSuccessWithIndex": "Image {index} uploaded successfully!",
-    "cannotUploadImageWithIndex": "Cannot upload image {index}"
+    "cannotUploadImageWithIndex": "Cannot upload image {index}",
+    "property": "Property"
   },
   "news": {
     "title": "News",
@@ -386,7 +444,8 @@
       "luangPrabang": "Luang Prabang",
       "buyHouse": "Buy House",
       "rent": "Rent"
-    }
+    },
+    "share": "Share"
   },
   "search": {
     "searchFilters": "Search Filters",
@@ -472,7 +531,7 @@
     "popularSearchTerms": "Popular search terms"
   },
   "map": {
-    "area": "Area",
+    "area": "Province (Tỉnh)",
     "searchPlaceholder": "Search for location...",
     "searching": "Searching...",
     "noResultsFound": "No results found for \"{query}\"",
@@ -495,6 +554,10 @@
     "enterAddressManually": "Enter address manually (not auto-generated from map)",
     "coordinatesOnly": "Coordinates Only",
     "searchLocation": "Search Location",
+    "addressWillBeAutoFilled": "Address will be auto-filled from search/map",
+    "addressAutoFilledFromSearch": "Address will be automatically filled from search results or map clicks",
+    "searchOrClickMap": "Search location or click on map",
+    "addressAutoFilled": "Address auto-filled",
     "viewMap": "View Map",
     "listView": "List View",
     "gridView": "Grid View",
@@ -1228,7 +1291,10 @@
     "pleaseAddAtLeast1Content": "Please add at least 1 content block",
     "locationOnMap": "Location on Map",
     "selectLocationOnMap": "Select location on map",
-    "additionalImagesUploadFailed": "additional images upload failed"
+    "additionalImagesUploadFailed": "additional images upload failed",
+    "property": "Property",
+    "owner": "Owner",
+    "unknown": "Unknown"
   },
   "errors": {
     "userIdNotFound": "User ID not found. Please log in again.",
@@ -1236,6 +1302,7 @@
     "cannotLoadProperties": "Cannot load properties list",
     "cannotLoadReviews": "Cannot load reviews list",
     "cannotLoadPropertyTypes": "Cannot load property types list",
+    "cannotLoadLocations": "Cannot load locations list",
     "cannotLoadBrokers": "Cannot load brokers list. Please try again."
   },
   "brokerDetail": {

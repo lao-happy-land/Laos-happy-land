@@ -1,7 +1,7 @@
 "use client";
 
-import { Card, Typography, Empty, Select, Spin, Badge } from "antd";
-import { useState, useMemo } from "react";
+import { Card, Typography, Empty, Badge } from "antd";
+import { useMemo } from "react";
 import {
   XAxis,
   YAxis,
@@ -12,8 +12,13 @@ import {
   AreaChart,
 } from "recharts";
 import { useTranslations } from "next-intl";
+import { useUrlLocale } from "@/utils/locale";
+import {
+  getCurrencyByLocale,
+  getValidLocale,
+} from "@/share/helper/locale.helper";
 import type { PropertyPrice, PropertyPriceHistory } from "@/@types/types";
-import { TrendingUp, TrendingDown, DollarSign, Activity } from "lucide-react";
+import { TrendingUp, TrendingDown, Activity } from "lucide-react";
 
 const { Title } = Typography;
 
@@ -22,15 +27,15 @@ type Props = {
   currentPrice: string | PropertyPrice | null;
 };
 
-type CurrencyType = "LAK" | "USD" | "VND";
-
 export default function PriceHistoryChart({
   priceHistory,
-  currentPrice,
+  currentPrice: _currentPrice,
 }: Props) {
   const t = useTranslations();
-  const [selectedCurrency, setSelectedCurrency] = useState<CurrencyType>("USD");
-  const [isLoading, setIsLoading] = useState(false);
+  const locale = useUrlLocale();
+
+  // Get currency based on current locale
+  const selectedCurrency = getCurrencyByLocale(getValidLocale(locale));
 
   // Transform price history data for the chart
   const chartData = useMemo(() => {
@@ -91,9 +96,9 @@ export default function PriceHistoryChart({
     return change;
   }, [chartData]);
 
-  // Get currency symbol
-  const getCurrencySymbol = (currency: CurrencyType) => {
-    switch (currency) {
+  // Get currency symbol based on locale
+  const getCurrencySymbol = () => {
+    switch (selectedCurrency) {
       case "USD":
         return "$";
       case "VND":
@@ -118,17 +123,6 @@ export default function PriceHistoryChart({
       maximumFractionDigits: 1,
     }).format(value);
   };
-
-  // Handle currency change with loading state
-  const handleCurrencyChange = (value: CurrencyType) => {
-    setIsLoading(true);
-    setSelectedCurrency(value);
-    setTimeout(() => setIsLoading(false), 300);
-  };
-
-  // Check if currentPrice is a PropertyPrice object
-  const hasMultipleCurrencies =
-    currentPrice && typeof currentPrice === "object";
 
   if (!priceHistory || priceHistory.length === 0) {
     return null;
@@ -161,47 +155,6 @@ export default function PriceHistoryChart({
             </Typography.Text>
           </div>
         </div>
-
-        {hasMultipleCurrencies && (
-          <div className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-gray-400" />
-            <Select
-              value={selectedCurrency}
-              onChange={handleCurrencyChange}
-              className="w-32"
-              size="middle"
-              options={[
-                {
-                  value: "USD",
-                  label: (
-                    <div className="flex items-center gap-2">
-                      <span className="text-green-600">$</span>
-                      <span>USD</span>
-                    </div>
-                  ),
-                },
-                {
-                  value: "VND",
-                  label: (
-                    <div className="flex items-center gap-2">
-                      <span className="text-red-500">₫</span>
-                      <span>VND</span>
-                    </div>
-                  ),
-                },
-                {
-                  value: "LAK",
-                  label: (
-                    <div className="flex items-center gap-2">
-                      <span className="text-orange-500">₭</span>
-                      <span>LAK</span>
-                    </div>
-                  ),
-                },
-              ]}
-            />
-          </div>
-        )}
       </div>
 
       {/* Price Change Indicator */}
@@ -239,7 +192,7 @@ export default function PriceHistoryChart({
               Current Price
             </Typography.Text>
             <div className="text-lg font-bold text-gray-900">
-              {getCurrencySymbol(selectedCurrency)}
+              {getCurrencySymbol()}
               {formatPrice(chartData[chartData.length - 1]?.price ?? 0)}
             </div>
           </div>
@@ -248,12 +201,6 @@ export default function PriceHistoryChart({
 
       {/* Chart Section */}
       <div className="relative">
-        {isLoading && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
-            <Spin size="large" />
-          </div>
-        )}
-
         {chartData.length > 0 ? (
           <ResponsiveContainer width="100%" height={320}>
             <AreaChart
@@ -302,7 +249,7 @@ export default function PriceHistoryChart({
                   boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)",
                 }}
                 formatter={(value: unknown) => [
-                  `${getCurrencySymbol(selectedCurrency)}${formatPrice(value as number)}`,
+                  `${getCurrencySymbol()}${formatPrice(value as number)}`,
                   `${t("property.price")} (${selectedCurrency})`,
                 ]}
                 labelStyle={{

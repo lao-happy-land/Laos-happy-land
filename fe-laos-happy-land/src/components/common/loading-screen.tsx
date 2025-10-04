@@ -2,6 +2,7 @@
 
 import { Building2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface LoadingScreenProps {
   message?: string;
@@ -14,7 +15,7 @@ interface LoadingScreenProps {
 }
 
 export default function LoadingScreen({
-  message = "Đang tải...",
+  message,
   variant = "primary",
   size = "md",
   showLogo = true,
@@ -22,6 +23,7 @@ export default function LoadingScreen({
   duration = 3,
   className = "",
 }: LoadingScreenProps) {
+  const t = useTranslations();
   const [progress, setProgress] = useState(0);
   const [currentMessage, setCurrentMessage] = useState(message);
   const [isVisible, setIsVisible] = useState(false);
@@ -33,10 +35,10 @@ export default function LoadingScreen({
 
     // Progressive messages for better UX
     const progressMessages = [
-      "Khởi tạo...",
-      "Đang kết nối...",
-      "Đang tải dữ liệu...",
-      "Hoàn thành...",
+      "Laohappyland",
+      t("loading.connecting"),
+      t("loading.loadingData"),
+      t("loading.completing"),
     ];
 
     const interval = setInterval(() => {
@@ -56,7 +58,7 @@ export default function LoadingScreen({
     }, 100);
 
     return () => clearInterval(interval);
-  }, [duration, showProgress, message]);
+  }, [duration, showProgress, message, t]);
   const variants = {
     primary: {
       bg: "bg-gradient-to-br from-red-50 via-orange-25 to-pink-50",
@@ -603,42 +605,42 @@ export default function LoadingScreen({
 export const LoadingPresets = {
   auth: {
     variant: "blue" as const,
-    message: "Đang xác thực...",
+    message: "loading.authenticating",
     size: "md" as const,
     showProgress: true,
     duration: 2,
   },
   page: {
     variant: "primary" as const,
-    message: "Đang tải trang...",
+    message: "loading.loadingPage",
     size: "lg" as const,
     showProgress: true,
     duration: 3,
   },
   form: {
     variant: "green" as const,
-    message: "Đang xử lý...",
+    message: "loading.processing",
     size: "sm" as const,
     showLogo: false,
     showProgress: false,
   },
   data: {
     variant: "purple" as const,
-    message: "Đang tải dữ liệu...",
+    message: "loading.loadingData",
     size: "md" as const,
     showProgress: true,
     duration: 2.5,
   },
   upload: {
     variant: "blue" as const,
-    message: "Đang tải lên...",
+    message: "loading.uploading",
     size: "md" as const,
     showProgress: true,
     duration: 4,
   },
   download: {
     variant: "green" as const,
-    message: "Đang tải xuống...",
+    message: "loading.downloading",
     size: "md" as const,
     showProgress: true,
     duration: 5,

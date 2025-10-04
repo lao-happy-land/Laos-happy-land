@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { Card, Button, Typography, Select, Input, Row, Col } from "antd";
+import { Card, Button, Typography, Select, Input } from "antd";
 import { MapPin, Check, Search } from "lucide-react";
 import Map from "react-map-gl/mapbox";
 import { Marker, Popup } from "react-map-gl/mapbox";
@@ -57,12 +57,6 @@ export default function MapboxLocationSelector({
     value?.location?.district,
   );
 
-  const [buildingNumber, setBuildingNumber] = useState<string>(
-    value?.location?.buildingNumber ?? "",
-  );
-
-  const [street, setStreet] = useState<string>(value?.location?.street ?? "");
-
   const [address, setAddress] = useState<string>(
     value?.location?.address ?? "",
   );
@@ -109,7 +103,6 @@ export default function MapboxLocationSelector({
       const response = await locationInfoService.getAllLocationInfo({
         lang: getLangByLocale(getValidLocale(locale)),
       });
-      console.log("Location Info loaded:", response.data);
       return response.data;
     },
   );
@@ -128,8 +121,7 @@ export default function MapboxLocationSelector({
         setMapLocation(newMapLocation);
         setLocationDetails(value.location);
         setSelectedStrict(value.location.district);
-        setBuildingNumber(value.location.buildingNumber ?? "");
-        setStreet(value.location.street ?? value.location.address ?? "");
+        setAddress(value.location.address ?? "");
         setViewState({
           longitude: newMapLocation.longitude,
           latitude: newMapLocation.latitude,
@@ -195,22 +187,6 @@ export default function MapboxLocationSelector({
         let province = "";
         let postalCode = "";
         let neighborhood = "";
-        let street = "";
-        let buildingNumber = "";
-
-        // Extract street name from place_name (usually the first part before comma)
-        const placeNameParts = feature.place_name.split(",");
-        if (placeNameParts.length > 0) {
-          const firstPart = placeNameParts[0]?.trim() ?? "";
-          // Try to extract building number and street
-          const addressMatch = /^(\d+[A-Za-z]?)\s+(.+)$/.exec(firstPart);
-          if (addressMatch) {
-            buildingNumber = addressMatch[1] ?? "";
-            street = addressMatch[2] ?? "";
-          } else {
-            street = firstPart;
-          }
-        }
 
         for (const item of feature.context ?? []) {
           const id = item.id || "";
@@ -231,15 +207,13 @@ export default function MapboxLocationSelector({
           }
         }
 
-        // Use street name as the primary address
-        const address = street || neighborhood || feature.place_name;
+        // Use the full place name as the primary address
+        const address = feature.place_name;
 
         return {
           latitude: lat,
           longitude: lng,
           address: address,
-          street: street || undefined,
-          buildingNumber: buildingNumber || undefined,
           city: city || undefined,
           country: country || undefined,
           district: district || undefined,
@@ -280,16 +254,14 @@ export default function MapboxLocationSelector({
         zoom: 15,
       });
 
-      // Get address details from reverse geocoding (for city/province info only)
+      // Get address details from reverse geocoding and sync with city/district
       void reverseGeocode(lngLat.lat, lngLat.lng).then((locationData) => {
         if (locationData) {
-          // Only use reverse geocoding for city/province, keep manual inputs for address fields
+          // Only update coordinates and city/district, keep manual address input
           const updatedLocation = {
             ...locationData,
             district: selectedStrict ?? locationData.district,
-            buildingNumber: buildingNumber, // Keep manual input
-            street: street, // Keep manual input
-            address: address, // Keep manual input
+            address: address, // Keep manual address input
           };
           setLocationDetails(updatedLocation);
           // Auto-update parent with new location
@@ -302,10 +274,7 @@ export default function MapboxLocationSelector({
           const fallbackLocation: LocationDto = {
             latitude: lngLat.lat,
             longitude: lngLat.lng,
-            address:
-              street || `${lngLat.lat.toFixed(6)}, ${lngLat.lng.toFixed(6)}`,
-            street: street || undefined,
-            buildingNumber: buildingNumber || undefined,
+            address: address, // Keep manual address input
             district: selectedStrict,
           };
           setLocationDetails(fallbackLocation);
@@ -316,21 +285,24 @@ export default function MapboxLocationSelector({
         }
       });
     },
-    [
-      reverseGeocode,
-      onChange,
-      selectedLocationInfoId,
-      selectedStrict,
-      buildingNumber,
-      street,
-      address,
-    ],
+    [reverseGeocode, onChange, selectedLocationInfoId, selectedStrict, address],
   );
 
   const handleLocationInfoChange = (newLocationInfoId: string) => {
     setSelectedLocationInfoId(newLocationInfoId);
     // Reset strict selection when location info changes
     setSelectedStrict(undefined);
+
+    // Auto-fill search input with selected area name
+    const selectedLocation = locationInfoData?.find(
+      (loc) => loc.id === newLocationInfoId,
+    );
+    if (selectedLocation) {
+      setSearchQuery(selectedLocation.name);
+      // Auto-search for this location
+      void handleSearch(selectedLocation.name);
+    }
+
     // Update parent immediately
     onChange?.({
       locationInfoId: newLocationInfoId,
@@ -342,47 +314,28 @@ export default function MapboxLocationSelector({
 
   const handleStrictChange = (newStrict: string) => {
     setSelectedStrict(newStrict);
+
+    // Auto-fill search input with area + district combination
+    const selectedLocation = locationInfoData?.find(
+      (loc) => loc.id === selectedLocationInfoId,
+    );
+    if (selectedLocation) {
+      const searchQuery = `${selectedLocation.name}, ${newStrict}`;
+      setSearchQuery(searchQuery);
+      // Auto-search for this location combination
+      void handleSearch(searchQuery);
+    }
+
     // Update location details with the selected district
     const updatedLocation = locationDetails
       ? {
           ...locationDetails,
           district: newStrict,
-          buildingNumber: buildingNumber || locationDetails.buildingNumber,
-          street: street || locationDetails.street,
-          address: street || locationDetails.address,
+          address: locationDetails.address, // Keep existing address
         }
       : null;
     setLocationDetails(updatedLocation);
     // Update parent immediately
-    onChange?.({
-      locationInfoId: selectedLocationInfoId,
-      location: updatedLocation,
-    });
-  };
-
-  const handleBuildingNumberChange = (value: string) => {
-    setBuildingNumber(value);
-    // Update location details
-    const updatedLocation = locationDetails
-      ? { ...locationDetails, buildingNumber: value || undefined }
-      : null;
-    setLocationDetails(updatedLocation);
-    onChange?.({
-      locationInfoId: selectedLocationInfoId,
-      location: updatedLocation,
-    });
-  };
-
-  const handleStreetChange = (value: string) => {
-    setStreet(value);
-    // Update location details
-    const updatedLocation = locationDetails
-      ? {
-          ...locationDetails,
-          street: value || undefined,
-        }
-      : null;
-    setLocationDetails(updatedLocation);
     onChange?.({
       locationInfoId: selectedLocationInfoId,
       location: updatedLocation,
@@ -434,15 +387,14 @@ export default function MapboxLocationSelector({
       zoom: 15,
     });
 
-    // Get address details from reverse geocoding
+    // Get address details from reverse geocoding and sync with city/district
     void reverseGeocode(lat, lng).then((locationData) => {
       if (locationData) {
+        // Only update coordinates and city/district, keep manual address input
         const updatedLocation = {
           ...locationData,
           district: selectedStrict ?? locationData.district,
-          buildingNumber: buildingNumber,
-          street: street,
-          address: address,
+          address: address, // Keep manual address input
         };
         setLocationDetails(updatedLocation);
         onChange?.({
@@ -454,9 +406,7 @@ export default function MapboxLocationSelector({
         const fallbackLocation: LocationDto = {
           latitude: lat,
           longitude: lng,
-          address: address,
-          street: street || undefined,
-          buildingNumber: buildingNumber || undefined,
+          address: address, // Keep manual address input
           district: selectedStrict ?? undefined,
           country: "Laos",
         };
@@ -492,8 +442,7 @@ export default function MapboxLocationSelector({
     setLocationDetails(null);
     setSelectedLocationInfoId(undefined);
     setSelectedStrict(undefined);
-    setBuildingNumber("");
-    setStreet("");
+    setAddress("");
     onChange?.(null);
   };
 
@@ -574,40 +523,10 @@ export default function MapboxLocationSelector({
               {selectedLocationInfo.strict && (
                 <Text className="mt-1 text-xs text-neutral-500">
                   {selectedLocationInfo.strict.length}{" "}
-                  {t("map.district").toLowerCase()} available
+                  {t("map.district").toLowerCase()}
                 </Text>
               )}
             </div>
-          )}
-
-          {/* Street, Building Number and Address Inputs */}
-          {selectedLocationInfoId && selectedStrict && (
-            <Row gutter={16}>
-              <Col xs={24} sm={8}>
-                <Text className="mb-2 block text-sm font-medium text-neutral-700">
-                  {t("map.buildingNumber")}
-                </Text>
-                <Input
-                  placeholder={t("map.buildingNumber")}
-                  value={buildingNumber}
-                  onChange={(e) => handleBuildingNumberChange(e.target.value)}
-                  disabled={disabled}
-                  size="large"
-                />
-              </Col>
-              <Col xs={24} sm={16}>
-                <Text className="mb-2 block text-sm font-medium text-neutral-700">
-                  {t("map.street")} <span className="text-red-500">*</span>
-                </Text>
-                <Input
-                  placeholder={t("map.street")}
-                  value={street}
-                  onChange={(e) => handleStreetChange(e.target.value)}
-                  disabled={disabled}
-                  size="large"
-                />
-              </Col>
-            </Row>
           )}
 
           {/* Address Input - Manual entry */}
@@ -716,7 +635,8 @@ export default function MapboxLocationSelector({
                     >
                       <div className="max-w-[250px] p-3">
                         <Text className="text-sm font-medium">
-                          {address || t("map.coordinatesOnly")}
+                          {address ||
+                            `${mapLocation.latitude.toFixed(6)}, ${mapLocation.longitude.toFixed(6)}`}
                         </Text>
                         <div className="mt-2 space-y-1">
                           {locationDetails.district && (
@@ -753,8 +673,8 @@ export default function MapboxLocationSelector({
           <div className="flex flex-col items-center justify-between gap-2 lg:flex-row">
             <Text className="text-sm text-neutral-600">
               💡 <strong>{t("map.instructions")}:</strong> {t("map.selectArea")}{" "}
-              → {t("map.district")} → {t("map.street")} → {t("common.address")}{" "}
-              → {t("map.clickOnMapToSelectLocation")}
+              → {t("map.district")} → {t("common.address")} →{" "}
+              {t("map.searchOrClickMap")} → {t("map.coordinates")}
             </Text>
             <div className="flex justify-end gap-2">
               {(mapLocation ?? selectedLocationInfoId) && (
@@ -769,7 +689,6 @@ export default function MapboxLocationSelector({
                   !mapLocation ||
                   !selectedLocationInfoId ||
                   !selectedStrict ||
-                  !street ||
                   !address ||
                   disabled
                 }
@@ -813,7 +732,7 @@ export default function MapboxLocationSelector({
                   </div>
                 </div>
               )}
-              {(buildingNumber || street || locationDetails) && (
+              {locationDetails && (
                 <div className="flex items-center gap-2">
                   <div className="text-primary-600 bg-primary-50 flex rounded-full p-2">
                     <MapPin className="h-4 w-4" />
@@ -823,8 +742,7 @@ export default function MapboxLocationSelector({
                       {t("map.address")}:
                     </p>
                     <p className="text-sm font-medium text-neutral-900">
-                      {buildingNumber && `${buildingNumber} `}
-                      {street || locationDetails?.address}
+                      {locationDetails?.address}
                     </p>
                     <div className="mt-2 space-y-1 border-t border-neutral-200 pt-2">
                       {mapLocation && (

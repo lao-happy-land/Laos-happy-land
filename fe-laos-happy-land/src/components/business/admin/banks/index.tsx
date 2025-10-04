@@ -37,7 +37,6 @@ export default function Banks() {
   const searchParams = useSearchParams();
 
   const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
-  const [openModal, setOpenModal] = useState<"create" | "update">("create");
   const [isVisible, setIsModalVisible] = useState(false);
 
   const [searchInputValue, setSearchInputValue] = useState(
@@ -144,12 +143,11 @@ export default function Banks() {
 
   const handleEditBank = (bank: Bank) => {
     setSelectedBank(bank);
-    setOpenModal("update");
     setIsModalVisible(true);
   };
 
-  const handleOpenModal = (action: "create" | "update") => {
-    setOpenModal(action);
+  const handleOpenModal = () => {
+    setSelectedBank(null);
     setIsModalVisible(true);
   };
 
@@ -247,7 +245,7 @@ export default function Banks() {
             <Button
               type="primary"
               icon={<Plus size={16} />}
-              onClick={() => handleOpenModal("create")}
+              onClick={handleOpenModal}
               size="large"
             >
               {t("admin.addBank")}
@@ -313,7 +311,7 @@ export default function Banks() {
         visible={isVisible}
         onClose={() => setIsModalVisible(false)}
         bank={selectedBank}
-        mode={openModal as "edit" | "create"}
+        mode={selectedBank ? "edit" : "create"}
         onSuccess={() => {
           setIsModalVisible(false);
           refreshBanks();
