@@ -796,11 +796,32 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                       : t("property.rentalDetails")}
                 </Title>
               </div>
-              <ProjectContentBuilder
-                form={form}
+              <Form.Item
                 name="content"
-                textFieldName="value"
-              />
+                rules={[
+                  {
+                    validator: (_, value) => {
+                      if (selectedTransactionType === "project") {
+                        if (
+                          !value ||
+                          (Array.isArray(value) && value.length === 0)
+                        ) {
+                          return Promise.reject(
+                            new Error(t("property.pleaseAddAtLeast1Content")),
+                          );
+                        }
+                      }
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
+              >
+                <ProjectContentBuilder
+                  form={form}
+                  name="content"
+                  textFieldName="value"
+                />
+              </Form.Item>
             </div>
           </div>
 

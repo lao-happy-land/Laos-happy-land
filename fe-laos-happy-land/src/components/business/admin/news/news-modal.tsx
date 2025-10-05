@@ -171,7 +171,23 @@ const NewsModal: React.FC<NewsModalProps> = ({
           </Select>
         </Form.Item>
 
-        <ProjectContentBuilder form={form} name="details" />
+        <Form.Item
+          name="details"
+          rules={[
+            {
+              validator: (_, value) => {
+                if (!value || (Array.isArray(value) && value.length === 0)) {
+                  return Promise.reject(
+                    new Error(t("property.pleaseAddAtLeast1Content")),
+                  );
+                }
+                return Promise.resolve();
+              },
+            },
+          ]}
+        >
+          <ProjectContentBuilder form={form} name="details" />
+        </Form.Item>
       </Form>
     </Modal>
   );
