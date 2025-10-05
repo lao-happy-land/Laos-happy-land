@@ -526,9 +526,16 @@ export class PropertyService {
 
     const [properties, total] = await qb.getManyAndCount();
 
-    const finalResult = params.priceSource
-      ? properties.map((item) => this.formatProperty(item, params.priceSource))
-      : properties;
+    const targetLang = this.mapLang(params.currency);
+
+    const finalResult = await Promise.all(
+      properties.map(async (item) => {
+        const formatted = params.priceSource
+          ? this.formatProperty(item, params.priceSource)
+          : item;
+        return this.transalteProperties(formatted, targetLang);
+      }),
+    );
 
     const serializedResult = instanceToPlain(finalResult);
 
