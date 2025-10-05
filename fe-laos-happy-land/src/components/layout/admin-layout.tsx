@@ -13,6 +13,7 @@ import UnauthorizedPage from "@/app/[locale]/(auth)/unauthorized/page";
 import { useUrlLocale } from "@/utils/locale";
 import { useTranslations } from "next-intl";
 import LanguageSwitcher from "@/components/business/common/language-switcher";
+import CurrencySwitcher from "@/components/business/common/currency-switcher";
 import router from "next/router";
 
 interface AdminLayoutProps {
@@ -221,6 +222,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <div className="flex items-center gap-4">
               {/* Language Switcher */}
               <LanguageSwitcher />
+
+              {/* Currency Switcher */}
+              <CurrencySwitcher />
 
               {/* User Dropdown */}
               <Dropdown

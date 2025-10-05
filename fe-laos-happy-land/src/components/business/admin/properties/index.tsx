@@ -45,12 +45,11 @@ import { formatLocation } from "@/share/helper/format-location";
 import { useTranslations } from "next-intl";
 import { useUrlLocale } from "@/utils/locale";
 import {
-  getCurrencyByLocale,
   getPropertyParamsByLocale,
   getValidLocale,
   getLangByLocale,
-  type SupportedLocale,
 } from "@/share/helper/locale.helper";
+import { useCurrencyStore } from "@/share/store/currency.store";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -62,6 +61,7 @@ const AdminProperties = () => {
   const router = useRouter();
   const pathname = usePathname();
   const [form] = Form.useForm();
+  const { currency } = useCurrencyStore();
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -187,7 +187,6 @@ const AdminProperties = () => {
         location?: string;
         transaction?: "rent" | "sale" | "project";
         status?: "pending" | "approved" | "rejected";
-        currency?: string;
         page?: number;
         perPage?: number;
       } = {
@@ -367,6 +366,7 @@ const AdminProperties = () => {
     currentPage,
     pageSize,
     fetchProperties,
+    currency, // Refetch when currency changes
   ]);
 
   const handleApprove = (property: Property) => {
@@ -515,7 +515,7 @@ const AdminProperties = () => {
 
     if (priceRange[0] > 0 || priceRange[1] < 100000000000) {
       filters.push(
-        `${numberToString(priceRange[0])} - ${numberToString(priceRange[1])} ${getCurrencyByLocale(locale as SupportedLocale)}`,
+        `${numberToString(priceRange[0])} - ${numberToString(priceRange[1])} ${currency}`,
       );
     }
 
@@ -667,19 +667,11 @@ const AdminProperties = () => {
                     />
                     <div className="flex gap-2 text-xs text-gray-500">
                       <span>
-                        {numberToString(
-                          priceRange[0],
-                          locale,
-                          getCurrencyByLocale(locale as SupportedLocale),
-                        )}{" "}
+                        {numberToString(priceRange[0], locale, currency)}{" "}
                       </span>
                       <span>-</span>
                       <span>
-                        {numberToString(
-                          priceRange[1],
-                          locale,
-                          getCurrencyByLocale(locale as SupportedLocale),
-                        )}{" "}
+                        {numberToString(priceRange[1], locale, currency)}{" "}
                       </span>
                     </div>
                   </div>
@@ -792,7 +784,7 @@ const AdminProperties = () => {
               width: 150,
               render: (price: string) =>
                 price
-                  ? `${numberToString(Number(price), locale, getCurrencyByLocale(locale as SupportedLocale))}`
+                  ? `${numberToString(Number(price), locale, currency)}`
                   : t("admin.negotiable"),
             },
             {

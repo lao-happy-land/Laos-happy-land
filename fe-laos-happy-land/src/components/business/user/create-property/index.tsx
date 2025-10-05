@@ -50,6 +50,7 @@ import propertyTypeService from "@/share/service/property-type.service";
 import uploadService from "@/share/service/upload.service";
 import { getLangByLocale, getValidLocale } from "@/share/helper/locale.helper";
 import Image from "next/image";
+import { useCurrencyStore } from "@/share/store/currency.store";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -61,6 +62,7 @@ export default function CreateProperty() {
   const { isAuthenticated, user } = useAuthStore();
   const router = useRouter();
   const locale = useUrlLocale();
+  const { currency } = useCurrencyStore();
   const [form] = Form.useForm();
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
   const [selectedTransactionType, setSelectedTransactionType] = useState<
@@ -476,7 +478,7 @@ export default function CreateProperty() {
                   name="price"
                   label={
                     <Text className="font-medium">
-                      {t("property.price")} (USD$)
+                      {t("property.price")} ({currency})
                     </Text>
                   }
                   rules={[

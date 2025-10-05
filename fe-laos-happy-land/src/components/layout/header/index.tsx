@@ -34,6 +34,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/share/store/auth.store";
 import Image from "next/image";
 import LanguageSwitcher from "@/components/business/common/language-switcher";
+import CurrencySwitcher from "@/components/business/common/currency-switcher";
 import { useUrlLocale } from "@/utils/locale";
 import { useTranslations } from "next-intl";
 const { Text } = Typography;
@@ -311,6 +312,7 @@ export default function Header({
 
               <div className="hidden items-center space-x-3 xl:flex">
                 <LanguageSwitcher />
+                <CurrencySwitcher />
                 {isAuthenticated && user ? (
                   <Dropdown
                     menu={{ items: userMenuItems }}
@@ -409,8 +411,9 @@ export default function Header({
         width={320}
       >
         <div className="flex flex-col space-y-6">
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-2">
             <LanguageSwitcher />
+            <CurrencySwitcher />
           </div>
           {isAuthenticated && user ? (
             <div className="space-y-4">

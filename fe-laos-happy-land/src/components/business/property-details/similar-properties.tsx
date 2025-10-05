@@ -5,11 +5,7 @@ import { Row, Col, Divider, Spin } from "antd";
 import { useTranslations } from "next-intl";
 import PropertyCard from "@/components/business/common/property-card";
 import propertyService from "@/share/service/property.service";
-import {
-  getCurrencyByLocale,
-  type SupportedLocale,
-} from "@/share/helper/locale.helper";
-import { useUrlLocale } from "@/utils/locale";
+import { useCurrencyStore } from "@/share/store/currency.store";
 
 interface SimilarPropertiesProps {
   propertyId: string;
@@ -19,15 +15,17 @@ export default function SimilarProperties({
   propertyId,
 }: SimilarPropertiesProps) {
   const t = useTranslations();
-  const locale = useUrlLocale() as SupportedLocale;
-  const currency = getCurrencyByLocale(locale);
+  const { currency } = useCurrencyStore();
 
-  const { data: similarProperties, loading } = useRequest(() =>
-    propertyService.getSimilarProperties(propertyId, {
-      page: 1,
-      perPage: 6,
-      currency: currency,
-    }),
+  const { data: similarProperties, loading } = useRequest(
+    () =>
+      propertyService.getSimilarProperties(propertyId, {
+        page: 1,
+        perPage: 6,
+      }),
+    {
+      refreshDeps: [currency], // Refetch when currency changes
+    },
   );
 
   const properties = similarProperties?.data ?? [];

@@ -50,6 +50,7 @@ import { getLangByLocale, getValidLocale } from "@/share/helper/locale.helper";
 import ProjectContentBuilder from "@/components/business/common/project-content-builder";
 import MapboxLocationSelector from "@/components/business/common/mapbox-location-selector";
 import Image from "next/image";
+import { useCurrencyStore } from "@/share/store/currency.store";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -63,6 +64,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
   const { isAuthenticated } = useAuthStore();
   const router = useRouter();
   const locale = useUrlLocale();
+  const { currency } = useCurrencyStore();
   const [form] = Form.useForm();
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
   const [selectedLocationInfoId, setSelectedLocationInfoId] =
@@ -397,7 +399,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
             {values.price && (
               <p>
                 <strong>{t("property.price")}:</strong>{" "}
-                {values.price.toLocaleString()} USD
+                {values.price.toLocaleString()} {currency}
               </p>
             )}
           </div>

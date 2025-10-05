@@ -23,16 +23,14 @@ import propertyService from "@/share/service/property.service";
 import type { Property } from "@/@types/types";
 import Image from "next/image";
 import { numberToString } from "@/share/helper/number-to-string";
-import {
-  getCurrencyByLocale,
-  type SupportedLocale,
-} from "@/share/helper/locale.helper";
+import { useCurrencyStore } from "@/share/store/currency.store";
 import { formatLocation } from "@/share/helper/format-location";
 
 const AdminDashboard = () => {
   const t = useTranslations();
   const locale = useUrlLocale();
   const { message, modal } = App.useApp();
+  const { currency } = useCurrencyStore();
 
   const { data: dashboardData, loading } = useRequest(async () => {
     return await dashboardService.getDashboard();
@@ -42,14 +40,18 @@ const AdminDashboard = () => {
     data: pendingPropertiesData,
     loading: loadingPendingProperties,
     run: refetchPendingProperties,
-  } = useRequest(async () => {
-    return await propertyService.getProperties({
-      status: "pending",
-      page: 1,
-      perPage: 10,
-      currency: getCurrencyByLocale(locale as SupportedLocale),
-    });
-  });
+  } = useRequest(
+    async () => {
+      return await propertyService.getProperties({
+        status: "pending",
+        page: 1,
+        perPage: 10,
+      });
+    },
+    {
+      refreshDeps: [currency],
+    },
+  );
 
   const handleApproveProperty = (property: Property) => {
     modal.confirm({
@@ -377,11 +379,7 @@ const AdminDashboard = () => {
               key: "price",
               render: (price: unknown) => (
                 <div className="font-semibold text-green-600">
-                  {numberToString(
-                    price as number,
-                    locale as SupportedLocale,
-                    getCurrencyByLocale(locale as SupportedLocale),
-                  )}
+                  {numberToString(price as number, locale, currency)}
                 </div>
               ),
             },

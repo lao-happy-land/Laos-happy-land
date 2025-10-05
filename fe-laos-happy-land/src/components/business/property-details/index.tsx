@@ -15,6 +15,7 @@ import SimilarProperties from "@/components/business/property-details/similar-pr
 import PriceHistoryChart from "@/components/business/property-details/price-history-chart";
 import { useRequest } from "ahooks";
 import propertyService from "@/share/service/property.service";
+import { useCurrencyStore } from "@/share/store/currency.store";
 
 type Props = {
   propertyId: string;
@@ -36,8 +37,12 @@ type Details = {
 type TransactionEnum = "sale" | "rent" | "project";
 
 export default function PropertyDetails({ propertyId }: Props) {
-  const { data: property, loading } = useRequest(() =>
-    propertyService.getPropertyById(propertyId),
+  const { currency } = useCurrencyStore();
+  const { data: property, loading } = useRequest(
+    () => propertyService.getPropertyById(propertyId),
+    {
+      refreshDeps: [currency],
+    },
   );
 
   const allImages = [property?.mainImage, ...(property?.images ?? [])].filter(

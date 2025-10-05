@@ -1,6 +1,7 @@
 import { Api } from "@/@types/gentype-axios";
 import { useLocaleStore } from "../store/locale.store";
-import { getCurrencyByLocale, getLangByLocale, getValidLocale } from "../helper/locale.helper";
+import { useCurrencyStore } from "../store/currency.store";
+import { getLangByLocale, getValidLocale } from "../helper/locale.helper";
 
 // Tạo instance API với base URL từ environment
 const api = new Api({
@@ -18,11 +19,15 @@ api.instance.interceptors.request.use(
         config.headers.Authorization = `Bearer ${token}`;
       }
 
-      // Add currency and lang headers based on current locale
+      // Get locale from store
       const locale = useLocaleStore.getState().getLocale();
       const validLocale = getValidLocale(locale);
-      
-      config.headers.currency = getCurrencyByLocale(validLocale);
+
+      config.headers.currency = getLangByLocale(validLocale);
+
+      const priceSource = useCurrencyStore.getState().getCurrency();
+      config.headers.priceSource = priceSource;
+
       config.headers.lang = getLangByLocale(validLocale);
     }
 

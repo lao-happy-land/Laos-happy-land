@@ -19,14 +19,12 @@ import { formatShortLocation } from "@/share/helper/format-location";
 import { Button } from "antd";
 import { formatCreatedDate } from "@/share/helper/format-date";
 import { useUrlLocale } from "@/utils/locale";
-import {
-  getCurrencyByLocale,
-  type SupportedLocale,
-} from "@/share/helper/locale.helper";
+import { useCurrencyStore } from "@/share/store/currency.store";
 
 export default function PropertyCard({ property }: { property: Property }) {
   const t = useTranslations();
-  const locale = useUrlLocale() as SupportedLocale;
+  const locale = useUrlLocale();
+  const { currency } = useCurrencyStore();
 
   // Helper function to get main image URL
   const getValidImageUrl = (property: Property): string => {
@@ -171,11 +169,7 @@ export default function PropertyCard({ property }: { property: Property }) {
             <div className="mb-2 flex flex-col items-start lg:flex-row lg:items-center lg:gap-3">
               <span className="text-2xl font-bold text-red-600">
                 {property.price
-                  ? numberToString(
-                      Number(property.price),
-                      locale,
-                      getCurrencyByLocale(locale),
-                    )
+                  ? numberToString(Number(property.price), locale, currency)
                   : t("property.contactForPrice")}
               </span>
               <span className="hidden text-gray-500 lg:block">•</span>

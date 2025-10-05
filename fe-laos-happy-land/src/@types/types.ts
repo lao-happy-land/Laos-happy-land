@@ -96,7 +96,7 @@ export type LocationInfo = {
 export type PropertyPrice = {
   LAK: string;
   USD: string;
-  VND: string;
+  THB: string;
 };
 
 export type PropertyPriceHistory = {

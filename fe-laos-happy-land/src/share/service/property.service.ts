@@ -12,7 +12,6 @@ const propertyService = {
     perPage?: number;
     type?: string[];
     locationId?: string;
-    currency?: string;
     keyword?: string;
     minPrice?: number;
     maxPrice?: number;
@@ -54,7 +53,6 @@ const propertyService = {
   getPropertiesByUser: async (query?: {
     page?: number;
     perPage?: number;
-    currency?: string;
   }): Promise<APIResponse<Property[]>> => {
     const response = await api.propertyControllerGetByUser(query);
     return response.data as unknown as APIResponse<Property[]>;
@@ -80,7 +78,6 @@ const propertyService = {
     query?: {
       page?: number;
       perPage?: number;
-      currency?: string;
     },
   ): Promise<APIResponse<Property[]>> => {
     try {
@@ -141,7 +138,6 @@ const propertyService = {
     query?: {
       page?: number;
       perPage?: number;
-      currency?: string;
     },
   ): Promise<APIResponse<Property[]>> => {
     try {
