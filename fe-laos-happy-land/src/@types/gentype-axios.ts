@@ -252,6 +252,11 @@ export interface CreatePropertyDto {
   mainImage?: string;
   /** Danh sách hình anh */
   images?: string[];
+  /**
+   * Nguồn đơn vị tiền tệ cho giá (lấy từ header price-source)
+   * @example "USD"
+   */
+  priceSource?: "USD" | "LAK" | "THB";
 }
 
 export interface UpdatePropertyDto {
@@ -309,6 +314,11 @@ export interface UpdatePropertyDto {
   mainImage?: File;
   /** Danh sách ảnh phụ của bất động sản */
   images?: File[];
+  /**
+   * Nguồn đơn vị tiền tệ cho giá (lấy từ header price-source)
+   * @example "USD"
+   */
+  priceSource?: "USD" | "LAK" | "THB";
 }
 
 export interface RejectPropertyDto {
@@ -696,6 +706,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         locationInfoId?: string;
         /** Filter users who requested role upgrade */
         requestedRoleUpgrade?: boolean;
+        /**
+         * Ngôn ngữ hiển thị (VND = Tiếng Việt, USD = English, LAK = Lao)
+         * @example "USD"
+         */
+        lang?: "VND" | "USD" | "LAK";
       },
       params: RequestParams = {},
     ) =>
@@ -727,6 +742,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         locationInfoId?: string;
         /** Filter users who requested role upgrade */
         requestedRoleUpgrade?: boolean;
+        /**
+         * Ngôn ngữ hiển thị (VND = Tiếng Việt, USD = English, LAK = Lao)
+         * @example "USD"
+         */
+        lang?: "VND" | "USD" | "LAK";
         fullName?: string;
         take?: number;
         skip?: number;
@@ -761,10 +781,21 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @name UserControllerGet
      * @request GET:/api/user/{id}
      */
-    userControllerGet: (id: string, params: RequestParams = {}) =>
+    userControllerGet: (
+      id: string,
+      query?: {
+        /**
+         * Ngôn ngữ hiển thị (VND = Tiếng Việt, USD = English, LAK = Lao)
+         * @example "USD"
+         */
+        lang?: "VND" | "USD" | "LAK";
+      },
+      params: RequestParams = {},
+    ) =>
       this.request<void, any>({
         path: `/api/user/${id}`,
         method: "GET",
+        query: query,
         ...params,
       }),
 

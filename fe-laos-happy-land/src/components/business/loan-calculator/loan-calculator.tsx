@@ -27,14 +27,10 @@ import { useTranslations } from "next-intl";
 import { useRequest } from "ahooks";
 import bankService from "@/share/service/bank.service";
 import type { TermRate } from "@/share/service/bank.service";
-import {
-  getCurrencyByLocale,
-  getLangByLocale,
-  getValidLocale,
-  type SupportedLocale,
-} from "@/share/helper/locale.helper";
+import { getLangByLocale, getValidLocale } from "@/share/helper/locale.helper";
 import { useUrlLocale } from "@/utils/locale";
 import { numberToString } from "@/share/helper/number-to-string";
+import { useCurrencyStore } from "@/share/store/currency.store";
 
 const { Title, Text } = Typography;
 
@@ -56,6 +52,7 @@ interface LoanResult {
 const LoanCalculator = () => {
   const t = useTranslations();
   const locale = useUrlLocale();
+  const { currency } = useCurrencyStore();
   const [loanAmount, setLoanAmount] = useState<number>(0);
   const [selectedBank, setSelectedBank] = useState<string>("");
   const [selectedTermRate, setSelectedTermRate] = useState<TermRate | null>(
@@ -308,17 +305,13 @@ const LoanCalculator = () => {
                     const value = e.target.value.replace(/\D/g, "");
                     setLoanAmount(Number(value));
                   }}
-                  suffix={getCurrencyByLocale(locale as SupportedLocale)}
+                  suffix={currency}
                   placeholder={t("loanCalculator.enterLoanAmount")}
                   className="w-full"
                 />
 
                 <Text type="secondary" className="text-sm">
-                  {numberToString(
-                    loanAmount,
-                    locale as SupportedLocale,
-                    getCurrencyByLocale(locale as SupportedLocale),
-                  )}
+                  {numberToString(loanAmount, locale, currency)}
                 </Text>
               </div>
 

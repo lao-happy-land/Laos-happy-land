@@ -8,10 +8,7 @@ import { numberToString } from "@/share/helper/number-to-string";
 import { formatShortLocation } from "@/share/helper/format-location";
 import { useUrlLocale } from "@/utils/locale";
 import { useTranslations } from "next-intl";
-import {
-  getCurrencyByLocale,
-  type SupportedLocale,
-} from "@/share/helper/locale.helper";
+import { useCurrencyStore } from "@/share/store/currency.store";
 
 interface PropertyCardProps {
   property: Property;
@@ -26,8 +23,9 @@ export default function PropertyCard({
   size = "medium",
   showDescription = false,
 }: PropertyCardProps) {
-  const locale = useUrlLocale() as SupportedLocale;
+  const locale = useUrlLocale();
   const t = useTranslations();
+  const { currency } = useCurrencyStore();
   const getCardPadding = () => {
     switch (size) {
       case "small":
@@ -170,11 +168,7 @@ export default function PropertyCard({
           <div className="mb-4">
             <div className="text-lg font-bold text-red-500">
               {property.price
-                ? numberToString(
-                    Number(property.price),
-                    locale,
-                    getCurrencyByLocale(locale),
-                  )
+                ? numberToString(Number(property.price), locale, currency)
                 : t("property.contactForPrice")}
             </div>
           </div>

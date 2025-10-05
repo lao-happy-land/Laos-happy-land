@@ -12,11 +12,7 @@ import {
   AreaChart,
 } from "recharts";
 import { useTranslations } from "next-intl";
-import { useUrlLocale } from "@/utils/locale";
-import {
-  getCurrencyByLocale,
-  getValidLocale,
-} from "@/share/helper/locale.helper";
+import { useCurrencyStore } from "@/share/store/currency.store";
 import type { PropertyPrice, PropertyPriceHistory } from "@/@types/types";
 import { TrendingUp, TrendingDown, Activity } from "lucide-react";
 
@@ -32,10 +28,9 @@ export default function PriceHistoryChart({
   currentPrice: _currentPrice,
 }: Props) {
   const t = useTranslations();
-  const locale = useUrlLocale();
 
-  // Get currency based on current locale
-  const selectedCurrency = getCurrencyByLocale(getValidLocale(locale));
+  // Get currency from store
+  const { currency: selectedCurrency } = useCurrencyStore();
 
   // Transform price history data for the chart
   const chartData = useMemo(() => {
@@ -105,30 +100,30 @@ export default function PriceHistoryChart({
     return change;
   }, [chartData]);
 
-  // Get currency symbol based on locale
+  // Get currency symbol based on selected currency
   const getCurrencySymbol = () => {
     switch (selectedCurrency) {
       case "USD":
         return "$";
-      case "VND":
-        return "₫";
       case "LAK":
         return "₭";
+      case "THB":
+        return "฿";
       default:
         return "";
     }
   };
 
-  // Format price for display - no formatting, just return the raw value
+  // Format price for display
   const formatPrice = (value: number) => {
     if (selectedCurrency === "USD") {
       return new Intl.NumberFormat("en-US", {}).format(value);
     }
-    if (selectedCurrency === "VND") {
-      return new Intl.NumberFormat("vi-VN", {}).format(value);
-    }
     if (selectedCurrency === "LAK") {
       return new Intl.NumberFormat("la-LA", {}).format(value);
+    }
+    if (selectedCurrency === "THB") {
+      return new Intl.NumberFormat("th-TH", {}).format(value);
     }
     return new Intl.NumberFormat("en-US", {
       notation: "compact",

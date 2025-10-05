@@ -4,10 +4,12 @@
  */
 
 export type SupportedLocale = "en" | "vn" | "la";
-export type SupportedCurrency = "USD" | "VND" | "LAK";
+export type SupportedCurrency = "USD" | "LAK" | "THB";
 
 /**
- * Maps locale to appropriate currency
+ * Maps locale to currency for display formatting purposes only
+ * @deprecated Use useCurrencyStore instead for price currency
+ * Note: This is kept for backward compatibility with display formatting
  */
 export const getCurrencyByLocale = (
   locale: SupportedLocale,
@@ -15,7 +17,7 @@ export const getCurrencyByLocale = (
   const localeToCurrency: Record<SupportedLocale, SupportedCurrency> = {
     la: "LAK", // Laos - Lao Kip
     en: "USD", // English - US Dollar
-    vn: "VND", // Vietnamese - Vietnamese Dong
+    vn: "THB", // Vietnamese - Thai Baht
   };
 
   return localeToCurrency[locale];
@@ -23,6 +25,8 @@ export const getCurrencyByLocale = (
 
 /**
  * Maps locale to appropriate language parameter for API calls
+ * This is used for both 'currency' and 'lang' headers for language display
+ * (USD=EN, LAK=LO, VND=VI)
  */
 export const getLangByLocale = (
   locale: SupportedLocale,
@@ -38,13 +42,13 @@ export const getLangByLocale = (
 
 /**
  * Gets property service parameters based on locale
+ * Note: Currency is now handled via priceSource header, not as a parameter
  */
 export const getPropertyParamsByLocale = (
   locale: SupportedLocale,
   additionalParams: Record<string, string | number | boolean | string[]> = {},
 ) => {
   return {
-    currency: getCurrencyByLocale(locale),
     ...additionalParams,
   };
 };

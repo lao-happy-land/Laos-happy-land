@@ -54,6 +54,7 @@ import MapboxLocationSelector from "@/components/business/common/mapbox-location
 import { useAuthStore } from "@/share/store/auth.store";
 import Image from "next/image";
 import type { LocationDto } from "@/@types/gentype-axios";
+import { useCurrencyStore } from "@/share/store/currency.store";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -87,6 +88,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
   const router = useRouter();
   const locale = useUrlLocale();
   const [form] = Form.useForm();
+  const { currency } = useCurrencyStore();
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [existingMainImage, setExistingMainImage] = useState<string | null>(
@@ -139,7 +141,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
     {
       ready: mode === "edit" && !!propertyId,
       manual: false,
-      refreshDeps: [propertyId, mode],
+      refreshDeps: [propertyId, mode, currency],
       onSuccess: (property) => {
         if (property) {
           setCurrentProperty(property);
@@ -195,7 +197,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
       setExistingMainImage(currentProperty.mainImage);
       setExistingImages(currentProperty.images ?? []);
     }
-  }, [currentProperty, form]);
+  }, [currentProperty, form, currency]);
 
   // Sync locationData with form field
   useEffect(() => {
@@ -598,7 +600,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                 name="price"
                 label={
                   <Text className="font-medium">
-                    {t("property.price")} (USD$)
+                    {t("property.price")} ({currency})
                   </Text>
                 }
                 rules={[

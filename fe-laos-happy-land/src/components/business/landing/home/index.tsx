@@ -19,21 +19,18 @@ import PropertyCard from "@/components/business/common/property-card";
 import ProjectCard from "@/components/business/common/project-card";
 import PropertyCardSkeleton from "@/components/business/common/property-card-skeleton";
 import { useUrlLocale } from "@/utils/locale";
-import {
-  getCurrencyByLocale,
-  getLangByLocale,
-  getValidLocale,
-  type SupportedLocale,
-} from "@/share/helper/locale.helper";
+import { getLangByLocale, getValidLocale } from "@/share/helper/locale.helper";
 import { useTranslations } from "next-intl";
 import { newsService } from "@/share/service/news.service";
 import type { News } from "@/@types/types";
+import { useCurrencyStore } from "@/share/store/currency.store";
 
 const { Title, Paragraph, Text } = Typography;
 
 const LandingPage = () => {
   const locale = useUrlLocale();
   const t = useTranslations();
+  const { currency } = useCurrencyStore();
   const {
     data: featuredPropertiesData,
     loading: featuredLoading,
@@ -43,10 +40,9 @@ const LandingPage = () => {
       propertyService.getProperties({
         perPage: 4,
         transaction: "sale",
-        currency: getCurrencyByLocale(locale as SupportedLocale),
       }),
     {
-      refreshDeps: [],
+      refreshDeps: [currency],
       onError: (error) => {
         console.error("Error fetching featured properties:", error);
       },
@@ -63,10 +59,9 @@ const LandingPage = () => {
       propertyService.getProperties({
         transaction: "project",
         perPage: 3,
-        currency: getCurrencyByLocale(locale as SupportedLocale),
       }),
     {
-      refreshDeps: [],
+      refreshDeps: [currency],
       onError: (error) => {
         console.error("Error fetching project properties:", error);
       },

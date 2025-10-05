@@ -8,10 +8,7 @@ import { numberToString } from "@/share/helper/number-to-string";
 import { formatShortLocation } from "@/share/helper/format-location";
 import { useTranslations } from "next-intl";
 import { useUrlLocale } from "@/utils/locale";
-import {
-  getCurrencyByLocale,
-  type SupportedLocale,
-} from "@/share/helper/locale.helper";
+import { useCurrencyStore } from "@/share/store/currency.store";
 
 interface ProjectCardProps {
   project: Property;
@@ -27,7 +24,8 @@ export default function ProjectCard({
   showDescription = false,
 }: ProjectCardProps) {
   const t = useTranslations();
-  const locale = useUrlLocale() as SupportedLocale;
+  const locale = useUrlLocale();
+  const { currency } = useCurrencyStore();
   const getCardPadding = () => {
     switch (size) {
       case "small":
@@ -86,7 +84,7 @@ export default function ProjectCard({
   const statusInfo = getStatusInfo();
 
   return (
-    <Link href={`/property/${project.id}`} className="block h-full">
+    <Link href={`/${locale}/property/${project.id}`} className="block h-full">
       <div
         className={`group relative flex h-full flex-col overflow-hidden rounded-xl bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${className}`}
       >
@@ -123,7 +121,7 @@ export default function ProjectCard({
           {project.priority > 0 && (
             <div className="absolute top-3 left-3">
               <span className="bg-primary-500 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold text-white shadow-md">
-                ⭐ {t("common.featured")}
+                ⭐ {t("property.featured")}
               </span>
             </div>
           )}
@@ -189,11 +187,7 @@ export default function ProjectCard({
           <div className="mb-4">
             <div className="text-lg font-bold text-red-500">
               {project.price
-                ? numberToString(
-                    Number(project.price),
-                    locale,
-                    getCurrencyByLocale(locale),
-                  )
+                ? numberToString(Number(project.price), locale, currency)
                 : t("property.contactForPrice")}
             </div>
           </div>

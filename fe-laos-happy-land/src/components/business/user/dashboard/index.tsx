@@ -14,10 +14,7 @@ import { Card, Table, Space, Typography, Dropdown, Spin } from "antd";
 import { useTranslations } from "next-intl";
 import { numberToString } from "@/share/helper/number-to-string";
 import { formatLocation } from "@/share/helper/format-location";
-import {
-  getCurrencyByLocale,
-  type SupportedLocale,
-} from "@/share/helper/locale.helper";
+import { useCurrencyStore } from "@/share/store/currency.store";
 
 const { Title, Text } = Typography;
 
@@ -27,6 +24,7 @@ export default function DashboardUser() {
   const router = useRouter();
   const locale = useUrlLocale();
   const t = useTranslations();
+  const { currency } = useCurrencyStore();
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +51,12 @@ export default function DashboardUser() {
       });
     },
     {
-      refreshDeps: [isAuthenticated, pagination.current, pagination.pageSize],
+      refreshDeps: [
+        isAuthenticated,
+        pagination.current,
+        pagination.pageSize,
+        currency,
+      ],
       onSuccess: (data) => {
         if (data?.data) {
           setProperties(data.data);
@@ -204,11 +207,7 @@ export default function DashboardUser() {
       key: "price",
       render: (price: unknown) => (
         <div className="font-semibold text-green-600">
-          {numberToString(
-            price as number,
-            locale as SupportedLocale,
-            getCurrencyByLocale(locale as SupportedLocale),
-          )}
+          {numberToString(price as number, locale, currency)}
         </div>
       ),
     },

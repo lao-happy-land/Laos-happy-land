@@ -53,6 +53,7 @@ import {
   getValidLocale,
   type SupportedLocale,
 } from "@/share/helper/locale.helper";
+import { useCurrencyStore } from "@/share/store/currency.store";
 
 interface PropertiesProps {
   transaction: "sale" | "rent" | "project";
@@ -65,6 +66,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+  const { currency } = useCurrencyStore();
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [minArea, setMinArea] = useState("");
@@ -288,6 +290,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
     selectedLocation,
     fetchProperties,
     isInitialLoad,
+    currency, // Refetch when currency changes
   ]);
 
   useEffect(() => {

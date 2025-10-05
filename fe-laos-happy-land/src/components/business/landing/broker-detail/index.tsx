@@ -23,11 +23,8 @@ import propertyService from "@/share/service/property.service";
 import { userFeedbackService } from "@/share/service/user-feedback.service";
 import FeedbackInput from "./broker-feedback-form";
 import { useTranslations } from "next-intl";
-import {
-  getCurrencyByLocale,
-  getValidLocale,
-} from "@/share/helper/locale.helper";
 import { formatShortLocation } from "@/share/helper/format-location";
+import { useCurrencyStore } from "@/share/store/currency.store";
 
 const { TabPane } = Tabs;
 
@@ -40,6 +37,7 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
   const locale = useUrlLocale();
   const t = useTranslations();
   const { message } = App.useApp();
+  const { currency } = useCurrencyStore();
   const [propertiesPagination, setPropertiesPagination] = useState({
     current: 1,
     pageSize: 6,
@@ -77,7 +75,6 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
         const response = await propertyService.getPropertyByUserId(brokerId, {
           page: propertiesPagination.current,
           perPage: propertiesPagination.pageSize,
-          currency: getCurrencyByLocale(getValidLocale(locale)),
         });
 
         // Handle APIResponse structure
@@ -99,6 +96,7 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
       refreshDeps: [
         propertiesPagination.current,
         propertiesPagination.pageSize,
+        currency, // Refetch when currency changes
       ],
       onError: (error) => {
         console.error("Error fetching properties:", error);
@@ -174,7 +172,6 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
-      currency: getCurrencyByLocale(getValidLocale(locale)),
       minimumFractionDigits: 0,
     }).format(price);
   };
