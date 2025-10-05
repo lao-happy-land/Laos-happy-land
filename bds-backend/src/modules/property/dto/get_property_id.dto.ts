@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsOptional } from 'class-validator';
+import { IsIn, IsOptional, IsString } from 'class-validator';
 
 export class GetPropertyDetailDto {
   @ApiPropertyOptional({
@@ -9,4 +9,15 @@ export class GetPropertyDetailDto {
   @IsOptional()
   @IsIn(['LAK', 'USD', 'VND'])
   currency?: 'LAK' | 'USD' | 'VND';
+
+  @ApiPropertyOptional({
+    description: 'Nguồn đơn vị tiền tệ cho giá (lấy từ header price-source)',
+    example: 'USD',
+    enum: ['USD', 'LAK', 'THB'],
+    readOnly: true,
+  })
+  @IsOptional()
+  @IsString()
+  @IsIn(['USD', 'LAK', 'THB'])
+  priceSource?: 'USD' | 'LAK' | 'THB';
 }

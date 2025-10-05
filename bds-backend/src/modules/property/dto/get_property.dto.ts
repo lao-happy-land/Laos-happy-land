@@ -115,4 +115,14 @@ export class GetPropertiesFilterDto extends PageOptionsDto {
   @IsOptional()
   @IsIn(Object.values(PropertyStatusEnum))
   status?: string;
+
+  @ApiPropertyOptional({
+    description: 'Nguồn đơn vị tiền tệ cho giá (lấy từ header price-source)',
+    example: 'USD',
+    enum: ['USD', 'LAK', 'THB'],
+    readOnly: true,
+  })
+  @IsOptional()
+  @IsIn(['USD', 'LAK', 'THB'])
+  priceSource?: 'USD' | 'LAK' | 'THB';
 }

@@ -56,12 +56,8 @@ export class PropertyService {
       throw new BadRequestException('Location info not found');
     }
 
-    const {
-      typeId,
-      locationInfoId,
-      price: usdPrice,
-      ...propertyData
-    } = createPropertyDto;
+    const { typeId, locationInfoId, price, priceSource, ...propertyData } =
+      createPropertyDto;
 
     if (typeof propertyData.details === 'string') {
       try {
@@ -71,32 +67,38 @@ export class PropertyService {
       }
     }
 
-    let finalPrice: Record<string, number> = null;
-    let history: PriceHistoryEntry[] = [];
+    const rates = await this.exchangeRateService.getRates(); // { VND: number, LAK: number }
+    const finalPrice: Record<string, number> = {};
+    const history: PriceHistoryEntry[] = [];
 
-    if (usdPrice !== undefined && usdPrice !== null) {
-      const rates = await this.exchangeRateService.getRates();
-      finalPrice = {};
-      finalPrice['USD'] = usdPrice;
+    const inputCurrency = (priceSource || 'USD').toUpperCase() as
+      | 'USD'
+      | 'LAK'
+      | 'THB';
+    const inputValue = Number(price);
 
-      Object.entries(rates).forEach(([currency, rate]) => {
-        finalPrice[currency] = usdPrice * rate;
-      });
+    if (isNaN(inputValue)) throw new BadRequestException('Invalid price');
 
-      history = [
-        {
-          rates: finalPrice,
-          date: new Date().toISOString(),
-        },
-      ];
-    }
+    let usdBase = inputValue;
+    if (inputCurrency === 'LAK') usdBase = inputValue / rates['LAK'];
+    else if (inputCurrency === 'THB') usdBase = inputValue / rates['THB'];
+    const round = (val: number, digits = 0) => {
+      const factor = Math.pow(10, digits);
+      return Math.round(val * factor) / factor;
+    };
+
+    finalPrice['USD'] = round(usdBase);
+    finalPrice['LAK'] = round(usdBase * rates['LAK']);
+    finalPrice['THB'] = round(usdBase * rates['THB']);
+
+    history.push({ rates: finalPrice, date: new Date().toISOString() });
 
     const property = this.propertyRepository.create({
       ...propertyData,
       price: finalPrice,
       priceHistory: history,
       owner,
-      locationInfo: locationInfo,
+      locationInfo,
       type: propertyType,
       status:
         isAdmin || isBroker
@@ -116,10 +118,10 @@ export class PropertyService {
 
   private formatProperty(
     item: Property,
-    currency?: 'LAK' | 'USD' | 'VND',
+    priceSource?: 'LAK' | 'USD' | 'THB',
   ): any {
-    if (!currency) return item;
-    const cur = currency;
+    if (!priceSource) return item;
+    const cur = priceSource;
     return {
       ...item,
       price: this.formatPrice(item.price?.[cur] ?? null),
@@ -228,7 +230,7 @@ export class PropertyService {
   async getAll(params: GetPropertiesFilterDto, user: User) {
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-    const isAdmin = !!user?.role && user.role.toString() === 'Admin';
+    const isAdmin = user?.role?.toString() === 'Admin';
 
     const properties = this.propertyRepository
       .createQueryBuilder('property')
@@ -267,17 +269,17 @@ export class PropertyService {
       }
     }
 
-    if (params.currency) {
+    if (params.priceSource) {
       if (params.minPrice !== undefined) {
         properties.andWhere(
-          `(property.price ->> :currency)::numeric >= :minPrice`,
-          { currency: params.currency, minPrice: params.minPrice },
+          `(property.price ->> :priceSource)::numeric >= :minPrice`,
+          { priceSource: params.priceSource, minPrice: params.minPrice },
         );
       }
       if (params.maxPrice !== undefined) {
         properties.andWhere(
-          `(property.price ->> :currency)::numeric <= :maxPrice`,
-          { currency: params.currency, maxPrice: params.maxPrice },
+          `(property.price ->> :priceSource)::numeric <= :maxPrice`,
+          { priceSource: params.priceSource, maxPrice: params.maxPrice },
         );
       }
     }
@@ -336,9 +338,9 @@ export class PropertyService {
     const targetLang = this.mapLang(params.currency || params.currency);
 
     let translated = await Promise.all(
-      allProperties.map((item) => {
-        const formatted = params.currency
-          ? this.formatProperty(item, params.currency)
+      allProperties.map(async (item) => {
+        const formatted = params.priceSource
+          ? this.formatProperty(item, params.priceSource)
           : item;
         return this.transalteProperties(formatted, targetLang);
       }),
@@ -403,10 +405,12 @@ export class PropertyService {
     const targetLang = this.mapLang(params.currency);
 
     const finalResult = await Promise.all(
-      (params.currency
-        ? result.map((item) => this.formatProperty(item, params.currency))
-        : result
-      ).map((item) => this.transalteProperties(item, targetLang)),
+      result.map(async (item) => {
+        const formatted = params.priceSource
+          ? this.formatProperty(item, params.priceSource)
+          : item;
+        return this.transalteProperties(formatted, targetLang);
+      }),
     );
     const serializedResult = instanceToPlain(finalResult);
 
@@ -453,7 +457,9 @@ export class PropertyService {
     }
 
     const targetLang = this.mapLang(params.currency);
-    const formattedProperty = this.formatProperty(property, params.currency);
+    const formattedProperty = params.priceSource
+      ? this.formatProperty(property, params.priceSource)
+      : property;
     const translatedProperty = await this.translateProperty(
       formattedProperty,
       targetLang,
@@ -486,10 +492,12 @@ export class PropertyService {
     const targetLang = this.mapLang(params.currency);
 
     const finalResult = await Promise.all(
-      (params.currency
-        ? properties.map((item) => this.formatProperty(item, params.currency))
-        : properties
-      ).map((item) => this.transalteProperties(item, targetLang)),
+      properties.map(async (item) => {
+        const formatted = params.priceSource
+          ? this.formatProperty(item, params.priceSource)
+          : item;
+        return this.transalteProperties(formatted, targetLang);
+      }),
     );
     const serializedResult = instanceToPlain(finalResult);
 
@@ -518,8 +526,8 @@ export class PropertyService {
 
     const [properties, total] = await qb.getManyAndCount();
 
-    const finalResult = params.currency
-      ? properties.map((item) => this.formatProperty(item, params.currency))
+    const finalResult = params.priceSource
+      ? properties.map((item) => this.formatProperty(item, params.priceSource))
       : properties;
 
     const serializedResult = instanceToPlain(finalResult);
@@ -595,26 +603,42 @@ export class PropertyService {
       }
     }
 
-    if (
-      updatePropertyDto.price !== undefined &&
-      updatePropertyDto.price !== null
-    ) {
-      const newUsd = Number(updatePropertyDto.price);
-      if (!isNaN(newUsd)) {
-        const rates = await this.exchangeRateService.getRates();
-        const converted: Record<string, number> = { USD: newUsd };
+    const { price, priceSource } = updatePropertyDto;
+    if (price !== undefined && price !== null) {
+      const rates = await this.exchangeRateService.getRates();
 
-        Object.entries(rates).forEach(([currency, rate]) => {
-          converted[currency] = newUsd * rate;
-        });
+      const inputCurrency = (priceSource || 'USD').toUpperCase() as
+        | 'USD'
+        | 'LAK'
+        | 'THB';
+      const inputValue = Number(price);
+      if (isNaN(inputValue)) throw new BadRequestException('Invalid price');
 
-        property.price = converted;
+      let usdBase = inputValue;
+      if (inputCurrency === 'LAK') usdBase = inputValue / rates['LAK'];
+      else if (inputCurrency === 'THB') usdBase = inputValue / rates['THB'];
+
+      const round = (val: number, digits = 0) => {
+        const factor = Math.pow(10, digits);
+        return Math.round(val * factor) / factor;
+      };
+
+      const finalPrice: Record<string, number> = {
+        USD: round(usdBase),
+        LAK: round(usdBase * rates['LAK']),
+        THB: round(usdBase * rates['THB']),
+      };
+
+      const currentPrice = property.price || {};
+      const isPriceChanged = ['USD', 'LAK', 'THB'].some(
+        (cur) => currentPrice[cur] !== finalPrice[cur],
+      );
+
+      if (isPriceChanged) {
+        property.price = finalPrice;
         property.priceHistory = [
           ...(property.priceHistory || []),
-          {
-            rates: converted,
-            date: new Date().toISOString(),
-          },
+          { rates: finalPrice, date: new Date().toISOString() },
         ];
       }
     }

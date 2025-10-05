@@ -10,6 +10,7 @@ import {
   IsUUID,
   IsEnum,
   ValidateNested,
+  IsIn,
 } from 'class-validator';
 import { TransactionEnum } from 'src/common/enum/enum';
 import { Multer } from 'multer';
@@ -169,6 +170,17 @@ export class CreatePropertyDto {
   })
   @IsOptional()
   images?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Nguồn đơn vị tiền tệ cho giá (lấy từ header price-source)',
+    example: 'USD',
+    enum: ['USD', 'LAK', 'THB'],
+    readOnly: true,
+  })
+  @IsOptional()
+  @IsString()
+  @IsIn(['USD', 'LAK', 'THB'])
+  priceSource?: 'USD' | 'LAK' | 'THB';
 
   priceHistory?: any;
 }

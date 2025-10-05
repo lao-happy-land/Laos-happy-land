@@ -50,9 +50,20 @@ export class PropertyController {
   @ApiBearerAuth()
   // @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreatePropertyDto })
+  @ApiHeader({
+    name: 'priceSource',
+    description: 'Đơn vị tiền tệ (LAK | USD | THB)',
+    required: false,
+    schema: { type: 'string', enum: ['LAK', 'USD', 'THB'] },
+  })
   @ApiResponse({ status: 200, description: 'Property created successfully' })
   async create(@Req() req: Request, @Body() body: any) {
     const user = req.user as User;
+    const priceSourceHeader =
+      (req.headers['pricesource'] as string) ||
+      (req.headers['price-source'] as string) ||
+      'USD';
+    body.priceSource = priceSourceHeader.toUpperCase();
     if (typeof body.details === 'string') {
       try {
         body.details = JSON.parse(body.details);
@@ -70,25 +81,39 @@ export class PropertyController {
   @UseGuards(OptionalAuthGuard)
   @ApiBearerAuth()
   @ApiHeader({
-    name: 'currency',
-    description: 'Currency filter (LAK | USD | VND)',
+    name: 'priceSource',
+    description: 'Đơn vị tiền tệ hiển thị giá (USD | LAK | THB)',
     required: false,
-    schema: { type: 'string', enum: ['LAK', 'USD', 'VND'] },
+    schema: { type: 'string', enum: ['USD', 'LAK', 'THB'] },
+  })
+  @ApiHeader({
+    name: 'currency',
+    description: 'Ngôn ngữ hiển thị (USD = EN, LAK = LO, VND = VI)',
+    required: false,
+    schema: { type: 'string', enum: ['USD', 'LAK', 'VND'] },
   })
   @ApiResponse({ status: 200, description: 'Success' })
   async getAll(
     @Query() params: GetPropertiesFilterDto,
-    @Headers() rawHeaders: Record<string, string>,
+    @Headers() headers: Record<string, string>,
     @Req() req: Request,
   ) {
     const user = req.user as User;
 
+    const priceSourceHeader =
+      (headers['priceSource'] as string) ||
+      (headers['pricesource'] as string) ||
+      'USD';
+
+    const currencyHeader =
+      (headers['currency'] as 'USD' | 'LAK' | 'VND') ?? params.currency;
+
     const mergedParams: GetPropertiesFilterDto = {
+      ...params,
       skip: params.skip ?? 0,
       perPage: params.perPage ?? 10,
-      ...params,
-      currency:
-        (rawHeaders['currency'] as 'LAK' | 'USD' | 'VND') ?? params.currency,
+      currency: currencyHeader,
+      priceSource: priceSourceHeader.toUpperCase() as 'USD' | 'LAK' | 'THB',
     };
 
     return this.propertyService.getAll(mergedParams, user);
@@ -98,25 +123,38 @@ export class PropertyController {
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiHeader({
-    name: 'currency',
-    description: 'Currency filter (LAK | USD | VND)',
+    name: 'priceSource',
+    description: 'Đơn vị tiền tệ hiển thị giá (USD | LAK | THB)',
     required: false,
-    schema: { type: 'string', enum: ['LAK', 'USD', 'VND'] },
+    schema: { type: 'string', enum: ['USD', 'LAK', 'THB'] },
+  })
+  @ApiHeader({
+    name: 'currency',
+    description: 'Ngôn ngữ hiển thị (USD = EN, LAK = LO, VND = VI)',
+    required: false,
+    schema: { type: 'string', enum: ['USD', 'LAK', 'VND'] },
   })
   @ApiResponse({ status: 200, description: 'Success' })
   async getByUser(
     @Req() req: Request,
     @Query() params: GetPropertyByUserDto,
-    @Headers() rawHeaders: Record<string, string>,
+    @Headers() headers: Record<string, string>,
   ) {
     const user = req.user as User;
 
+    const priceSourceHeader =
+      headers['priceSource'] || headers['pricesource'] || 'USD';
+    const currencyHeader =
+      (headers['currency'] as 'USD' | 'LAK' | 'VND') ??
+      params.currency ??
+      'VND';
+
     const mergedParams: GetPropertyByUserDto = {
+      ...params,
       skip: params.skip ?? 0,
       perPage: params.perPage ?? 10,
-      ...params,
-      currency:
-        (rawHeaders['currency'] as 'LAK' | 'USD' | 'VND') ?? params.currency,
+      currency: currencyHeader.toUpperCase() as 'USD' | 'LAK' | 'VND',
+      priceSource: priceSourceHeader.toUpperCase() as 'USD' | 'LAK' | 'THB',
     };
 
     return this.propertyService.getByUser(mergedParams, user);
@@ -124,23 +162,35 @@ export class PropertyController {
 
   @Get('user/:userId')
   @ApiHeader({
-    name: 'currency',
-    description: 'Currency filter (LAK | USD | VND)',
+    name: 'priceSource',
+    description: 'Đơn vị tiền tệ hiển thị giá (USD | LAK | THB)',
     required: false,
-    schema: { type: 'string', enum: ['LAK', 'USD', 'VND'] },
+    schema: { type: 'string', enum: ['USD', 'LAK', 'THB'] },
+  })
+  @ApiHeader({
+    name: 'currency',
+    description: 'Ngôn ngữ hiển thị (USD = EN, LAK = LO, VND = VI)',
+    required: false,
+    schema: { type: 'string', enum: ['USD', 'LAK', 'VND'] },
   })
   @ApiResponse({ status: 200, description: 'Success' })
   async getByUserId(
     @Param('userId') userId: string,
     @Query() params: GetPropertyByUserDto,
-    @Headers() rawHeaders: Record<string, string>,
+    @Headers() headers: Record<string, string>,
   ) {
+    const priceSourceHeader =
+      headers['priceSource'] || headers['pricesource'] || 'USD';
+    const currencyHeader =
+      (headers['currency'] as 'USD' | 'LAK' | 'VND') ??
+      params.currency ??
+      'VND';
     const mergedParams: GetPropertyByUserDto = {
+      ...params,
       skip: params.skip ?? 0,
       perPage: params.perPage ?? 10,
-      ...params,
-      currency:
-        (rawHeaders['currency'] as 'LAK' | 'USD' | 'VND') ?? params.currency,
+      currency: currencyHeader.toUpperCase() as 'USD' | 'LAK' | 'VND',
+      priceSource: priceSourceHeader.toUpperCase() as 'USD' | 'LAK' | 'THB',
     };
 
     return this.propertyService.getByUserId(userId, mergedParams);
@@ -148,22 +198,33 @@ export class PropertyController {
 
   @Get(':id')
   @ApiHeader({
-    name: 'currency',
-    description: 'Currency filter (LAK | USD | VND)',
+    name: 'priceSource',
+    description: 'Đơn vị tiền tệ hiển thị giá (USD | LAK | THB)',
     required: false,
-    schema: { type: 'string', enum: ['LAK', 'USD', 'VND'] },
+    schema: { type: 'string', enum: ['USD', 'LAK', 'THB'] },
+  })
+  @ApiHeader({
+    name: 'currency',
+    description: 'Ngôn ngữ hiển thị (USD = EN, LAK = LO, VND = VI)',
+    required: false,
+    schema: { type: 'string', enum: ['USD', 'LAK', 'VND'] },
   })
   @ApiResponse({ status: 200, description: 'Property found' })
-
   async get(
     @Param('id') id: string,
     @Query() params: GetPropertyDetailDto,
-    @Headers() rawHeaders: Record<string, string>,
+    @Headers() headers: Record<string, string>,
   ) {
+    const priceSourceHeader =
+      headers['priceSource'] || headers['pricesource'] || 'USD';
+    const currencyHeader =
+      (headers['currency'] as 'USD' | 'LAK' | 'VND') ??
+      params.currency ??
+      'VND';
     const mergedParams: GetPropertyDetailDto = {
       ...params,
-      currency:
-        (rawHeaders['currency'] as 'LAK' | 'USD' | 'VND') ?? params.currency,
+      currency: currencyHeader.toUpperCase() as 'USD' | 'LAK' | 'VND',
+      priceSource: priceSourceHeader.toUpperCase() as 'USD' | 'LAK' | 'THB',
     };
 
     return this.propertyService.get(id, mergedParams);
@@ -171,22 +232,36 @@ export class PropertyController {
 
   @Get(':id/similar')
   @ApiHeader({
-    name: 'currency',
-    description: 'Currency filter (LAK | USD | VND)',
+    name: 'priceSource',
+    description: 'Đơn vị tiền tệ hiển thị giá (USD | LAK | THB)',
     required: false,
-    schema: { type: 'string', enum: ['LAK', 'USD', 'VND'] },
+    schema: { type: 'string', enum: ['USD', 'LAK', 'THB'] },
+  })
+  @ApiHeader({
+    name: 'currency',
+    description: 'Ngôn ngữ hiển thị (USD = EN, LAK = LO, VND = VI)',
+    required: false,
+    schema: { type: 'string', enum: ['USD', 'LAK', 'VND'] },
   })
   @ApiResponse({ status: 200, description: 'Success' })
   async getSimilarProperties(
     @Param('id') id: string,
     @Query() params: GetPropertyByUserDto,
-    @Headers() rawHeaders: Record<string, string>,
+    @Headers() headers: Record<string, string>,
   ) {
-    const mergedParams = {
+    const priceSourceHeader =
+      headers['priceSource'] || headers['pricesource'] || 'USD';
+    const currencyHeader =
+      (headers['currency'] as 'USD' | 'LAK' | 'VND') ??
+      params.currency ??
+      'VND';
+
+    const mergedParams: GetPropertyByUserDto = {
+      ...params,
       skip: params.skip ?? 0,
       perPage: params.perPage ?? 10,
-      currency:
-        (rawHeaders['currency'] as 'LAK' | 'USD' | 'VND') ?? params.currency,
+      currency: currencyHeader.toUpperCase() as 'USD' | 'LAK' | 'VND',
+      priceSource: priceSourceHeader.toUpperCase() as 'USD' | 'LAK' | 'THB',
     };
 
     return this.propertyService.getSimilarProperties(id, mergedParams);
@@ -197,8 +272,25 @@ export class PropertyController {
   @ApiBearerAuth()
   // @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UpdatePropertyDto })
+  @ApiHeader({
+    name: 'priceSource',
+    description: 'Đơn vị tiền tệ (LAK | USD | THB)',
+    required: false,
+    schema: { type: 'string', enum: ['LAK', 'USD', 'THB'] },
+  })
   @ApiResponse({ status: 200, description: 'Property updated successfully' })
-  async update(@Param('id') id: string, @Body() body: any) {
+  async update(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Body() body: any,
+  ) {
+    const user = req.user as User;
+    const priceSourceHeader =
+      (req.headers['pricesource'] as string) ||
+      (req.headers['price-source'] as string) ||
+      'USD';
+
+    body.priceSource = priceSourceHeader.toUpperCase();
     if (typeof body.location === 'string') {
       try {
         body.location = JSON.parse(body.location);
