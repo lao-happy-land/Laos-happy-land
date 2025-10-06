@@ -67,7 +67,7 @@ export class PropertyService {
       }
     }
 
-    const rates = await this.exchangeRateService.getRates(); // { VND: number, LAK: number }
+    const rates = await this.exchangeRateService.getRates();
     const finalPrice: Record<string, number> = {};
     const history: PriceHistoryEntry[] = [];
 
@@ -434,10 +434,6 @@ export class PropertyService {
       .leftJoinAndSelect('property.type', 'type')
       .leftJoinAndSelect('property.locationInfo', 'locationInfo')
       .where('property.id = :id', { id });
-
-    if (params.currency) {
-      qb.andWhere(`property.price ? :currency`, { currency: params.currency });
-    }
 
     const property = await qb.getOne();
     if (!property) {
