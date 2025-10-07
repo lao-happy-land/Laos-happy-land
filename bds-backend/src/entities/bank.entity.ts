@@ -1,5 +1,6 @@
 import { AbstractEntity } from 'src/common/entities';
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { BankRequest } from './bank-request.entity';
 
 interface TermRate {
   term: string;
@@ -19,4 +20,7 @@ export class Bank extends AbstractEntity {
 
   @Column('json', { nullable: true })
   termRates: TermRate[];
+
+  @OneToMany(() => BankRequest, (bankRequest) => bankRequest.bank)
+  bank_requests: BankRequest[]
 }

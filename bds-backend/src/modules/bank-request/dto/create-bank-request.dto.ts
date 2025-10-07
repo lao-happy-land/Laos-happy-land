@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsDateString, IsEmail, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 
 export class CreateBankRequestDto {
   @ApiProperty({ example: 'Nguyen Van A' })
@@ -21,6 +21,22 @@ export class CreateBankRequestDto {
   @IsOptional()
   @IsString()
   note?: string;
+
+  @ApiPropertyOptional({ type: 'string', format: 'date' })
+  @IsOptional()
+  @IsDateString()
+  dob?: string;
+
+  @ApiPropertyOptional({ example: 3 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  yearsOfExperience?: number;
+
+  @ApiPropertyOptional({ description: 'Bank ID (UUID)' })
+  @IsOptional()
+  @IsUUID()
+  bankId?: string;
 
   @ApiProperty({
     description: 'Url image',

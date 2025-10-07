@@ -22,6 +22,7 @@ import { CreateBankRequestDto } from './dto/create-bank-request.dto';
 import { BankRequestStatus } from 'src/common/enum/enum';
 import { AdminGuard } from '../auth/guard/auth.guard';
 import { UpdateBankRequestStatusDto } from './dto/update-bank-request.dto';
+import { GetBankRequestDto } from './dto/get-bank-request.dto';
 
 @ApiTags('Bank Request')
 @Controller('bank-request')
@@ -41,8 +42,14 @@ export class BankRequestController {
   @Get()
   @ApiQuery({ name: 'status', required: false, enum: BankRequestStatus })
   @ApiResponse({ status: 200, description: 'List of all bank requests' })
-  async findAll(@Query('status') status?: BankRequestStatus) {
-    return this.bankRequestService.findAll(status);
+  async findAll(@Query() params : GetBankRequestDto) {
+    return this.bankRequestService.findAll(params);
+  }
+
+  @Get(':id')
+  @ApiResponse({ status: 200, description: 'Bank request details' })
+  async get(@Param('id') id: string) {
+    return this.bankRequestService.get(id);
   }
 
   @Patch(':id/approve')
