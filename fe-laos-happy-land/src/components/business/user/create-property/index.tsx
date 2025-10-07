@@ -478,7 +478,7 @@ export default function CreateProperty() {
                   name="price"
                   label={
                     <Text className="font-medium">
-                      {t("property.price")} ({currency})
+                      {t("property.totalPropertyValue")} ({currency})
                     </Text>
                   }
                   rules={[
@@ -514,19 +514,6 @@ export default function CreateProperty() {
                       {t("property.area")} (m²)
                     </span>
                   }
-                  rules={[
-                    { required: true, message: t("property.pleaseEnterArea") },
-                    {
-                      type: "number",
-                      min: 1,
-                      message: t("property.areaMin"),
-                    },
-                    {
-                      type: "number",
-                      max: 10000000,
-                      message: t("property.areaMax"),
-                    },
-                  ]}
                 >
                   <InputNumber
                     min={0}
@@ -546,22 +533,6 @@ export default function CreateProperty() {
                           {t("property.bedrooms")}
                         </span>
                       }
-                      rules={[
-                        {
-                          required: true,
-                          message: t("property.pleaseEnterBedrooms"),
-                        },
-                        {
-                          type: "number",
-                          min: 0,
-                          message: t("property.bedroomsMin"),
-                        },
-                        {
-                          type: "number",
-                          max: 20,
-                          message: t("property.bedroomsMax"),
-                        },
-                      ]}
                     >
                       <InputNumber
                         min={0}
@@ -579,22 +550,6 @@ export default function CreateProperty() {
                           {t("property.bathrooms")}
                         </span>
                       }
-                      rules={[
-                        {
-                          required: true,
-                          message: t("property.pleaseEnterBathrooms"),
-                        },
-                        {
-                          type: "number",
-                          min: 0,
-                          message: t("property.bathroomsMin"),
-                        },
-                        {
-                          type: "number",
-                          max: 10,
-                          message: t("property.bathroomsMax"),
-                        },
-                      ]}
                     >
                       <InputNumber
                         min={0}

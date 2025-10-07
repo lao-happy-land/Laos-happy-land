@@ -8,10 +8,13 @@ import { Marker, Popup } from "react-map-gl/mapbox";
 import type { MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import Image from "next/image";
-import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { Property } from "@/@types/types";
 import { formatShortLocation } from "@/share/helper/format-location";
+import { useUrlLocale } from "@/utils/locale";
+import { useRouter } from "next/navigation";
+import { numberToString } from "@/share/helper/number-to-string";
+import { useCurrencyStore } from "@/share/store/currency.store";
 
 interface PropertiesMapProps {
   properties: Property[];
@@ -27,6 +30,9 @@ export default function PropertiesMap({
   height = "600px",
 }: PropertiesMapProps) {
   const t = useTranslations("property");
+  const locale = useUrlLocale();
+  const router = useRouter();
+  const { currency } = useCurrencyStore();
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(
     null,
   );
@@ -78,25 +84,6 @@ export default function PropertiesMap({
     setSelectedProperty(null);
   };
 
-  const formatPrice = (price: unknown) => {
-    if (!price) return "Liên hệ";
-
-    if (typeof price === "object" && price !== null) {
-      const priceObj = price as Record<string, unknown>;
-      if (typeof priceObj.LAK === "number") {
-        return `${(priceObj.LAK / 1000000).toFixed(1)}M LAK`;
-      }
-      if (typeof priceObj.USD === "number") {
-        return `$${priceObj.USD.toLocaleString()}`;
-      }
-      if (typeof priceObj.VND === "number") {
-        return `${(priceObj.VND / 1000000).toFixed(1)}M VND`;
-      }
-    }
-
-    return "Liên hệ";
-  };
-
   const getImageURL = (property: Property) => {
     if (property.mainImage) {
       return property.mainImage;
@@ -105,6 +92,10 @@ export default function PropertiesMap({
       return property.images[0];
     }
     return "/images/placeholder-property.jpg";
+  };
+
+  const handleViewDetails = (property: Property) => {
+    router.push(`/${locale}/properties/${property.id}`);
   };
 
   if (loading) {
@@ -216,7 +207,11 @@ export default function PropertiesMap({
                 {/* Price Badge */}
                 <div className="absolute right-3 bottom-3">
                   <div className="rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white shadow-lg">
-                    {formatPrice(selectedProperty.price)}
+                    {numberToString(
+                      Number(selectedProperty.price),
+                      locale,
+                      currency,
+                    )}
                   </div>
                 </div>
               </div>
@@ -236,36 +231,6 @@ export default function PropertiesMap({
                       {formatShortLocation(selectedProperty, "")}
                     </p>
                   </div>
-                </div>
-
-                {/* Property Details */}
-                <div className="mb-4 grid grid-cols-2 gap-3">
-                  {selectedProperty.details && (
-                    <>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <div className="h-2 w-2 rounded-full bg-blue-500"></div>
-                        <span>{selectedProperty.details.area}m²</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                        <span>
-                          {selectedProperty.details.bedrooms} {t("bedrooms")}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <div className="h-2 w-2 rounded-full bg-purple-500"></div>
-                        <span>
-                          {selectedProperty.details.bathrooms} {t("bathrooms")}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <div className="h-2 w-2 rounded-full bg-orange-500"></div>
-                        <span>
-                          {t("priority")} {selectedProperty.priority}
-                        </span>
-                      </div>
-                    </>
-                  )}
                 </div>
 
                 {/* Engagement Stats */}
@@ -288,19 +253,15 @@ export default function PropertiesMap({
 
                 {/* Action Buttons */}
                 <div className="flex gap-2">
-                  <Link
-                    href={`/properties/${selectedProperty.id}`}
-                    className="flex-1"
+                  <Button
+                    type="primary"
+                    size="middle"
+                    onClick={() => handleViewDetails(selectedProperty)}
+                    block
+                    className="bg-red-500 font-semibold shadow-lg hover:bg-red-600"
                   >
-                    <Button
-                      type="primary"
-                      size="middle"
-                      block
-                      className="bg-red-500 font-semibold shadow-lg hover:bg-red-600"
-                    >
-                      {t("viewDetails")}
-                    </Button>
-                  </Link>
+                    {t("viewDetails")}
+                  </Button>
                 </div>
               </div>
             </div>

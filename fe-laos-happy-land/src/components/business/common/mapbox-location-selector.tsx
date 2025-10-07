@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { Card, Button, Typography, Select, Input } from "antd";
+import { Button, Typography, Select, Input } from "antd";
 import { MapPin, Check, Search } from "lucide-react";
 import Map from "react-map-gl/mapbox";
 import { Marker, Popup } from "react-map-gl/mapbox";
@@ -467,10 +467,10 @@ export default function MapboxLocationSelector({
 
   return (
     <div className="w-full space-y-4">
-      <Card className="border border-neutral-200">
+      <div className="rounded-lg border border-neutral-200">
         <div className="space-y-4">
           {/* Location Info Dropdown */}
-          <div>
+          <div className="px-4 pt-4">
             <Text className="mb-2 block text-sm font-medium text-neutral-700">
               {t("map.area")} <span className="text-red-500">*</span>
             </Text>
@@ -517,7 +517,7 @@ export default function MapboxLocationSelector({
 
           {/* District/Strict Dropdown - Only show when LocationInfo is selected */}
           {selectedLocationInfoId && selectedLocationInfo?.strict && (
-            <div>
+            <div className="px-4">
               <Text className="mb-2 block text-sm font-medium text-neutral-700">
                 {t("map.district")} <span className="text-red-500">*</span>
               </Text>
@@ -550,7 +550,7 @@ export default function MapboxLocationSelector({
 
           {/* Address Input - Manual entry */}
           {selectedLocationInfoId && selectedStrict && (
-            <div>
+            <div className="px-4">
               <Text className="mb-2 block text-sm font-medium text-neutral-700">
                 {t("common.address")} <span className="text-red-500">*</span>
               </Text>
@@ -573,10 +573,12 @@ export default function MapboxLocationSelector({
 
           {/* Map with Search */}
           <div>
-            <Text className="mb-2 block text-sm font-medium text-neutral-700">
-              {t("map.selectLocationOnMap")} ({t("map.coordinates")}){" "}
-              <span className="text-red-500">*</span>
-            </Text>
+            <div className="px-4 pb-2">
+              <Text className="mb-2 block text-sm font-medium text-neutral-700">
+                {t("map.selectLocationOnMap")} ({t("map.coordinates")}){" "}
+                <span className="text-red-500">*</span>
+              </Text>
+            </div>
             <div className="relative">
               {/* Search Input - Absolute positioned on top of map */}
               <div className="absolute top-4 left-4 z-10 w-80 max-w-[calc(100%-2rem)]">
@@ -624,7 +626,7 @@ export default function MapboxLocationSelector({
               </div>
 
               {/* Map */}
-              <div className="h-[50vh] w-full overflow-hidden rounded-lg border border-neutral-200">
+              <div className="h-[50vh] w-full">
                 <Map
                   ref={mapRef}
                   {...viewState}
@@ -693,7 +695,7 @@ export default function MapboxLocationSelector({
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-between gap-2 lg:flex-row">
+          <div className="flex flex-col items-center justify-between gap-2 p-4 lg:flex-row">
             <Text className="text-sm text-neutral-600">
               💡 <strong>{t("map.instructions")}:</strong> {t("map.selectArea")}{" "}
               → {t("map.district")} → {t("common.address")} →{" "}
@@ -808,7 +810,7 @@ export default function MapboxLocationSelector({
             </div>
           )}
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

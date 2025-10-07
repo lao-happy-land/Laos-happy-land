@@ -301,8 +301,24 @@ export default function Header({
               </nav>
             </div>
 
-            <div className="flex items-center">
-              <div className="xl:hidden">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 2xl:hidden">
+                <Button
+                  type="default"
+                  icon={<Plus className="h-4 w-4" />}
+                  className="hidden sm:flex"
+                  onClick={() => {
+                    if (isAuthenticated) {
+                      router.push(`/${locale}/create-property`);
+                    } else {
+                      router.push(
+                        `/${locale}/login?redirect=/${locale}/create-property`,
+                      );
+                    }
+                  }}
+                >
+                  {t("navigation.postAd")}
+                </Button>
                 <Button
                   type="text"
                   icon={<MenuIcon className="h-5 w-5" />}
@@ -386,19 +402,17 @@ export default function Header({
       <Drawer
         title={
           <div className="flex items-center space-x-3">
-            <div className="flex h-8 w-8 items-center justify-center">
+            <div className="flex h-10 w-10 items-center justify-center gap-2">
               <Image
                 src="/images/logo.png"
                 alt="Logo"
-                width={32}
-                height={32}
+                width={40}
+                height={40}
                 className="h-full w-full object-contain"
               />
             </div>
             <div>
-              <div className="text-primary-500 text-base font-bold">
-                Laohappyland
-              </div>
+              <div className="text-lg font-bold text-red-700">Laohappyland</div>
               <div className="text-xs text-gray-500">
                 No.1 property platform
               </div>
@@ -409,27 +423,27 @@ export default function Header({
         onClose={() => setDrawerVisible(false)}
         open={drawerVisible}
         width={320}
+        styles={{
+          body: { padding: "16px" },
+        }}
       >
         <div className="flex flex-col space-y-6">
-          <div className="flex justify-center gap-2">
-            <LanguageSwitcher />
-            <CurrencySwitcher />
-          </div>
+          {/* User Section */}
           {isAuthenticated && user ? (
             <div className="space-y-4">
-              <div className="flex items-center space-x-3 rounded-lg bg-orange-50 p-4">
+              <div className="flex items-center gap-3 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 p-4 shadow-sm">
                 <Avatar
-                  size="large"
-                  className="bg-orange-600"
+                  size={48}
+                  className="bg-gradient-to-br from-blue-500 to-indigo-600"
                   icon={<UserIcon className="h-5 w-5" />}
                 >
                   {displayName.charAt(0).toUpperCase()}
                 </Avatar>
-                <div>
-                  <div className="max-w-48 truncate font-medium">
+                <div className="flex-1">
+                  <div className="max-w-40 truncate font-semibold text-gray-900">
                     {displayName}
                   </div>
-                  <Text className="text-sm text-gray-500">
+                  <Text className="text-xs text-gray-600">
                     {user.role || "User"}
                   </Text>
                 </div>
@@ -440,6 +454,7 @@ export default function Header({
                   type="primary"
                   icon={<LayoutDashboard className="h-4 w-4" />}
                   block
+                  size="large"
                   onClick={() => {
                     setDrawerVisible(false);
                     router.push(`/${locale}/dashboard`);
@@ -451,6 +466,7 @@ export default function Header({
                   type="default"
                   icon={<UserIcon className="h-4 w-4" />}
                   block
+                  size="large"
                   onClick={() => {
                     setDrawerVisible(false);
                     router.push(`/${locale}/profile`);
@@ -459,14 +475,15 @@ export default function Header({
                   {t("navigation.personalInfo")}
                 </Button>
                 <Button
-                  type="text"
                   danger
                   icon={<LogOut className="h-4 w-4" />}
                   block
+                  size="large"
                   onClick={() => {
                     setDrawerVisible(false);
                     logout();
                   }}
+                  className="mt-4"
                 >
                   {t("navigation.logout")}
                 </Button>
@@ -475,43 +492,74 @@ export default function Header({
           ) : (
             <div className="space-y-3">
               <Button
-                type="default"
+                type="primary"
                 icon={<LogIn className="h-4 w-4" />}
                 block
+                size="large"
                 onClick={() => {
+                  setDrawerVisible(false);
                   router.push(`/${locale}/login`);
                 }}
               >
                 {t("navigation.login")}
               </Button>
               <Button
-                type="primary"
+                type="default"
                 icon={<UserPlus className="h-4 w-4" />}
                 block
+                size="large"
                 onClick={() => {
+                  setDrawerVisible(false);
                   router.push(`/${locale}/register`);
                 }}
               >
                 {t("navigation.register")}
               </Button>
               <Button
-                type="default"
+                type="dashed"
                 icon={<Plus className="h-4 w-4" />}
                 block
-                onClick={() => setDrawerVisible(false)}
+                size="large"
+                onClick={() => {
+                  setDrawerVisible(false);
+                  if (isAuthenticated) {
+                    router.push(`/${locale}/create-property`);
+                  } else {
+                    router.push(
+                      `/${locale}/login?redirect=/${locale}/create-property`,
+                    );
+                  }
+                }}
               >
                 {t("navigation.postAd")}
               </Button>
             </div>
           )}
-
+          {/* Language and Currency Switchers */}
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+            <div className="mb-2">
+              <Text className="text-xs font-medium text-gray-600">
+                {t("common.settings")}
+              </Text>
+            </div>
+            <div className="flex justify-center gap-2">
+              <LanguageSwitcher />
+              <CurrencySwitcher />
+            </div>
+          </div>
+          {/* Navigation Categories */}
           <div>
-            <Text className="mb-3 block text-sm font-medium text-gray-500">
-              {t("navigation.categories")}
-            </Text>
+            <div className="mb-3 flex items-center justify-between border-b border-gray-200 pb-2">
+              <Text className="text-sm font-semibold text-gray-700">
+                {t("navigation.categories")}
+              </Text>
+            </div>
             <Menu
               mode="inline"
-              className="border-none"
+              style={{
+                border: "none",
+                backgroundColor: "transparent",
+              }}
               selectedKeys={getSelectedKeys()}
               items={mobileMenuItems.map((item) => ({
                 ...item,

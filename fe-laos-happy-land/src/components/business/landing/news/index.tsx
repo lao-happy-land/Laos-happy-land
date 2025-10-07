@@ -144,17 +144,24 @@ const NewsPage = () => {
 
   const getImageURL = (news: News) => {
     const content = news.details;
+    const fallback = [
+      "/images/landingpage/project/project-1.jpg",
+      "/images/landingpage/project/project-2.jpg",
+      "/images/landingpage/project/project-3.jpg",
+    ];
+    const fallbackImage = fallback[Math.floor(Math.random() * fallback.length)];
     if (content) {
       const image = content.find((item) => item.type === "image");
       if (image) {
         return (
           image.url ??
           image.value ??
+          fallbackImage ??
           "/images/landingpage/project/project-1.jpg"
         );
       }
     }
-    return "/images/landingpage/project/project-1.jpg";
+    return fallbackImage ?? "/images/landingpage/project/project-1.jpg";
   };
 
   const breadcrumbItems = [

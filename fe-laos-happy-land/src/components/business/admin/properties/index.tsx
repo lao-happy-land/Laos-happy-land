@@ -181,7 +181,7 @@ const AdminProperties = () => {
     async () => {
       const params: {
         keyword?: string;
-        type?: string[];
+        type?: string;
         minPrice?: number;
         maxPrice?: number;
         location?: string;
@@ -200,7 +200,7 @@ const AdminProperties = () => {
       }
 
       if (selectedPropertyTypes.length > 0) {
-        params.type = selectedPropertyTypes;
+        params.type = selectedPropertyTypes.join(",");
       }
 
       if (selectedStatus !== "all") {
@@ -298,7 +298,11 @@ const AdminProperties = () => {
 
   const handleTransactionTypeChange = (type: string) => {
     setSelectedTransactionType(type);
-    updateSearchParams({ transaction: type === "all" ? "" : type });
+    setSelectedPropertyTypes([]); // Clear property types when transaction type changes
+    updateSearchParams({
+      transaction: type === "all" ? "" : type,
+      type: [], // Clear property type filter in URL
+    });
   };
 
   const handleLocationChange = (location: string) => {
@@ -736,6 +740,18 @@ const AdminProperties = () => {
             ),
           }}
           columns={[
+            {
+              title: "ID",
+              dataIndex: "code",
+              key: "code",
+              width: 80,
+              fixed: "left",
+              render: (code: string) => (
+                <Text className="font-mono text-xs text-gray-600">
+                  {code.slice(0, 8)}
+                </Text>
+              ),
+            },
             {
               title: t("admin.property"),
               dataIndex: "title",

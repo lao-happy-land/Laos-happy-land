@@ -3,14 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Button, Row, Col, Typography, Space, Card, Tag } from "antd";
-import {
-  CheckCircle,
-  Clock,
-  User,
-  ArrowRight,
-  Building2,
-  Eye,
-} from "lucide-react";
+import { CheckCircle, Clock, User, Building2, Eye } from "lucide-react";
 import { useRequest } from "ahooks";
 import SearchBox from "./search-box";
 import propertyService from "@/share/service/property.service";
@@ -301,70 +294,73 @@ const LandingPage = () => {
                 </Col>
               ))
             ) : newsItems.length > 0 ? (
-              newsItems.map((news: News) => (
-                <Col xs={24} md={8} key={news.id}>
-                  <Card
-                    hoverable
-                    className="h-full overflow-hidden rounded-xl border-0 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-                    styles={{
-                      body: { padding: "20px" },
-                    }}
-                    cover={
-                      <div className="relative h-48 w-full overflow-hidden">
-                        <Image
-                          src="/images/landingpage/market-news/market-news-1.jpg" // Default fallback image
-                          alt={news.title}
-                          fill
-                          className="object-cover transition-transform duration-300 hover:scale-105"
-                          sizes="(max-width: 768px) 100vw, 33vw"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-                      </div>
-                    }
-                  >
-                    <div className="mb-3">
-                      <Space>
-                        <Tag color="primary">
-                          {news.newsType?.name ??
-                            news.type?.name ??
-                            t("home.news")}
-                        </Tag>
-                        <Text type="secondary" className="text-xs">
-                          {new Date(news.createdAt).toLocaleDateString(
-                            locale === "vn"
-                              ? "vi-VN"
-                              : locale === "la"
-                                ? "lo-LA"
-                                : "en-US",
-                          )}
-                        </Text>
-                      </Space>
-                    </div>
-                    <Title
-                      level={5}
-                      className="hover:text-primary-500 mb-3 line-clamp-2 text-base font-semibold text-neutral-900 transition-colors"
-                    >
-                      {news.title}
-                    </Title>
-                    <Paragraph
-                      type="secondary"
-                      className="mb-4 line-clamp-2 text-sm leading-relaxed"
-                    >
-                      {news.description ?? t("home.noDescription")}
-                    </Paragraph>
+              newsItems.map((news: News, index: number) => {
+                // Get image from news details or use random fallback
+                const newsImage = news.details?.find(
+                  (d) => d.type === "image",
+                )?.url;
+                const randomImages = [
+                  "/images/landingpage/market-news/market-news-1.jpg",
+                  "/images/landingpage/market-news/market-news-2.jpg",
+                  "/images/landingpage/market-news/market-news-3.jpg",
+                ];
+                const fallbackImage = randomImages[index % randomImages.length];
+                const imageUrl =
+                  newsImage ??
+                  fallbackImage ??
+                  "/images/landingpage/market-news/market-news-1.jpg";
+
+                return (
+                  <Col xs={24} md={8} key={news.id}>
                     <Link href={`/${locale}/news/${news.id}`}>
-                      <Button
-                        type="link"
-                        size="small"
-                        icon={<ArrowRight className="h-4 w-4" />}
-                        className="text-primary-500 hover:text-primary-600 flex h-auto items-center gap-2 p-0 text-sm font-semibold"
+                      <Card
+                        hoverable
+                        className="h-full overflow-hidden rounded-xl border-0 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                        styles={{
+                          body: { padding: "20px" },
+                        }}
+                        cover={
+                          <div className="relative h-48 w-full overflow-hidden">
+                            <Image
+                              src={imageUrl}
+                              alt={news.title}
+                              fill
+                              className="object-cover transition-transform duration-300 hover:scale-105"
+                              sizes="(max-width: 768px) 100vw, 33vw"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+                          </div>
+                        }
                       >
-                        {t("home.readMore")}
-                      </Button>
+                        <div className="mb-3">
+                          <Space>
+                            <Tag color="primary">
+                              {news.newsType?.name ??
+                                news.type?.name ??
+                                t("home.news")}
+                            </Tag>
+                            <Text type="secondary" className="text-xs">
+                              {new Date(news.createdAt).toLocaleDateString(
+                                locale === "vn"
+                                  ? "vi-VN"
+                                  : locale === "la"
+                                    ? "lo-LA"
+                                    : "en-US",
+                              )}
+                            </Text>
+                          </Space>
+                        </div>
+                        <Title
+                          level={5}
+                          className="hover:text-primary-500 mb-3 line-clamp-2 text-base font-semibold text-neutral-900 transition-colors"
+                        >
+                          {news.title}
+                        </Title>
+                      </Card>
                     </Link>
-                  </Card>
-                </Col>
-              ))
+                  </Col>
+                );
+              })
             ) : (
               <Col span={24} className="py-8 text-center">
                 <Text type="secondary">{t("home.noNewsAvailable")}</Text>

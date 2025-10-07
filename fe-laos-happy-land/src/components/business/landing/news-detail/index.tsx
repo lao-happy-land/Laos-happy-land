@@ -3,9 +3,8 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Button, Tag, Breadcrumb, Spin, Empty } from "antd";
-import { Calendar, Eye, Share2, ArrowRight } from "lucide-react";
+import { Calendar, Eye, Share2 } from "lucide-react";
 import { useUrlLocale } from "@/utils/locale";
 import { useTranslations } from "next-intl";
 import { useRequest } from "ahooks";
@@ -17,7 +16,6 @@ interface NewsDetailProps {
 }
 
 const NewsDetailPage = ({ newsId }: NewsDetailProps) => {
-  const router = useRouter();
   const locale = useUrlLocale();
   const t = useTranslations();
 
@@ -235,7 +233,7 @@ const NewsDetailPage = ({ newsId }: NewsDetailProps) => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <span className="text-sm font-semibold text-neutral-700">
-                        Chia sẻ:
+                        {t("news.share")}:
                       </span>
                       <div className="flex items-center gap-2">
                         <Button
@@ -257,19 +255,32 @@ const NewsDetailPage = ({ newsId }: NewsDetailProps) => {
                   {t("news.relatedNews")}
                 </h3>
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                  {relatedNews.map((news) => (
-                    <div
-                      key={news.id}
-                      className="overflow-hidden rounded-xl bg-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-                    >
-                      {news.details?.[0]?.type === "image" && (
+                  {relatedNews.map((news, index) => {
+                    // Get image from news details or use random fallback
+                    const newsImage = news.details?.find(
+                      (d) => d.type === "image",
+                    )?.url;
+                    const randomImages = [
+                      "/images/landingpage/market-news/market-news-1.jpg",
+                      "/images/landingpage/market-news/market-news-2.jpg",
+                      "/images/landingpage/market-news/market-news-3.jpg",
+                    ];
+                    const fallbackImage =
+                      randomImages[index % randomImages.length];
+                    const imageUrl =
+                      newsImage ??
+                      fallbackImage ??
+                      "/images/landingpage/market-news/market-news-1.jpg";
+
+                    return (
+                      <Link
+                        key={news.id}
+                        href={`/${locale}/news/${news.id}`}
+                        className="block overflow-hidden rounded-xl bg-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                      >
                         <div className="relative h-48 overflow-hidden">
                           <Image
-                            src={
-                              news.details[0].url ??
-                              news.details[0].value ??
-                              "/images/placeholder.jpg"
-                            }
+                            src={imageUrl}
                             alt={news.title}
                             fill
                             className="object-cover transition-transform duration-300 hover:scale-105"
@@ -284,22 +295,10 @@ const NewsDetailPage = ({ newsId }: NewsDetailProps) => {
                             </div>
                           )}
                         </div>
-                      )}
-                      <div className="p-6">
-                        <h4 className="hover:text-primary-500 mb-3 line-clamp-2 text-lg leading-tight font-semibold text-neutral-900 transition-colors">
-                          <Link
-                            href={`/${locale}/news/${news.id}`}
-                            className="text-inherit"
-                          >
+                        <div className="p-6">
+                          <h4 className="hover:text-primary-500 mb-3 line-clamp-2 text-lg leading-tight font-semibold text-neutral-900 transition-colors">
                             {news.title}
-                          </Link>
-                        </h4>
-                        {news.description && (
-                          <p className="mb-4 line-clamp-2 text-sm leading-relaxed text-neutral-600">
-                            {news.description}
-                          </p>
-                        )}
-                        <div className="flex items-center justify-between">
+                          </h4>
                           <div className="flex items-center gap-4 text-xs text-neutral-500">
                             <div className="flex items-center gap-1">
                               <Calendar size={12} />
@@ -314,21 +313,10 @@ const NewsDetailPage = ({ newsId }: NewsDetailProps) => {
                               </span>
                             </div>
                           </div>
-                          <Button
-                            type="link"
-                            size="small"
-                            icon={<ArrowRight size={12} />}
-                            className="text-primary-500 hover:text-primary-600 p-0 font-semibold"
-                            onClick={() =>
-                              router.push(`/${locale}/news/${news.id}`)
-                            }
-                          >
-                            {t("news.readMore")}
-                          </Button>
                         </div>
-                      </div>
-                    </div>
-                  ))}
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             )}

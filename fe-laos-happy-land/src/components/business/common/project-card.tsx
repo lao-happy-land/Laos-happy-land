@@ -92,21 +92,23 @@ export default function ProjectCard({
         <div className={`relative overflow-hidden ${getImageHeight()}`}>
           <Image
             src={(() => {
-              const mainImg = project.mainImage;
-              const fallback = "/images/landingpage/project/project-1.jpg";
+              const mainImg = project.details?.content?.find(
+                (d) => d.type === "image",
+              )?.url;
+              const fallback = [
+                "/images/landingpage/project/project-1.jpg",
+                "/images/landingpage/project/project-2.jpg",
+                "/images/landingpage/project/project-3.jpg",
+              ];
 
-              if (mainImg && typeof mainImg === "string") {
-                try {
-                  new URL(mainImg);
-                  return mainImg;
-                } catch {
-                  if (mainImg.startsWith("/")) {
-                    return mainImg;
-                  }
-                }
-              }
+              const fallbackImage =
+                fallback[Math.floor(Math.random() * fallback.length)];
 
-              return fallback;
+              return (
+                mainImg ??
+                fallbackImage ??
+                "/images/landingpage/project/project-1.jpg"
+              );
             })()}
             alt={project.title}
             fill
