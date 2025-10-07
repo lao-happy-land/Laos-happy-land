@@ -20,3 +20,9 @@ export enum PropertyStatusEnum {
   APPROVED = 'approved',
   REJECTED = 'rejected',
 }
+
+export enum BankRequestStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+}

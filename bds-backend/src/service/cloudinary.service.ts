@@ -9,6 +9,9 @@ import { Multer } from 'multer';
 import bufferToStream = require('buffer-to-stream');
 import path = require('path');
 import { ConfigService } from '@nestjs/config';
+const sharp = require('sharp');
+
+
 
 @Injectable()
 export class CloudinaryService {
@@ -23,13 +26,21 @@ export class CloudinaryService {
   async uploadImageFile(
     file: Multer.File,
   ): Promise<UploadApiResponse | UploadApiErrorResponse> {
-    return new Promise((resolve, reject) => {
-      const upload = v2.uploader.upload_stream((error, result) => {
-        if (error) return reject(error);
-        resolve(result);
-      });
+    const compressedBuffer = await sharp(file.buffer)
+      .resize({ width: 1920, withoutEnlargement: true })
+      .jpeg({ quality: 80 })
+      .toBuffer();
 
-      bufferToStream(file.buffer).pipe(upload);
+    return new Promise((resolve, reject) => {
+      const upload = v2.uploader.upload_stream(
+        { folder: 'uploads' },
+        (error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        },
+      );
+
+      bufferToStream(compressedBuffer).pipe(upload);
     });
   }
 
@@ -58,7 +69,7 @@ export class CloudinaryService {
     const publicId = lastPart.split('.').slice(0, -1).join('.');
     return publicId;
   }
-  
+
   async uploadAndReturnImageUrl(file: Multer.File): Promise<string> {
     try {
       const result = await this.uploadImageFile(file);

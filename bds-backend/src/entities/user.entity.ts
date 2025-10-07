@@ -48,15 +48,6 @@ export class User extends AbstractEntity {
   avatarUrl: string;
 
   @Column({ type: 'jsonb', nullable: true })
-  fromBank: {
-    phone?: string;
-    isFromBank?: boolean;
-    imageUrl?: string;
-    requested?: boolean;
-    note?: string;
-  };
-
-  @Column({ type: 'jsonb', nullable: true })
   roleRequests?: {
     requested?: boolean;
     note?: string;
@@ -65,7 +56,6 @@ export class User extends AbstractEntity {
     requestedAt?: Date;
     processedAt?: Date;
   };
-
 
   @Column({ type: 'int', default: 0 })
   experienceYears: number;
@@ -91,6 +81,9 @@ export class User extends AbstractEntity {
   @Column({ nullable: true })
   company?: string;
 
+  @Column({ type: 'int', default: 0 })
+  priority: number;
+
   @OneToMany(() => UserFeedback, (fb) => fb.user)
   feedbacks: UserFeedback[];
 
@@ -104,7 +97,10 @@ export class User extends AbstractEntity {
 
   @Expose()
   get approvedPropertyCount(): number {
-    return this.properties?.filter(p => p.status === PropertyStatusEnum.APPROVED).length || 0;
+    return (
+      this.properties?.filter((p) => p.status === PropertyStatusEnum.APPROVED)
+        .length || 0
+    );
   }
 
   constructor(user: Partial<User>) {

@@ -100,7 +100,7 @@ export class UserService {
     const query = this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.role', 'role')
-      .leftJoinAndSelect('user.locationInfo', 'locationInfo');
+      .leftJoinAndSelect('user.locationInfo', 'locationInfo')
 
     if (params.role) {
       query.andWhere('role.name = :role', { role: params.role });
@@ -144,7 +144,9 @@ export class UserService {
     }
 
     query.skip(params.skip).take(params.perPage);
-    query.orderBy('user.createdAt', params.OrderSort);
+    query.orderBy('user.priority', 'DESC')
+    query.addOrderBy('user.createdAt', 'DESC');
+
 
     const [users, total] = await query.getManyAndCount();
 
@@ -241,38 +243,6 @@ export class UserService {
     return { user, message: 'Success' };
   }
 
-  async getRandomUsersFromBank(limit = 10) {
-    const query = this.userRepository
-      .createQueryBuilder('user')
-      .leftJoinAndSelect('user.locationInfo', 'locationInfo')
-      .addSelect((subQuery) => {
-        return subQuery
-          .select('COUNT(p.id)', 'approvedPropertyCount')
-          .from(Property, 'p')
-          .where('p.owner_id = user.id')
-          .andWhere('p.status = :status', {
-            status: PropertyStatusEnum.APPROVED,
-          });
-      }, 'approvedPropertyCount')
-      .where("user.fromBank ->> 'isFromBank' = :fromBank", {
-        fromBank: 'true',
-      });
-
-    const result = await query.getRawAndEntities();
-
-    if (!result.entities.length) return [];
-
-    const usersWithCount = result.entities.map((user, idx) => ({
-      ...user,
-      propertyCount:
-        parseInt(result.raw[idx]['approvedPropertyCount'], 10) || 0,
-    }));
-
-    const shuffled = usersWithCount.sort(() => 0.5 - Math.random());
-
-    return shuffled.slice(0, limit);
-  }
-
   async update(id: string, updateUserDto: UpdateUserDto, image?: Multer.File) {
     const user = await this.userRepository.findOne({
       where: { id },
@@ -330,6 +300,9 @@ export class UserService {
       if (updateUserDto.company) {
         user.company = updateUserDto.company;
       }
+      if (updateUserDto.priority !== undefined) {
+        user.priority = Number(updateUserDto.priority);
+      }
     }
     return await this.userRepository.save(user);
   }
@@ -341,126 +314,6 @@ export class UserService {
     }
     await this.userRepository.remove(user);
     return { message: 'User deleted successfully' };
-  }
-
-  async requestIsFromBank(
-    id: string,
-    image?: Multer.File,
-    note?: string,
-    phone?: string,
-  ) {
-    const user = await this.userRepository.findOneBy({ id });
-    if (!user) throw new BadRequestException('User not found');
-
-    const fromBank = user.fromBank || { isFromBank: false, requested: false };
-
-    if (fromBank.isFromBank) {
-      throw new BadRequestException('User is already marked as from bank');
-    }
-    if (fromBank.requested) {
-      throw new BadRequestException('User already has a pending request');
-    }
-
-    let imageUrl: string | null = null;
-    if (image) {
-      imageUrl = await this.cloudinaryService.uploadAndReturnImageUrl(image);
-    }
-
-    if (phone && !user.phone) {
-      user.phone = phone;
-    }
-
-    user.fromBank = {
-      ...fromBank,
-      requested: true,
-      imageUrl,
-      note,
-      phone,
-    };
-    await this.entityManager.save(user);
-
-    return { message: 'Request to be from bank submitted successfully', user };
-  }
-
-  async approveIsFromBank(id: string, approve: boolean) {
-    const user = await this.userRepository.findOneBy({ id });
-    if (!user) throw new BadRequestException('User not found');
-
-    const fromBank = user.fromBank || { isFromBank: false, requested: false };
-
-    if (!fromBank.requested) {
-      throw new BadRequestException('No request pending for this user');
-    }
-
-    user.fromBank = {
-      ...fromBank,
-      isFromBank: approve,
-      requested: false,
-      note: approve ? 'Approved by admin' : 'Rejected by admin',
-    };
-
-    await this.entityManager.save(user);
-
-    return {
-      message: `User ${user.fullName} has been ${approve ? 'approved' : 'rejected'} as from bank`,
-      user,
-    };
-  }
-
-  async getBankRequests(params: GetUserDto) {
-    const query = this.userRepository
-      .createQueryBuilder('user')
-      .leftJoinAndSelect('user.role', 'role')
-      .addSelect((subQuery) => {
-        return subQuery
-          .select('COUNT(p.id)', 'approvedPropertyCount')
-          .from(Property, 'p')
-          .where('p.owner_id = user.id')
-          .andWhere('p.status = :status', {
-            status: PropertyStatusEnum.APPROVED,
-          });
-      }, 'approvedPropertyCount')
-      .where(`"user"."fromBank"->>'requested' = :requested`, {
-        requested: 'true',
-      })
-      .skip(params.skip)
-      .take(params.perPage)
-      .orderBy('user.createdAt', params.OrderSort);
-
-    if (params.search) {
-      query.andWhere(
-        new Brackets((qb) => {
-          qb.orWhere('user.fullName ILIKE :search', {
-            search: `%${params.search}%`,
-          })
-            .orWhere('user.email ILIKE :search', {
-              search: `%${params.search}%`,
-            })
-            .orWhere('user.phone ILIKE :search', {
-              search: `%${params.search}%`,
-            });
-        }),
-      );
-    }
-
-    if (params.role) {
-      query.andWhere('role.name = :role', { role: params.role });
-    }
-
-    const result = await query.getRawAndEntities();
-
-    const finalResult = result.entities.map((user, idx) => ({
-      ...user,
-      propertyCount:
-        parseInt(result.raw[idx]['approvedPropertyCount'], 10) || 0,
-    }));
-
-    const pageMetaDto = new PageMetaDto({
-      itemCount: finalResult.length,
-      pageOptionsDto: params,
-    });
-
-    return new ResponsePaginate(finalResult, pageMetaDto, 'Success');
   }
 
   async requestRoleUpgrade(

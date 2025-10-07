@@ -115,4 +115,13 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   company?: string;
+
+  @ApiPropertyOptional({
+    description: 'Độ ưu tiên',
+    example: 0,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  priority?: number;
 }

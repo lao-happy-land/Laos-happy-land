@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 
 import { UserModule } from './modules/user/user.module';
 import { DbModule } from './common/db/db.module';
@@ -17,6 +17,9 @@ import { AboutUsModule } from './modules/about-us/about-us.module';
 import { UserFeedbackModule } from './modules/user-feedback/user-feedback.module';
 import { BankModule } from './modules/bank/bank.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { BankRequestModule } from './modules/bank-request/bank-request.module';
+import { DataSource } from 'typeorm';
+import { Property } from './entities/property.entity';
 
 @Module({
   imports: [ConfigModule.forRoot({
@@ -37,7 +40,14 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     AboutUsModule,
     UserFeedbackModule,
     BankModule,
-    DashboardModule
+    DashboardModule,
+    BankRequestModule
   ],
 })
-export class AppModule {}
+export class AppModule implements OnModuleInit {
+  constructor(private dataSource: DataSource) {}
+
+  onModuleInit() {
+    Property.setDataSource(this.dataSource);
+  }
+}

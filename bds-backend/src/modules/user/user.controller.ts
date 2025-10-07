@@ -52,25 +52,6 @@ export class UserController {
     return this.userService.getAll(params);
   }
 
-  @Get('bank-requests')
-  @ApiQuery({ name: 'skip', required: false, type: Number })
-  @ApiQuery({ name: 'take', required: false, type: Number })
-  @ApiQuery({ name: 'fullName', required: false, type: String })
-  @ApiResponse({ status: 200, description: 'List of bank requests' })
-  async getBankRequests(@Query() params: GetUserDto) {
-    return this.userService.getBankRequests(params);
-  }
-
-  @Get('random-from-bank')
-  @ApiResponse({ status: 200, description: 'Random user from bank' })
-  async getRandomUser() {
-    const users = await this.userService.getRandomUsersFromBank();
-    if (!users) {
-      return { message: 'No users from bank found' };
-    }
-    return { users, message: 'Success' };
-  }
-
   @Get(':id')
   @ApiResponse({ status: 200, description: 'User found successfully' })
   async get(@Param('id') id: string, @Query() params: GetOneUserDto) {
@@ -98,53 +79,6 @@ export class UserController {
     return { result, message: 'User updated successfully' };
   }
 
-  @Patch(':id/request')
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        note: { type: 'string', nullable: true },
-        phone: { type: 'string', nullable: true },
-        image: { type: 'string', format: 'binary', nullable: true },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Request to be from bank submitted successfully',
-  })
-  @UseInterceptors(FileFieldsInterceptor([{ name: 'image', maxCount: 1 }]))
-  async requestIsFromBank(
-    @Param('id') id: string,
-    @Body('note') note?: string,
-    @Body('phone') phone?: string,
-    @UploadedFiles() files?: { image?: Multer.File[] },
-  ) {
-    return this.userService.requestIsFromBank(
-      id,
-      files?.image?.[0],
-      note,
-      phone,
-    );
-  }
-
-  @Patch(':id/approve')
-  @UseGuards(AdminGuard)
-  @ApiBearerAuth()
-  @ApiBody({
-    schema: { type: 'object', properties: { approve: { type: 'boolean' } } },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Admin approved/rejected user as from bank',
-  })
-  async approveIsFromBank(
-    @Param('id') id: string,
-    @Body('approve') approve: boolean,
-  ) {
-    return this.userService.approveIsFromBank(id, approve);
-  }
 
   @Patch(':id/request-role-upgrade')
   @ApiConsumes('multipart/form-data')

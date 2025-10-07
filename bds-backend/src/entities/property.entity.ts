@@ -7,6 +7,8 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   JoinColumn,
+  DataSource,
+  BeforeInsert,
 } from 'typeorm';
 import { User } from './user.entity';
 import { AbstractEntity } from 'src/common/entities';
@@ -37,6 +39,9 @@ export interface LocationData {
 export class Property extends AbstractEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column({ unique: true })
+  code: string;
 
   @ManyToOne(() => User, (user) => user.properties, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'owner_id' })
@@ -104,6 +109,22 @@ export class Property extends AbstractEntity {
   })
   @JoinColumn({ name: 'location_info_id' })
   locationInfo: LocationInfo;
+
+  private static dataSource: DataSource;
+
+  static setDataSource(ds: DataSource) {
+    Property.dataSource = ds;
+  }
+
+  @BeforeInsert()
+  async generateCode() {
+    if (!Property.dataSource) return;
+    const result = await Property.dataSource.query(
+      `SELECT nextval('property_code_seq') as seq;`
+    );
+    const seqNumber = result[0]?.seq ?? 1001;
+    this.code = `${seqNumber}`;
+  }
 
   constructor(property: Partial<Property>) {
     super();
