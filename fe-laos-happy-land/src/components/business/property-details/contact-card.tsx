@@ -17,7 +17,7 @@ import Image from "next/image";
 import { useMemo } from "react";
 import Link from "next/link";
 import { useUrlLocale } from "@/utils/locale";
-import BankUsers from "./bank-users";
+// import BankUsers from "./bank-users";
 import BrokerUsers from "./broker-users";
 
 const { Title, Text } = Typography;

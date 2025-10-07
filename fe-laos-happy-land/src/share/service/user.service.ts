@@ -60,22 +60,6 @@ export const userService = {
     }
   },
 
-  requestIsFromBank: async (
-    id: string,
-    data: {
-      note: string;
-      phone: string;
-      image: File;
-    },
-  ): Promise<void> => {
-    try {
-      await api.userControllerRequestIsFromBank(id, data);
-    } catch (error) {
-      console.error("Bank request error:", error);
-      throw error;
-    }
-  },
-
   requestRoleUpgrade: async (
     id: string,
     data: {
@@ -90,16 +74,6 @@ export const userService = {
     }
   },
 
-  getBankRequests: async (params?: {
-    page?: number;
-    perPage?: number;
-    search?: string;
-    requestedRoleUpgrade?: boolean;
-  }): Promise<APIResponse<User[]>> => {
-    const response = await api.userControllerGetBankRequests(params);
-    return response.data as unknown as APIResponse<User[]>;
-  },
-
   getRoleUpgradeRequests: async (params?: {
     page?: number;
     perPage?: number;
@@ -112,46 +86,7 @@ export const userService = {
     return response.data as unknown as APIResponse<User[]>;
   },
 
-  approveIsFromBank: async (id: string, approve: boolean): Promise<void> => {
-    await api.userControllerApproveIsFromBank(id, { approve });
-  },
-
   approveRoleUpgrade: async (id: string, approve: boolean): Promise<void> => {
     await api.userControllerApproveRoleUpgrade(id, { approve });
-  },
-
-  getRandomBankUsers: async (): Promise<User[]> => {
-    try {
-      const response = await api.userControllerGetRandomUser();
-      const data = response.data as unknown;
-
-      // Handle different response formats
-      if (data && typeof data === "object" && data !== null) {
-        // If the response has a users field
-        if (
-          "users" in data &&
-          Array.isArray((data as { users: unknown }).users)
-        ) {
-          return (data as { users: User[] }).users;
-        }
-
-        // If the response has a data field
-        if ("data" in data && Array.isArray((data as { data: unknown }).data)) {
-          return (data as { data: User[] }).data;
-        }
-
-        // If the response is a direct array
-        if (Array.isArray(data)) {
-          return data as User[];
-        }
-      }
-
-      // Fallback to empty array if structure is unexpected
-      console.warn("Unexpected response format for random bank users:", data);
-      return [];
-    } catch (error) {
-      console.error("Error fetching random bank users:", error);
-      return [];
-    }
   },
 };

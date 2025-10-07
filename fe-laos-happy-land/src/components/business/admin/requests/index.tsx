@@ -38,22 +38,22 @@ export default function AdminRequests() {
   const pageSize = 10;
 
   // Fetch bank requests
-  const {
-    data: bankRequestsData,
-    loading: bankRequestsLoading,
-    run: fetchBankRequests,
-  } = useRequest(
-    async () => {
-      return await userService.getBankRequests({
-        page: bankRequestsPage,
-        perPage: pageSize,
-        search: searchText,
-      });
-    },
-    {
-      refreshDeps: [bankRequestsPage, searchText],
-    },
-  );
+  // const {
+  //   data: bankRequestsData,
+  //   loading: bankRequestsLoading,
+  //   run: fetchBankRequests,
+  // } = useRequest(
+  //   async () => {
+  //     return await userService.getBankRequests({
+  //       page: bankRequestsPage,
+  //       perPage: pageSize,
+  //       search: searchText,
+  //     });
+  //   },
+  //   {
+  //     refreshDeps: [bankRequestsPage, searchText],
+  //   },
+  // );
 
   // Fetch broker (role upgrade) requests
   const {
@@ -73,28 +73,28 @@ export default function AdminRequests() {
     },
   );
 
-  const handleApproveBankRequest = (userId: string, approve: boolean) => {
-    modal.confirm({
-      title: approve ? t("admin.confirmApprove") : t("admin.confirmReject"),
-      content: approve
-        ? t("admin.confirmApproveBankRequest")
-        : t("admin.confirmRejectBankRequest"),
-      onOk: async () => {
-        try {
-          await userService.approveIsFromBank(userId, approve);
-          message.success(
-            approve
-              ? t("admin.bankRequestApproved")
-              : t("admin.bankRequestRejected"),
-          );
-          fetchBankRequests();
-        } catch (error) {
-          console.error("Error approving bank request:", error);
-          message.error(t("admin.actionFailed"));
-        }
-      },
-    });
-  };
+  // const handleApproveBankRequest = (userId: string, approve: boolean) => {
+  //   modal.confirm({
+  //     title: approve ? t("admin.confirmApprove") : t("admin.confirmReject"),
+  //     content: approve
+  //       ? t("admin.confirmApproveBankRequest")
+  //       : t("admin.confirmRejectBankRequest"),
+  //     onOk: async () => {
+  //       try {
+  //         await userService.approveIsFromBank(userId, approve);
+  //         message.success(
+  //           approve
+  //             ? t("admin.bankRequestApproved")
+  //             : t("admin.bankRequestRejected"),
+  //         );
+  //         fetchBankRequests();
+  //       } catch (error) {
+  //         console.error("Error approving bank request:", error);
+  //         message.error(t("admin.actionFailed"));
+  //       }
+  //     },
+  //   });
+  // };
 
   const handleApproveBrokerRequest = (userId: string, approve: boolean) => {
     modal.confirm({
@@ -200,7 +200,7 @@ export default function AdminRequests() {
                   type="primary"
                   size="small"
                   icon={<CheckCircle size={14} />}
-                  onClick={() => handleApproveBankRequest(record.id, true)}
+                  // onClick={() => handleApproveBankRequest(record.id, true)}
                 >
                   {t("admin.approve")}
                 </Button>
@@ -208,7 +208,7 @@ export default function AdminRequests() {
                   danger
                   size="small"
                   icon={<XCircle size={14} />}
-                  onClick={() => handleApproveBankRequest(record.id, false)}
+                  // onClick={() => handleApproveBankRequest(record.id, false)}
                 >
                   {t("admin.reject")}
                 </Button>
@@ -320,7 +320,7 @@ export default function AdminRequests() {
         </div>
 
         <Tabs defaultActiveKey="bank">
-          <Tabs.TabPane
+          {/* <Tabs.TabPane
             tab={
               <div className="flex items-center gap-2">
                 <Landmark className="h-4 w-4" />
@@ -345,7 +345,7 @@ export default function AdminRequests() {
                   `${range[0]}-${range[1]} ${t("admin.of")} ${total} ${t("admin.requests")}`,
               }}
             />
-          </Tabs.TabPane>
+          </Tabs.TabPane> */}
 
           <Tabs.TabPane
             tab={

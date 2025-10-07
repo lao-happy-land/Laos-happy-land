@@ -356,42 +356,42 @@ export default function Profile() {
   };
 
   // Bank request handler
-  const { loading: submittingBankRequest, run: submitBankRequest } = useRequest(
-    async () => {
-      if (!userData?.user?.id) {
-        throw new Error("User ID not found");
-      }
+  // const { loading: submittingBankRequest, run: submitBankRequest } = useRequest(
+  //   async () => {
+  //     if (!userData?.user?.id) {
+  //       throw new Error("User ID not found");
+  //     }
 
-      await userService.requestIsFromBank(userData.user.id, {
-        note: bankRequestNote,
-        phone: bankRequestPhone,
-        image: bankRequestImage!,
-      });
-    },
-    {
-      manual: true,
-      onSuccess: () => {
-        antMessage.success(t("profile.bankRequestSent"));
-        setIsBankModalOpen(false);
-        setBankRequestNote("");
-        setBankRequestPhone("");
-        setBankRequestImage(null);
-        setBankRequestFileList([]);
-      },
-      onError: (error) => {
-        console.error("Bank request error:", error);
-        antMessage.error(t("profile.bankRequestFailed"));
-      },
-    },
-  );
+  //     await userService.requestIsFromBank(userData.user.id, {
+  //       note: bankRequestNote,
+  //       phone: bankRequestPhone,
+  //       image: bankRequestImage!,
+  //     });
+  //   },
+  //   {
+  //     manual: true,
+  //     onSuccess: () => {
+  //       antMessage.success(t("profile.bankRequestSent"));
+  //       setIsBankModalOpen(false);
+  //       setBankRequestNote("");
+  //       setBankRequestPhone("");
+  //       setBankRequestImage(null);
+  //       setBankRequestFileList([]);
+  //     },
+  //     onError: (error) => {
+  //       console.error("Bank request error:", error);
+  //       antMessage.error(t("profile.bankRequestFailed"));
+  //     },
+  //   },
+  // );
 
-  const handleBankRequestSubmit = () => {
-    if (!bankRequestPhone.trim()) {
-      antMessage.error(t("profile.phoneRequired"));
-      return;
-    }
-    submitBankRequest();
-  };
+  // const handleBankRequestSubmit = () => {
+  //   if (!bankRequestPhone.trim()) {
+  //     antMessage.error(t("profile.phoneRequired"));
+  //     return;
+  //   }
+  //   submitBankRequest();
+  // };
 
   // Broker request handler
   const { loading: submittingBrokerRequest, run: submitBrokerRequest } =
@@ -703,7 +703,7 @@ export default function Profile() {
             {/* Request Buttons */}
             <div className="mt-4 space-y-3">
               {/* Bank Request Button - Show for user and broker roles who are NOT already from bank */}
-              {!isFromBank() &&
+              {/* {!isFromBank() &&
                 (userData?.user?.role?.name?.toLowerCase() === "user" ||
                   userData?.user?.role?.name?.toLowerCase() === "broker") && (
                   <Button
@@ -716,7 +716,7 @@ export default function Profile() {
                   >
                     {t("profile.requestBankStatus")}
                   </Button>
-                )}
+                )} */}
 
               {/* Broker Request Button - Show only for user role */}
               {userData?.user?.role?.name?.toLowerCase() === "user" && (
@@ -1122,7 +1122,7 @@ export default function Profile() {
       </div>
 
       {/* Bank Request Modal */}
-      <Modal
+      {/* <Modal
         title={
           <div className="flex items-center gap-2">
             <Landmark className="h-5 w-5 text-blue-600" />
@@ -1223,7 +1223,7 @@ export default function Profile() {
             </p>
           </div>
         </div>
-      </Modal>
+      </Modal> */}
 
       {/* Broker Request Modal */}
       <Modal
