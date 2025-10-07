@@ -25,6 +25,7 @@ import FeedbackInput from "./broker-feedback-form";
 import { useTranslations } from "next-intl";
 import { formatShortLocation } from "@/share/helper/format-location";
 import { useCurrencyStore } from "@/share/store/currency.store";
+import { numberToString } from "@/share/helper/number-to-string";
 
 const { TabPane } = Tabs;
 
@@ -170,10 +171,7 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      minimumFractionDigits: 0,
-    }).format(price);
+    return numberToString(price, locale, currency);
   };
 
   if (brokerLoading) {

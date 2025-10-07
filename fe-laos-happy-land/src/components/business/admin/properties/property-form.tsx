@@ -600,7 +600,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                 name="price"
                 label={
                   <Text className="font-medium">
-                    {t("property.price")} ({currency})
+                    {t("property.totalPropertyValue")} ({currency})
                   </Text>
                 }
                 rules={[
@@ -630,9 +630,6 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     {t("property.area")} (m²)
                   </span>
                 }
-                rules={[
-                  { required: true, message: t("property.pleaseEnterArea") },
-                ]}
               >
                 <InputNumber
                   min={0}

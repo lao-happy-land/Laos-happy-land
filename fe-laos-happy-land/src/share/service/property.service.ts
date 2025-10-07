@@ -10,7 +10,7 @@ const propertyService = {
   getProperties: async (query?: {
     page?: number;
     perPage?: number;
-    type?: string[];
+    type?: string;
     locationId?: string;
     keyword?: string;
     minPrice?: number;
@@ -25,8 +25,14 @@ const propertyService = {
     status?: "pending" | "approved" | "rejected";
   }): Promise<APIResponse<Property[]>> => {
     try {
-      // TODO: fix query builder for type string[]
-      const response = await api.propertyControllerGetAll(query);
+      // Convert type string to array if needed for API compatibility
+      const apiQuery = query
+        ? {
+            ...query,
+            type: query.type,
+          }
+        : undefined;
+      const response = await api.propertyControllerGetAll(apiQuery);
       const data = response.data as unknown;
 
       // Handle different response formats

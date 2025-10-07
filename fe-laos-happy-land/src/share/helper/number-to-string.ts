@@ -28,14 +28,13 @@ export const numberToString = (
     return locale === "en" ? "Contact" : locale === "la" ? "ຕິດຕໍ່" : "Liên hệ";
   }
 
-  if (number >= 1000000000) {
-    return (number / 1000000000).toFixed(1) + " " + value[0] + " " + currency;
-  }
-  if (number >= 1000000) {
-    return (number / 1000000).toFixed(1) + " " + value[1] + " " + currency;
-  }
-  if (number >= 1000) {
-    return (number / 1000).toFixed(0) + " " + value[2] + " " + currency;
-  }
-  return number.toLocaleString(language) + " " + currency;
+  // Return exact number with locale formatting
+  return (
+    number.toLocaleString(language, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }) +
+    " " +
+    currency
+  );
 };

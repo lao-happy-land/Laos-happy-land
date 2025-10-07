@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 import type { UpdatePropertyDto } from "@/@types/gentype-axios";
 import type { PropertyType, Content } from "@/@types/types";
+import { useCurrencyStore } from "@/share/store/currency.store";
 import { useRequest } from "ahooks";
 import propertyService from "@/share/service/property.service";
 import propertyTypeService from "@/share/service/property-type.service";
@@ -50,7 +51,6 @@ import { getLangByLocale, getValidLocale } from "@/share/helper/locale.helper";
 import ProjectContentBuilder from "@/components/business/common/project-content-builder";
 import MapboxLocationSelector from "@/components/business/common/mapbox-location-selector";
 import Image from "next/image";
-import { useCurrencyStore } from "@/share/store/currency.store";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -156,12 +156,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
       form.setFieldsValue({
         title: property.title,
         description: property.description,
-        price:
-          typeof property.price === "object" &&
-          property.price !== null &&
-          "USD" in property.price
-            ? parseFloat(property.price.USD)
-            : undefined,
+        price: property.price,
         area: property.details?.area,
         bedrooms: property.details?.bedrooms,
         bathrooms: property.details?.bathrooms,
@@ -654,7 +649,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                   name="price"
                   label={
                     <Text className="font-medium">
-                      {t("property.price")} (USD$)
+                      {t("property.totalPropertyValue")} ({currency})
                     </Text>
                   }
                   rules={[
@@ -695,19 +690,6 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       {t("property.area")} (m²)
                     </span>
                   }
-                  rules={[
-                    { required: true, message: t("property.pleaseEnterArea") },
-                    {
-                      type: "number",
-                      min: 1,
-                      message: t("property.areaMustBeGreaterThan0"),
-                    },
-                    {
-                      type: "number",
-                      max: 10000,
-                      message: t("property.areaMustBeLessThan10000"),
-                    },
-                  ]}
                 >
                   <InputNumber
                     min={0}
@@ -728,18 +710,6 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                           {t("property.bedrooms")}
                         </span>
                       }
-                      rules={[
-                        {
-                          type: "number",
-                          min: 0,
-                          message: t("property.bedroomsMustBeGreaterThan0"),
-                        },
-                        {
-                          type: "number",
-                          max: 20,
-                          message: t("property.bedroomsMustBeLessThan20"),
-                        },
-                      ]}
                     >
                       <InputNumber
                         min={0}
@@ -758,18 +728,6 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                           {t("property.bathrooms")}
                         </span>
                       }
-                      rules={[
-                        {
-                          type: "number",
-                          min: 0,
-                          message: t("property.bathroomsMustBeGreaterThan0"),
-                        },
-                        {
-                          type: "number",
-                          max: 10,
-                          message: t("property.bathroomsMustBeLessThan10"),
-                        },
-                      ]}
                     >
                       <InputNumber
                         min={0}

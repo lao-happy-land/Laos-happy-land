@@ -19,7 +19,7 @@ import {
   Tooltip,
   App,
 } from "antd";
-import { Plus, Search, Edit, Trash2 } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Filter, X } from "lucide-react";
 import propertyTypeService from "@/share/service/property-type.service";
 import PropertyTypeModal from "./property-type-modal";
 import { getLangByLocale, getValidLocale } from "@/share/helper/locale.helper";
@@ -54,6 +54,7 @@ export default function PropertyTypes() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
+  const [showFilters, setShowFilters] = useState(false);
 
   // Sync URL params with component state
   useEffect(() => {
@@ -314,48 +315,124 @@ export default function PropertyTypes() {
       </div>
 
       <Card>
-        <Row gutter={[16, 16]} className="mb-6">
-          <Col xs={24} md={8}>
-            <AntInput
-              placeholder={t("admin.searchPropertyTypes")}
-              value={searchInputValue}
-              onChange={(e) => setSearchInputValue(e.target.value)}
-              onPressEnter={handleSearch}
-              prefix={<Search className="h-4 w-4 text-gray-400" />}
-              allowClear
-              onClear={handleClearSearch}
-            />
-          </Col>
-          <Col xs={24} md={8}>
-            <Select
-              placeholder={t("admin.filterByTransactionType")}
-              value={filterTransaction || undefined}
-              onChange={(value) => {
-                handleTransactionTypeChange(value);
-              }}
-              allowClear
-              onClear={() => {
-                handleTransactionTypeChange("all");
-              }}
-              style={{ width: "100%" }}
-            >
-              <Option value="all">{t("common.all")}</Option>
-              <Option value="sale">{t("property.forSale")}</Option>
-              <Option value="rent">{t("property.forRent")}</Option>
-              <Option value="project">{t("navigation.projects")}</Option>
-            </Select>
-          </Col>
-          <Col xs={24} md={8}>
-            <Space>
-              <Button type="primary" onClick={handleSearch}>
+        <div className="mb-4">
+          <Row gutter={[16, 16]} align="middle">
+            <Col flex="auto">
+              <AntInput
+                placeholder={t("admin.searchPropertyTypes")}
+                value={searchInputValue}
+                onChange={(e) => setSearchInputValue(e.target.value)}
+                onPressEnter={handleSearch}
+                prefix={<Search className="h-4 w-4 text-gray-400" />}
+                suffix={
+                  searchInputValue && (
+                    <X
+                      className="h-4 w-4 cursor-pointer text-gray-400 hover:text-gray-600"
+                      onClick={handleClearSearch}
+                    />
+                  )
+                }
+                size="large"
+              />
+            </Col>
+            <Col>
+              <Button
+                size="large"
+                icon={<Filter className="h-4 w-4" />}
+                onClick={() => setShowFilters(!showFilters)}
+                type={showFilters ? "primary" : "default"}
+              >
+                {t("common.filter")}
+              </Button>
+            </Col>
+            <Col>
+              <Button size="large" type="primary" onClick={handleSearch}>
                 {t("common.search")}
               </Button>
-              <Button onClick={handleClearSearch}>
-                {t("admin.clearFilters")}
-              </Button>
-            </Space>
-          </Col>
-        </Row>
+            </Col>
+          </Row>
+        </div>
+
+        {/* Active Filters */}
+        {(searchTerm || filterTransaction !== "all") && (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <Text className="text-sm text-gray-600">
+              {t("admin.activeFilters")}:
+            </Text>
+            {searchTerm && (
+              <Tag
+                closable
+                onClose={() => {
+                  setSearchInputValue("");
+                  setSearchTerm("");
+                  handleSearch();
+                }}
+                className="bg-blue-50 text-blue-700"
+              >
+                {t("common.search")}: {searchTerm}
+              </Tag>
+            )}
+            {filterTransaction !== "all" && (
+              <Tag
+                closable
+                onClose={() => handleTransactionTypeChange("all")}
+                className="bg-green-50 text-green-700"
+              >
+                {t("admin.transactionType")}:{" "}
+                {getTransactionTypeText(filterTransaction)}
+              </Tag>
+            )}
+            <Button
+              type="link"
+              size="small"
+              onClick={handleClearSearch}
+              className="text-red-500"
+            >
+              {t("admin.clearAll")}
+            </Button>
+          </div>
+        )}
+
+        {showFilters && (
+          <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <Row gutter={[16, 16]}>
+              <Col xs={24} md={12}>
+                <div className="mb-2">
+                  <Text className="font-medium text-gray-700">
+                    {t("admin.transactionType")}
+                  </Text>
+                </div>
+                <Select
+                  placeholder={t("admin.selectTransactionType")}
+                  value={filterTransaction}
+                  onChange={handleTransactionTypeChange}
+                  allowClear
+                  onClear={() => handleTransactionTypeChange("all")}
+                  style={{ width: "100%" }}
+                  size="large"
+                >
+                  <Option value="all">{t("common.all")}</Option>
+                  <Option value="sale">{t("property.forSale")}</Option>
+                  <Option value="rent">{t("property.forRent")}</Option>
+                  <Option value="project">{t("navigation.projects")}</Option>
+                </Select>
+              </Col>
+              <Col xs={24} md={12}>
+                <div className="mb-2">
+                  <Text className="font-medium text-gray-700">&nbsp;</Text>
+                </div>
+                <Button
+                  onClick={handleClearSearch}
+                  block
+                  size="large"
+                  icon={<X className="h-4 w-4" />}
+                >
+                  {t("admin.clearFilters")}
+                </Button>
+              </Col>
+            </Row>
+          </div>
+        )}
 
         <Table
           dataSource={propertyTypesData.data}
