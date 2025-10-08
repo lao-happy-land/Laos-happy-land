@@ -71,9 +71,10 @@ api.instance.interceptors.response.use(
         window.location.href = `/${locale}/login`;
       }
     }
-    const errorMessage =
-      error instanceof Error ? error.message : "Response failed";
-    return Promise.reject(new Error(errorMessage));
+
+    // Preserve the original error with all response data
+    // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
+    return Promise.reject(error);
   },
 );
 

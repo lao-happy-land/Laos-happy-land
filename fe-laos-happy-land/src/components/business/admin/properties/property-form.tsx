@@ -117,7 +117,12 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
     {
       manual: true,
       onSuccess: (response) => {
-        setPropertyTypes(response.data ?? []);
+        const data = response.data ?? [];
+        setPropertyTypes(data);
+        // Automatically set the first property type when transaction type changes
+        if (data.length > 0 && data[0]) {
+          form.setFieldValue("typeId", data[0].id);
+        }
       },
       onError: (error) => {
         console.error("Failed to fetch property types:", error);
@@ -443,7 +448,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
 
   const handleTransactionTypeChange = (value: "rent" | "sale" | "project") => {
     setSelectedTransactionType(value);
-    form.setFieldsValue({ typeId: undefined });
+    // Property type will be automatically set to first item when property types are loaded
   };
 
   if (propertyLoading) {
