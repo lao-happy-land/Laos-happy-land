@@ -104,6 +104,10 @@ export default function CreateProperty() {
       manual: true,
       onSuccess: (data) => {
         setPropertyTypes(data);
+        // Automatically set the first property type when transaction type changes
+        if (data && data.length > 0 && data[0]) {
+          form.setFieldValue("typeId", data[0].id);
+        }
       },
       onError: () => {
         message.error(t("property.cannotLoadPropertyTypes"));
@@ -712,6 +716,7 @@ export default function CreateProperty() {
                     form={form}
                     name="content"
                     textFieldName="value"
+                    initialBlockCount={3}
                   />
                 </Form.Item>
               </div>

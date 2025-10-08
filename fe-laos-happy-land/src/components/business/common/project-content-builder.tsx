@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Dropdown,
   Form,
@@ -31,6 +31,7 @@ type Props = {
   form: FormInstance;
   name?: string | number | Array<string | number>;
   textFieldName?: "text" | "value";
+  initialBlockCount?: number;
 };
 
 const { TextArea } = Input;
@@ -40,12 +41,36 @@ export default function ProjectContentBuilder({
   form,
   name = "content",
   textFieldName = "value",
+  initialBlockCount = 0,
 }: Props) {
-  const listPathArr: Array<string | number> = Array.isArray(name)
-    ? name
-    : [name];
+  const listPathArr: Array<string | number> = useMemo(
+    () => (Array.isArray(name) ? name : [name]),
+    [name],
+  );
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
+  const [initialized, setInitialized] = useState(false);
   const t = useTranslations();
+
+  // Initialize with default blocks if specified
+  useEffect(() => {
+    if (initialized || initialBlockCount <= 0) return;
+
+    const currentValue = form.getFieldValue(listPathArr) as Block[] | undefined;
+    if (!currentValue || currentValue.length === 0) {
+      const initialBlocks: Block[] = Array.from(
+        { length: initialBlockCount },
+        () => {
+          if (textFieldName === "text") {
+            return { type: "paragraph", text: "" };
+          }
+          return { type: "paragraph", value: "" };
+        },
+      );
+
+      form.setFieldsValue({ [listPathArr[0] as string]: initialBlocks });
+      setInitialized(true);
+    }
+  }, [form, listPathArr, textFieldName, initialBlockCount, initialized]);
 
   const openAndUploadImage = async (fieldIndex: number) => {
     try {
@@ -162,42 +187,74 @@ export default function ProjectContentBuilder({
                 <div className="flex-1">
                   <div className="mb-2">
                     <Form.Item noStyle shouldUpdate={() => true}>
-                      {({ getFieldValue }) => {
+                      {({ getFieldValue, setFieldValue }) => {
                         const type = getFieldValue([
                           ...listPathArr,
                           field.name,
                           "type",
                         ]) as BlockType | undefined;
+
+                        const changeBlockType = (newType: BlockType) => {
+                          const currentBlock = getFieldValue([
+                            ...listPathArr,
+                            field.name,
+                          ]) as Block;
+
+                          let updatedBlock: Block;
+                          if (newType === "image") {
+                            updatedBlock = { type: "image", url: "" };
+                          } else if (textFieldName === "text") {
+                            updatedBlock = {
+                              type: newType,
+                              text:
+                                currentBlock && "text" in currentBlock
+                                  ? currentBlock.text
+                                  : "",
+                            };
+                          } else {
+                            updatedBlock = {
+                              type: newType,
+                              value:
+                                currentBlock && "value" in currentBlock
+                                  ? currentBlock.value
+                                  : "",
+                            };
+                          }
+
+                          setFieldValue(
+                            [...listPathArr, field.name],
+                            updatedBlock,
+                          );
+                        };
+
                         return (
                           <>
-                            {type === undefined && (
-                              <Form.Item
-                                {...field}
-                                name={[field.name, "type"]}
-                                rules={[
-                                  {
-                                    required: true,
-                                    message: t("property.pleaseSelectContent"),
-                                  },
-                                ]}
+                            <div className="mb-2 flex items-center gap-2">
+                              <span className="text-xs text-gray-500">
+                                {t("property.type")}:
+                              </span>
+                              <Select
+                                size="small"
+                                value={type ?? "paragraph"}
+                                onChange={changeBlockType}
+                                style={{ width: 120 }}
                               >
-                                <Select
-                                  placeholder={t(
-                                    "property.pleaseSelectContent",
-                                  )}
-                                >
-                                  <Option value="heading">
-                                    {t("property.heading")}
-                                  </Option>
-                                  <Option value="paragraph">
-                                    {t("property.paragraph")}
-                                  </Option>
-                                  <Option value="image">
-                                    {t("property.image")}
-                                  </Option>
-                                </Select>
-                              </Form.Item>
-                            )}
+                                <Option value="heading">
+                                  {t("property.heading")}
+                                </Option>
+                                <Option value="paragraph">
+                                  {t("property.paragraph")}
+                                </Option>
+                                <Option value="image">
+                                  {t("property.image")}
+                                </Option>
+                              </Select>
+                            </div>
+
+                            <Form.Item hidden name={[field.name, "type"]}>
+                              <Input />
+                            </Form.Item>
+
                             {type === "heading" && (
                               <Form.Item
                                 name={[field.name, textFieldName]}

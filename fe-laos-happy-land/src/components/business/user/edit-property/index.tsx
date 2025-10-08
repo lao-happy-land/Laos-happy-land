@@ -115,7 +115,13 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
     },
     {
       manual: true,
-      onSuccess: (data) => setPropertyTypes(data),
+      onSuccess: (data) => {
+        setPropertyTypes(data);
+        // Automatically set the first property type when transaction type changes
+        if (data && data.length > 0 && data[0]) {
+          form.setFieldValue("typeId", data[0].id);
+        }
+      },
       onError: () => {
         message.error(t("admin.cannotLoadPropertyTypes"));
       },
@@ -497,7 +503,6 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
 
   const handleTransactionTypeChange = (value: "rent" | "sale" | "project") => {
     setSelectedTransactionType(value);
-    form.setFieldsValue({ typeId: undefined });
   };
 
   if (loadingProperty || !property) {
