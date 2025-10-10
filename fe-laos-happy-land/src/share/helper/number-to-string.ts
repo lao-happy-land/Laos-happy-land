@@ -3,17 +3,6 @@ export const numberToString = (
   locale = "en",
   currency = "USD",
 ) => {
-  // Default unit values based on currency
-  let value = ["billion", "million", "thousand"];
-
-  if (locale === "en") {
-    value = ["billion", "million", "thousand"];
-  } else if (locale === "vn") {
-    value = ["tỷ", "triệu", "nghìn"];
-  } else if (locale === "la") {
-    value = ["ຕື້", "ລ້ານ", "ພັນ"];
-  }
-
   let language = "en-US";
   if (locale === "en") {
     language = "en-US";

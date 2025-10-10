@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useClickAway, useEventListener } from "ahooks";
 import { useTranslations } from "next-intl";
 import {
@@ -393,17 +393,120 @@ const Properties = ({ transaction }: PropertiesProps) => {
     })),
   ];
 
-  // Create translated price ranges
-  const priceRanges = [
-    { value: "all", label: t("search.priceRanges.all") },
-    { value: "under-500", label: t("search.priceRanges.under500") },
-    { value: "500-800", label: t("search.priceRanges.range500to800") },
-    { value: "800-1000", label: t("search.priceRanges.range800to1000") },
-    { value: "1000-2000", label: t("search.priceRanges.range1to2billion") },
-    { value: "2000-5000", label: t("search.priceRanges.range2to5billion") },
-    { value: "5000-10000", label: t("search.priceRanges.range5to10billion") },
-    { value: "over-10000", label: t("search.priceRanges.over10billion") },
-  ];
+  // Get price ranges based on currency and transaction type
+  const getPriceRanges = useCallback(
+    (currency: string, transactionType: string) => {
+      const baseRanges = [{ value: "all", label: t("search.priceRanges.all") }];
+
+      if (currency === "USD") {
+        if (transactionType === "sale" || transactionType === "project") {
+          // Buy and Project ranges for USD
+          return [
+            ...baseRanges,
+            { value: "0-20000", label: "$0 - $20,000" },
+            { value: "20000-50000", label: "$20,000 - $50,000" },
+            { value: "50000-100000", label: "$50,000 - $100,000" },
+            { value: "100000-300000", label: "$100,000 - $300,000" },
+            { value: "300000-500000", label: "$300,000 - $500,000" },
+            { value: "500000-1000000", label: "$500,000 - $1,000,000" },
+            { value: "1000000-2000000", label: "$1,000,000 - $2,000,000" },
+            { value: "2000000-2500000", label: "$2,000,000 - $2,500,000" },
+          ];
+        } else {
+          // Rent ranges for USD
+          return [
+            ...baseRanges,
+            { value: "0-100", label: "$0 - $100" },
+            { value: "100-200", label: "$100 - $200" },
+            { value: "200-500", label: "$200 - $500" },
+            { value: "500-1000", label: "$500 - $1,000" },
+            { value: "1000-5000", label: "$1,000 - $5,000" },
+            { value: "5000-10000", label: "$5,000 - $10,000" },
+            { value: "10000-50000", label: "$10,000 - $50,000" },
+            { value: "50000-100000", label: "$50,000 - $100,000" },
+          ];
+        }
+      } else if (currency === "LAK") {
+        if (transactionType === "sale" || transactionType === "project") {
+          // Buy and Project ranges for LAK
+          return [
+            ...baseRanges,
+            { value: "0-400000000", label: "0 - 400M LAK" },
+            { value: "400000000-1000000000", label: "400M - 1B LAK" },
+            { value: "1000000000-2000000000", label: "1B - 2B LAK" },
+            { value: "2000000000-6000000000", label: "2B - 6B LAK" },
+            { value: "6000000000-10000000000", label: "6B - 10B LAK" },
+            { value: "10000000000-20000000000", label: "10B - 20B LAK" },
+            { value: "20000000000-40000000000", label: "20B - 40B LAK" },
+            { value: "40000000000-50000000000", label: "40B - 50B LAK" },
+          ];
+        } else {
+          // Rent ranges for LAK
+          return [
+            ...baseRanges,
+            { value: "0-2000000", label: "0 - 2M LAK" },
+            { value: "2000000-5000000", label: "2M - 5M LAK" },
+            { value: "5000000-10000000", label: "5M - 10M LAK" },
+            { value: "10000000-20000000", label: "10M - 20M LAK" },
+            { value: "20000000-100000000", label: "20M - 100M LAK" },
+            { value: "100000000-200000000", label: "100M - 200M LAK" },
+            { value: "200000000-1000000000", label: "200M - 1B LAK" },
+            { value: "1000000000-2000000000", label: "1B - 2B LAK" },
+          ];
+        }
+      } else if (currency === "THB") {
+        if (transactionType === "sale" || transactionType === "project") {
+          // Buy and Project ranges for THB
+          return [
+            ...baseRanges,
+            { value: "0-500000", label: "0 - 500K THB" },
+            { value: "500000-1500000", label: "500K - 1.5M THB" },
+            { value: "1500000-3000000", label: "1.5M - 3M THB" },
+            { value: "3000000-10000000", label: "3M - 10M THB" },
+            { value: "10000000-15000000", label: "10M - 15M THB" },
+            { value: "15000000-30000000", label: "15M - 30M THB" },
+            { value: "30000000-60000000", label: "30M - 60M THB" },
+            { value: "60000000-80000000", label: "60M - 80M THB" },
+          ];
+        } else {
+          // Rent ranges for THB
+          return [
+            ...baseRanges,
+            { value: "0-3000", label: "0 - 3K THB" },
+            { value: "3000-8000", label: "3K - 8K THB" },
+            { value: "8000-15000", label: "8K - 15K THB" },
+            { value: "15000-30000", label: "15K - 30K THB" },
+            { value: "30000-150000", label: "30K - 150K THB" },
+            { value: "150000-300000", label: "150K - 300K THB" },
+            { value: "300000-1500000", label: "300K - 1.5M THB" },
+            { value: "1500000-3000000", label: "1.5M - 3M THB" },
+          ];
+        }
+      }
+
+      // Default ranges (fallback)
+      return [
+        ...baseRanges,
+        { value: "under-500", label: t("search.priceRanges.under500") },
+        { value: "500-800", label: t("search.priceRanges.range500to800") },
+        { value: "800-1000", label: t("search.priceRanges.range800to1000") },
+        { value: "1000-2000", label: t("search.priceRanges.range1to2billion") },
+        { value: "2000-5000", label: t("search.priceRanges.range2to5billion") },
+        {
+          value: "5000-10000",
+          label: t("search.priceRanges.range5to10billion"),
+        },
+        { value: "over-10000", label: t("search.priceRanges.over10billion") },
+      ];
+    },
+    [t],
+  );
+
+  // Create translated price ranges based on current currency and transaction type
+  const priceRanges = useMemo(
+    () => getPriceRanges(currency, transaction),
+    [getPriceRanges, currency, transaction],
+  );
 
   const handleSearch = () => {
     const params: Record<string, string | string[]> = {};
@@ -457,57 +560,30 @@ const Properties = ({ transaction }: PropertiesProps) => {
     let minValue = 0;
     let maxValue = 100000000000;
 
-    switch (rangeValue) {
-      case "under-500":
-        minValue = 0;
-        maxValue = 500000000;
-        break;
-      case "500-800":
-        minValue = 500000000;
-        maxValue = 800000000;
-        break;
-      case "800-1000":
-        minValue = 800000000;
-        maxValue = 1000000000;
-        break;
-      case "1000-2000":
-        minValue = 1000000000;
-        maxValue = 2000000000;
-        break;
-      case "2000-5000":
-        minValue = 2000000000;
-        maxValue = 5000000000;
-        break;
-      case "5000-10000":
-        minValue = 5000000000;
-        maxValue = 10000000000;
-        break;
-      case "over-10000":
-        minValue = 10000000000;
-        maxValue = 100000000000;
-        break;
-      case "all":
-      default:
-        minValue = 0;
-        maxValue = 100000000000;
-        break;
+    if (rangeValue === "all") {
+      minValue = 0;
+      maxValue = 100000000000;
+    } else {
+      // Parse range format "min-max"
+      const parts = rangeValue.split("-");
+      if (parts.length === 2) {
+        const minStr = parts[0];
+        const maxStr = parts[1];
+        if (minStr && maxStr) {
+          const parsedMin = parseInt(minStr);
+          const parsedMax = parseInt(maxStr);
+
+          if (!isNaN(parsedMin) && !isNaN(parsedMax)) {
+            minValue = parsedMin;
+            maxValue = parsedMax;
+          }
+        }
+      }
     }
 
     setPriceRange([minValue, maxValue]);
-    // For "all" option, clear the input fields
-    if (rangeValue === "all") {
-      setMinPrice("");
-      setMaxPrice("");
-    } else {
-      // For "under-500" option, show "0" in min price input
-      if (rangeValue === "under-500") {
-        setMinPrice("0");
-        setMaxPrice(maxValue.toString());
-      } else {
-        setMinPrice(minValue.toString());
-        setMaxPrice(maxValue.toString());
-      }
-    }
+    setMinPrice(minValue.toString());
+    setMaxPrice(maxValue.toString());
 
     const params: Record<string, string> = {};
     if (minValue !== 0) {
@@ -732,24 +808,33 @@ const Properties = ({ transaction }: PropertiesProps) => {
     const newMaxArea = parseInt(urlMaxArea ?? "1000");
     setAreaRange([newMinArea, newMaxArea]);
 
-    // Update selected price range
+    // Update selected price range based on current price ranges
     let newSelectedPriceRange = "all";
-    if (newMinPrice === 0 && newMaxPrice === 500000000) {
-      newSelectedPriceRange = "under-500";
-    } else if (newMinPrice === 500000000 && newMaxPrice === 800000000) {
-      newSelectedPriceRange = "500-800";
-    } else if (newMinPrice === 800000000 && newMaxPrice === 1000000000) {
-      newSelectedPriceRange = "800-1000";
-    } else if (newMinPrice === 1000000000 && newMaxPrice === 2000000000) {
-      newSelectedPriceRange = "1000-2000";
-    } else if (newMinPrice === 2000000000 && newMaxPrice === 5000000000) {
-      newSelectedPriceRange = "2000-5000";
-    } else if (newMinPrice === 5000000000 && newMaxPrice === 10000000000) {
-      newSelectedPriceRange = "5000-10000";
-    } else if (newMinPrice === 10000000000 && newMaxPrice === 100000000000) {
-      newSelectedPriceRange = "over-10000";
-    } else if (newMinPrice !== 0 || newMaxPrice !== 100000000000) {
-      newSelectedPriceRange = "";
+    if (newMinPrice !== 0 || newMaxPrice !== 100000000000) {
+      // Find matching range from current price ranges
+      const matchingRange = priceRanges.find((range) => {
+        if (range.value === "all") return false;
+
+        // Parse range format "min-max"
+        const parts = range.value.split("-");
+        if (parts.length === 2) {
+          const minStr = parts[0];
+          const maxStr = parts[1];
+          if (minStr && maxStr) {
+            const rangeMin = parseInt(minStr);
+            const rangeMax = parseInt(maxStr);
+
+            return newMinPrice === rangeMin && newMaxPrice === rangeMax;
+          }
+        }
+        return false;
+      });
+
+      if (matchingRange) {
+        newSelectedPriceRange = matchingRange.value;
+      } else {
+        newSelectedPriceRange = "";
+      }
     }
     setSelectedPriceRange(newSelectedPriceRange);
 
@@ -776,7 +861,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
     setSelectedAreaRange(newSelectedAreaRange);
 
     setIsInitialLoad(false);
-  }, [searchParams]);
+  }, [searchParams, priceRanges]);
 
   useEffect(() => {
     if (isInitialLoad) return;
@@ -1208,7 +1293,11 @@ const Properties = ({ transaction }: PropertiesProps) => {
                             <Typography.Text className="mb-1 block text-sm text-gray-600">
                               {t("search.from")}:{" "}
                               {minPrice
-                                ? numberToString(parseInt(minPrice))
+                                ? numberToString(
+                                    parseInt(minPrice),
+                                    locale,
+                                    currency,
+                                  )
                                 : "0"}
                             </Typography.Text>
                             <Input
@@ -1229,7 +1318,11 @@ const Properties = ({ transaction }: PropertiesProps) => {
                             <Typography.Text className="mb-1 block text-sm text-gray-600">
                               {t("search.to")}:{" "}
                               {maxPrice
-                                ? numberToString(parseInt(maxPrice))
+                                ? numberToString(
+                                    parseInt(maxPrice),
+                                    locale,
+                                    currency,
+                                  )
                                 : "∞"}
                             </Typography.Text>
                             <Input
@@ -1255,7 +1348,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                           tooltip={{
                             formatter: (value?: number) => {
                               if (typeof value !== "number") return "";
-                              return `${numberToString(value)}`;
+                              return `${numberToString(value, locale, currency)}`;
                             },
                           }}
                           max={100000000000}
@@ -1353,7 +1446,11 @@ const Properties = ({ transaction }: PropertiesProps) => {
                             </Typography.Text>
                             <Typography.Text className="mb-2 block text-lg font-bold text-red-600">
                               {minPrice
-                                ? numberToString(parseInt(minPrice))
+                                ? numberToString(
+                                    parseInt(minPrice),
+                                    locale,
+                                    currency,
+                                  )
                                 : "0"}
                             </Typography.Text>
                           </div>
@@ -1379,7 +1476,11 @@ const Properties = ({ transaction }: PropertiesProps) => {
                             </Typography.Text>
                             <Typography.Text className="mb-2 block text-lg font-bold text-red-600">
                               {maxPrice
-                                ? numberToString(parseInt(maxPrice))
+                                ? numberToString(
+                                    parseInt(maxPrice),
+                                    locale,
+                                    currency,
+                                  )
                                 : "∞"}
                             </Typography.Text>
                           </div>
@@ -1408,7 +1509,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                           tooltip={{
                             formatter: (value?: number) => {
                               if (typeof value !== "number") return "";
-                              return `${numberToString(value)}`;
+                              return `${numberToString(value, locale, currency)}`;
                             },
                           }}
                           max={100000000000}
@@ -1548,7 +1649,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                           tooltip={{
                             formatter: (value?: number) => {
                               if (typeof value !== "number") return "";
-                              return `${numberToString(value)}`;
+                              return `${numberToString(value, locale, currency)}`;
                             },
                           }}
                           max={1000}

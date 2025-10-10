@@ -335,35 +335,79 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
     location?: LocationDto;
     transactionType: "rent" | "sale" | "project";
   }) => {
+    // Comprehensive validation with toast messages
+    const errors: string[] = [];
+
+    // Validate title
+    if (!values.title || values.title.trim().length === 0) {
+      errors.push(t("property.titleRequired"));
+    } else if (values.title.trim().length < 10) {
+      errors.push(t("property.titleMinLength"));
+    }
+
+    // Validate description
+    if (!values.description || values.description.trim().length === 0) {
+      errors.push(t("property.descriptionRequired"));
+    } else if (values.description.trim().length < 50) {
+      errors.push(t("property.descriptionMinLength"));
+    }
+
+    // Validate price
+    if (!values.price || values.price <= 0) {
+      errors.push(t("property.priceRequired"));
+    }
+
+    // Validate area
+    if (!values.area || values.area <= 0) {
+      errors.push(t("property.areaRequired"));
+    }
+
+    // Validate property type
+    if (!values.typeId) {
+      errors.push(t("property.propertyTypeRequired"));
+    }
+
+    // Validate transaction type
+    if (!values.transactionType) {
+      errors.push(t("property.transactionTypeRequired"));
+    }
+
+    // Validate location
+    if (!locationData?.locationInfoId || !locationData?.location) {
+      errors.push(t("property.pleaseSelectLocationOnMap"));
+    }
+
+    // Validate images for non-project properties
     if (selectedTransactionType !== "project") {
-      // Check main image - either new upload or existing image
       const hasMainImage = mainImageFile ?? mainImageUrl ?? existingMainImage;
       if (!hasMainImage) {
-        message.error(t("property.pleaseUploadMainImage"));
-        return;
+        errors.push(t("property.pleaseUploadMainImage"));
       }
 
-      // Check additional images - count existing images + new uploads
       const totalImages = existingImages.length + imageUrls.length;
       if (totalImages < 3) {
-        message.error(t("property.pleaseUploadAtLeast3Images"));
-        return;
+        errors.push(t("property.pleaseUploadAtLeast3Images"));
       }
     }
 
-    // Check location from state (not form field)
-    if (!locationData?.locationInfoId || !locationData?.location) {
-      message.error(t("property.pleaseSelectLocationOnMap"));
+    // Show all validation errors
+    if (errors.length > 0) {
+      errors.forEach((error) => {
+        message.error(error);
+      });
       return;
     }
 
     // Ensure location data is included in the values
-    const valuesWithLocation = {
-      ...values,
-      location: locationData.location,
-    };
-
-    submitForm(valuesWithLocation);
+    if (locationData?.location) {
+      const valuesWithLocation = {
+        ...values,
+        location: locationData.location,
+      };
+      submitForm(valuesWithLocation);
+    } else {
+      message.error(t("property.pleaseSelectLocationOnMap"));
+    }
   };
 
   const handleMainImageUpload = async (file: File) => {
