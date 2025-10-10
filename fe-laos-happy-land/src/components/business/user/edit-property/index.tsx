@@ -283,32 +283,50 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
     locationText?: string;
     transactionType: "rent" | "sale" | "project";
   }) => {
-    // Collect all validation errors
+    // Comprehensive validation with toast messages
     const errors: string[] = [];
 
-    // Validate required fields
-    if (!values.title || values.title.trim().length < 10) {
+    // Validate title
+    if (!values.title || values.title.trim().length === 0) {
+      errors.push(t("property.titleRequired"));
+    } else if (values.title.trim().length < 10) {
       errors.push(t("property.titleMinLength"));
     }
-    if (!values.description || values.description.trim().length < 50) {
+
+    // Validate description
+    if (!values.description || values.description.trim().length === 0) {
+      errors.push(t("property.descriptionRequired"));
+    } else if (values.description.trim().length < 50) {
       errors.push(t("property.descriptionMinLength"));
     }
-    if (!values.typeId) {
-      errors.push(t("property.pleaseSelectPropertyType"));
+
+    // Validate price
+    if (!values.price || values.price <= 0) {
+      errors.push(t("property.priceRequired"));
     }
-    // Check locationInfoId from form or state
+
+    // Validate area
+    if (!values.area || values.area <= 0) {
+      errors.push(t("property.areaRequired"));
+    }
+
+    // Validate property type
+    if (!values.typeId) {
+      errors.push(t("property.propertyTypeRequired"));
+    }
+
+    // Validate transaction type
+    if (!values.transactionType) {
+      errors.push(t("property.transactionTypeRequired"));
+    }
+
+    // Validate location
     const currentLocationInfoId =
       values.locationInfoId || selectedLocationInfoId;
     if (!currentLocationInfoId) {
       errors.push(t("property.pleaseSelectArea"));
     }
-    if (!values.price || values.price <= 0) {
-      errors.push(t("property.pleaseEnterValidPrice"));
-    }
-    if (!values.area || values.area <= 0) {
-      errors.push(t("property.pleaseEnterValidArea"));
-    }
-    // Check location from form field
+
     if (!values.location) {
       errors.push(t("property.pleaseSelectLocationOnMap"));
     }
@@ -659,16 +677,6 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                   }
                   rules={[
                     { required: true, message: t("property.pleaseEnterPrice") },
-                    {
-                      type: "number",
-                      min: 1,
-                      message: t("property.priceMustBeGreaterThan0"),
-                    },
-                    {
-                      type: "number",
-                      max: 999999999,
-                      message: t("property.priceMustBeLessThan999999999"),
-                    },
                   ]}
                 >
                   <InputNumber
@@ -681,7 +689,6 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       return parsed ? Number(parsed) : 0;
                     }}
                     min={0}
-                    max={999999999}
                     size="large"
                     style={{ width: "100%" }}
                   />

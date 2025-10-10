@@ -239,18 +239,66 @@ export default function CreateProperty() {
     locationText?: string;
     transactionType: "rent" | "sale" | "project";
   }) => {
-    if (selectedTransactionType !== "project" && !mainImageUrl) {
-      message.error(t("property.pleaseUploadMainImage"));
-      return;
+    // Comprehensive validation with toast messages
+    const errors: string[] = [];
+
+    // Validate title
+    if (!values.title || values.title.trim().length === 0) {
+      errors.push(t("property.titleRequired"));
+    } else if (values.title.trim().length < 10) {
+      errors.push(t("property.titleMinLength"));
     }
-    if (selectedTransactionType !== "project" && imageUrls.length < 3) {
-      message.error(t("property.pleaseUploadAtLeast3Images"));
-      return;
+
+    // Validate description
+    if (!values.description || values.description.trim().length === 0) {
+      errors.push(t("property.descriptionRequired"));
+    } else if (values.description.trim().length < 50) {
+      errors.push(t("property.descriptionMinLength"));
     }
+
+    // Validate price
+    if (!values.price || values.price <= 0) {
+      errors.push(t("property.priceRequired"));
+    }
+
+    // Validate area
+    if (!values.area || values.area <= 0) {
+      errors.push(t("property.areaRequired"));
+    }
+
+    // Validate property type
+    if (!values.typeId) {
+      errors.push(t("property.propertyTypeRequired"));
+    }
+
+    // Validate transaction type
+    if (!values.transactionType) {
+      errors.push(t("property.transactionTypeRequired"));
+    }
+
+    // Validate location
     if (!locationData?.locationInfoId || !locationData?.location) {
-      message.error(t("property.pleaseSelectLocationOnMap"));
+      errors.push(t("property.pleaseSelectLocationOnMap"));
+    }
+
+    // Validate images for non-project properties
+    if (selectedTransactionType !== "project") {
+      if (!mainImageUrl) {
+        errors.push(t("property.pleaseUploadMainImage"));
+      }
+
+      if (imageUrls.length < 3) {
+        errors.push(t("property.pleaseUploadAtLeast3Images"));
+      }
+    }
+    // Show all validation errors
+    if (errors.length > 0) {
+      errors.forEach((error) => {
+        message.error(error);
+      });
       return;
     }
+
     submitForm(values);
   };
 
@@ -487,12 +535,6 @@ export default function CreateProperty() {
                   }
                   rules={[
                     { required: true, message: t("property.pleaseEnterPrice") },
-                    { type: "number", min: 1, message: t("property.priceMin") },
-                    {
-                      type: "number",
-                      max: 1000000000,
-                      message: t("property.priceMax"),
-                    },
                   ]}
                 >
                   <InputNumber
