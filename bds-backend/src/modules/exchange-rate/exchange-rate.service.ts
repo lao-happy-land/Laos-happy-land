@@ -93,18 +93,24 @@ export class ExchangeRateService {
         property.priceHistory?.[property.priceHistory.length - 1]?.rates?.USD;
       if (latestUsd === undefined || latestUsd === null) continue;
 
-      const convertedLatest: Record<string, number> = { USD: latestUsd };
+      const convertedLatest: Record<string, number> = {
+        USD: Math.round(latestUsd),
+      };
       Object.entries(rates).forEach(([currency, rate]) => {
-        if (currency !== 'USD') convertedLatest[currency] = latestUsd * rate;
+        if (currency !== 'USD')
+          convertedLatest[currency] = Math.round(latestUsd * rate);
       });
       property.price = convertedLatest;
 
       if (property.priceHistory?.length) {
         property.priceHistory = property.priceHistory.map((entry) => {
           const usdOriginal = entry.rates?.USD ?? 0;
-          const newRates: Record<string, number> = { USD: usdOriginal };
+          const newRates: Record<string, number> = {
+            USD: Math.round(usdOriginal),
+          };
           Object.entries(rates).forEach(([currency, rate]) => {
-            if (currency !== 'USD') newRates[currency] = usdOriginal * rate;
+            if (currency !== 'USD')
+              newRates[currency] = Math.round(usdOriginal * rate);
           });
           return {
             ...entry,
