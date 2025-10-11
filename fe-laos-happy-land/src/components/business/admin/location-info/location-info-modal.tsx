@@ -238,29 +238,6 @@ const LocationInfoModal = ({
               required: true,
               message: t("admin.pleaseEnterLocationName"),
             },
-            {
-              min: 2,
-              message: t("admin.locationNameMinLength"),
-            },
-            {
-              max: 100,
-              message: t("admin.locationNameMaxLength"),
-            },
-            {
-              validator: (_, value: string) => {
-                if (!value || value.trim().length === 0) {
-                  return Promise.reject(
-                    new Error(t("admin.pleaseEnterLocationName")),
-                  );
-                }
-                if (value.trim().length < 2) {
-                  return Promise.reject(
-                    new Error(t("admin.locationNameMinLength")),
-                  );
-                }
-                return Promise.resolve();
-              },
-            },
           ]}
         >
           <Input
@@ -291,7 +268,7 @@ const LocationInfoModal = ({
               <div className="text-center">
                 <UploadIcon className="mx-auto mb-2 h-8 w-8 text-gray-400" />
                 <div className="text-sm text-gray-600">
-                  {t("common.uploadImage")}
+                  {t("common.upload")}
                 </div>
               </div>
             )}

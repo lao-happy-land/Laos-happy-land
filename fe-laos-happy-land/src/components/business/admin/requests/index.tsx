@@ -224,15 +224,13 @@ export default function AdminRequests() {
           return <Tag color="processing">{t("common.loading")}</Tag>;
         }
 
-        const bankName = getBankName(record.bankId);
-        const isNotAvailable = bankName === t("common.notAvailable");
-        const isBankId = bankName.startsWith("Bank ID:");
+        const name = record.bank?.name;
+
+        const isNotAvailable = name === "";
 
         return (
-          <Tag
-            color={isNotAvailable ? "default" : isBankId ? "warning" : "blue"}
-          >
-            {bankName}
+          <Tag color={isNotAvailable ? "default" : "blue"}>
+            {name ?? t("common.notAvailable")}
           </Tag>
         );
       },

@@ -679,6 +679,9 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     {t("property.area")} (m²)
                   </span>
                 }
+                rules={[
+                  { required: true, message: t("property.pleaseEnterArea") },
+                ]}
               >
                 <InputNumber
                   min={0}
@@ -866,6 +869,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                   form={form}
                   name="content"
                   textFieldName="value"
+                  initialBlockCount={3}
                 />
               </Form.Item>
             </div>

@@ -560,6 +560,9 @@ export default function CreateProperty() {
                       {t("property.area")} (m²)
                     </span>
                   }
+                  rules={[
+                    { required: true, message: t("property.pleaseEnterArea") },
+                  ]}
                 >
                   <InputNumber
                     min={0}
@@ -703,11 +706,6 @@ export default function CreateProperty() {
                   {
                     required: true,
                     message: t("property.pleaseEnterDescription"),
-                  },
-                  { min: 20, message: t("property.descriptionMinLength") },
-                  {
-                    max: 2000,
-                    message: t("property.descriptionMaxLength"),
                   },
                 ]}
               >

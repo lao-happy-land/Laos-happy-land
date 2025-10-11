@@ -84,10 +84,8 @@ const Properties = ({ transaction }: PropertiesProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
 
-  const [priceRange, setPriceRange] = useState<[number, number]>([
-    0, 100000000000,
-  ]);
-  const [areaRange, setAreaRange] = useState<[number, number]>([0, 1000]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
+  const [areaRange, setAreaRange] = useState<[number, number]>([0, 10000]);
   const [selectedPriceRange, setSelectedPriceRange] = useState<string>("all");
   const [selectedAreaRange, setSelectedAreaRange] = useState<string>("all");
 
@@ -198,7 +196,6 @@ const Properties = ({ transaction }: PropertiesProps) => {
           const shouldRemove =
             value === "" ||
             value === "0" ||
-            value === "100000000000" ||
             value === "false" ||
             value === "all" ||
             !value ||
@@ -240,7 +237,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
         apiParams.minPrice = parseInt(minPrice);
       }
 
-      if (maxPrice && maxPrice !== "100000000000" && maxPrice !== "") {
+      if (maxPrice && maxPrice !== "" && parseInt(maxPrice) !== maxPriceValue) {
         apiParams.maxPrice = parseInt(maxPrice);
       }
 
@@ -248,7 +245,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
         apiParams.minArea = parseInt(minArea);
       }
 
-      if (maxArea && maxArea !== "100000000000") {
+      if (maxArea && maxArea !== "" && parseInt(maxArea) !== 10000) {
         apiParams.maxArea = parseInt(maxArea);
       }
 
@@ -393,37 +390,193 @@ const Properties = ({ transaction }: PropertiesProps) => {
     })),
   ];
 
+  // Get max price based on currency and transaction type
+  const getMaxPrice = (currency: string, transactionType: string) => {
+    if (currency === "USD") {
+      return transactionType === "sale" || transactionType === "project"
+        ? 5000000
+        : 100000;
+    } else if (currency === "LAK") {
+      return transactionType === "sale" || transactionType === "project"
+        ? 100000000000
+        : 2000000000;
+    } else if (currency === "VND") {
+      return transactionType === "sale" || transactionType === "project"
+        ? 100000000000
+        : 2000000000;
+    } else if (currency === "THB") {
+      return transactionType === "sale" || transactionType === "project"
+        ? 150000000
+        : 2000000;
+    }
+    return 100000000000; // Default fallback
+  };
+
+  // Calculate max price for current currency and transaction type
+  const maxPriceValue = useMemo(
+    () => getMaxPrice(currency, transaction),
+    [currency, transaction],
+  );
+
+  // Get appropriate step size based on max price
+  const priceStep = useMemo(() => {
+    if (maxPriceValue >= 10000000000) {
+      return 100000000; // 100M for very large values (LAK, VND)
+    } else if (maxPriceValue >= 1000000000) {
+      return 10000000; // 10M for large values
+    } else if (maxPriceValue >= 100000000) {
+      return 1000000; // 1M for medium-large values (THB)
+    } else if (maxPriceValue >= 1000000) {
+      return 100000; // 100K for medium values
+    } else {
+      return 1000; // 1K for smaller values (USD rent)
+    }
+  }, [maxPriceValue]);
+
+  // Initialize price range when max value changes
+  useEffect(() => {
+    setPriceRange((prevRange) => {
+      if (prevRange[1] === 0 || prevRange[1] > maxPriceValue) {
+        return [prevRange[0], maxPriceValue];
+      }
+      return prevRange;
+    });
+  }, [maxPriceValue]);
+
   // Get price ranges based on currency and transaction type
   const getPriceRanges = useCallback(
     (currency: string, transactionType: string) => {
       const baseRanges = [{ value: "all", label: t("search.priceRanges.all") }];
+
+      // Get currency unit labels based on locale
+      const getUnits = () => {
+        if (locale === "la") {
+          return { billion: "ຕື້", million: "ລ້ານ", thousand: "ພັນ" };
+        } else if (locale === "vn") {
+          return { billion: "tỷ", million: "triệu", thousand: "nghìn" };
+        } else {
+          return { billion: "B", million: "M", thousand: "K" };
+        }
+      };
+
+      const units = getUnits();
 
       if (currency === "USD") {
         if (transactionType === "sale" || transactionType === "project") {
           // Buy and Project ranges for USD
           return [
             ...baseRanges,
-            { value: "0-20000", label: "$0 - $20,000" },
-            { value: "20000-50000", label: "$20,000 - $50,000" },
-            { value: "50000-100000", label: "$50,000 - $100,000" },
-            { value: "100000-300000", label: "$100,000 - $300,000" },
-            { value: "300000-500000", label: "$300,000 - $500,000" },
-            { value: "500000-1000000", label: "$500,000 - $1,000,000" },
-            { value: "1000000-2000000", label: "$1,000,000 - $2,000,000" },
-            { value: "2000000-2500000", label: "$2,000,000 - $2,500,000" },
+            { value: "0-10000", label: `0 - 10 ${units.thousand} ${currency}` },
+            {
+              value: "10000-20000",
+              label: `10 ${units.thousand} - 20 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "20000-30000",
+              label: `20 ${units.thousand} - 30 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "30000-50000",
+              label: `30 ${units.thousand} - 50 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "50000-80000",
+              label: `50 ${units.thousand} - 80 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "80000-100000",
+              label: `80 ${units.thousand} - 100 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "100000-150000",
+              label: `100 ${units.thousand} - 150 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "150000-200000",
+              label: `150 ${units.thousand} - 200 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "200000-300000",
+              label: `200 ${units.thousand} - 300 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "300000-500000",
+              label: `300 ${units.thousand} - 500 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "500000-800000",
+              label: `500 ${units.thousand} - 800 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "800000-1000000",
+              label: `800 ${units.thousand} - 1 ${units.million} ${currency}`,
+            },
+            {
+              value: "1000000-1500000",
+              label: `1 ${units.million} - 1.5 ${units.million} ${currency}`,
+            },
+            {
+              value: "1500000-2000000",
+              label: `1.5 ${units.million} - 2 ${units.million} ${currency}`,
+            },
+            {
+              value: "2000000-3000000",
+              label: `2 ${units.million} - 3 ${units.million} ${currency}`,
+            },
+            {
+              value: "over-3000000",
+              label: `> 3 ${units.million} ${currency}`,
+            },
           ];
         } else {
           // Rent ranges for USD
           return [
             ...baseRanges,
-            { value: "0-100", label: "$0 - $100" },
-            { value: "100-200", label: "$100 - $200" },
-            { value: "200-500", label: "$200 - $500" },
-            { value: "500-1000", label: "$500 - $1,000" },
-            { value: "1000-5000", label: "$1,000 - $5,000" },
-            { value: "5000-10000", label: "$5,000 - $10,000" },
-            { value: "10000-50000", label: "$10,000 - $50,000" },
-            { value: "50000-100000", label: "$50,000 - $100,000" },
+            { value: "0-100", label: `0 - 100 ${currency}` },
+            { value: "100-200", label: `100 - 200 ${currency}` },
+            { value: "200-300", label: `200 - 300 ${currency}` },
+            { value: "300-500", label: `300 - 500 ${currency}` },
+            { value: "500-800", label: `500 - 800 ${currency}` },
+            {
+              value: "800-1000",
+              label: `800 - 1 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "1000-1500",
+              label: `1 ${units.thousand} - 1.5 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "1500-2000",
+              label: `1.5 ${units.thousand} - 2 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "2000-3000",
+              label: `2 ${units.thousand} - 3 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "3000-5000",
+              label: `3 ${units.thousand} - 5 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "5000-8000",
+              label: `5 ${units.thousand} - 8 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "8000-10000",
+              label: `8 ${units.thousand} - 10 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "10000-20000",
+              label: `10 ${units.thousand} - 20 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "20000-50000",
+              label: `20 ${units.thousand} - 50 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "over-50000",
+              label: `> 50 ${units.thousand} ${currency}`,
+            },
           ];
         }
       } else if (currency === "LAK") {
@@ -431,27 +584,269 @@ const Properties = ({ transaction }: PropertiesProps) => {
           // Buy and Project ranges for LAK
           return [
             ...baseRanges,
-            { value: "0-400000000", label: "0 - 400M LAK" },
-            { value: "400000000-1000000000", label: "400M - 1B LAK" },
-            { value: "1000000000-2000000000", label: "1B - 2B LAK" },
-            { value: "2000000000-6000000000", label: "2B - 6B LAK" },
-            { value: "6000000000-10000000000", label: "6B - 10B LAK" },
-            { value: "10000000000-20000000000", label: "10B - 20B LAK" },
-            { value: "20000000000-40000000000", label: "20B - 40B LAK" },
-            { value: "40000000000-50000000000", label: "40B - 50B LAK" },
+            {
+              value: "0-200000000",
+              label: `0 - 200 ${units.million} ${currency}`,
+            },
+            {
+              value: "200000000-400000000",
+              label: `200 ${units.million} - 400 ${units.million} ${currency}`,
+            },
+            {
+              value: "400000000-600000000",
+              label: `400 ${units.million} - 600 ${units.million} ${currency}`,
+            },
+            {
+              value: "600000000-800000000",
+              label: `600 ${units.million} - 800 ${units.million} ${currency}`,
+            },
+            {
+              value: "800000000-1000000000",
+              label: `800 ${units.million} - 1 ${units.billion} ${currency}`,
+            },
+            {
+              value: "1000000000-1500000000",
+              label: `1 ${units.billion} - 1.5 ${units.billion} ${currency}`,
+            },
+            {
+              value: "1500000000-2000000000",
+              label: `1.5 ${units.billion} - 2 ${units.billion} ${currency}`,
+            },
+            {
+              value: "2000000000-3000000000",
+              label: `2 ${units.billion} - 3 ${units.billion} ${currency}`,
+            },
+            {
+              value: "3000000000-5000000000",
+              label: `3 ${units.billion} - 5 ${units.billion} ${currency}`,
+            },
+            {
+              value: "5000000000-8000000000",
+              label: `5 ${units.billion} - 8 ${units.billion} ${currency}`,
+            },
+            {
+              value: "8000000000-10000000000",
+              label: `8 ${units.billion} - 10 ${units.billion} ${currency}`,
+            },
+            {
+              value: "10000000000-15000000000",
+              label: `10 ${units.billion} - 15 ${units.billion} ${currency}`,
+            },
+            {
+              value: "15000000000-20000000000",
+              label: `15 ${units.billion} - 20 ${units.billion} ${currency}`,
+            },
+            {
+              value: "20000000000-30000000000",
+              label: `20 ${units.billion} - 30 ${units.billion} ${currency}`,
+            },
+            {
+              value: "30000000000-50000000000",
+              label: `30 ${units.billion} - 50 ${units.billion} ${currency}`,
+            },
+            {
+              value: "over-50000000000",
+              label: `> 50 ${units.billion} ${currency}`,
+            },
           ];
         } else {
           // Rent ranges for LAK
           return [
             ...baseRanges,
-            { value: "0-2000000", label: "0 - 2M LAK" },
-            { value: "2000000-5000000", label: "2M - 5M LAK" },
-            { value: "5000000-10000000", label: "5M - 10M LAK" },
-            { value: "10000000-20000000", label: "10M - 20M LAK" },
-            { value: "20000000-100000000", label: "20M - 100M LAK" },
-            { value: "100000000-200000000", label: "100M - 200M LAK" },
-            { value: "200000000-1000000000", label: "200M - 1B LAK" },
-            { value: "1000000000-2000000000", label: "1B - 2B LAK" },
+            { value: "0-1000000", label: `0 - 1 ${units.million} ${currency}` },
+            {
+              value: "1000000-2000000",
+              label: `1 ${units.million} - 2 ${units.million} ${currency}`,
+            },
+            {
+              value: "2000000-3000000",
+              label: `2 ${units.million} - 3 ${units.million} ${currency}`,
+            },
+            {
+              value: "3000000-5000000",
+              label: `3 ${units.million} - 5 ${units.million} ${currency}`,
+            },
+            {
+              value: "5000000-8000000",
+              label: `5 ${units.million} - 8 ${units.million} ${currency}`,
+            },
+            {
+              value: "8000000-10000000",
+              label: `8 ${units.million} - 10 ${units.million} ${currency}`,
+            },
+            {
+              value: "10000000-15000000",
+              label: `10 ${units.million} - 15 ${units.million} ${currency}`,
+            },
+            {
+              value: "15000000-20000000",
+              label: `15 ${units.million} - 20 ${units.million} ${currency}`,
+            },
+            {
+              value: "20000000-30000000",
+              label: `20 ${units.million} - 30 ${units.million} ${currency}`,
+            },
+            {
+              value: "30000000-50000000",
+              label: `30 ${units.million} - 50 ${units.million} ${currency}`,
+            },
+            {
+              value: "50000000-80000000",
+              label: `50 ${units.million} - 80 ${units.million} ${currency}`,
+            },
+            {
+              value: "80000000-100000000",
+              label: `80 ${units.million} - 100 ${units.million} ${currency}`,
+            },
+            {
+              value: "100000000-200000000",
+              label: `100 ${units.million} - 200 ${units.million} ${currency}`,
+            },
+            {
+              value: "200000000-500000000",
+              label: `200 ${units.million} - 500 ${units.million} ${currency}`,
+            },
+            {
+              value: "500000000-1000000000",
+              label: `500 ${units.million} - 1 ${units.billion} ${currency}`,
+            },
+            {
+              value: "over-1000000000",
+              label: `> 1 ${units.billion} ${currency}`,
+            },
+          ];
+        }
+      } else if (currency === "VND") {
+        if (transactionType === "sale" || transactionType === "project") {
+          // Buy and Project ranges for VND
+          return [
+            ...baseRanges,
+            {
+              value: "0-300000000",
+              label: `0 - 300 ${units.million} ${currency}`,
+            },
+            {
+              value: "300000000-500000000",
+              label: `300 ${units.million} - 500 ${units.million} ${currency}`,
+            },
+            {
+              value: "500000000-800000000",
+              label: `500 ${units.million} - 800 ${units.million} ${currency}`,
+            },
+            {
+              value: "800000000-1000000000",
+              label: `800 ${units.million} - 1 ${units.billion} ${currency}`,
+            },
+            {
+              value: "1000000000-1500000000",
+              label: `1 ${units.billion} - 1.5 ${units.billion} ${currency}`,
+            },
+            {
+              value: "1500000000-2000000000",
+              label: `1.5 ${units.billion} - 2 ${units.billion} ${currency}`,
+            },
+            {
+              value: "2000000000-3000000000",
+              label: `2 ${units.billion} - 3 ${units.billion} ${currency}`,
+            },
+            {
+              value: "3000000000-5000000000",
+              label: `3 ${units.billion} - 5 ${units.billion} ${currency}`,
+            },
+            {
+              value: "5000000000-8000000000",
+              label: `5 ${units.billion} - 8 ${units.billion} ${currency}`,
+            },
+            {
+              value: "8000000000-10000000000",
+              label: `8 ${units.billion} - 10 ${units.billion} ${currency}`,
+            },
+            {
+              value: "10000000000-15000000000",
+              label: `10 ${units.billion} - 15 ${units.billion} ${currency}`,
+            },
+            {
+              value: "15000000000-20000000000",
+              label: `15 ${units.billion} - 20 ${units.billion} ${currency}`,
+            },
+            {
+              value: "20000000000-30000000000",
+              label: `20 ${units.billion} - 30 ${units.billion} ${currency}`,
+            },
+            {
+              value: "30000000000-50000000000",
+              label: `30 ${units.billion} - 50 ${units.billion} ${currency}`,
+            },
+            {
+              value: "over-50000000000",
+              label: `> 50 ${units.billion} ${currency}`,
+            },
+          ];
+        } else {
+          // Rent ranges for VND
+          return [
+            ...baseRanges,
+            { value: "0-1000000", label: `0 - 1 ${units.million} ${currency}` },
+            {
+              value: "1000000-2000000",
+              label: `1 ${units.million} - 2 ${units.million} ${currency}`,
+            },
+            {
+              value: "2000000-3000000",
+              label: `2 ${units.million} - 3 ${units.million} ${currency}`,
+            },
+            {
+              value: "3000000-5000000",
+              label: `3 ${units.million} - 5 ${units.million} ${currency}`,
+            },
+            {
+              value: "5000000-8000000",
+              label: `5 ${units.million} - 8 ${units.million} ${currency}`,
+            },
+            {
+              value: "8000000-10000000",
+              label: `8 ${units.million} - 10 ${units.million} ${currency}`,
+            },
+            {
+              value: "10000000-15000000",
+              label: `10 ${units.million} - 15 ${units.million} ${currency}`,
+            },
+            {
+              value: "15000000-20000000",
+              label: `15 ${units.million} - 20 ${units.million} ${currency}`,
+            },
+            {
+              value: "20000000-30000000",
+              label: `20 ${units.million} - 30 ${units.million} ${currency}`,
+            },
+            {
+              value: "30000000-50000000",
+              label: `30 ${units.million} - 50 ${units.million} ${currency}`,
+            },
+            {
+              value: "50000000-80000000",
+              label: `50 ${units.million} - 80 ${units.million} ${currency}`,
+            },
+            {
+              value: "80000000-100000000",
+              label: `80 ${units.million} - 100 ${units.million} ${currency}`,
+            },
+            {
+              value: "100000000-200000000",
+              label: `100 ${units.million} - 200 ${units.million} ${currency}`,
+            },
+            {
+              value: "200000000-500000000",
+              label: `200 ${units.million} - 500 ${units.million} ${currency}`,
+            },
+            {
+              value: "500000000-1000000000",
+              label: `500 ${units.million} - 1 ${units.billion} ${currency}`,
+            },
+            {
+              value: "over-1000000000",
+              label: `> 1 ${units.billion} ${currency}`,
+            },
           ];
         }
       } else if (currency === "THB") {
@@ -459,27 +854,124 @@ const Properties = ({ transaction }: PropertiesProps) => {
           // Buy and Project ranges for THB
           return [
             ...baseRanges,
-            { value: "0-500000", label: "0 - 500K THB" },
-            { value: "500000-1500000", label: "500K - 1.5M THB" },
-            { value: "1500000-3000000", label: "1.5M - 3M THB" },
-            { value: "3000000-10000000", label: "3M - 10M THB" },
-            { value: "10000000-15000000", label: "10M - 15M THB" },
-            { value: "15000000-30000000", label: "15M - 30M THB" },
-            { value: "30000000-60000000", label: "30M - 60M THB" },
-            { value: "60000000-80000000", label: "60M - 80M THB" },
+            {
+              value: "0-500000",
+              label: `0 - 500 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "500000-1000000",
+              label: `500 ${units.thousand} - 1 ${units.million} ${currency}`,
+            },
+            {
+              value: "1000000-1500000",
+              label: `1 ${units.million} - 1.5 ${units.million} ${currency}`,
+            },
+            {
+              value: "1500000-2000000",
+              label: `1.5 ${units.million} - 2 ${units.million} ${currency}`,
+            },
+            {
+              value: "2000000-3000000",
+              label: `2 ${units.million} - 3 ${units.million} ${currency}`,
+            },
+            {
+              value: "3000000-5000000",
+              label: `3 ${units.million} - 5 ${units.million} ${currency}`,
+            },
+            {
+              value: "5000000-8000000",
+              label: `5 ${units.million} - 8 ${units.million} ${currency}`,
+            },
+            {
+              value: "8000000-10000000",
+              label: `8 ${units.million} - 10 ${units.million} ${currency}`,
+            },
+            {
+              value: "10000000-15000000",
+              label: `10 ${units.million} - 15 ${units.million} ${currency}`,
+            },
+            {
+              value: "15000000-20000000",
+              label: `15 ${units.million} - 20 ${units.million} ${currency}`,
+            },
+            {
+              value: "20000000-30000000",
+              label: `20 ${units.million} - 30 ${units.million} ${currency}`,
+            },
+            {
+              value: "30000000-50000000",
+              label: `30 ${units.million} - 50 ${units.million} ${currency}`,
+            },
+            {
+              value: "50000000-80000000",
+              label: `50 ${units.million} - 80 ${units.million} ${currency}`,
+            },
+            {
+              value: "over-80000000",
+              label: `> 80 ${units.million} ${currency}`,
+            },
           ];
         } else {
           // Rent ranges for THB
           return [
             ...baseRanges,
-            { value: "0-3000", label: "0 - 3K THB" },
-            { value: "3000-8000", label: "3K - 8K THB" },
-            { value: "8000-15000", label: "8K - 15K THB" },
-            { value: "15000-30000", label: "15K - 30K THB" },
-            { value: "30000-150000", label: "30K - 150K THB" },
-            { value: "150000-300000", label: "150K - 300K THB" },
-            { value: "300000-1500000", label: "300K - 1.5M THB" },
-            { value: "1500000-3000000", label: "1.5M - 3M THB" },
+            { value: "0-3000", label: `0 - 3 ${units.thousand} ${currency}` },
+            {
+              value: "3000-5000",
+              label: `3 ${units.thousand} - 5 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "5000-8000",
+              label: `5 ${units.thousand} - 8 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "8000-10000",
+              label: `8 ${units.thousand} - 10 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "10000-15000",
+              label: `10 ${units.thousand} - 15 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "15000-20000",
+              label: `15 ${units.thousand} - 20 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "20000-30000",
+              label: `20 ${units.thousand} - 30 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "30000-50000",
+              label: `30 ${units.thousand} - 50 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "50000-80000",
+              label: `50 ${units.thousand} - 80 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "80000-100000",
+              label: `80 ${units.thousand} - 100 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "100000-150000",
+              label: `100 ${units.thousand} - 150 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "150000-200000",
+              label: `150 ${units.thousand} - 200 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "200000-500000",
+              label: `200 ${units.thousand} - 500 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "500000-1000000",
+              label: `500 ${units.thousand} - 1 ${units.million} ${currency}`,
+            },
+            {
+              value: "over-1000000",
+              label: `> 1 ${units.million} ${currency}`,
+            },
           ];
         }
       }
@@ -499,7 +991,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
         { value: "over-10000", label: t("search.priceRanges.over10billion") },
       ];
     },
-    [t],
+    [t, locale],
   );
 
   // Create translated price ranges based on current currency and transaction type
@@ -558,11 +1050,25 @@ const Properties = ({ transaction }: PropertiesProps) => {
     setSelectedPriceRange(rangeValue);
 
     let minValue = 0;
-    let maxValue = 100000000000;
+    let maxValue = maxPriceValue;
 
     if (rangeValue === "all") {
       minValue = 0;
-      maxValue = 100000000000;
+      maxValue = maxPriceValue;
+      // Clear price range from URL params
+      setPriceRange([minValue, maxValue]);
+      setMinPrice("");
+      setMaxPrice("");
+      updateSearchParams({ minPrice: "", maxPrice: "" });
+      return;
+    } else if (rangeValue.startsWith("over-")) {
+      // Handle "over-X" format
+      const minStr = rangeValue.replace("over-", "");
+      const parsedMin = parseInt(minStr);
+      if (!isNaN(parsedMin)) {
+        minValue = parsedMin;
+        maxValue = maxPriceValue;
+      }
     } else {
       // Parse range format "min-max"
       const parts = rangeValue.split("-");
@@ -591,8 +1097,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
     } else {
       params.minPrice = "";
     }
-    // For "all" option, don't set maxPrice (infinity)
-    if (rangeValue !== "all" && maxValue !== 100000000000) {
+    if (maxValue !== maxPriceValue) {
       params.maxPrice = maxValue.toString();
     } else {
       params.maxPrice = "";
@@ -614,7 +1119,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
       params.minPrice = "";
     }
     // If max value is at the maximum, treat it as infinity (no maxPrice parameter)
-    if (value[1] !== 100000000000) {
+    if (value[1] !== maxPriceValue) {
       params.maxPrice = value[1].toString();
     } else {
       params.maxPrice = "";
@@ -640,14 +1145,14 @@ const Properties = ({ transaction }: PropertiesProps) => {
   };
 
   const handleMaxPriceInputChange = (value: number) => {
-    const numValue = value || 100000000000;
+    const numValue = value || maxPriceValue;
     setPriceRange([priceRange[0], numValue]);
     setSelectedPriceRange("");
     setMaxPrice(numValue.toString());
 
     const params: Record<string, string> = {};
     // If max value is at the maximum, treat it as infinity (no maxPrice parameter)
-    if (numValue !== 100000000000) {
+    if (numValue !== maxPriceValue) {
       params.maxPrice = numValue.toString();
     } else {
       params.maxPrice = "";
@@ -668,7 +1173,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
     } else {
       params.minArea = "";
     }
-    if (value[1] !== 1000) {
+    if (value[1] !== 10000) {
       params.maxArea = value[1].toString();
     } else {
       params.maxArea = "";
@@ -681,38 +1186,49 @@ const Properties = ({ transaction }: PropertiesProps) => {
     setSelectedAreaRange(rangeValue);
 
     let minValue = 0;
-    let maxValue = 1000;
+    let maxValue = 10000;
 
-    switch (rangeValue) {
-      case "under-50":
+    if (rangeValue === "all") {
+      minValue = 0;
+      maxValue = 10000;
+      // Clear area range from URL params
+      setAreaRange([minValue, maxValue]);
+      setMinArea("");
+      setMaxArea("");
+      updateSearchParams({ minArea: "", maxArea: "" });
+      return;
+    } else if (rangeValue.startsWith("under-")) {
+      // Handle "under-X" format
+      const maxStr = rangeValue.replace("under-", "");
+      const parsedMax = parseInt(maxStr);
+      if (!isNaN(parsedMax)) {
         minValue = 0;
-        maxValue = 50;
-        break;
-      case "50-100":
-        minValue = 50;
-        maxValue = 100;
-        break;
-      case "100-200":
-        minValue = 100;
-        maxValue = 200;
-        break;
-      case "200-300":
-        minValue = 200;
-        maxValue = 300;
-        break;
-      case "300-500":
-        minValue = 300;
-        maxValue = 500;
-        break;
-      case "over-500":
-        minValue = 500;
-        maxValue = 1000;
-        break;
-      case "all":
-      default:
-        minValue = 0;
-        maxValue = 1000;
-        break;
+        maxValue = parsedMax;
+      }
+    } else if (rangeValue.startsWith("over-")) {
+      // Handle "over-X" format
+      const minStr = rangeValue.replace("over-", "");
+      const parsedMin = parseInt(minStr);
+      if (!isNaN(parsedMin)) {
+        minValue = parsedMin;
+        maxValue = 10000;
+      }
+    } else {
+      // Parse range format "min-max"
+      const parts = rangeValue.split("-");
+      if (parts.length === 2) {
+        const minStr = parts[0];
+        const maxStr = parts[1];
+        if (minStr && maxStr) {
+          const parsedMin = parseInt(minStr);
+          const parsedMax = parseInt(maxStr);
+
+          if (!isNaN(parsedMin) && !isNaN(parsedMax)) {
+            minValue = parsedMin;
+            maxValue = parsedMax;
+          }
+        }
+      }
     }
 
     setAreaRange([minValue, maxValue]);
@@ -725,7 +1241,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
     } else {
       params.minArea = "";
     }
-    if (maxValue !== 1000) {
+    if (maxValue !== 10000) {
       params.maxArea = maxValue.toString();
     } else {
       params.maxArea = "";
@@ -800,17 +1316,17 @@ const Properties = ({ transaction }: PropertiesProps) => {
 
     // Update price range
     const newMinPrice = parseInt(urlMinPrice ?? "0");
-    const newMaxPrice = parseInt(urlMaxPrice ?? "100000000000");
+    const newMaxPrice = parseInt(urlMaxPrice ?? maxPriceValue.toString());
     setPriceRange([newMinPrice, newMaxPrice]);
 
     // Update area range
     const newMinArea = parseInt(urlMinArea ?? "0");
-    const newMaxArea = parseInt(urlMaxArea ?? "1000");
+    const newMaxArea = parseInt(urlMaxArea ?? "10000");
     setAreaRange([newMinArea, newMaxArea]);
 
     // Update selected price range based on current price ranges
     let newSelectedPriceRange = "all";
-    if (newMinPrice !== 0 || newMaxPrice !== 100000000000) {
+    if (newMinPrice !== 0 || newMaxPrice !== maxPriceValue) {
       // Find matching range from current price ranges
       const matchingRange = priceRanges.find((range) => {
         if (range.value === "all") return false;
@@ -861,7 +1377,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
     setSelectedAreaRange(newSelectedAreaRange);
 
     setIsInitialLoad(false);
-  }, [searchParams, priceRanges]);
+  }, [searchParams, priceRanges, maxPriceValue]);
 
   useEffect(() => {
     if (isInitialLoad) return;
@@ -1344,14 +1860,14 @@ const Properties = ({ transaction }: PropertiesProps) => {
                             handlePriceRangeChange(value as [number, number])
                           }
                           min={0}
-                          step={1000000}
+                          step={priceStep}
                           tooltip={{
                             formatter: (value?: number) => {
                               if (typeof value !== "number") return "";
                               return `${numberToString(value, locale, currency)}`;
                             },
                           }}
-                          max={100000000000}
+                          max={maxPriceValue}
                           className="mb-4"
                         />
                       </div>
@@ -1505,14 +2021,14 @@ const Properties = ({ transaction }: PropertiesProps) => {
                             handlePriceRangeChange(value as [number, number])
                           }
                           min={0}
-                          step={1000000}
+                          step={priceStep}
                           tooltip={{
                             formatter: (value?: number) => {
                               if (typeof value !== "number") return "";
                               return `${numberToString(value, locale, currency)}`;
                             },
                           }}
-                          max={100000000000}
+                          max={maxPriceValue}
                           className="mb-6"
                         />
                       </div>
@@ -1645,14 +2161,14 @@ const Properties = ({ transaction }: PropertiesProps) => {
                             handleAreaRangeChange(value as [number, number])
                           }
                           min={0}
-                          step={5}
+                          step={10}
                           tooltip={{
                             formatter: (value?: number) => {
                               if (typeof value !== "number") return "";
-                              return `${numberToString(value, locale, currency)}`;
+                              return `${value}m²`;
                             },
                           }}
-                          max={1000}
+                          max={10000}
                           className="mb-4"
                         />
                       </div>
@@ -1843,14 +2359,14 @@ const Properties = ({ transaction }: PropertiesProps) => {
                             handleAreaRangeChange(value as [number, number])
                           }
                           min={0}
-                          step={5}
+                          step={10}
                           tooltip={{
                             formatter: (value?: number) => {
                               if (typeof value !== "number") return "";
                               return `${value}m²`;
                             },
                           }}
-                          max={1000}
+                          max={10000}
                           className="mb-6"
                         />
                       </div>

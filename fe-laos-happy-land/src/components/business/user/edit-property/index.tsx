@@ -51,6 +51,7 @@ import { getLangByLocale, getValidLocale } from "@/share/helper/locale.helper";
 import ProjectContentBuilder from "@/components/business/common/project-content-builder";
 import MapboxLocationSelector from "@/components/business/common/mapbox-location-selector";
 import Image from "next/image";
+import { numberToString } from "@/share/helper/number-to-string";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -418,14 +419,14 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
             {values.price && (
               <p>
                 <strong>{t("property.price")}:</strong>{" "}
-                {values.price.toLocaleString()} {currency}
+                {numberToString(Number(values.price), locale, currency)}
               </p>
             )}
           </div>
         </div>
       ),
-      okText: t("property.update"),
-      cancelText: t("property.cancel"),
+      okText: t("common.update"),
+      cancelText: t("common.cancel"),
       onOk: () => {
         submitForm(values);
       },
@@ -702,10 +703,12 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                       {t("property.area")} (m²)
                     </span>
                   }
+                  rules={[
+                    { required: true, message: t("property.pleaseEnterArea") },
+                  ]}
                 >
                   <InputNumber
                     min={0}
-                    max={10000}
                     placeholder={t("property.enterArea")}
                     size="large"
                     style={{ width: "100%" }}
@@ -725,7 +728,6 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                     >
                       <InputNumber
                         min={0}
-                        max={20}
                         placeholder={t("property.enterBedrooms")}
                         size="large"
                         style={{ width: "100%" }}
@@ -743,7 +745,6 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                     >
                       <InputNumber
                         min={0}
-                        max={10}
                         placeholder={t("property.enterBathrooms")}
                         size="large"
                         style={{ width: "100%" }}
@@ -849,8 +850,6 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                     required: true,
                     message: t("property.pleaseEnterDescription"),
                   },
-                  { min: 50, message: t("property.descriptionMinLength") },
-                  { max: 2000, message: t("property.descriptionMaxLength") },
                 ]}
               >
                 <TextArea

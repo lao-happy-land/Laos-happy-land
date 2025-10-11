@@ -12,7 +12,7 @@ import DetailsSection from "@/components/business/property-details/details-secti
 import ContactCard from "@/components/business/property-details/contact-card";
 import LoanCalculator from "@/components/business/loan-calculator/loan-calculator";
 import SimilarProperties from "@/components/business/property-details/similar-properties";
-import PriceHistoryChart from "@/components/business/property-details/price-history-chart";
+import ApprovedBankRequests from "@/components/business/property-details/approved-bank-requests";
 import { useRequest } from "ahooks";
 import propertyService from "@/share/service/property.service";
 import { useCurrencyStore } from "@/share/store/currency.store";
@@ -170,12 +170,12 @@ export default function PropertyDetails({ propertyId }: Props) {
           </Card>
 
           {/* Price History Chart */}
-          {property.priceHistory && property.priceHistory.length > 0 && (
+          {/* {property.priceHistory && property.priceHistory.length > 0 && (
             <PriceHistoryChart
               priceHistory={property.priceHistory}
               currentPrice={property.price as PropertyPrice | null}
             />
-          )}
+          )} */}
         </Col>
 
         <Col xs={24} lg={8} style={{ padding: 0 }}>
@@ -194,6 +194,7 @@ export default function PropertyDetails({ propertyId }: Props) {
             onCall={handleContactOwner}
             onEmail={handleEmailOwner}
           />
+          <ApprovedBankRequests />
         </Col>
       </Row>
 
