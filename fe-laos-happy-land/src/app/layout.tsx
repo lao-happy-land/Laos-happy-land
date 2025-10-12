@@ -8,9 +8,8 @@ import { App } from "antd";
 import { Suspense } from "react";
 import LoadingScreen from "@/components/common/loading-screen";
 import AuthProvider from "@/components/common/auth-provider";
-import { NextIntlClientProvider, useTranslations } from "next-intl";
+import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
-import { useUrlLocale } from "@/utils/locale";
 import TokenHandler from "@/components/common/token-handler";
 
 export const metadata: Metadata = {
@@ -43,14 +42,7 @@ export const metadata: Metadata = {
       },
     ],
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "Laos Happy Land - Bất động sản Lào",
-    description:
-      "Website bất động sản Lào - Tìm nhà đất, căn hộ, dự án bất động sản tại Lào",
-    images: ["/images/landingpage/hero-slider/hero-banner-1.jpg"],
-    creator: "@laohappyland",
-  },
+
   icons: [{ rel: "icon", url: "/logo.ico" }],
   manifest: "/manifest.json",
 };
