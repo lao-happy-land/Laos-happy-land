@@ -326,7 +326,7 @@ export default function Header({
                 />
               </div>
 
-              <div className="hidden items-center space-x-3 xl:flex">
+              <div className="hidden items-center space-x-3 2xl:flex">
                 <LanguageSwitcher />
                 <CurrencySwitcher />
                 {isAuthenticated && user ? (

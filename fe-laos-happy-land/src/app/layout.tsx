@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "vi_VN",
-    url: "https://laoshappyland.com",
+    url: "https://laohappyland.com",
     siteName: "Laos Happy Land",
     title: "Laos Happy Land - Bất động sản Lào",
     description:
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     description:
       "Website bất động sản Lào - Tìm nhà đất, căn hộ, dự án bất động sản tại Lào",
     images: ["/images/landingpage/hero-slider/hero-banner-1.jpg"],
-    creator: "@laoshappyland",
+    creator: "@laohappyland",
   },
   icons: [{ rel: "icon", url: "/logo.ico" }],
   manifest: "/manifest.json",

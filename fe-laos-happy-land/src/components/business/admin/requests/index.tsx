@@ -193,13 +193,6 @@ export default function AdminRequests() {
     setDetailsModalOpen(true);
   };
 
-  // Helper function to get bank name by ID
-  const getBankName = (bankId?: string): string => {
-    if (!bankId) return t("common.notAvailable");
-    const bank = banks.find((b) => b.id === bankId);
-    return bank?.name ?? `Bank ID: ${bankId.substring(0, 8)}...`;
-  };
-
   const bankRequestColumns = [
     {
       title: t("admin.fullName"),
@@ -550,8 +543,8 @@ export default function AdminRequests() {
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label={t("loanCalculator.selectBank")}>
-                <Tag color={selectedBankRequest.bankId ? "blue" : "default"}>
-                  {getBankName(selectedBankRequest.bankId)}
+                <Tag color={selectedBankRequest.bank ? "blue" : "default"}>
+                  selectedBankRequest.bank?.name
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label={t("admin.requestNote")}>
