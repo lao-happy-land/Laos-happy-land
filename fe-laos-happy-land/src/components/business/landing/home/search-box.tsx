@@ -140,7 +140,7 @@ const SearchBox = () => {
     0, 100000000000,
   ]);
   const [selectedPriceRange, setSelectedPriceRange] = useState<string>("all");
-  const [areaRange, setAreaRange] = useState<[number, number]>([0, 1000]);
+  const [areaRange, setAreaRange] = useState<[number, number]>([0, 10000]);
   const [selectedAreaRange, setSelectedAreaRange] = useState<string>("all");
 
   // Detect mobile screen size
@@ -311,32 +311,135 @@ const SearchBox = () => {
     (currency: string, transactionType: string) => {
       const baseRanges = [{ value: "all", label: t("search.priceRanges.all") }];
 
+      // Get currency unit labels based on locale
+      const getUnits = () => {
+        if (locale === "la") {
+          return { billion: "ຕື້", million: "ລ້ານ", thousand: "ພັນ" };
+        } else if (locale === "vn") {
+          return { billion: "tỷ", million: "triệu", thousand: "nghìn" };
+        } else {
+          return { billion: "B", million: "M", thousand: "K" };
+        }
+      };
+
+      const units = getUnits();
+
       if (currency === "USD") {
         if (transactionType === "sale" || transactionType === "project") {
           // Buy and Project ranges for USD
           return [
             ...baseRanges,
-            { value: "0-20000", label: "$0 - $20,000" },
-            { value: "20000-50000", label: "$20,000 - $50,000" },
-            { value: "50000-100000", label: "$50,000 - $100,000" },
-            { value: "100000-300000", label: "$100,000 - $300,000" },
-            { value: "300000-500000", label: "$300,000 - $500,000" },
-            { value: "500000-1000000", label: "$500,000 - $1,000,000" },
-            { value: "1000000-2000000", label: "$1,000,000 - $2,000,000" },
-            { value: "2000000-2500000", label: "$2,000,000 - $2,500,000" },
+            { value: "0-10000", label: `0 - 10 ${units.thousand} ${currency}` },
+            {
+              value: "10000-20000",
+              label: `10 ${units.thousand} - 20 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "20000-30000",
+              label: `20 ${units.thousand} - 30 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "30000-50000",
+              label: `30 ${units.thousand} - 50 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "50000-80000",
+              label: `50 ${units.thousand} - 80 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "80000-100000",
+              label: `80 ${units.thousand} - 100 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "100000-150000",
+              label: `100 ${units.thousand} - 150 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "150000-200000",
+              label: `150 ${units.thousand} - 200 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "200000-300000",
+              label: `200 ${units.thousand} - 300 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "300000-500000",
+              label: `300 ${units.thousand} - 500 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "500000-800000",
+              label: `500 ${units.thousand} - 800 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "800000-1000000",
+              label: `800 ${units.thousand} - 1 ${units.million} ${currency}`,
+            },
+            {
+              value: "1000000-1500000",
+              label: `1 ${units.million} - 1.5 ${units.million} ${currency}`,
+            },
+            {
+              value: "1500000-2000000",
+              label: `1.5 ${units.million} - 2 ${units.million} ${currency}`,
+            },
+            {
+              value: "2000000-3000000",
+              label: `2 ${units.million} - 3 ${units.million} ${currency}`,
+            },
+            {
+              value: "over-3000000",
+              label: `> 3 ${units.million} ${currency}`,
+            },
           ];
         } else {
           // Rent ranges for USD
           return [
             ...baseRanges,
-            { value: "0-100", label: "$0 - $100" },
-            { value: "100-200", label: "$100 - $200" },
-            { value: "200-500", label: "$200 - $500" },
-            { value: "500-1000", label: "$500 - $1,000" },
-            { value: "1000-5000", label: "$1,000 - $5,000" },
-            { value: "5000-10000", label: "$5,000 - $10,000" },
-            { value: "10000-50000", label: "$10,000 - $50,000" },
-            { value: "50000-100000", label: "$50,000 - $100,000" },
+            { value: "0-100", label: `0 - 100 ${currency}` },
+            { value: "100-200", label: `100 - 200 ${currency}` },
+            { value: "200-300", label: `200 - 300 ${currency}` },
+            { value: "300-500", label: `300 - 500 ${currency}` },
+            { value: "500-800", label: `500 - 800 ${currency}` },
+            {
+              value: "800-1000",
+              label: `800 - 1 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "1000-1500",
+              label: `1 ${units.thousand} - 1.5 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "1500-2000",
+              label: `1.5 ${units.thousand} - 2 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "2000-3000",
+              label: `2 ${units.thousand} - 3 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "3000-5000",
+              label: `3 ${units.thousand} - 5 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "5000-8000",
+              label: `5 ${units.thousand} - 8 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "8000-10000",
+              label: `8 ${units.thousand} - 10 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "10000-20000",
+              label: `10 ${units.thousand} - 20 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "20000-50000",
+              label: `20 ${units.thousand} - 50 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "over-50000",
+              label: `> 50 ${units.thousand} ${currency}`,
+            },
           ];
         }
       } else if (currency === "LAK") {
@@ -344,27 +447,136 @@ const SearchBox = () => {
           // Buy and Project ranges for LAK
           return [
             ...baseRanges,
-            { value: "0-400000000", label: "0 - 400M LAK" },
-            { value: "400000000-1000000000", label: "400M - 1B LAK" },
-            { value: "1000000000-2000000000", label: "1B - 2B LAK" },
-            { value: "2000000000-6000000000", label: "2B - 6B LAK" },
-            { value: "6000000000-10000000000", label: "6B - 10B LAK" },
-            { value: "10000000000-20000000000", label: "10B - 20B LAK" },
-            { value: "20000000000-40000000000", label: "20B - 40B LAK" },
-            { value: "40000000000-50000000000", label: "40B - 50B LAK" },
+            {
+              value: "0-200000000",
+              label: `0 - 200 ${units.million} ${currency}`,
+            },
+            {
+              value: "200000000-400000000",
+              label: `200 ${units.million} - 400 ${units.million} ${currency}`,
+            },
+            {
+              value: "400000000-600000000",
+              label: `400 ${units.million} - 600 ${units.million} ${currency}`,
+            },
+            {
+              value: "600000000-800000000",
+              label: `600 ${units.million} - 800 ${units.million} ${currency}`,
+            },
+            {
+              value: "800000000-1000000000",
+              label: `800 ${units.million} - 1 ${units.billion} ${currency}`,
+            },
+            {
+              value: "1000000000-1500000000",
+              label: `1 ${units.billion} - 1.5 ${units.billion} ${currency}`,
+            },
+            {
+              value: "1500000000-2000000000",
+              label: `1.5 ${units.billion} - 2 ${units.billion} ${currency}`,
+            },
+            {
+              value: "2000000000-3000000000",
+              label: `2 ${units.billion} - 3 ${units.billion} ${currency}`,
+            },
+            {
+              value: "3000000000-5000000000",
+              label: `3 ${units.billion} - 5 ${units.billion} ${currency}`,
+            },
+            {
+              value: "5000000000-8000000000",
+              label: `5 ${units.billion} - 8 ${units.billion} ${currency}`,
+            },
+            {
+              value: "8000000000-10000000000",
+              label: `8 ${units.billion} - 10 ${units.billion} ${currency}`,
+            },
+            {
+              value: "10000000000-15000000000",
+              label: `10 ${units.billion} - 15 ${units.billion} ${currency}`,
+            },
+            {
+              value: "15000000000-20000000000",
+              label: `15 ${units.billion} - 20 ${units.billion} ${currency}`,
+            },
+            {
+              value: "20000000000-30000000000",
+              label: `20 ${units.billion} - 30 ${units.billion} ${currency}`,
+            },
+            {
+              value: "30000000000-50000000000",
+              label: `30 ${units.billion} - 50 ${units.billion} ${currency}`,
+            },
+            {
+              value: "over-50000000000",
+              label: `> 50 ${units.billion} ${currency}`,
+            },
           ];
         } else {
           // Rent ranges for LAK
           return [
             ...baseRanges,
-            { value: "0-2000000", label: "0 - 2M LAK" },
-            { value: "2000000-5000000", label: "2M - 5M LAK" },
-            { value: "5000000-10000000", label: "5M - 10M LAK" },
-            { value: "10000000-20000000", label: "10M - 20M LAK" },
-            { value: "20000000-100000000", label: "20M - 100M LAK" },
-            { value: "100000000-200000000", label: "100M - 200M LAK" },
-            { value: "200000000-1000000000", label: "200M - 1B LAK" },
-            { value: "1000000000-2000000000", label: "1B - 2B LAK" },
+            { value: "0-1000000", label: `0 - 1 ${units.million} ${currency}` },
+            {
+              value: "1000000-2000000",
+              label: `1 ${units.million} - 2 ${units.million} ${currency}`,
+            },
+            {
+              value: "2000000-3000000",
+              label: `2 ${units.million} - 3 ${units.million} ${currency}`,
+            },
+            {
+              value: "3000000-5000000",
+              label: `3 ${units.million} - 5 ${units.million} ${currency}`,
+            },
+            {
+              value: "5000000-8000000",
+              label: `5 ${units.million} - 8 ${units.million} ${currency}`,
+            },
+            {
+              value: "8000000-10000000",
+              label: `8 ${units.million} - 10 ${units.million} ${currency}`,
+            },
+            {
+              value: "10000000-15000000",
+              label: `10 ${units.million} - 15 ${units.million} ${currency}`,
+            },
+            {
+              value: "15000000-20000000",
+              label: `15 ${units.million} - 20 ${units.million} ${currency}`,
+            },
+            {
+              value: "20000000-30000000",
+              label: `20 ${units.million} - 30 ${units.million} ${currency}`,
+            },
+            {
+              value: "30000000-50000000",
+              label: `30 ${units.million} - 50 ${units.million} ${currency}`,
+            },
+            {
+              value: "50000000-80000000",
+              label: `50 ${units.million} - 80 ${units.million} ${currency}`,
+            },
+            {
+              value: "80000000-100000000",
+              label: `80 ${units.million} - 100 ${units.million} ${currency}`,
+            },
+            {
+              value: "100000000-200000000",
+              label: `100 ${units.million} - 200 ${units.million} ${currency}`,
+            },
+            {
+              value: "200000000-500000000",
+              label: `200 ${units.million} - 500 ${units.million} ${currency}`,
+            },
+            {
+              value: "500000000-1000000000",
+              label: `500 ${units.million} - 1 ${units.billion} ${currency}`,
+            },
+            {
+              value: "over-1000000000",
+              label: `> 1 ${units.billion} ${currency}`,
+            },
           ];
         }
       } else if (currency === "THB") {
@@ -372,27 +584,257 @@ const SearchBox = () => {
           // Buy and Project ranges for THB
           return [
             ...baseRanges,
-            { value: "0-500000", label: "0 - 500K THB" },
-            { value: "500000-1500000", label: "500K - 1.5M THB" },
-            { value: "1500000-3000000", label: "1.5M - 3M THB" },
-            { value: "3000000-10000000", label: "3M - 10M THB" },
-            { value: "10000000-15000000", label: "10M - 15M THB" },
-            { value: "15000000-30000000", label: "15M - 30M THB" },
-            { value: "30000000-60000000", label: "30M - 60M THB" },
-            { value: "60000000-80000000", label: "60M - 80M THB" },
+            {
+              value: "0-500000",
+              label: `0 - 500 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "500000-1000000",
+              label: `500 ${units.thousand} - 1 ${units.million} ${currency}`,
+            },
+            {
+              value: "1000000-1500000",
+              label: `1 ${units.million} - 1.5 ${units.million} ${currency}`,
+            },
+            {
+              value: "1500000-2000000",
+              label: `1.5 ${units.million} - 2 ${units.million} ${currency}`,
+            },
+            {
+              value: "2000000-3000000",
+              label: `2 ${units.million} - 3 ${units.million} ${currency}`,
+            },
+            {
+              value: "3000000-5000000",
+              label: `3 ${units.million} - 5 ${units.million} ${currency}`,
+            },
+            {
+              value: "5000000-8000000",
+              label: `5 ${units.million} - 8 ${units.million} ${currency}`,
+            },
+            {
+              value: "8000000-10000000",
+              label: `8 ${units.million} - 10 ${units.million} ${currency}`,
+            },
+            {
+              value: "10000000-15000000",
+              label: `10 ${units.million} - 15 ${units.million} ${currency}`,
+            },
+            {
+              value: "15000000-20000000",
+              label: `15 ${units.million} - 20 ${units.million} ${currency}`,
+            },
+            {
+              value: "20000000-30000000",
+              label: `20 ${units.million} - 30 ${units.million} ${currency}`,
+            },
+            {
+              value: "30000000-50000000",
+              label: `30 ${units.million} - 50 ${units.million} ${currency}`,
+            },
+            {
+              value: "50000000-80000000",
+              label: `50 ${units.million} - 80 ${units.million} ${currency}`,
+            },
+            {
+              value: "over-80000000",
+              label: `> 80 ${units.million} ${currency}`,
+            },
           ];
         } else {
           // Rent ranges for THB
           return [
             ...baseRanges,
-            { value: "0-3000", label: "0 - 3K THB" },
-            { value: "3000-8000", label: "3K - 8K THB" },
-            { value: "8000-15000", label: "8K - 15K THB" },
-            { value: "15000-30000", label: "15K - 30K THB" },
-            { value: "30000-150000", label: "30K - 150K THB" },
-            { value: "150000-300000", label: "150K - 300K THB" },
-            { value: "300000-1500000", label: "300K - 1.5M THB" },
-            { value: "1500000-3000000", label: "1.5M - 3M THB" },
+            { value: "0-3000", label: `0 - 3 ${units.thousand} ${currency}` },
+            {
+              value: "3000-5000",
+              label: `3 ${units.thousand} - 5 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "5000-8000",
+              label: `5 ${units.thousand} - 8 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "8000-10000",
+              label: `8 ${units.thousand} - 10 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "10000-15000",
+              label: `10 ${units.thousand} - 15 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "15000-20000",
+              label: `15 ${units.thousand} - 20 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "20000-30000",
+              label: `20 ${units.thousand} - 30 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "30000-50000",
+              label: `30 ${units.thousand} - 50 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "50000-80000",
+              label: `50 ${units.thousand} - 80 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "80000-100000",
+              label: `80 ${units.thousand} - 100 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "100000-150000",
+              label: `100 ${units.thousand} - 150 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "150000-200000",
+              label: `150 ${units.thousand} - 200 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "200000-500000",
+              label: `200 ${units.thousand} - 500 ${units.thousand} ${currency}`,
+            },
+            {
+              value: "500000-1000000",
+              label: `500 ${units.thousand} - 1 ${units.million} ${currency}`,
+            },
+            {
+              value: "over-1000000",
+              label: `> 1 ${units.million} ${currency}`,
+            },
+          ];
+        }
+      } else if (currency === "VND") {
+        if (transactionType === "sale" || transactionType === "project") {
+          // Buy and Project ranges for VND
+          return [
+            ...baseRanges,
+            {
+              value: "0-300000000",
+              label: `0 - 300 ${units.million} ${currency}`,
+            },
+            {
+              value: "300000000-500000000",
+              label: `300 ${units.million} - 500 ${units.million} ${currency}`,
+            },
+            {
+              value: "500000000-800000000",
+              label: `500 ${units.million} - 800 ${units.million} ${currency}`,
+            },
+            {
+              value: "800000000-1000000000",
+              label: `800 ${units.million} - 1 ${units.billion} ${currency}`,
+            },
+            {
+              value: "1000000000-1500000000",
+              label: `1 ${units.billion} - 1.5 ${units.billion} ${currency}`,
+            },
+            {
+              value: "1500000000-2000000000",
+              label: `1.5 ${units.billion} - 2 ${units.billion} ${currency}`,
+            },
+            {
+              value: "2000000000-3000000000",
+              label: `2 ${units.billion} - 3 ${units.billion} ${currency}`,
+            },
+            {
+              value: "3000000000-5000000000",
+              label: `3 ${units.billion} - 5 ${units.billion} ${currency}`,
+            },
+            {
+              value: "5000000000-8000000000",
+              label: `5 ${units.billion} - 8 ${units.billion} ${currency}`,
+            },
+            {
+              value: "8000000000-10000000000",
+              label: `8 ${units.billion} - 10 ${units.billion} ${currency}`,
+            },
+            {
+              value: "10000000000-15000000000",
+              label: `10 ${units.billion} - 15 ${units.billion} ${currency}`,
+            },
+            {
+              value: "15000000000-20000000000",
+              label: `15 ${units.billion} - 20 ${units.billion} ${currency}`,
+            },
+            {
+              value: "20000000000-30000000000",
+              label: `20 ${units.billion} - 30 ${units.billion} ${currency}`,
+            },
+            {
+              value: "30000000000-50000000000",
+              label: `30 ${units.billion} - 50 ${units.billion} ${currency}`,
+            },
+            {
+              value: "over-50000000000",
+              label: `> 50 ${units.billion} ${currency}`,
+            },
+          ];
+        } else {
+          // Rent ranges for VND
+          return [
+            ...baseRanges,
+            { value: "0-1000000", label: `0 - 1 ${units.million} ${currency}` },
+            {
+              value: "1000000-2000000",
+              label: `1 ${units.million} - 2 ${units.million} ${currency}`,
+            },
+            {
+              value: "2000000-3000000",
+              label: `2 ${units.million} - 3 ${units.million} ${currency}`,
+            },
+            {
+              value: "3000000-5000000",
+              label: `3 ${units.million} - 5 ${units.million} ${currency}`,
+            },
+            {
+              value: "5000000-8000000",
+              label: `5 ${units.million} - 8 ${units.million} ${currency}`,
+            },
+            {
+              value: "8000000-10000000",
+              label: `8 ${units.million} - 10 ${units.million} ${currency}`,
+            },
+            {
+              value: "10000000-15000000",
+              label: `10 ${units.million} - 15 ${units.million} ${currency}`,
+            },
+            {
+              value: "15000000-20000000",
+              label: `15 ${units.million} - 20 ${units.million} ${currency}`,
+            },
+            {
+              value: "20000000-30000000",
+              label: `20 ${units.million} - 30 ${units.million} ${currency}`,
+            },
+            {
+              value: "30000000-50000000",
+              label: `30 ${units.million} - 50 ${units.million} ${currency}`,
+            },
+            {
+              value: "50000000-80000000",
+              label: `50 ${units.million} - 80 ${units.million} ${currency}`,
+            },
+            {
+              value: "80000000-100000000",
+              label: `80 ${units.million} - 100 ${units.million} ${currency}`,
+            },
+            {
+              value: "100000000-200000000",
+              label: `100 ${units.million} - 200 ${units.million} ${currency}`,
+            },
+            {
+              value: "200000000-500000000",
+              label: `200 ${units.million} - 500 ${units.million} ${currency}`,
+            },
+            {
+              value: "500000000-1000000000",
+              label: `500 ${units.million} - 1 ${units.billion} ${currency}`,
+            },
+            {
+              value: "over-1000000000",
+              label: `> 1 ${units.billion} ${currency}`,
+            },
           ];
         }
       }
@@ -412,7 +854,7 @@ const SearchBox = () => {
         { value: "over-10000", label: t("search.priceRanges.over10billion") },
       ];
     },
-    [t],
+    [t, locale],
   );
 
   // Create translated price ranges based on current currency and search type
@@ -424,12 +866,17 @@ const SearchBox = () => {
   // Create translated area ranges
   const areaRanges = [
     { value: "all", label: t("search.areaRanges.all") },
-    { value: "under-50", label: t("search.areaRanges.under50") },
-    { value: "50-100", label: t("search.areaRanges.range50to100") },
-    { value: "100-200", label: t("search.areaRanges.range100to200") },
-    { value: "200-300", label: t("search.areaRanges.range200to300") },
-    { value: "300-500", label: t("search.areaRanges.range300to500") },
-    { value: "over-500", label: t("search.areaRanges.over500") },
+    { value: "under-30", label: "< 30 m²" },
+    { value: "30-50", label: "30 - 50 m²" },
+    { value: "50-80", label: "50 - 80 m²" },
+    { value: "80-100", label: "80 - 100 m²" },
+    { value: "100-150", label: "100 - 150 m²" },
+    { value: "150-200", label: "150 - 200 m²" },
+    { value: "200-300", label: "200 - 300 m²" },
+    { value: "300-500", label: "300 - 500 m²" },
+    { value: "500-1000", label: "500 - 1,000 m²" },
+    { value: "1000-2000", label: "1,000 - 2,000 m²" },
+    { value: "over-2000", label: "> 2,000 m²" },
   ];
 
   const handleSearch = async () => {
@@ -441,7 +888,7 @@ const SearchBox = () => {
       searchParams.set("minPrice", priceRange[0].toString());
       searchParams.set("maxPrice", priceRange[1].toString());
     }
-    if (areaRange[0] === 0 && areaRange[1] === 1000) {
+    if (areaRange[0] === 0 && areaRange[1] === 10000) {
       searchParams.delete("minArea");
       searchParams.delete("maxArea");
     } else {
@@ -541,7 +988,7 @@ const SearchBox = () => {
   };
 
   const handleMaxAreaInputChange = (value: number) => {
-    const numValue = value || 1000;
+    const numValue = value || 10000;
     setAreaRange([areaRange[0], numValue]);
     setSelectedAreaRange("");
   };
@@ -565,6 +1012,14 @@ const SearchBox = () => {
     if (rangeValue === "all") {
       minValue = 0;
       maxValue = 100000000000;
+    } else if (rangeValue.startsWith("over-")) {
+      // Handle "over-X" format
+      const minStr = rangeValue.replace("over-", "");
+      const parsedMin = parseInt(minStr);
+      if (!isNaN(parsedMin)) {
+        minValue = parsedMin;
+        maxValue = 100000000000;
+      }
     } else {
       // Parse range format "min-max"
       const parts = rangeValue.split("-");
@@ -590,38 +1045,43 @@ const SearchBox = () => {
     setSelectedAreaRange(rangeValue);
 
     let minValue = 0;
-    let maxValue = 1000;
+    let maxValue = 10000;
 
-    switch (rangeValue) {
-      case "under-50":
+    if (rangeValue === "all") {
+      minValue = 0;
+      maxValue = 10000;
+    } else if (rangeValue.startsWith("under-")) {
+      // Handle "under-X" format
+      const maxStr = rangeValue.replace("under-", "");
+      const parsedMax = parseInt(maxStr);
+      if (!isNaN(parsedMax)) {
         minValue = 0;
-        maxValue = 50;
-        break;
-      case "50-100":
-        minValue = 50;
-        maxValue = 100;
-        break;
-      case "100-200":
-        minValue = 100;
-        maxValue = 200;
-        break;
-      case "200-300":
-        minValue = 200;
-        maxValue = 300;
-        break;
-      case "300-500":
-        minValue = 300;
-        maxValue = 500;
-        break;
-      case "over-500":
-        minValue = 500;
-        maxValue = 1000;
-        break;
-      case "all":
-      default:
-        minValue = 0;
-        maxValue = 1000;
-        break;
+        maxValue = parsedMax;
+      }
+    } else if (rangeValue.startsWith("over-")) {
+      // Handle "over-X" format
+      const minStr = rangeValue.replace("over-", "");
+      const parsedMin = parseInt(minStr);
+      if (!isNaN(parsedMin)) {
+        minValue = parsedMin;
+        maxValue = 10000;
+      }
+    } else {
+      // Parse range format "min-max"
+      const parts = rangeValue.split("-");
+      if (parts.length === 2) {
+        const minStr = parts[0];
+        const maxStr = parts[1];
+        if (minStr && maxStr) {
+          const parsedMin = parseInt(minStr);
+          const parsedMax = parseInt(maxStr);
+
+          if (!isNaN(parsedMin) && !isNaN(parsedMax)) {
+            minValue = parsedMin;
+            maxValue = parsedMax;
+          }
+        }
+      }
     }
 
     setAreaRange([minValue, maxValue]);
@@ -1401,7 +1861,15 @@ const SearchBox = () => {
                               return `${numberToString(value, locale, currency)}`;
                             },
                           }}
-                          max={20000000000}
+                          max={
+                            currency === "USD"
+                              ? 10000000
+                              : currency === "LAK"
+                                ? 20000000000
+                                : currency === "THB"
+                                  ? 20000000000
+                                  : 200000000000
+                          }
                           className="mb-6"
                         />
                       </div>
@@ -1454,7 +1922,7 @@ const SearchBox = () => {
                   <span className="text-sm font-medium sm:text-base">
                     {selectedAreaRange === "all"
                       ? t("search.area")
-                      : `${numberToString(areaRange[0], locale, currency)} - ${numberToString(areaRange[1], locale, currency)}`}
+                      : `${areaRange[0]} m² - ${areaRange[1]} m²`}{" "}
                   </span>
                   <ChevronDown
                     size={16}
@@ -1532,7 +2000,8 @@ const SearchBox = () => {
                             handleAreaRangeChange(value as [number, number])
                           }
                           min={0}
-                          max={1000}
+                          max={10000}
+                          step={10}
                           className="mb-4"
                         />
                       </div>
@@ -1649,7 +2118,7 @@ const SearchBox = () => {
                               {t("search.to")}
                             </Text>
                             <Text className="mb-2 block text-lg font-bold text-red-600">
-                              {areaRange[1] === 1000 ? "∞" : areaRange[1]}m²
+                              {areaRange[1] === 10000 ? "∞" : areaRange[1]}m²
                             </Text>
                           </div>
                           <Input
@@ -1672,14 +2141,14 @@ const SearchBox = () => {
                             handleAreaRangeChange(value as [number, number])
                           }
                           min={0}
-                          step={5}
+                          step={10}
                           tooltip={{
                             formatter: (value?: number) => {
                               if (typeof value !== "number") return "";
                               return `${value}m²`;
                             },
                           }}
-                          max={1000}
+                          max={10000}
                           className="mb-6"
                         />
                       </div>

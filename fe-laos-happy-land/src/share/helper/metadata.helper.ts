@@ -71,7 +71,7 @@ export async function generateMetadata(
       title: title ?? localeMetadata.title,
       description: description ?? localeMetadata.description,
       images: [image],
-      creator: "@laoshappyland",
+      creator: "@laohappyland",
     },
     icons: [{ rel: "icon", url: "/logo.ico" }],
     manifest: "/manifest.json",

@@ -48,12 +48,24 @@ export default function FeedbackInput({
       form.resetFields();
       setRating(0);
       onSuccess?.();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error submitting feedback:", error);
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : t("errors.errorSubmittingFeedback");
+
+      const backendMessage = (
+        error as { response?: { data?: { message?: string } } }
+      )?.response?.data?.message;
+
+      let errorMessage = t("errors.errorSubmittingFeedback");
+
+      // Check for specific error messages from backend
+      if (backendMessage === "You have already given feedback to this user") {
+        errorMessage = t("errors.alreadyGivenFeedback");
+      } else if (backendMessage) {
+        errorMessage = backendMessage;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
       message.error(errorMessage);
       onError?.(errorMessage);
     } finally {

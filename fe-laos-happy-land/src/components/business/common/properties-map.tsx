@@ -95,7 +95,7 @@ export default function PropertiesMap({
   };
 
   const handleViewDetails = (property: Property) => {
-    router.push(`/${locale}/properties/${property.id}`);
+    router.push(`/${locale}/property/${property.id}`);
   };
 
   if (loading) {

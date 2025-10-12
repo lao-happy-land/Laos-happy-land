@@ -3,6 +3,7 @@ import type {
   CreateBankRequestDto,
   UpdateBankRequestStatusDto,
 } from "@/@types/gentype-axios";
+import type { Bank } from "./bank.service";
 
 export interface BankRequest {
   id: string;
@@ -12,7 +13,7 @@ export interface BankRequest {
   note?: string;
   dob?: string;
   yearsOfExperience?: number;
-  bankId?: string;
+  bank?: Bank;
   imageUrl?: string;
   status: "pending" | "approved" | "rejected";
   createdAt: string;

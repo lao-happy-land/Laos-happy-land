@@ -205,11 +205,13 @@ export default function DashboardUser() {
       title: t("property.price"),
       dataIndex: "price",
       key: "price",
-      render: (price: unknown) => (
-        <div className="font-semibold text-green-600">
-          {numberToString(price as number, locale, currency)}
-        </div>
-      ),
+      render: (price: string) => {
+        return (
+          <div className="font-semibold text-green-600">
+            {numberToString(Number(price), locale, currency)}
+          </div>
+        );
+      },
     },
     {
       title: t("property.status"),
