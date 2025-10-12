@@ -100,7 +100,7 @@ export class UserService {
     const query = this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.role', 'role')
-      .leftJoinAndSelect('user.locationInfo', 'locationInfo')
+      .leftJoinAndSelect('user.locationInfo', 'locationInfo');
 
     if (params.role) {
       query.andWhere('role.name = :role', { role: params.role });
@@ -144,21 +144,27 @@ export class UserService {
     }
 
     query.skip(params.skip).take(params.perPage);
-    query.orderBy('user.priority', 'DESC')
-    query.addOrderBy('user.createdAt', 'DESC');
-
+    query
+      .orderBy('user.priority', 'DESC')
+      .addOrderBy('user.ratingAverage', 'DESC')
+      .addOrderBy('user.createdAt', 'DESC');
 
     const [users, total] = await query.getManyAndCount();
 
     const userIds = users.map((u) => u.id);
-    const counts = await this.userRepository.manager
-      .createQueryBuilder(Property, 'p')
-      .select('p.owner_id', 'ownerId')
-      .addSelect('COUNT(p.id)', 'approvedPropertyCount')
-      .where('p.owner_id IN (:...userIds)', { userIds })
-      .andWhere('p.status = :status', { status: PropertyStatusEnum.APPROVED })
-      .groupBy('p.owner_id')
-      .getRawMany();
+
+    let counts: { ownerId: string; approvedPropertyCount: string }[] = [];
+
+    if (userIds.length > 0) {
+      counts = await this.userRepository.manager
+        .createQueryBuilder(Property, 'p')
+        .select('p.owner_id', 'ownerId')
+        .addSelect('COUNT(p.id)', 'approvedPropertyCount')
+        .where('p.owner_id IN (:...userIds)', { userIds })
+        .andWhere('p.status = :status', { status: PropertyStatusEnum.APPROVED })
+        .groupBy('p.owner_id')
+        .getRawMany();
+    }
 
     const countMap = counts.reduce(
       (acc, cur) => {
