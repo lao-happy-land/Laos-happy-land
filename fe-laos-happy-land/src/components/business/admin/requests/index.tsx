@@ -20,9 +20,7 @@ import {
   bankRequestService,
   type BankRequest,
 } from "@/share/service/bank-request.service";
-import bankService, { type Bank } from "@/share/service/bank.service";
-import { getLangByLocale, getValidLocale } from "@/share/helper/locale.helper";
-import { useUrlLocale } from "@/utils/locale";
+
 import {
   CheckCircle,
   XCircle,
@@ -41,7 +39,6 @@ const { Option } = Select;
 export default function AdminRequests() {
   const t = useTranslations();
   const { message, modal } = App.useApp();
-  const locale = useUrlLocale();
   const [bankRequestsPage, setBankRequestsPage] = useState(1);
   const [brokerRequestsPage, setBrokerRequestsPage] = useState(1);
   const [bankRequestStatus, setBankRequestStatus] = useState<
@@ -53,29 +50,7 @@ export default function AdminRequests() {
     useState<BankRequest | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [requestType, setRequestType] = useState<"bank" | "broker">("bank");
-  const [banks, setBanks] = useState<Bank[]>([]);
   const pageSize = 10;
-
-  // Fetch banks for display
-  const { loading: loadingBanks } = useRequest(
-    async () => {
-      const response = await bankService.getBanks({
-        page: 1,
-        perPage: 100,
-        lang: getLangByLocale(getValidLocale(locale)),
-      });
-      return response;
-    },
-    {
-      onSuccess: (data) => {
-        console.log("Banks loaded:", data.data);
-        setBanks(data.data ?? []);
-      },
-      onError: (error) => {
-        console.error("Failed to load banks:", error);
-      },
-    },
-  );
 
   // Fetch bank requests
   const {
@@ -213,10 +188,6 @@ export default function AdminRequests() {
       title: t("loanCalculator.selectBank"),
       key: "bank",
       render: (_: unknown, record: BankRequest) => {
-        if (loadingBanks) {
-          return <Tag color="processing">{t("common.loading")}</Tag>;
-        }
-
         const name = record.bank?.name;
 
         const isNotAvailable = name === "";

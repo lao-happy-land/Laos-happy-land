@@ -184,7 +184,7 @@ const AdminProperties = () => {
         type?: string;
         minPrice?: number;
         maxPrice?: number;
-        location?: string;
+        locationId?: string;
         transaction?: "rent" | "sale" | "project";
         status?: "pending" | "approved" | "rejected";
         page?: number;
@@ -215,7 +215,7 @@ const AdminProperties = () => {
       }
 
       if (selectedLocation !== "all") {
-        params.location = selectedLocation;
+        params.locationId = selectedLocation;
       }
 
       if (priceRange[0] > 0) {
@@ -267,7 +267,7 @@ const AdminProperties = () => {
     if (selectedStatus !== "all") params.status = selectedStatus;
     if (selectedTransactionType !== "all")
       params.transaction = selectedTransactionType;
-    if (selectedLocation !== "all") params.location = selectedLocation;
+    if (selectedLocation !== "all") params.locationId = selectedLocation;
     if (priceRange[0] > 0) params.minPrice = priceRange[0];
     if (priceRange[1] < 100000000000) params.maxPrice = priceRange[1];
 
@@ -307,7 +307,7 @@ const AdminProperties = () => {
 
   const handleLocationChange = (location: string) => {
     setSelectedLocation(location);
-    updateSearchParams({ location: location === "all" ? "" : location });
+    updateSearchParams({ locationId: location === "all" ? "" : location });
   };
 
   const handlePriceRangeChange = (range: number | number[]) => {
@@ -339,7 +339,7 @@ const AdminProperties = () => {
       searchParams.get("type")?.split(",").filter(Boolean) ?? [];
     const urlStatus = searchParams.get("status") ?? "all";
     const urlTransactionType = searchParams.get("transaction") ?? "all";
-    const urlLocation = searchParams.get("location") ?? "all";
+    const urlLocation = searchParams.get("locationId") ?? "all";
     const urlMinPrice = parseInt(searchParams.get("minPrice") ?? "0");
     const urlMaxPrice = parseInt(
       searchParams.get("maxPrice") ?? "100000000000",
