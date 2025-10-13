@@ -224,6 +224,13 @@ export class PropertyService {
       }
     }
 
+    if (item.legalStatus) {
+      item.legalStatus = await this.translateService.translateText(
+        item.legalStatus,
+        targetLang,
+      );
+    }
+
     return item;
   }
 
