@@ -279,6 +279,8 @@ export default function CreateProperty() {
     // Validate location
     if (!locationData?.locationInfoId || !locationData?.location) {
       errors.push(t("property.pleaseSelectLocationOnMap"));
+    } else if (!locationData?.location?.address) {
+      errors.push(t("property.pleaseProvideLocationAddress"));
     }
 
     // Validate images for non-project properties
@@ -702,12 +704,6 @@ export default function CreateProperty() {
                     {t("property.description")}
                   </Text>
                 }
-                rules={[
-                  {
-                    required: true,
-                    message: t("property.pleaseEnterDescription"),
-                  },
-                ]}
               >
                 <TextArea
                   rows={6}

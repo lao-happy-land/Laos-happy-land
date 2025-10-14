@@ -54,6 +54,8 @@ import {
   type SupportedLocale,
 } from "@/share/helper/locale.helper";
 import { useCurrencyStore } from "@/share/store/currency.store";
+import ApprovedBankRequests from "../../property-details/approved-bank-requests";
+import BrokerUsers from "../../property-details/broker-users";
 
 interface PropertiesProps {
   transaction: "sale" | "rent" | "project";
@@ -85,7 +87,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
 
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
-  const [areaRange, setAreaRange] = useState<[number, number]>([0, 10000]);
+  const [areaRange, setAreaRange] = useState<[number, number]>([0, 50000]);
   const [selectedPriceRange, setSelectedPriceRange] = useState<string>("all");
   const [selectedAreaRange, setSelectedAreaRange] = useState<string>("all");
 
@@ -1173,7 +1175,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
     } else {
       params.minArea = "";
     }
-    if (value[1] !== 10000) {
+    if (value[1] !== 50000) {
       params.maxArea = value[1].toString();
     } else {
       params.maxArea = "";
@@ -1186,11 +1188,11 @@ const Properties = ({ transaction }: PropertiesProps) => {
     setSelectedAreaRange(rangeValue);
 
     let minValue = 0;
-    let maxValue = 10000;
+    let maxValue = 50000;
 
     if (rangeValue === "all") {
       minValue = 0;
-      maxValue = 10000;
+      maxValue = 50000;
       // Clear area range from URL params
       setAreaRange([minValue, maxValue]);
       setMinArea("");
@@ -1211,7 +1213,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
       const parsedMin = parseInt(minStr);
       if (!isNaN(parsedMin)) {
         minValue = parsedMin;
-        maxValue = 10000;
+        maxValue = 50000;
       }
     } else {
       // Parse range format "min-max"
@@ -1241,7 +1243,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
     } else {
       params.minArea = "";
     }
-    if (maxValue !== 10000) {
+    if (maxValue !== 50000) {
       params.maxArea = maxValue.toString();
     } else {
       params.maxArea = "";
@@ -1321,7 +1323,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
 
     // Update area range
     const newMinArea = parseInt(urlMinArea ?? "0");
-    const newMaxArea = parseInt(urlMaxArea ?? "10000");
+    const newMaxArea = parseInt(urlMaxArea ?? "50000");
     setAreaRange([newMinArea, newMaxArea]);
 
     // Update selected price range based on current price ranges
@@ -2161,14 +2163,14 @@ const Properties = ({ transaction }: PropertiesProps) => {
                             handleAreaRangeChange(value as [number, number])
                           }
                           min={0}
-                          step={10}
+                          step={50}
                           tooltip={{
                             formatter: (value?: number) => {
                               if (typeof value !== "number") return "";
                               return `${value}m²`;
                             },
                           }}
-                          max={10000}
+                          max={50000}
                           className="mb-4"
                         />
                       </div>
@@ -2188,28 +2190,64 @@ const Properties = ({ transaction }: PropertiesProps) => {
                               label: t("search.areaRanges.all"),
                             },
                             {
-                              value: "under-50",
-                              label: t("search.areaRanges.under50"),
+                              value: "under-30",
+                              label: "< 30 m²",
                             },
                             {
-                              value: "50-100",
-                              label: t("search.areaRanges.range50to100"),
+                              value: "30-50",
+                              label: "30 - 50 m²",
                             },
                             {
-                              value: "100-200",
-                              label: t("search.areaRanges.range100to200"),
+                              value: "50-80",
+                              label: "50 - 80 m²",
+                            },
+                            {
+                              value: "80-100",
+                              label: "80 - 100 m²",
+                            },
+                            {
+                              value: "100-150",
+                              label: "100 - 150 m²",
+                            },
+                            {
+                              value: "150-200",
+                              label: "150 - 200 m²",
                             },
                             {
                               value: "200-300",
-                              label: t("search.areaRanges.range200to300"),
+                              label: "200 - 300 m²",
                             },
                             {
                               value: "300-500",
-                              label: t("search.areaRanges.range300to500"),
+                              label: "300 - 500 m²",
                             },
                             {
-                              value: "over-500",
-                              label: t("search.areaRanges.over500"),
+                              value: "500-1000",
+                              label: "500 - 1,000 m²",
+                            },
+                            {
+                              value: "1000-2000",
+                              label: "1,000 - 2,000 m²",
+                            },
+                            {
+                              value: "2000-5000",
+                              label: "2,000 - 5,000 m²",
+                            },
+                            {
+                              value: "5000-10000",
+                              label: "5,000 - 10,000 m²",
+                            },
+                            {
+                              value: "10000-20000",
+                              label: "10,000 - 20,000 m²",
+                            },
+                            {
+                              value: "20000-50000",
+                              label: "20,000 - 50,000 m²",
+                            },
+                            {
+                              value: "over-50000",
+                              label: "> 50,000 m²",
                             },
                           ].map((range) => (
                             <div key={range.value} className="mb-2">
@@ -2359,14 +2397,14 @@ const Properties = ({ transaction }: PropertiesProps) => {
                             handleAreaRangeChange(value as [number, number])
                           }
                           min={0}
-                          step={10}
+                          step={50}
                           tooltip={{
                             formatter: (value?: number) => {
                               if (typeof value !== "number") return "";
                               return `${value}m²`;
                             },
                           }}
-                          max={10000}
+                          max={50000}
                           className="mb-6"
                         />
                       </div>
@@ -2391,28 +2429,64 @@ const Properties = ({ transaction }: PropertiesProps) => {
                               label: t("search.areaRanges.all"),
                             },
                             {
-                              value: "under-50",
-                              label: t("search.areaRanges.under50"),
+                              value: "under-30",
+                              label: "< 30 m²",
                             },
                             {
-                              value: "50-100",
-                              label: t("search.areaRanges.range50to100"),
+                              value: "30-50",
+                              label: "30 - 50 m²",
                             },
                             {
-                              value: "100-200",
-                              label: t("search.areaRanges.range100to200"),
+                              value: "50-80",
+                              label: "50 - 80 m²",
+                            },
+                            {
+                              value: "80-100",
+                              label: "80 - 100 m²",
+                            },
+                            {
+                              value: "100-150",
+                              label: "100 - 150 m²",
+                            },
+                            {
+                              value: "150-200",
+                              label: "150 - 200 m²",
                             },
                             {
                               value: "200-300",
-                              label: t("search.areaRanges.range200to300"),
+                              label: "200 - 300 m²",
                             },
                             {
                               value: "300-500",
-                              label: t("search.areaRanges.range300to500"),
+                              label: "300 - 500 m²",
                             },
                             {
-                              value: "over-500",
-                              label: t("search.areaRanges.over500"),
+                              value: "500-1000",
+                              label: "500 - 1,000 m²",
+                            },
+                            {
+                              value: "1000-2000",
+                              label: "1,000 - 2,000 m²",
+                            },
+                            {
+                              value: "2000-5000",
+                              label: "2,000 - 5,000 m²",
+                            },
+                            {
+                              value: "5000-10000",
+                              label: "5,000 - 10,000 m²",
+                            },
+                            {
+                              value: "10000-20000",
+                              label: "10,000 - 20,000 m²",
+                            },
+                            {
+                              value: "20000-50000",
+                              label: "20,000 - 50,000 m²",
+                            },
+                            {
+                              value: "over-50000",
+                              label: "> 50,000 m²",
                             },
                           ].map((range) => (
                             <div
@@ -2790,28 +2864,36 @@ const Properties = ({ transaction }: PropertiesProps) => {
                     <Empty description={t("property.noSuitableProperties")} />
                   </div>
                 ) : (
-                  <div
-                    className={`grid grid-cols-1 gap-6 ${
-                      layout === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : ""
-                    }`}
-                  >
-                    {properties?.data.map((property) => (
-                      <PropertyCard key={property.id} property={property} />
-                    ))}
-                    {layout === "list" || layout === "grid" ? (
-                      <div className="col-span-full">
-                        <Pagination
-                          align="center"
-                          total={total}
-                          pageSize={pageSize}
-                          current={currentPage}
-                          onChange={(page, pageSize) => {
-                            setCurrentPage(page);
-                            setPageSize(pageSize);
-                          }}
-                        />
+                  <div className="grid grid-cols-3 gap-6 2xl:grid-cols-4">
+                    <div
+                      className={`col-span-3 grid grid-cols-1 gap-6 ${
+                        layout === "grid" ? "grid-cols-2" : ""
+                      }`}
+                    >
+                      {properties?.data.map((property) => (
+                        <PropertyCard key={property.id} property={property} />
+                      ))}
+                      {layout === "list" || layout === "grid" ? (
+                        <div className="col-span-full">
+                          <Pagination
+                            align="center"
+                            total={total}
+                            pageSize={pageSize}
+                            current={currentPage}
+                            onChange={(page, pageSize) => {
+                              setCurrentPage(page);
+                              setPageSize(pageSize);
+                            }}
+                          />
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className="col-span-1 hidden 2xl:block">
+                      <div className="flex flex-col">
+                        <ApprovedBankRequests />
+                        <BrokerUsers />
                       </div>
-                    ) : null}
+                    </div>
                   </div>
                 )}
               </>

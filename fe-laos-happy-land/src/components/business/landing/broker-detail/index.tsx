@@ -225,8 +225,8 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
               {/* Broker Info */}
               <div className="lg:col-span-2">
                 <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
-                  <div className="relative">
-                    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-100 to-indigo-100 p-1">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-fit overflow-hidden rounded-3xl bg-gradient-to-br from-blue-100 to-indigo-100 p-2">
                       <Image
                         src={
                           broker.image ??
@@ -373,7 +373,7 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
               }
               key="about"
             >
-              <div className="space-y-8 p-8">
+              <div className="space-y-8 p-4">
                 {/* Bio Section */}
                 <div className="rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 p-6">
                   <h3 className="mb-4 flex items-center gap-2 text-2xl font-bold text-gray-900">
@@ -584,8 +584,8 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
               }
               key="properties"
             >
-              <div className="p-8">
-                <div className="mb-6 flex items-center justify-between">
+              <div className="p-4">
+                <div className="mb-6 flex flex-col items-center justify-between gap-2 lg:flex-row lg:items-center">
                   <h3 className="text-2xl font-bold text-gray-900">
                     {t("brokerDetail.listedProperties")} (
                     {properties?.length ?? 0})
@@ -788,14 +788,14 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
 
             <TabPane
               tab={
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 px-4">
                   <Star className="h-4 w-4" />
                   {t("brokerDetail.reviews")}
                 </div>
               }
               key="reviews"
             >
-              <div className="space-y-8 p-8">
+              <div className="space-y-8 p-2">
                 {/* Feedback Input */}
                 <FeedbackInput
                   brokerId={brokerId}
@@ -848,7 +848,7 @@ export default function BrokerDetail({ brokerId }: BrokerDetailProps) {
                               height={40}
                             />
                             <div className="flex-1">
-                              <div className="mb-2 flex items-center gap-2">
+                              <div className="mb-2 flex flex-col gap-2 lg:flex-row lg:items-center">
                                 <h4 className="font-semibold text-gray-900">
                                   {review.reviewer?.fullName ??
                                     t("common.anonymous")}

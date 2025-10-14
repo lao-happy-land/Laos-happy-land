@@ -28,6 +28,7 @@ import {
   ChevronDown,
   MoreHorizontal,
   Calculator,
+  Banknote,
 } from "lucide-react";
 import type { User } from "@/share/service/auth.service";
 import { useRouter } from "next/navigation";
@@ -81,6 +82,12 @@ const getNavItems = (locale: string, t: (key: string) => string) => [
     title: t("navigation.loanCalculator"),
     href: `/${locale}/loan-calculator`,
     icon: <Calculator className="h-4 w-4" />,
+  },
+  {
+    key: "bank-request",
+    title: t("navigation.bankRequest"),
+    href: `/${locale}/bank-request`,
+    icon: <Banknote className="h-4 w-4" />,
   },
 ];
 
@@ -166,21 +173,23 @@ export default function Header({
                 href={`/${locale}`}
                 className="group flex items-center space-x-3 transition-transform duration-200 hover:scale-105"
               >
-                <div className={`flex items-center ${"h-12 w-12"}`}>
+                <div className="hidden max-h-[75px] items-center lg:flex">
                   <Image
-                    src="/images/logo.png"
+                    src="/images/logo-fullname.png"
                     alt="Logo"
-                    width={100}
-                    height={100}
+                    width={75}
+                    height={75}
+                    className="h-[75px] w-auto object-contain"
                   />
                 </div>
-                <div>
-                  <h1 className="text-primary-500 text-lg font-bold">
-                    Laohappyland
-                  </h1>
-                  <p className="text-xs text-neutral-600">
-                    No.1 property platform
-                  </p>
+                <div className="flex items-center lg:hidden">
+                  <Image
+                    src="/images/logo-mb-fullname.png"
+                    alt="Logo"
+                    width={40}
+                    height={40}
+                    className="h-auto w-16 object-contain"
+                  />
                 </div>
               </Link>
             </div>
@@ -402,20 +411,14 @@ export default function Header({
       <Drawer
         title={
           <div className="flex items-center space-x-3">
-            <div className="flex h-10 w-10 items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-2">
               <Image
-                src="/images/logo.png"
+                src="/images/logo-fullname.png"
                 alt="Logo"
-                width={40}
-                height={40}
-                className="h-full w-full object-contain"
+                width={360}
+                height={360}
+                className="h-auto w-full object-contain"
               />
-            </div>
-            <div>
-              <div className="text-lg font-bold text-red-700">Laohappyland</div>
-              <div className="text-xs text-gray-500">
-                No.1 property platform
-              </div>
             </div>
           </div>
         }

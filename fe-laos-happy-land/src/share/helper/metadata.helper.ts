@@ -37,9 +37,9 @@ export async function generateMetadata(
     title: title ?? localeMetadata.title,
     description: description ?? localeMetadata.description,
     keywords: keywords ?? localeMetadata.keywords,
-    authors: [{ name: "Laos Happy Land Team" }],
-    creator: "Laos Happy Land",
-    publisher: "Laos Happy Land",
+    authors: [{ name: "Laohappyland.com Team" }],
+    creator: "Laohappyland.com",
+    publisher: "Laohappyland.com",
     robots: "index, follow",
     metadataBase: new URL(baseUrl),
     alternates: {
@@ -84,30 +84,30 @@ export async function generateMetadata(
 function getLocaleMetadata(locale: string) {
   const metadata = {
     en: {
-      title: "Laos Happy Land - Real Estate in Laos",
+      title: "Laohappyland.com - Real Estate in Laos",
       description:
         "Laos real estate website - Find houses, apartments, and real estate projects in Laos",
       keywords:
         "Laos real estate, houses Laos, apartments Laos, projects Laos, investment Laos, Laohappyland.com, Laohappyland",
-      siteName: "Laos Happy Land",
+      siteName: "Laohappyland.com",
       openGraphLocale: "en_US",
     },
     vn: {
-      title: "Laos Happy Land - Bất động sản Lào",
+      title: "Laohappyland.com - Bất động sản Lào",
       description:
         "Website bất động sản Lào - Tìm nhà đất, căn hộ, dự án bất động sản tại Lào",
       keywords:
         "bất động sản Lào, nhà đất Lào, căn hộ Lào, dự án Lào, đầu tư Lào, Laos real estate, Laohappyland.com, Laohappyland",
-      siteName: "Laos Happy Land",
+      siteName: "Laohappyland.com",
       openGraphLocale: "vi_VN",
     },
     la: {
-      title: "Laohappyland - ອະສັງຫາລິມະສັບລາວ",
+      title: "Laohappyland.com - ອະສັງຫາລິມະສັບລາວ",
       description:
         "ເວັບໄຊທ໌ອະສັງຫາລິມະສັບລາວ - ຊອກຫາບ້ານ, ອາພາດເມັນ, ແລະໂຄງການອະສັງຫາລິມະສັບໃນລາວ",
       keywords:
         "ອະສັງຫາລິມະສັບລາວ, ບ້ານລາວ, ອາພາດເມັນລາວ, ໂຄງການລາວ, ການລົງທຶນລາວ, Laos real estate, Laohappyland.com, Laohappyland",
-      siteName: "Laohappyland",
+      siteName: "Laohappyland.com",
       openGraphLocale: "lo_LA",
     },
   };
@@ -199,7 +199,7 @@ export async function generateBrokerMetadata(
 ): Promise<Metadata> {
   const localeMetadata = getLocaleMetadata(locale);
 
-  const title = `${broker.fullName} - Môi giới bất động sản - ${localeMetadata.siteName}`;
+  const title = `${broker.fullName} - Môi giới bất động sản - Laohappyland.com`;
   const description = `Môi giới bất động sản chuyên nghiệp ${broker.fullName}${broker.specialties ? ` chuyên về ${broker.specialties.join(", ")}` : ""}${broker.location ? ` tại ${broker.location}` : ""}`;
 
   return generateMetadata(

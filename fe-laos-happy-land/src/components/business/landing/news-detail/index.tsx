@@ -125,14 +125,14 @@ const NewsDetailPage = ({ newsId }: NewsDetailProps) => {
           <div>
             <div className="mb-8 overflow-hidden rounded-2xl bg-white shadow-lg">
               {/* Article Header */}
-              <div className="p-8">
+              <div className="p-4 lg:p-8">
                 <div className="mb-6">
                   {newsData.type && (
                     <Tag color="red" className="mb-4 px-3 py-1 text-sm">
                       {newsData.type.name}
                     </Tag>
                   )}
-                  <h1 className="mb-6 text-4xl leading-tight font-bold text-neutral-900">
+                  <h1 className="mb-6 text-2xl leading-tight font-bold text-neutral-900 lg:text-4xl">
                     {newsData.title}
                   </h1>
                   <div className="flex flex-wrap items-center gap-6 text-sm text-neutral-500">
@@ -211,13 +211,13 @@ const NewsDetailPage = ({ newsId }: NewsDetailProps) => {
                           block.url ?? block.value ?? "/images/placeholder.jpg";
                         return (
                           <div key={index} className="my-8">
-                            <div className="relative h-96 w-full overflow-hidden rounded-xl">
+                            <div className="relative">
                               <Image
                                 src={imageUrl}
                                 alt="News image"
-                                fill
-                                className="object-cover"
-                                sizes="(max-width: 1024px) 100vw, 75vw"
+                                className="h-auto w-full object-cover"
+                                width={1000}
+                                height={1000}
                               />
                             </div>
                           </div>

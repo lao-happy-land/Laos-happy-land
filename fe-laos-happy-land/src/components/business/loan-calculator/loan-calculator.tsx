@@ -125,30 +125,40 @@ const LoanCalculator = () => {
 
     if (calculationMethod === "annuity") {
       // Equal Installment Payment (Gốc + lãi chia đều hàng tháng)
-      const monthlyPayment =
-        (loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, totalMonths))) /
-        (Math.pow(1 + monthlyRate, totalMonths) - 1);
+      // Both principal and interest are the same every month
+
+      // Fixed principal payment per month
+      const principalPayment = Math.round(loanAmount / totalMonths);
+
+      // Calculate total interest for the entire loan period on the full amount
+      const totalInterestAmount = Math.round(
+        loanAmount * monthlyRate * totalMonths,
+      );
+
+      // Fixed interest payment per month
+      const interestPayment = Math.round(totalInterestAmount / totalMonths);
+
+      // Fixed monthly payment (same every month)
+      const monthlyPayment = principalPayment + interestPayment;
 
       const schedule: LoanCalculation[] = [];
       let remainingBalance = loanAmount;
 
       for (let month = 1; month <= totalMonths; month++) {
-        const interestPayment = remainingBalance * monthlyRate;
-        const principalPayment = monthlyPayment - interestPayment;
         remainingBalance -= principalPayment;
 
         schedule.push({
           month,
-          principalPayment,
-          interestPayment,
-          totalPayment: monthlyPayment,
-          remainingBalance: Math.max(0, remainingBalance),
+          principalPayment, // Same principal every month
+          interestPayment, // Same interest every month
+          totalPayment: monthlyPayment, // Same total every month
+          remainingBalance: Math.max(0, Math.round(remainingBalance)),
         });
       }
 
       return {
         monthlyPayment,
-        totalInterest: monthlyPayment * totalMonths - loanAmount,
+        totalInterest: totalInterestAmount,
         totalPayment: monthlyPayment * totalMonths,
         schedule,
       };
@@ -270,7 +280,6 @@ const LoanCalculator = () => {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <Spin size="large" />
-        <Text className="ml-3">{t("loanCalculator.loadingBanks")}</Text>
       </div>
     );
   }
@@ -522,9 +531,6 @@ const LoanCalculator = () => {
                   setCurrentPage(page);
                   setPageSize(size || 12);
                 }}
-                showTotal={(total, range) =>
-                  `${range[0]}-${range[1]} ${t("loanCalculator.of")} ${total} ${t("loanCalculator.paymentSchedule")}`
-                }
                 showSizeChanger={false}
               />
             </div>

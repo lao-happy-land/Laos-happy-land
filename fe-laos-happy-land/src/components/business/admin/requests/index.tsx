@@ -500,10 +500,10 @@ export default function AdminRequests() {
                 <Tag
                   color={
                     selectedBankRequest.status === "approved"
-                      ? "green"
+                      ? "success"
                       : selectedBankRequest.status === "rejected"
-                        ? "red"
-                        : "orange"
+                        ? "error"
+                        : "warning"
                   }
                 >
                   {selectedBankRequest.status === "approved"
@@ -514,8 +514,8 @@ export default function AdminRequests() {
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label={t("loanCalculator.selectBank")}>
-                <Tag color={selectedBankRequest.bank ? "blue" : "default"}>
-                  selectedBankRequest.bank?.name
+                <Tag color={selectedBankRequest.bank ? "success" : "default"}>
+                  {selectedBankRequest.bank?.name ?? t("common.notAvailable")}
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label={t("admin.requestNote")}>

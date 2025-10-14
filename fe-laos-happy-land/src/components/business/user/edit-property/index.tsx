@@ -330,6 +330,8 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
 
     if (!values.location) {
       errors.push(t("property.pleaseSelectLocationOnMap"));
+    } else if (!locationData?.location?.address) {
+      errors.push(t("property.pleaseProvideLocationAddress"));
     }
 
     // Validate images for non-project types
@@ -845,12 +847,6 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                     {t("property.description")}
                   </Text>
                 }
-                rules={[
-                  {
-                    required: true,
-                    message: t("property.pleaseEnterDescription"),
-                  },
-                ]}
               >
                 <TextArea
                   rows={6}
@@ -1105,6 +1101,7 @@ export default function EditProperty({ propertyId }: EditPropertyProps) {
                                 size="small"
                                 onClick={() => removeExistingImage(index)}
                                 className="h-6 w-6"
+                                disabled={uploadingImages[index]}
                               >
                                 <X className="size-3" />
                               </Button>

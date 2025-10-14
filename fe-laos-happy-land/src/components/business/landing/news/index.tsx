@@ -296,7 +296,7 @@ const NewsPage = () => {
                           {featuredNews.description}
                         </p>
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-6 text-sm text-neutral-500">
+                          <div className="flex flex-col items-center gap-2 text-sm text-neutral-500 lg:flex-row lg:gap-6">
                             <div className="flex items-center gap-2">
                               <Calendar size={16} />
                               <span>

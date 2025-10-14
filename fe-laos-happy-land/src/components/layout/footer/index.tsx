@@ -58,7 +58,7 @@ const Footer = () => {
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-400/20 to-transparent"></div>
                 <Image
                   src="/images/logo.png"
-                  alt="Laohappyland Logo"
+                  alt="Laohappyland.com Logo"
                   width={48}
                   height={48}
                   className="relative h-full w-full object-contain"
@@ -69,7 +69,7 @@ const Footer = () => {
                   {t("footer.companyName")}
                 </div>
                 <div className="-mt-1 text-sm font-medium text-blue-300">
-                  {t("footer.companyTagline")}
+                  Happy platform for Lao property
                 </div>
               </div>
             </Link>

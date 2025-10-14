@@ -100,7 +100,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white p-1">
               <Image
-                src="/images/logo.png"
+                src="/images/logo-fullname.png"
                 alt="Laohappyland Logo"
                 width={40}
                 height={40}

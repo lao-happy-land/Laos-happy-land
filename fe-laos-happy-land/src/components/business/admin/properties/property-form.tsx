@@ -375,6 +375,8 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
     // Validate location
     if (!locationData?.locationInfoId || !locationData?.location) {
       errors.push(t("property.pleaseSelectLocationOnMap"));
+    } else if (!locationData?.location?.address) {
+      errors.push(t("property.pleaseProvideLocationAddress"));
     }
 
     // Validate images for non-project properties
@@ -817,12 +819,6 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
               label={
                 <Text className="font-medium">{t("property.description")}</Text>
               }
-              rules={[
-                {
-                  required: true,
-                  message: t("property.pleaseEnterDescription"),
-                },
-              ]}
             >
               <TextArea
                 rows={6}
@@ -984,6 +980,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                           onClick={() => setExistingMainImage(null)}
                           size="small"
                           shape="circle"
+                          disabled={uploadingMainImage}
                         >
                           <X className="size-4" />
                         </Button>
@@ -1088,6 +1085,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                             );
                             setExistingImages(newExistingImages);
                           }}
+                          disabled={uploadingImages[index]}
                           className="h-6 w-6"
                         >
                           <X className="size-3" />
