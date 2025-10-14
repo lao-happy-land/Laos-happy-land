@@ -162,6 +162,13 @@ export class PropertyService {
       );
     }
 
+    if (item.legalStatus) {
+      item.legalStatus = await this.translateService.translateText(
+        item.legalStatus,
+        targetLang,
+      );
+    }
+
     return item;
   }
   private async translateProperty(item: any, targetLang: string): Promise<any> {
@@ -334,7 +341,7 @@ export class PropertyService {
       });
     }
 
-    if (params.status && user.role.toString() === 'Admin') {
+    if (params.status && user && user.role.toString() === 'Admin') {
       properties.andWhere('property.status = :status', {
         status: params.status,
       });
