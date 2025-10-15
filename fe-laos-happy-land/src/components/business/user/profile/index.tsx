@@ -154,6 +154,19 @@ export default function Profile() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validate phone is required
+    if (!formData.phone || formData.phone.trim().length === 0) {
+      antMessage.error(t("auth.pleaseEnterPhone"));
+      return;
+    }
+
+    // Validate phone format (basic validation: should have at least 8 digits)
+    const phoneDigits = formData.phone.replace(/\D/g, "");
+    if (phoneDigits.length < 8) {
+      antMessage.error(t("auth.invalidPhone"));
+      return;
+    }
+
     const submitData = {
       ...formData,
       image: avatarFile ?? undefined,
@@ -770,7 +783,8 @@ export default function Profile() {
 
                   <div>
                     <label className="mb-1 block text-sm font-medium text-neutral-700">
-                      {t("common.phone")}
+                      {t("common.phone")}{" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     <Input
                       placeholder={t("common.enterPhone")}
@@ -779,6 +793,7 @@ export default function Profile() {
                       onChange={(e) =>
                         handleInputChange("phone", e.target.value)
                       }
+                      required
                       disabled={!isEditing}
                     />
                   </div>

@@ -166,13 +166,12 @@ export default function PropertyCard({ property }: { property: Property }) {
               {property.title}
             </h3>
 
-            <div className="mb-2 flex flex-col items-start lg:flex-row lg:items-center lg:gap-3">
+            <div className="mb-2 flex flex-col items-start lg:gap-3">
               <span className="text-2xl font-bold text-red-600">
                 {property.price
                   ? numberToString(Number(property.price), locale, currency)
                   : t("property.contactForPrice")}
               </span>
-              <span className="hidden text-gray-500 lg:block">•</span>
               <div className="flex items-center gap-1">
                 <MapPin className="h-4 w-4" />
                 <span className="text-sm text-gray-600">
@@ -207,15 +206,17 @@ export default function PropertyCard({ property }: { property: Property }) {
             </div>
 
             <p className="mb-4 line-clamp-2 text-sm leading-relaxed text-gray-600">
-              {property.description}
+              {property?.description}
             </p>
           </div>
 
           {/* Footer */}
-          <div className="flex flex-row items-start justify-between gap-4 border-t border-gray-200 p-4 lg:items-center">
+          <div className="flex flex-col items-start justify-between gap-4 border-t border-gray-200 p-4">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-600 shadow-lg">
-                <span className="text-sm font-bold text-white">T</span>
+                <span className="text-sm font-bold text-white">
+                  {property.owner?.fullName?.charAt(0)}
+                </span>
               </div>
               <div className="flex flex-col gap-1">
                 <div className="text-sm font-semibold text-gray-900">
@@ -234,7 +235,7 @@ export default function PropertyCard({ property }: { property: Property }) {
             {property.owner?.phone && (
               <Button
                 type="primary"
-                className="flex h-12 w-1/2 items-center gap-2"
+                className="flex h-12 w-full items-center gap-2"
               >
                 <Phone className="h-4 w-4" />
                 <span>{property.owner?.phone}</span>

@@ -20,6 +20,8 @@ export default function BrokerUsers() {
     async () => {
       const users = await userService.getAllUsers({
         role: "Broker",
+        perPage: 5,
+        page: 1,
       });
       return users.data as unknown as User[];
     },
@@ -48,7 +50,7 @@ export default function BrokerUsers() {
   if (users.length === 0) {
     return (
       <div className="mt-4 overflow-hidden rounded-lg shadow-sm">
-        <Card bordered={false}>
+        <Card>
           <Empty
             description={t("property.noBrokerConsultants")}
             image={Empty.PRESENTED_IMAGE_SIMPLE}

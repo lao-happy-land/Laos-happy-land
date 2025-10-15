@@ -140,7 +140,7 @@ const SearchBox = () => {
     0, 100000000000,
   ]);
   const [selectedPriceRange, setSelectedPriceRange] = useState<string>("all");
-  const [areaRange, setAreaRange] = useState<[number, number]>([0, 10000]);
+  const [areaRange, setAreaRange] = useState<[number, number]>([0, 50000]);
   const [selectedAreaRange, setSelectedAreaRange] = useState<string>("all");
 
   // Detect mobile screen size
@@ -876,7 +876,11 @@ const SearchBox = () => {
     { value: "300-500", label: "300 - 500 m²" },
     { value: "500-1000", label: "500 - 1,000 m²" },
     { value: "1000-2000", label: "1,000 - 2,000 m²" },
-    { value: "over-2000", label: "> 2,000 m²" },
+    { value: "2000-5000", label: "2,000 - 5,000 m²" },
+    { value: "5000-10000", label: "5,000 - 10,000 m²" },
+    { value: "10000-20000", label: "10,000 - 20,000 m²" },
+    { value: "20000-50000", label: "20,000 - 50,000 m²" },
+    { value: "over-50000", label: "> 50,000 m²" },
   ];
 
   const handleSearch = async () => {
@@ -888,7 +892,7 @@ const SearchBox = () => {
       searchParams.set("minPrice", priceRange[0].toString());
       searchParams.set("maxPrice", priceRange[1].toString());
     }
-    if (areaRange[0] === 0 && areaRange[1] === 10000) {
+    if (areaRange[0] === 0 && areaRange[1] === 50000) {
       searchParams.delete("minArea");
       searchParams.delete("maxArea");
     } else {
@@ -988,7 +992,7 @@ const SearchBox = () => {
   };
 
   const handleMaxAreaInputChange = (value: number) => {
-    const numValue = value || 10000;
+    const numValue = value || 50000;
     setAreaRange([areaRange[0], numValue]);
     setSelectedAreaRange("");
   };
@@ -1045,11 +1049,11 @@ const SearchBox = () => {
     setSelectedAreaRange(rangeValue);
 
     let minValue = 0;
-    let maxValue = 10000;
+    let maxValue = 50000;
 
     if (rangeValue === "all") {
       minValue = 0;
-      maxValue = 10000;
+      maxValue = 50000;
     } else if (rangeValue.startsWith("under-")) {
       // Handle "under-X" format
       const maxStr = rangeValue.replace("under-", "");
@@ -1064,7 +1068,7 @@ const SearchBox = () => {
       const parsedMin = parseInt(minStr);
       if (!isNaN(parsedMin)) {
         minValue = parsedMin;
-        maxValue = 10000;
+        maxValue = 50000;
       }
     } else {
       // Parse range format "min-max"
@@ -2000,8 +2004,8 @@ const SearchBox = () => {
                             handleAreaRangeChange(value as [number, number])
                           }
                           min={0}
-                          max={10000}
-                          step={10}
+                          max={50000}
+                          step={50}
                           className="mb-4"
                         />
                       </div>
@@ -2118,7 +2122,7 @@ const SearchBox = () => {
                               {t("search.to")}
                             </Text>
                             <Text className="mb-2 block text-lg font-bold text-red-600">
-                              {areaRange[1] === 10000 ? "∞" : areaRange[1]}m²
+                              {areaRange[1] === 50000 ? "∞" : areaRange[1]}m²
                             </Text>
                           </div>
                           <Input
@@ -2141,14 +2145,14 @@ const SearchBox = () => {
                             handleAreaRangeChange(value as [number, number])
                           }
                           min={0}
-                          step={10}
+                          step={50}
                           tooltip={{
                             formatter: (value?: number) => {
                               if (typeof value !== "number") return "";
                               return `${value}m²`;
                             },
                           }}
-                          max={10000}
+                          max={50000}
                           className="mb-6"
                         />
                       </div>

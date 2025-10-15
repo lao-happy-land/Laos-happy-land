@@ -214,7 +214,7 @@ const LandingPage = () => {
             </p>
           </div>
 
-          <div className="container mx-auto grid grid-cols-4 gap-4 px-4 text-center">
+          <div className="container mx-auto grid grid-cols-2 gap-4 px-4 text-center lg:grid-cols-4">
             <div className="flex flex-col items-center gap-3">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
                 <Building2 className="h-8 w-8 text-white" />

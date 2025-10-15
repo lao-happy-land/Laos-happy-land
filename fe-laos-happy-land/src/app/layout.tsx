@@ -13,36 +13,35 @@ import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import TokenHandler from "@/components/common/token-handler";
 
 export const metadata: Metadata = {
-  title: "Laos Happy Land - Bất động sản Lào",
+  title: "Laohappyland.com - Happy platform for Lao property",
   description:
-    "Website bất động sản Lào - Tìm nhà đất, căn hộ, dự án bất động sản tại Lào",
+    "Website property for Laos - Find houses, apartments, and real estate projects in Laos",
   keywords:
     "bất động sản Lào, nhà đất Lào, căn hộ Lào, dự án Lào, đầu tư Lào, Laos real estate. Laohappyland.com, Laohappyland, Laohappyland.com",
-  authors: [{ name: "Laos Happy Land Team" }],
-  creator: "Laos Happy Land",
-  publisher: "Laos Happy Land",
+  authors: [{ name: "Laohappyland.com Team" }],
+  creator: "Laohappyland.com",
+  publisher: "Laohappyland.com",
   robots: "index, follow",
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000",
   ),
   openGraph: {
     type: "website",
-    locale: "vi_VN",
+    locale: "la_LA",
     url: "https://laohappyland.com",
-    siteName: "Laos Happy Land",
-    title: "Laos Happy Land - Bất động sản Lào",
+    siteName: "Laohappyland.com",
+    title: "Laohappyland.com - Happy platform for Lao property",
     description:
-      "Website bất động sản Lào - Tìm nhà đất, căn hộ, dự án bất động sản tại Lào",
+      "Website property for Laos - Find houses, apartments, and real estate projects in Laos",
     images: [
       {
         url: "/images/landingpage/hero-slider/hero-banner-1.jpg",
         width: 1200,
         height: 630,
-        alt: "Laos Happy Land",
+        alt: "Laohappyland.com",
       },
     ],
   },
-
   icons: [{ rel: "icon", url: "/logo.ico" }],
   manifest: "/manifest.json",
 };
@@ -61,8 +60,11 @@ export default async function RootLayout({
   const t = await getTranslations("common");
   const locale = await getLocale();
 
+  const localeCode =
+    locale === "la" ? "la_LA" : locale === "en" ? "en_US" : "vi_VN";
+
   return (
-    <html lang={locale} className={`${beVietnamPro.variable}`}>
+    <html lang={localeCode} className={`${beVietnamPro.variable}`}>
       <body className="antialiased">
         <AntdRegistry>
           <AntdConfigProvider>
