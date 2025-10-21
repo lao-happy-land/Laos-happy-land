@@ -1263,7 +1263,7 @@ const SearchBox = () => {
                 </Button>
               </div>
             </div>
-            {showLocationPopup && (
+            {!isMobile && showLocationPopup && (
               <div
                 ref={locationPopupRef}
                 className="location-popup absolute z-50 h-[60vh] w-[calc(100%-1rem)] overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-2xl sm:h-[50vh] sm:w-[calc(100%-3rem)] sm:rounded-2xl"
@@ -1409,6 +1409,141 @@ const SearchBox = () => {
                 </div>
               </div>
             )}
+
+            {/* Location Modal - Mobile */}
+            <Modal
+              title={
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
+                    <MapPin className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <span className="text-lg font-semibold">
+                    {t("search.selectLocation")}
+                  </span>
+                </div>
+              }
+              open={isMobile && showLocationPopup}
+              onCancel={() => setShowLocationPopup(false)}
+              footer={null}
+              centered
+              width={420}
+            >
+              <div className="max-h-[70vh] overflow-y-auto">
+                {/* Trending Locations */}
+                <div className="mb-6">
+                  <div className="mb-3 flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-red-500 to-orange-500">
+                      <span className="text-sm">🔥</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">
+                        {t("search.explorePopularAreas")}
+                      </h4>
+                      <p className="text-sm text-gray-500">
+                        {t("search.trendingDescription")}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {allLocationsLoading
+                      ? Array.from({ length: 6 }).map((_, index) => (
+                          <div
+                            key={index}
+                            className="h-24 animate-pulse rounded-xl bg-gray-200"
+                          />
+                        ))
+                      : popularCities?.slice(0, 6).map((city) => (
+                          <div
+                            key={city.id}
+                            className={`group relative h-24 overflow-hidden rounded-xl border-2 border-solid transition-all duration-200 hover:scale-105 hover:shadow-lg ${
+                              selectedLocation === city.id
+                                ? "border-red-400"
+                                : "border-gray-200 hover:border-red-300"
+                            }`}
+                            onClick={() => handleLocationSelect(city.id)}
+                          >
+                            <Image
+                              src={
+                                city.imageURL ??
+                                "/images/landingpage/cities/default.jpg"
+                              }
+                              alt={city.name}
+                              fill
+                              className="object-cover"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/80"></div>
+                            <div className="absolute right-2 bottom-2 left-2">
+                              <span
+                                className={`text-sm font-semibold drop-shadow-lg ${
+                                  selectedLocation === city.id
+                                    ? "rounded-full bg-white px-2 py-1 text-red-600"
+                                    : "text-white"
+                                }`}
+                              >
+                                {city.name}
+                              </span>
+                            </div>
+                            {selectedLocation === city.id && (
+                              <div className="absolute top-2 right-2">
+                                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-lg">
+                                  <CheckCircle className="h-3 w-3" />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                  </div>
+                </div>
+
+                {/* All Locations */}
+                <div>
+                  <div className="mb-3 flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-indigo-500">
+                      <span className="text-sm">🌍</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">
+                        {t("search.allLocations")}
+                      </h4>
+                      <p className="text-sm text-gray-500">
+                        {t("search.allLocationsDescription")}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {allLocationsLoading
+                      ? Array.from({ length: 8 }).map((_, index) => (
+                          <div
+                            key={index}
+                            className="h-12 animate-pulse rounded-lg bg-gray-200"
+                          />
+                        ))
+                      : allLocations.map((location) => (
+                          <button
+                            key={location}
+                            onClick={() => handleLocationSelect(location)}
+                            className={`flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left text-sm font-medium transition-all duration-200 ${
+                              selectedLocation === location
+                                ? "border-red-500 bg-red-500 text-white shadow-md"
+                                : "border-gray-100 bg-gray-50 text-gray-700 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                            }`}
+                          >
+                            <span className="capitalize">
+                              {location === "all"
+                                ? t("search.allAreas")
+                                : (allLocationsData?.find(
+                                    (loc: LocationInfo) => loc.id === location,
+                                  )?.name ?? location)}
+                            </span>
+                            {selectedLocation === location && (
+                              <CheckCircle className="h-4 w-4" />
+                            )}
+                          </button>
+                        ))}
+                  </div>
+                </div>
+              </div>
+            </Modal>
 
             {/* Filter Dropdowns */}
             <div className="relative mt-2 grid w-full gap-2 lg:mt-4 lg:grid-cols-3 lg:gap-4">

@@ -100,7 +100,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
   const [total, setTotal] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [layout, setLayout] = useState<"grid" | "list" | "map">("list");
-  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [isSearchExpanded, setIsSearchExpanded] = useState(true);
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window !== "undefined") {
       return window.innerWidth < 768;
@@ -125,6 +125,40 @@ const Properties = ({ transaction }: PropertiesProps) => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // Auto-collapse/expand search section on scroll
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+    let timeoutId: NodeJS.Timeout;
+
+    const handleScroll = () => {
+      clearTimeout(timeoutId);
+
+      timeoutId = setTimeout(() => {
+        const currentScrollY = window.scrollY;
+        const isScrollingUp = currentScrollY < lastScrollY;
+
+        // Collapse when scrolling down past 100px
+        if (currentScrollY > 100 && isSearchExpanded && !isScrollingUp) {
+          setIsSearchExpanded(false);
+        }
+        // Expand when scrolling up (anywhere on page)
+        else if (isScrollingUp && !isSearchExpanded) {
+          setIsSearchExpanded(true);
+        }
+
+        lastScrollY = currentScrollY;
+      }, 50); // 50ms debounce
+    };
+
+    // Debounced scroll listener
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [isSearchExpanded]);
+
   // Fetch property types
   const { loading: propertyTypesLoading } = useRequest(
     async () => {
@@ -139,7 +173,6 @@ const Properties = ({ transaction }: PropertiesProps) => {
         setPropertyTypes(data);
       },
       onError: (error) => {
-        console.error("Failed to fetch property types:", error);
         message.error(t("admin.cannotLoadPropertyTypes"));
       },
     },
@@ -1456,40 +1489,57 @@ const Properties = ({ transaction }: PropertiesProps) => {
 
   return (
     <div className="relative min-h-screen">
-      <div className="sticky top-[80px] right-0 left-0 z-50 container mx-auto px-4 py-4">
+      <div className="sticky top-[80px] right-0 left-0 z-50 container mx-auto bg-white px-4 py-4">
         <div className="relative rounded-2xl bg-white shadow-md ring-1 ring-gray-200/50 backdrop-blur-sm">
-          {/* Mobile Search Toggle */}
-          <div className="block border-b border-gray-100 p-2 lg:hidden">
-            <Button
-              size="large"
-              onClick={() => setIsSearchExpanded(!isSearchExpanded)}
-              className="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-gradient-to-r from-red-50 to-orange-50 px-4 py-3 shadow-sm transition-all duration-200 hover:border-red-300 hover:shadow-md"
-            >
-              <div className="flex items-center gap-3">
-                <Filter className="h-5 w-5 text-red-500" />
-                <div className="text-left">
-                  <div className="font-semibold text-gray-900">
-                    {t("search.searchFilters")}
-                  </div>
-                  {getFilterDisplayText() && (
-                    <div className="max-w-[200px] truncate text-xs text-gray-600">
-                      {getFilterDisplayText()}
+          {/* Search Toggle Button - Only show when collapsed */}
+          {!isSearchExpanded && (
+            <div className="border-b border-gray-100 p-2">
+              <Button
+                size="large"
+                onClick={() => setIsSearchExpanded(true)}
+                className="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-gradient-to-r from-red-50 to-orange-50 px-4 py-3 shadow-sm transition-all duration-200 hover:border-red-300 hover:shadow-md"
+              >
+                <div className="flex items-center gap-3">
+                  <Filter className="h-5 w-5 text-red-500" />
+                  <div className="text-left">
+                    <div className="font-semibold text-gray-900">
+                      {t("search.searchFilters")}
                     </div>
-                  )}
+                    {getFilterDisplayText() && (
+                      <div className="max-w-[200px] truncate text-xs text-gray-600">
+                        {getFilterDisplayText()}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <ChevronRight
-                className={`h-5 w-5 text-gray-400 transition-transform duration-200 ${
-                  isSearchExpanded ? "rotate-90" : ""
-                }`}
-              />
-            </Button>
-          </div>
+                <ChevronRight className="h-5 w-5 rotate-90 text-gray-400 transition-transform duration-200" />
+              </Button>
+            </div>
+          )}
 
           {/* Search Form */}
           <div
-            className={`p-2 lg:p-6 ${isSearchExpanded ? "block" : "hidden lg:block"}`}
+            className={`p-2 lg:p-6 ${isSearchExpanded ? "block" : "hidden"}`}
           >
+            {/* Collapse Button */}
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Filter className="h-5 w-5 text-red-500" />
+                <span className="font-semibold text-gray-900">
+                  {t("search.searchFilters")}
+                </span>
+              </div>
+              <Button
+                type="text"
+                size="small"
+                onClick={() => setIsSearchExpanded(false)}
+                className="flex items-center gap-1 text-gray-500 hover:text-red-500"
+              >
+                <X className="h-4 w-4" />
+                <span className="text-sm">Collapse</span>
+              </Button>
+            </div>
+
             <div className="my-4 hidden items-center text-sm lg:flex">
               <div className="flex items-center space-x-2">
                 <span className="cursor-pointer text-gray-500 transition-colors hover:text-red-500 hover:underline">
