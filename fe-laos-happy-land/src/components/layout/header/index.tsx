@@ -184,11 +184,11 @@ export default function Header({
                 </div>
                 <div className="flex items-center lg:hidden">
                   <Image
-                    src="/images/logo-mb-fullname.png"
+                    src="/images/logo-fullname.png"
                     alt="Logo"
                     width={40}
                     height={40}
-                    className="h-auto w-16 object-contain"
+                    className="h-auto w-[160px] object-contain"
                   />
                 </div>
               </Link>
@@ -197,7 +197,7 @@ export default function Header({
             <div className="hidden lg:flex lg:flex-1 lg:justify-center">
               <nav className="flex items-center space-x-1">
                 {/* First 3 navigation items */}
-                {NAV_ITEMS.slice(0, 3).map((item) => (
+                {NAV_ITEMS.slice(0, 4).map((item) => (
                   <div key={item.key}>
                     {item.href ? (
                       <Link
@@ -237,11 +237,11 @@ export default function Header({
                 ))}
 
                 {/* More menu for remaining items */}
-                <div className="hidden lg:block 2xl:hidden">
+                <div className="hidden lg:block">
                   {NAV_ITEMS.length > 3 && (
                     <Dropdown
                       menu={{
-                        items: NAV_ITEMS.slice(3).map((item) => ({
+                        items: NAV_ITEMS.slice(4).map((item) => ({
                           key: item.key,
                           icon: item.icon,
                           label: item.href ? (
@@ -264,48 +264,6 @@ export default function Header({
                       </Tooltip>
                     </Dropdown>
                   )}
-                </div>
-                <div className="hidden items-center space-x-1 2xl:flex">
-                  {NAV_ITEMS.slice(3).map((item) => (
-                    <div key={item.key}>
-                      {item.href ? (
-                        <Link
-                          href={item.href}
-                          className={`hover:bg-primary-50 hover:text-primary-500 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
-                            getSelectedKeys().includes(item.key)
-                              ? "bg-primary-50 text-primary-500"
-                              : "text-neutral-600"
-                          }`}
-                        >
-                          <span
-                            className={
-                              getSelectedKeys().includes(item.key)
-                                ? "text-primary-500"
-                                : "text-neutral-500"
-                            }
-                          >
-                            {item.icon}
-                          </span>
-                          <span
-                            className={`whitespace-nowrap ${
-                              getSelectedKeys().includes(item.key)
-                                ? "text-primary-500"
-                                : "text-neutral-600"
-                            }`}
-                          >
-                            {item.title}
-                          </span>
-                        </Link>
-                      ) : (
-                        <span className="flex cursor-not-allowed items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-500 opacity-60">
-                          <span className="text-neutral-400">{item.icon}</span>
-                          <span className="whitespace-nowrap">
-                            {item.title}
-                          </span>
-                        </span>
-                      )}
-                    </div>
-                  ))}
                 </div>
               </nav>
             </div>

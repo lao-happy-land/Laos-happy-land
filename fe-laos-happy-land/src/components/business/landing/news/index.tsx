@@ -429,7 +429,13 @@ const NewsPage = () => {
                   </h3>
                   <div className="space-y-4">
                     {processedNews.slice(0, 5).map((news: News) => (
-                      <div key={news.id} className="group cursor-pointer">
+                      <div
+                        onClick={() =>
+                          router.push(`/${locale}/news/${news.id}`)
+                        }
+                        key={news.id}
+                        className="group cursor-pointer"
+                      >
                         <div className="flex gap-3">
                           <div className="h-12 w-16 flex-shrink-0 overflow-hidden rounded-md bg-neutral-100">
                             <Image
