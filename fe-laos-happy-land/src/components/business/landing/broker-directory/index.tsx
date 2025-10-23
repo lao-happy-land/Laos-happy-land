@@ -232,7 +232,7 @@ export default function BrokerDirectory() {
                     <Image
                       src={broker.avatar ?? "/images/admin/avatar.png"}
                       alt={broker.name}
-                      className="rounded-full object-cover"
+                      className="h-full w-full rounded-full object-cover"
                       width={80}
                       height={80}
                     />
