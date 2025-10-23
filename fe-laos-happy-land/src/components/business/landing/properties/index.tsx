@@ -101,6 +101,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
   const [pageSize, setPageSize] = useState(10);
   const [layout, setLayout] = useState<"grid" | "list" | "map">("list");
   const [isSearchExpanded, setIsSearchExpanded] = useState(true);
+  const [isUserInteracting, setIsUserInteracting] = useState(false);
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window !== "undefined") {
       return window.innerWidth < 768;
@@ -131,6 +132,9 @@ const Properties = ({ transaction }: PropertiesProps) => {
     let timeoutId: NodeJS.Timeout;
 
     const handleScroll = () => {
+      // Don't interfere if user is manually interacting
+      if (isUserInteracting) return;
+
       clearTimeout(timeoutId);
 
       timeoutId = setTimeout(() => {
@@ -157,7 +161,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
       clearTimeout(timeoutId);
       window.removeEventListener("scroll", handleScroll);
     };
-  }, [isSearchExpanded]);
+  }, [isSearchExpanded, isUserInteracting]);
 
   // Fetch property types
   const { loading: propertyTypesLoading } = useRequest(
@@ -1488,7 +1492,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
   };
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative h-fit">
       <div className="sticky top-[80px] right-0 left-0 z-50 container mx-auto bg-white px-4 py-4">
         <div className="relative rounded-2xl bg-white shadow-md ring-1 ring-gray-200/50 backdrop-blur-sm">
           {/* Search Toggle Button - Only show when collapsed */}
@@ -1496,7 +1500,12 @@ const Properties = ({ transaction }: PropertiesProps) => {
             <div className="border-b border-gray-100 p-2">
               <Button
                 size="large"
-                onClick={() => setIsSearchExpanded(true)}
+                onClick={() => {
+                  setIsUserInteracting(true);
+                  setIsSearchExpanded(true);
+                  // Reset user interaction flag after a delay
+                  setTimeout(() => setIsUserInteracting(false), 1000);
+                }}
                 className="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-gradient-to-r from-red-50 to-orange-50 px-4 py-3 shadow-sm transition-all duration-200 hover:border-red-300 hover:shadow-md"
               >
                 <div className="flex items-center gap-3">
@@ -1532,7 +1541,12 @@ const Properties = ({ transaction }: PropertiesProps) => {
               <Button
                 type="text"
                 size="small"
-                onClick={() => setIsSearchExpanded(false)}
+                onClick={() => {
+                  setIsUserInteracting(true);
+                  setIsSearchExpanded(false);
+                  // Reset user interaction flag after a delay
+                  setTimeout(() => setIsUserInteracting(false), 1000);
+                }}
                 className="flex items-center gap-1 text-gray-500 hover:text-red-500"
               >
                 <X className="h-4 w-4" />
@@ -2916,7 +2930,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                 ) : (
                   <div className="grid grid-cols-3 gap-6 2xl:grid-cols-4">
                     <div
-                      className={`col-span-3 grid grid-cols-1 gap-6 ${
+                      className={`col-span-3 grid h-fit grid-cols-1 gap-6 ${
                         layout === "grid" ? "grid-cols-2" : ""
                       }`}
                     >
@@ -2938,7 +2952,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                         </div>
                       ) : null}
                     </div>
-                    <div className="col-span-1 hidden 2xl:block">
+                    <div className="col-span-3 2xl:col-span-1">
                       <div className="flex flex-col">
                         <ApprovedBankRequests />
                         <BrokerUsers />
