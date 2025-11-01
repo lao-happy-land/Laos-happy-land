@@ -69,6 +69,10 @@ export class NewsService {
           r.title,
           targetLang,
         );
+        r.type.name = await this.translateService.translateText(
+          r.type.name,
+          targetLang,
+        );
         return r;
       }),
     );

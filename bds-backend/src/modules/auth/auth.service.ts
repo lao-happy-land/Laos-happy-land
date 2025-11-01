@@ -12,6 +12,8 @@ import { RoleEnum } from 'src/common/enum/enum';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 import { Profile } from 'passport-google-oauth20';
 import { UserRole } from 'src/entities/user-role.entity';
+import { ResetPasswordDto } from './dto/reset_pass.dto';
+import { VerifyEmaildDto } from './dto/verify_email.dto';
 
 @Injectable()
 export class AuthService {
@@ -207,14 +209,23 @@ export class AuthService {
     };
   }
 
-  async resetPassword(email: string, newPassword: string): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { email } });
+  async verifyEmail(verifyEmailDto: VerifyEmaildDto): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({ where: { email: verifyEmailDto.email } });
+    if (!user) {
+      throw new BadRequestException('Email not found');
+    }
+
+    return { message: 'Email is valid. You can reset your password.' };
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { email: resetPasswordDto.email } });
     if (!user) {
       throw new BadRequestException('User with this email does not exist');
     }
     const salt = crypto.randomBytes(16).toString('hex');
 
-    const hashedPassword = this.hashPassword(newPassword.trim(), salt);
+    const hashedPassword = this.hashPassword(resetPasswordDto.newPassword.trim(), salt);
 
     user.password = hashedPassword;
     await this.userRepository.save(user);

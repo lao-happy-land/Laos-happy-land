@@ -16,6 +16,7 @@ import { GoogleAuthGuard } from './guard/google.guard';
 import { ResetPasswordDto } from './dto/reset_pass.dto';
 import { Response } from 'express';
 import { RefreshTokenDto } from './dto/refersh.dto';
+import { VerifyEmaildDto } from './dto/verify_email.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -81,6 +82,15 @@ export class AuthController {
     return res.redirect(`${FE_URL}?token=${token}`);
   }
 
+  @Post('verify')
+  @ApiOperation({ summary: 'Verify gmail' })
+  @ApiResponse({ status: 200, description: 'Email is valid' })
+  @ApiResponse({ status: 400, description: 'Email not found' })
+  @ApiBody({ type: VerifyEmaildDto })
+  async verifyUserRole(@Body() body: VerifyEmaildDto) {
+    return this.authService.verifyEmail(body);
+  }
+
   @Post('reset-password')
   @ApiOperation({ summary: 'Reset user password' })
   @ApiResponse({ status: 200, description: 'Password successfully reset' })
@@ -91,7 +101,7 @@ export class AuthController {
     if (!email || !newPassword) {
       throw new BadRequestException('Email and new password are required');
     }
-    const user = await this.authService.resetPassword(email, newPassword);
-    return { message: 'Password successfully reset', userId: user.id };
+    const user = await this.authService.resetPassword(body);
+    return { message: 'Password successfully reset'};
   }
 }
