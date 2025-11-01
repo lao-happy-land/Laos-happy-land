@@ -1,7 +1,18 @@
 import { create } from "zustand";
 import { authService } from "@/share/service/auth.service";
 import type { User } from "@/share/service/auth.service";
-import { useLocaleStore } from "./locale.store";
+
+// Helper function to get current locale from URL
+const getCurrentLocale = (): string => {
+  if (typeof window === "undefined") return "vn";
+  const pathname = window.location.pathname;
+  const localeRegex = /^\/(en|vn|la)(\/|$)/;
+  const localeMatch = localeRegex.exec(pathname);
+  return localeMatch?.[1] ?? "vn";
+};
+
+// Flag to prevent double redirect
+let isRedirecting = false;
 
 interface AuthState {
   user: User | null;
@@ -50,7 +61,9 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   login: async (email: string, password: string, redirectUrl?: string) => {
     try {
-      const locale = useLocaleStore.getState().getLocale();
+      // Get current locale from URL path instead of store to ensure accuracy
+      const locale = getCurrentLocale();
+
       // Use auth service to handle login
       const response = await authService.login({ email, password });
 
@@ -70,16 +83,20 @@ export const useAuthStore = create<AuthState>((set) => ({
         isInitialized: true,
       });
 
-      // Use a longer delay to ensure cookie is properly set and middleware can read it
-      setTimeout(() => {
-        if (redirectUrl && redirectUrl !== "/") {
-          window.location.href = redirectUrl;
-        } else if (userData?.role?.toLowerCase() === "admin") {
-          window.location.href = `/${locale}/admin`;
-        } else {
-          window.location.href = `/${locale}/`;
-        }
-      }, 1000); // Increased delay to ensure cookie is set
+      // Prevent double redirect
+      if (isRedirecting) return;
+      isRedirecting = true;
+
+      // Determine destination
+      const destination =
+        redirectUrl && redirectUrl !== "/"
+          ? redirectUrl
+          : userData?.role?.toLowerCase() === "admin"
+            ? `/${locale}/admin`
+            : `/${locale}/`;
+
+      // Use replace to avoid adding to browser history
+      window.location.replace(destination);
     } catch (error: unknown) {
       console.error("Login error:", error);
       set({
@@ -108,7 +125,9 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   handleGoogleCallback: async (token: string, redirectUrl?: string) => {
     try {
-      const locale = useLocaleStore.getState().getLocale();
+      // Get current locale from URL path instead of store to ensure accuracy
+      const locale = getCurrentLocale();
+
       // Use auth service to handle Google callback
       const response = await authService.handleGoogleCallback(token);
 
@@ -131,16 +150,20 @@ export const useAuthStore = create<AuthState>((set) => ({
         redirectUrl ?? sessionStorage.getItem("google_redirect_url");
       sessionStorage.removeItem("google_redirect_url");
 
-      // Use a longer delay to ensure cookie is properly set and middleware can read it
-      setTimeout(() => {
-        if (finalRedirectUrl && finalRedirectUrl !== "/") {
-          window.location.href = finalRedirectUrl;
-        } else if (userData?.role?.toLowerCase() === "admin") {
-          window.location.href = `/${locale}/admin`;
-        } else {
-          window.location.href = `/${locale}/`;
-        }
-      }, 1000);
+      // Prevent double redirect
+      if (isRedirecting) return;
+      isRedirecting = true;
+
+      // Determine destination
+      const destination =
+        finalRedirectUrl && finalRedirectUrl !== "/"
+          ? finalRedirectUrl
+          : userData?.role?.toLowerCase() === "admin"
+            ? `/${locale}/admin`
+            : `/${locale}/`;
+
+      // Use replace to avoid adding to browser history
+      window.location.replace(destination);
     } catch (error: unknown) {
       console.error("Google callback error:", error);
       set({
@@ -153,17 +176,19 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: (redirectUrl?: string) => {
-    const locale = useLocaleStore.getState().getLocale();
-    authService.logout();
+    // Get current locale from URL path instead of store to ensure accuracy
+    const locale = getCurrentLocale();
 
-    // Use provided redirect URL or default to home page
-    const finalRedirectUrl = redirectUrl ?? `/${locale}/`;
-    window.location.href = finalRedirectUrl;
+    authService.logout();
 
     set({
       user: null,
       isAuthenticated: false,
       isInitialized: true,
     });
+
+    // Use provided redirect URL or default to home page
+    const finalRedirectUrl = redirectUrl ?? `/${locale}/`;
+    window.location.replace(finalRedirectUrl);
   },
 }));

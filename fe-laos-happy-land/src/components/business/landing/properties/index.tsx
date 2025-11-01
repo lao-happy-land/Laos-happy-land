@@ -2706,8 +2706,8 @@ const Properties = ({ transaction }: PropertiesProps) => {
             </div>
           )}
 
-          {/* Location Modal */}
-          {locationModalOpen && (
+          {/* Location Dropdown - Desktop */}
+          {!isMobile && locationModalOpen && (
             <div
               ref={locationModalRef}
               className="location-popup absolute top-full left-0 z-50 mt-2 w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl lg:mt-4"
@@ -2855,6 +2855,151 @@ const Properties = ({ transaction }: PropertiesProps) => {
               </div>
             </div>
           )}
+
+          {/* Location Modal - Mobile */}
+          <Modal
+            title={
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
+                  <MapPin className="h-4 w-4 text-blue-600" />
+                </div>
+                <span className="text-lg font-semibold">
+                  {t("search.selectLocation")}
+                </span>
+              </div>
+            }
+            open={isMobile && locationModalOpen}
+            onCancel={() => setLocationModalOpen(false)}
+            footer={null}
+            centered
+            width="90%"
+            style={{ maxWidth: 480 }}
+          >
+            <div className="max-h-[70vh] overflow-y-auto">
+              {/* Popular Cities */}
+              <div className="mb-6">
+                <div className="mb-3 flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-red-500 to-pink-500">
+                    <span className="text-sm">🔥</span>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">
+                      {t("search.topLocations")}
+                    </h4>
+                    <p className="text-xs text-gray-500">
+                      {t("search.topLocationsDescription")}
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {locationInfosLoading
+                    ? Array.from({ length: 4 }).map((_, index) => (
+                        <div
+                          key={index}
+                          className="h-24 animate-pulse rounded-xl bg-gray-200"
+                        />
+                      ))
+                    : popularCities.map((city) => (
+                        <div
+                          key={city.id}
+                          className={`group relative h-24 overflow-hidden rounded-xl border-3 border-solid transition-all duration-200 hover:scale-105 hover:shadow-lg ${
+                            selectedLocation === city.id
+                              ? "border-red-400 hover:border-red-400"
+                              : "border-white hover:border-red-300"
+                          }`}
+                          onClick={() => {
+                            handleProvinceSelect(city.id);
+                            setLocationModalOpen(false);
+                          }}
+                        >
+                          <Image
+                            src={
+                              city.imageURL ??
+                              "/images/landingpage/cities/default.jpg"
+                            }
+                            alt={city.name}
+                            fill
+                            className="object-cover"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/80"></div>
+                          <div className="absolute right-2 bottom-2 left-2">
+                            <span
+                              className={`text-xs font-semibold drop-shadow-lg ${
+                                selectedLocation === city.id
+                                  ? "rounded-full bg-white px-2 py-1 text-red-600"
+                                  : "text-white"
+                              }`}
+                            >
+                              {city.name}
+                            </span>
+                          </div>
+                          {selectedLocation === city.id && (
+                            <div className="absolute top-2 right-2">
+                              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-lg">
+                                <CheckCircle className="h-3 w-3" />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                </div>
+              </div>
+
+              {/* All Locations */}
+              <div>
+                <div className="mb-3 flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-indigo-500">
+                    <span className="text-sm">🌍</span>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">
+                      {t("search.allLocations")}
+                    </h4>
+                    <p className="text-xs text-gray-500">
+                      {t("search.allLocationsDescription")}
+                    </p>
+                  </div>
+                </div>
+                <div className="max-h-60 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    {locationInfosLoading
+                      ? Array.from({ length: 8 }).map((_, index) => (
+                          <div
+                            key={index}
+                            className="h-12 animate-pulse rounded-lg bg-gray-200"
+                          />
+                        ))
+                      : allProvinces.map((province) => (
+                          <button
+                            key={province}
+                            onClick={() => {
+                              handleProvinceSelect(province);
+                              setLocationModalOpen(false);
+                            }}
+                            className={`flex items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-medium transition-all duration-200 ${
+                              selectedLocation === province
+                                ? "bg-red-500 text-white shadow-md"
+                                : "bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 hover:shadow-sm"
+                            }`}
+                          >
+                            <span className="truncate capitalize">
+                              {province === "all"
+                                ? t("search.allAreas")
+                                : (locationInfos.find(
+                                    (loc) => loc.id === province,
+                                  )?.name ?? province)}
+                            </span>
+                            {selectedLocation === province && (
+                              <CheckCircle className="ml-1 h-4 w-4 flex-shrink-0" />
+                            )}
+                          </button>
+                        ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Modal>
+
           {/* Enhanced Breadcrumb */}
         </div>
       </div>

@@ -93,7 +93,7 @@ export default function PropertyCard({ property }: { property: Property }) {
 
         <div className="flex h-full flex-col">
           <div className="relative flex w-full overflow-hidden">
-            <div className="relative h-[240px] w-[60%] flex-shrink-0">
+            <div className="relative h-[320px] w-[60%] flex-shrink-0">
               <Image
                 src={getValidImageUrl(property)}
                 alt={property.title}
@@ -104,9 +104,9 @@ export default function PropertyCard({ property }: { property: Property }) {
               />
             </div>
 
-            <div className="flex h-[240px] w-[40%] flex-col">
+            <div className="flex h-[320px] w-[40%] flex-col">
               {/* Top Image - Full Width */}
-              <div className="relative h-[120px] overflow-hidden">
+              <div className="relative h-[160px] overflow-hidden">
                 <Image
                   src={validateImageUrl(
                     property.images?.[0],
@@ -122,7 +122,7 @@ export default function PropertyCard({ property }: { property: Property }) {
               </div>
 
               {/* Bottom Images - Split Width */}
-              <div className="flex h-[120px]">
+              <div className="flex h-[160px]">
                 <div className="relative w-[50%] overflow-hidden">
                   <Image
                     src={validateImageUrl(
