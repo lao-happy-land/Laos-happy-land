@@ -16,6 +16,7 @@ export interface RegisterRequest {
 export interface User {
   id: string;
   email: string;
+  phone: string;
   fullName: string;
   role: string;
 }
@@ -54,6 +55,7 @@ interface TokenPayload {
   sub?: string;
   id?: string;
   email?: string;
+  phone?: string;
   fullName?: string;
   name?: string;
   role?: string;
@@ -106,6 +108,7 @@ export const authService = {
         const userInfo: User = {
           id: registerData.id,
           email: registerData.email,
+          phone: registerData.phone,
           fullName: registerData.fullName,
           role: registerData.role,
         };
@@ -165,10 +168,12 @@ export const authService = {
 
       // Ensure fullName is properly handled for Vietnamese characters
       const fullName = payload.fullName ?? payload.name ?? "User";
+      const phone = payload.phone ?? "";
 
       return {
         id: payload.sub ?? payload.id ?? "",
         email: payload.email ?? "",
+        phone: phone,
         fullName: fullName,
         role: payload.role ?? "user",
       };
@@ -177,6 +182,7 @@ export const authService = {
       return {
         id: "",
         email: "",
+        phone: "",
         fullName: "User",
         role: "user",
       };

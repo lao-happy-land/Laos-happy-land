@@ -1,7 +1,9 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import Image from "next/image";
+import { useEffect, useState } from "react";
+import { settingService } from "@/share/service/setting.service";
+import type { Setting } from "@/share/service/setting.service";
 import {
   Users,
   Target,
@@ -12,19 +14,30 @@ import {
   MapPin,
   Phone,
   Mail,
-  Star,
-  TrendingUp,
   Lightbulb,
   Shield,
   Link,
   Sparkles,
-  CheckCircle,
   Calendar,
   Briefcase,
 } from "lucide-react";
 
 export default function AboutPageClient() {
   const t = useTranslations();
+  const [setting, setSetting] = useState<Setting | null>(null);
+
+  useEffect(() => {
+    const fetchSetting = async () => {
+      try {
+        const data = await settingService.getSetting();
+        setSetting(data);
+      } catch (error) {
+        console.error("Error fetching settings:", error);
+      }
+    };
+
+    void fetchSetting();
+  }, []);
 
   const historyTimeline = [
     {
@@ -84,6 +97,13 @@ export default function AboutPageClient() {
       description: t("about.value5Description"),
       color: "text-yellow-600",
       bgColor: "bg-yellow-100",
+    },
+    {
+      icon: Briefcase,
+      title: t("about.value6Title"),
+      description: t("about.value6Description"),
+      color: "text-indigo-600",
+      bgColor: "bg-indigo-100",
     },
   ];
 
@@ -295,7 +315,7 @@ export default function AboutPageClient() {
             </p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {coreValues.map((value, index) => (
               <div
                 key={index}
@@ -425,7 +445,9 @@ export default function AboutPageClient() {
               <h3 className="mb-2 text-lg font-semibold text-gray-900">
                 {t("about.phone")}
               </h3>
-              <p className="text-gray-600">{t("about.phoneValue")}</p>
+              <p className="text-gray-600">
+                {setting?.hotline ?? t("about.phoneValue")}
+              </p>
             </div>
 
             <div className="rounded-xl bg-white p-6 text-center shadow-lg ring-1 ring-gray-200">

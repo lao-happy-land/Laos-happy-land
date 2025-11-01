@@ -216,6 +216,15 @@ const Footer = () => {
                 </li>
                 <li>
                   <Link
+                    href={`/${locale}/profile`}
+                    className="group flex items-center text-gray-300 transition-all duration-300 hover:translate-x-2 hover:text-blue-400"
+                  >
+                    <div className="mr-3 h-1 w-1 rounded-full bg-blue-400 transition-all duration-300 group-hover:scale-150 group-hover:bg-blue-300"></div>
+                    {t("footer.brokerRequest")}
+                  </Link>
+                </li>
+                <li>
+                  <Link
                     href={`/${locale}/bank-request`}
                     className="group flex items-center text-gray-300 transition-all duration-300 hover:translate-x-2 hover:text-blue-400"
                   >
@@ -223,15 +232,7 @@ const Footer = () => {
                     {t("profile.requestBankStatus")}
                   </Link>
                 </li>
-                <li>
-                  <Link
-                    href={`/${locale}/loan-calculator`}
-                    className="group flex items-center text-gray-300 transition-all duration-300 hover:translate-x-2 hover:text-blue-400"
-                  >
-                    <div className="mr-3 h-1 w-1 rounded-full bg-blue-400 transition-all duration-300 group-hover:scale-150 group-hover:bg-blue-300"></div>
-                    {t("footer.loanCalculator")}
-                  </Link>
-                </li>
+
                 <li>
                   <Link
                     href={`/${locale}/properties-for-project`}

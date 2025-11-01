@@ -29,6 +29,7 @@ import {
   MoreHorizontal,
   Calculator,
   Banknote,
+  InfoIcon,
 } from "lucide-react";
 import type { User } from "@/share/service/auth.service";
 import { useRouter } from "next/navigation";
@@ -88,6 +89,12 @@ const getNavItems = (locale: string, t: (key: string) => string) => [
     title: t("navigation.bankRequest"),
     href: `/${locale}/bank-request`,
     icon: <Banknote className="h-4 w-4" />,
+  },
+  {
+    key: "about-us",
+    title: t("footer.aboutUs"),
+    href: `/${locale}/about`,
+    icon: <InfoIcon className="h-4 w-4" />,
   },
 ];
 
