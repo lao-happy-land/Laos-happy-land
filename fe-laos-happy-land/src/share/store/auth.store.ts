@@ -4,11 +4,11 @@ import type { User } from "@/share/service/auth.service";
 
 // Helper function to get current locale from URL
 const getCurrentLocale = (): string => {
-  if (typeof window === "undefined") return "vn";
+  if (typeof window === "undefined") return "la";
   const pathname = window.location.pathname;
   const localeRegex = /^\/(en|vn|la)(\/|$)/;
   const localeMatch = localeRegex.exec(pathname);
-  return localeMatch?.[1] ?? "vn";
+  return localeMatch?.[1] ?? "la";
 };
 
 // Flag to prevent double redirect

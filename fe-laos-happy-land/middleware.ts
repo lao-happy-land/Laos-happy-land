@@ -28,7 +28,7 @@ function getTokenPayload(token: string) {
 // Create i18n middleware
 const intlMiddleware = createMiddleware({
   locales: ["en", "vn", "la"],
-  defaultLocale: "vn",
+  defaultLocale: "la",
   localePrefix: "always",
 });
 
@@ -41,7 +41,7 @@ export function middleware(request: NextRequest) {
 
   // Get user's preferred locale from cookie
   const localeCookie = request.cookies.get("locale-preference")?.value;
-  const preferredLocale = localeCookie ?? "vn";
+  const preferredLocale = localeCookie ?? "la";
 
   // Check if pathname already has locale prefix
   const hasLocalePrefix =
