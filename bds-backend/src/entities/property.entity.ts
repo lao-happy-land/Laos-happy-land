@@ -110,6 +110,37 @@ export class Property extends AbstractEntity {
   @JoinColumn({ name: 'location_info_id' })
   locationInfo: LocationInfo;
 
+  @Column({ type: 'jsonb', nullable: true })
+  translatedContent: {
+    en?: {
+      title?: string;
+      description?: string;
+      legalStatus?: string;
+      details?: any;
+      typeName?: string;
+      locationName?: string;
+      owner?: any;
+    };
+    lo?: {
+      title?: string;
+      description?: string;
+      legalStatus?: string;
+      details?: any;
+      typeName?: string;
+      locationName?: string;
+      owner?: any;
+    };
+    vi?: {
+      title?: string;
+      description?: string;
+      legalStatus?: string;
+      details?: any;
+      typeName?: string;
+      locationName?: string;
+      owner?: any;
+    };
+  };
+
   private static dataSource: DataSource;
 
   static setDataSource(ds: DataSource) {
@@ -120,7 +151,7 @@ export class Property extends AbstractEntity {
   async generateCode() {
     if (!Property.dataSource) return;
     const result = await Property.dataSource.query(
-      `SELECT nextval('property_code_seq') as seq;`
+      `SELECT nextval('property_code_seq') as seq;`,
     );
     const seqNumber = result[0]?.seq ?? 1001;
     this.code = `${seqNumber}`;

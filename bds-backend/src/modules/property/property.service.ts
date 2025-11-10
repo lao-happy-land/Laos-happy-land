@@ -37,10 +37,68 @@ export class PropertyService {
     private readonly entityManager: EntityManager,
   ) {}
 
+  private async saveTranslations(property: Property) {
+    const langs = ['en', 'lo', 'vi'];
+    const translatedContent: Record<string, any> = {};
+
+    for (const lang of langs) {
+      const translated = {
+        title: property.title
+          ? await this.translateService.translateText(property.title, lang)
+          : null,
+        description: property.description
+          ? await this.translateService.translateText(
+              property.description,
+              lang,
+            )
+          : null,
+        legalStatus: property.legalStatus
+          ? await this.translateService.translateText(
+              property.legalStatus,
+              lang,
+            )
+          : null,
+        details: property.details?.content
+          ? await Promise.all(
+              property.details.content.map(async (c) => ({
+                ...c,
+                value: c.value
+                  ? await this.translateService.translateText(c.value, lang)
+                  : c.value,
+              })),
+            )
+          : null,
+        typeName: property.type?.name
+          ? await this.translateService.translateText(property.type.name, lang)
+          : null,
+        locationName: property.locationInfo?.name
+          ? await this.translateService.translateText(
+              property.locationInfo.name,
+              lang,
+            )
+          : null,
+        ownerRoleName: property.owner?.role?.name
+          ? await this.translateService.translateText(
+              property.owner.role.name,
+              lang,
+            )
+          : null,
+      };
+
+      translatedContent[lang] = translated;
+    }
+
+    property.translatedContent = translatedContent;
+    await this.propertyRepository.save(property);
+  }
+
   async create(createPropertyDto: CreatePropertyDto, user?: any) {
     const isAdmin = !!user?.role && user.role.toString() === 'Admin';
     const isBroker = !!user?.role && user.role.toString() === 'Broker';
-    const owner = await this.entityManager.findOneBy(User, { id: user.sub });
+    const owner = await this.entityManager.findOne(User, {
+      where: { id: user.sub },
+      relations: ['role'],
+    });
 
     const propertyType = await this.entityManager.findOneBy(PropertyType, {
       id: createPropertyDto.typeId,
@@ -107,6 +165,7 @@ export class PropertyService {
     });
 
     await this.entityManager.save(property);
+    await this.saveTranslations(property);
 
     return { property, message: 'Property created successfully' };
   }
@@ -144,101 +203,64 @@ export class PropertyService {
     }
   }
 
-  private async transalteProperties(
-    item: any,
-    targetLang: string,
-  ): Promise<any> {
-    if (item.title) {
-      item.title = await this.translateService.translateText(
-        item.title,
-        targetLang,
-      );
+  private pickTranslatedContent(property: Property, lang: string) {
+    if (!property.translatedContent) return property;
+
+    const translated = property.translatedContent?.[lang] as {
+      title?: string;
+      description?: string;
+      legalStatus?: string;
+      details?: any;
+      typeName?: string;
+      locationName?: string;
+      ownerRoleName?: string; // ✅ thêm
+      owner?: {
+        role?: {
+          name?: string;
+        };
+      };
+    };
+
+    if (!translated) return property;
+
+    const merged = {
+      ...property,
+      title: translated.title || property.title,
+      description: translated.description || property.description,
+      legalStatus: translated.legalStatus || property.legalStatus,
+      details: translated.details || property.details,
+    };
+
+    // ✅ Merge type.name nếu có
+    if (property.type) {
+      merged.type = {
+        ...property.type,
+        name: translated.typeName || property.type.name,
+      };
     }
 
-    if (item.description) {
-      item.description = await this.translateService.translateText(
-        item.description,
-        targetLang,
-      );
+    // ✅ Merge locationInfo.name nếu có
+    if (property.locationInfo) {
+      merged.locationInfo = {
+        ...property.locationInfo,
+        name: translated.locationName || property.locationInfo.name,
+      };
     }
 
-    if (item.legalStatus) {
-      item.legalStatus = await this.translateService.translateText(
-        item.legalStatus,
-        targetLang,
-      );
+    // ✅ Merge owner.role.name nếu có
+    if (property.owner && property.owner.role) {
+      merged.owner = {
+        ...property.owner,
+        role: {
+          ...property.owner.role,
+          name: translated.ownerRoleName || property.owner.role.name,
+        },
+      } as User; // ép kiểu tránh lỗi thiếu field
     }
 
-    return item;
-  }
-  private async translateProperty(item: any, targetLang: string): Promise<any> {
-    if (item.title) {
-      item.title = await this.translateService.translateText(
-        item.title,
-        targetLang,
-      );
-    }
+    delete (merged as any).translatedContent;
 
-    if (item.description) {
-      item.description = await this.translateService.translateText(
-        item.description,
-        targetLang,
-      );
-    }
-
-    if (item.details?.content) {
-      item.details.content = await Promise.all(
-        item.details.content.map(async (c) => ({
-          ...c,
-          value: c.value
-            ? await this.translateService.translateText(c.value, targetLang)
-            : c.value,
-        })),
-      );
-    }
-
-    if (item.type) {
-      item.type.name = await this.translateService.translateText(
-        item.type.name,
-        targetLang,
-      );
-    }
-
-    if (item.locationInfo) {
-      if (item.locationInfo.name) {
-        item.locationInfo.name = await this.translateService.translateText(
-          item.locationInfo.name,
-          targetLang,
-        );
-      }
-    }
-
-    if (item.owner) {
-      for (const key of ['specialties', 'languages', 'certifications']) {
-        if (Array.isArray(item.owner[key])) {
-          item.owner[key] = await Promise.all(
-            item.owner[key].map(async (v) =>
-              v ? await this.translateService.translateText(v, targetLang) : v,
-            ),
-          );
-        }
-      }
-      if (item.owner.role?.name) {
-        item.owner.role.name = await this.translateService.translateText(
-          item.owner.role.name,
-          targetLang,
-        );
-      }
-    }
-
-    if (item.legalStatus) {
-      item.legalStatus = await this.translateService.translateText(
-        item.legalStatus,
-        targetLang,
-      );
-    }
-
-    return item;
+    return merged;
   }
 
   async getAll(params: GetPropertiesFilterDto, user: User) {
@@ -351,14 +373,12 @@ export class PropertyService {
 
     const targetLang = this.mapLang(params.currency || params.currency);
 
-    let translated = await Promise.all(
-      allProperties.map(async (item) => {
-        const formatted = params.priceSource
-          ? this.formatProperty(item, params.priceSource)
-          : item;
-        return this.transalteProperties(formatted, targetLang);
-      }),
-    );
+    let translated = allProperties.map((item) => {
+      const formatted = params.priceSource
+        ? this.formatProperty(item, params.priceSource)
+        : item;
+      return this.pickTranslatedContent(formatted, targetLang);
+    });
 
     if (params.keyword) {
       const keywordLower = params.keyword.toLowerCase();
@@ -423,7 +443,7 @@ export class PropertyService {
         const formatted = params.priceSource
           ? this.formatProperty(item, params.priceSource)
           : item;
-        return this.transalteProperties(formatted, targetLang);
+        return this.pickTranslatedContent(formatted, targetLang);
       }),
     );
     const serializedResult = instanceToPlain(finalResult);
@@ -470,7 +490,7 @@ export class PropertyService {
     const formattedProperty = params.priceSource
       ? this.formatProperty(property, params.priceSource)
       : property;
-    const translatedProperty = await this.translateProperty(
+    const translatedProperty = await this.pickTranslatedContent(
       formattedProperty,
       targetLang,
     );
@@ -506,7 +526,7 @@ export class PropertyService {
         const formatted = params.priceSource
           ? this.formatProperty(item, params.priceSource)
           : item;
-        return this.transalteProperties(formatted, targetLang);
+        return this.pickTranslatedContent(formatted, targetLang);
       }),
     );
     const serializedResult = instanceToPlain(finalResult);
@@ -543,7 +563,7 @@ export class PropertyService {
         const formatted = params.priceSource
           ? this.formatProperty(item, params.priceSource)
           : item;
-        return this.transalteProperties(formatted, targetLang);
+        return this.pickTranslatedContent(formatted, targetLang);
       }),
     );
 
@@ -667,6 +687,7 @@ export class PropertyService {
     });
 
     await this.entityManager.save(property);
+    await this.saveTranslations(property);
     return { property, message: 'Property updated successfully' };
   }
 
