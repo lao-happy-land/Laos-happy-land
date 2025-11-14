@@ -130,6 +130,8 @@ const Properties = ({ transaction }: PropertiesProps) => {
   useEffect(() => {
     let lastScrollY = window.scrollY;
     let timeoutId: NodeJS.Timeout;
+    let scrollUpStartY: number | null = null;
+    let scrollDownStartY: number | null = null;
 
     const handleScroll = () => {
       // Don't interfere if user is manually interacting
@@ -141,13 +143,38 @@ const Properties = ({ transaction }: PropertiesProps) => {
         const currentScrollY = window.scrollY;
         const isScrollingUp = currentScrollY < lastScrollY;
 
-        // Collapse when scrolling down past 100px
+        // Track scroll down distance and collapse after scrolling down more than 50px
         if (currentScrollY > 100 && isSearchExpanded && !isScrollingUp) {
-          setIsSearchExpanded(false);
+          scrollDownStartY ??= currentScrollY;
+
+          const scrollDownDistance = currentScrollY - scrollDownStartY;
+
+          if (scrollDownDistance > 0) {
+            setIsSearchExpanded(false);
+            scrollUpStartY = null;
+            scrollDownStartY = null;
+          }
         }
-        // Expand when scrolling up (anywhere on page)
+        // Track scroll up distance and expand after scrolling up more than 100px
         else if (isScrollingUp && !isSearchExpanded) {
-          setIsSearchExpanded(true);
+          scrollUpStartY ??= currentScrollY;
+          scrollDownStartY = null;
+
+          const scrollUpDistance = scrollUpStartY - currentScrollY;
+
+          if (scrollUpDistance > 20) {
+            setIsSearchExpanded(true);
+            scrollUpStartY = null;
+          }
+        }
+        // If scrolling up and already expanded, keep it expanded and reset down tracking
+        else if (isScrollingUp && isSearchExpanded) {
+          scrollUpStartY = null;
+          scrollDownStartY = null;
+        }
+        // Reset scroll up tracking if scrolling down and not expanded
+        else if (!isScrollingUp && !isSearchExpanded) {
+          scrollUpStartY = null;
         }
 
         lastScrollY = currentScrollY;

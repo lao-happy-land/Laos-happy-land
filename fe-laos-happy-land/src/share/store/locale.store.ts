@@ -10,7 +10,7 @@ interface LocaleState {
 export const useLocaleStore = create<LocaleState>()(
   persist(
     (set, get) => ({
-      locale: "vn", // Default locale
+      locale: "la", // Default locale
       setLocale: (locale: string) => {
         set({ locale });
       },
