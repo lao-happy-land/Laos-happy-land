@@ -37,7 +37,7 @@ export class PropertyService {
     private readonly entityManager: EntityManager,
   ) {}
 
-  private async saveTranslations(property: Property) {
+  public async saveTranslations(property: Property) {
     const langs = ['en', 'lo', 'vi'];
     const translatedContent: Record<string, any> = {};
 
