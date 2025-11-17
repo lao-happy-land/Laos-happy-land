@@ -206,32 +206,23 @@ export class PropertyService {
   private pickTranslatedContent(property: Property, lang: string) {
     if (!property.translatedContent) return property;
 
-    const translated = property.translatedContent?.[lang] as {
-      title?: string;
-      description?: string;
-      legalStatus?: string;
-      details?: any;
-      typeName?: string;
-      locationName?: string;
-      ownerRoleName?: string; // ✅ thêm
-      owner?: {
-        role?: {
-          name?: string;
-        };
-      };
-    };
+    const translated = property.translatedContent?.[lang];
 
     if (!translated) return property;
 
-    const merged = {
+    const merged: any = {
       ...property,
       title: translated.title || property.title,
       description: translated.description || property.description,
       legalStatus: translated.legalStatus || property.legalStatus,
-      details: translated.details || property.details,
+      details: property.details
+        ? {
+            ...property.details,
+            content: translated.details || property.details.content,
+          }
+        : property.details,
     };
 
-    // ✅ Merge type.name nếu có
     if (property.type) {
       merged.type = {
         ...property.type,
@@ -239,7 +230,6 @@ export class PropertyService {
       };
     }
 
-    // ✅ Merge locationInfo.name nếu có
     if (property.locationInfo) {
       merged.locationInfo = {
         ...property.locationInfo,
@@ -247,7 +237,6 @@ export class PropertyService {
       };
     }
 
-    // ✅ Merge owner.role.name nếu có
     if (property.owner && property.owner.role) {
       merged.owner = {
         ...property.owner,
@@ -255,11 +244,10 @@ export class PropertyService {
           ...property.owner.role,
           name: translated.ownerRoleName || property.owner.role.name,
         },
-      } as User; // ép kiểu tránh lỗi thiếu field
+      };
     }
 
-    delete (merged as any).translatedContent;
-
+    delete merged.translatedContent;
     return merged;
   }
 
