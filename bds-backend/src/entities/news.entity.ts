@@ -1,14 +1,12 @@
+import { AbstractEntity } from 'src/common/entities';
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
-  ManyToOne,
-  CreateDateColumn,
-  UpdateDateColumn,
+  Entity,
   JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { NewsType } from './news-type.entity';
-import { AbstractEntity } from 'src/common/entities';
 
 @Entity('news')
 export class News extends AbstractEntity {
@@ -27,4 +25,22 @@ export class News extends AbstractEntity {
 
   @Column({ type: 'int', default: 0 })
   viewCount: number;
+  @Column({ type: 'jsonb', nullable: true })
+  translatedContent: {
+    en?: {
+      title?: string;
+      typeName?: string;
+      details?: any;
+    };
+    lo?: {
+      title?: string;
+      typeName?: string;
+      details?: any;
+    };
+    vi?: {
+      title?: string;
+      typeName?: string;
+      details?: any;
+    };
+  };
 }
