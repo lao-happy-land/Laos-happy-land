@@ -1,17 +1,13 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { PageMetaDto } from 'src/common/dtos/pageMeta';
+import { ResponsePaginate } from 'src/common/dtos/reponsePaginate';
 import { PropertyType } from 'src/entities/property-type.entity';
-import { Repository } from 'typeorm';
+import { TranslateService } from 'src/service/translate.service';
+import { EntityManager, Repository } from 'typeorm';
 import { CreatePropertyTypeDto } from './dto/create_property_type.dto';
 import { GetPropertyTypeDto } from './dto/get_property_type.dto';
-import { PageMetaDto } from 'src/common/dtos/pageMeta';
-import {
-  ResponsePaginate,
-  ResponsePaginateObject,
-} from 'src/common/dtos/reponsePaginate';
-import { TranslateService } from 'src/service/translate.service';
 import { GetOnePropertyTypeDto } from './dto/get_property_type_id.dto';
-import { TransactionEnum } from 'src/common/enum/enum';
 
 @Injectable()
 export class PropertyTypeService {
@@ -19,9 +15,10 @@ export class PropertyTypeService {
     @InjectRepository(PropertyType)
     private readonly propertyTypeRepository: Repository<PropertyType>,
     private readonly translateService: TranslateService,
+    private readonly entityManager: EntityManager,
   ) {}
 
-  private mapLang(param: string): string {
+  private mapLang(param?: string): 'vi' | 'en' | 'lo' {
     switch (param?.toUpperCase()) {
       case 'USD':
         return 'en';
@@ -33,114 +30,160 @@ export class PropertyTypeService {
     }
   }
 
-  async create(createPropertyTypeDto: CreatePropertyTypeDto) {
-    const { name } = createPropertyTypeDto;
+  private async generateTranslations(propertyType: PropertyType) {
+    const languages: Array<'vi' | 'en' | 'lo'> = ['vi', 'en', 'lo'];
+    const result: Record<string, { name: string | null }> = {};
 
-    if (!name) {
-      throw new BadRequestException('Name is required');
+    for (const lang of languages) {
+      result[lang] = {
+        name: propertyType.name
+          ? await this.translateService.translateText(propertyType.name, lang)
+          : null,
+      };
     }
 
-    const propertyType = this.propertyTypeRepository.create(
-      createPropertyTypeDto,
-    );
-    await this.propertyTypeRepository.save(propertyType);
+    propertyType.translatedContent = result;
+  }
 
-    return { propertyType, message: 'Property type created successfully' };
+  private async saveTranslations(propertyType: PropertyType) {
+    await this.generateTranslations(propertyType);
+    await this.entityManager.save(propertyType);
+  }
+
+  private pickTranslation(
+    propertyType: PropertyType,
+    lang: 'vi' | 'en' | 'lo',
+  ) {
+    return (
+      propertyType.translatedContent?.[lang] ??
+      propertyType.translatedContent?.['vi'] ?? { name: propertyType.name }
+    );
+  }
+
+  private applyTranslation(
+    propertyType: PropertyType,
+    lang: 'vi' | 'en' | 'lo',
+  ) {
+    const tr = this.pickTranslation(propertyType, lang);
+    return {
+      ...propertyType,
+      name: tr.name,
+      translatedContent: propertyType.translatedContent,
+    };
+  }
+
+  async create(createDto: CreatePropertyTypeDto) {
+    let propertyType = this.propertyTypeRepository.create(createDto);
+    await this.saveTranslations(propertyType);
+
+    const tr = this.pickTranslation(propertyType, 'vi');
+
+    return {
+      propertyType: {
+        ...propertyType,
+        name: tr.name,
+        translatedContent: propertyType.translatedContent,
+      },
+      message: 'Property type created successfully',
+    };
   }
 
   async getAll(params: GetPropertyTypeDto) {
-    const queryBuilder = this.propertyTypeRepository
+    const query = this.propertyTypeRepository
       .createQueryBuilder('propertyType')
       .skip(params.skip)
       .take(params.perPage)
       .orderBy('propertyType.createdAt', params.OrderSort);
 
     if (params.search) {
-      queryBuilder.andWhere('propertyType.name ILIKE :search', {
+      query.andWhere('propertyType.name ILIKE :search', {
         search: `%${params.search}%`,
       });
     }
 
     if (params.transaction) {
-      queryBuilder.andWhere('propertyType.transactionType = :transaction', {
+      query.andWhere('propertyType.transactionType = :transaction', {
         transaction: params.transaction,
       });
     }
 
-    const [result, total] = await queryBuilder.getManyAndCount();
-
+    const [result, total] = await query.getManyAndCount();
     const targetLang = this.mapLang(params.lang);
-    if (targetLang) {
-      for (const r of result) {
-        r.name = await this.translateService.translateText(r.name, targetLang);
-      }
-    }
 
-    const pageMetaDto = new PageMetaDto({
+    const translated = result.map((item) =>
+      this.applyTranslation(item, targetLang),
+    );
+
+    const pageMeta = new PageMetaDto({
       itemCount: total,
       pageOptionsDto: params,
     });
 
-    return new ResponsePaginate(result, pageMetaDto, 'Success');
+    return new ResponsePaginate(translated, pageMeta, 'Success');
   }
 
   async get(id: string, params: GetOnePropertyTypeDto) {
-    const propertyType = await this.propertyTypeRepository
-      .createQueryBuilder('propertyType')
-      .where('propertyType.id = :id', { id })
-      .getOne();
-
-    if (!propertyType) {
-      throw new BadRequestException('Property type not found');
-    }
+    const propertyType = await this.propertyTypeRepository.findOneBy({ id });
+    if (!propertyType) throw new BadRequestException('Property type not found');
 
     const targetLang = this.mapLang(params.lang);
-    if (targetLang) {
-      propertyType.name = await this.translateService.translateText(
-        propertyType.name,
-        targetLang,
-      )
-    }
+    const tr = this.pickTranslation(propertyType, targetLang);
 
-    return { propertyType, message: 'Success' };
+    return {
+      propertyType: {
+        ...propertyType,
+        name: tr.name,
+        translatedContent: propertyType.translatedContent,
+      },
+      message: 'Success',
+    };
   }
 
-  async update(id: string, updatePropertyTypeDto: CreatePropertyTypeDto) {
+  async update(id: string, updateDto: CreatePropertyTypeDto) {
     const propertyType = await this.propertyTypeRepository.findOneBy({ id });
-    if (!propertyType) {
-      throw new BadRequestException('Property type not found');
-    }
+    if (!propertyType) throw new BadRequestException('Property type not found');
 
-    if (updatePropertyTypeDto.name) {
+    let needsTranslate = false;
+
+    if (updateDto.name && updateDto.name !== propertyType.name) {
       const existed = await this.propertyTypeRepository.findOneBy({
-        name: updatePropertyTypeDto.name,
+        name: updateDto.name,
       });
-
       if (existed && existed.id !== id) {
         throw new BadRequestException('Property type name already exists');
       }
-
-      propertyType.name = updatePropertyTypeDto.name;
+      propertyType.name = updateDto.name;
+      needsTranslate = true;
     }
 
-    if (updatePropertyTypeDto.transactionType) {
-      propertyType.transactionType = updatePropertyTypeDto.transactionType;
+    if (updateDto.transactionType) {
+      propertyType.transactionType = updateDto.transactionType;
     }
 
-    await this.propertyTypeRepository.save(propertyType);
+    if (needsTranslate) {
+      await this.saveTranslations(propertyType);
+    } else {
+      await this.entityManager.save(propertyType);
+    }
+
+    const tr = this.pickTranslation(propertyType, 'vi');
 
     return {
-      propertyType,
+      propertyType: {
+        ...propertyType,
+        name: tr.name,
+        translatedContent: propertyType.translatedContent,
+      },
       message: 'Property type updated successfully',
     };
   }
 
   async remove(id: string) {
     const propertyType = await this.propertyTypeRepository.findOneBy({ id });
-    if (!propertyType) {
-      throw new BadRequestException('Property type not found');
-    }
-    await this.propertyTypeRepository.remove(propertyType);
+    if (!propertyType) throw new BadRequestException('Property type not found');
+
+    await this.entityManager.remove(propertyType);
+
     return { message: 'Property type deleted successfully' };
   }
 }
