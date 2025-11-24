@@ -1,13 +1,6 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  OneToMany,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
-import { Property } from './property.entity';
 import { AbstractEntity } from 'src/common/entities';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Property } from './property.entity';
 import { User } from './user.entity';
 
 @Entity('location_infos')
@@ -32,4 +25,10 @@ export class LocationInfo extends AbstractEntity {
 
   @OneToMany(() => User, (user) => user.locationInfo)
   users: User[];
+  @Column({ type: 'jsonb', nullable: true })
+  translatedContent: {
+    en?: { name?: string };
+    lo?: { name?: string };
+    vi?: { name?: string };
+  };
 }

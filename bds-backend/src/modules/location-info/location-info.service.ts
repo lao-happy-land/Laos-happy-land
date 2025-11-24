@@ -1,15 +1,15 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { LocationInfo } from 'src/entities/location-info.entity';
-import { CloudinaryService } from 'src/service/cloudinary.service';
-import { EntityManager, Repository } from 'typeorm';
-import { CreateLocationInfoDto } from './dto/create_location_info.dto';
 import { Multer } from 'multer';
-import { GetLocationInfoDto } from './dto/get_location_info.dto';
 import { PageMetaDto } from 'src/common/dtos/pageMeta';
 import { ResponsePaginate } from 'src/common/dtos/reponsePaginate';
+import { LocationInfo } from 'src/entities/location-info.entity';
+import { CloudinaryService } from 'src/service/cloudinary.service';
 import { TranslateService } from 'src/service/translate.service';
+import { EntityManager, Repository } from 'typeorm';
+import { CreateLocationInfoDto } from './dto/create_location_info.dto';
 import { GetOneLocationInfoDto } from './dto/get-location-info-id.dto';
+import { GetLocationInfoDto } from './dto/get_location_info.dto';
 
 @Injectable()
 export class LocationInfoService {
@@ -33,6 +33,38 @@ export class LocationInfoService {
     }
   }
 
+  /** Save translated name into translatedContent */
+  public async saveTranslations(location: LocationInfo) {
+    const langs = ['en', 'lo', 'vi'];
+    const translatedContent: Record<string, any> = {};
+
+    for (const lang of langs) {
+      translatedContent[lang] = {
+        name: location.name
+          ? await this.translateService.translateText(location.name, lang)
+          : null,
+      };
+    }
+
+    location.translatedContent = translatedContent;
+    await this.locationInfoRepository.save(location);
+  }
+
+  /** Merge translated content with original */
+  private pickTranslatedContent(location: LocationInfo, lang: string) {
+    if (!location.translatedContent) return location;
+    const translated = location.translatedContent?.[lang];
+    if (!translated) return location;
+
+    const merged: any = {
+      ...location,
+      name: translated.name || location.name,
+    };
+
+    delete merged.translatedContent;
+    return merged;
+  }
+
   async create(
     createLocationInfoDto: CreateLocationInfoDto,
     image?: Multer.File,
@@ -45,96 +77,10 @@ export class LocationInfoService {
       ...createLocationInfoDto,
       imageURL,
     });
-    return this.locationInfoRepository.save(locationInfo);
-  }
-
-  async getAll(params: GetLocationInfoDto) {
-    const locationInfo = this.locationInfoRepository
-      .createQueryBuilder('locationInfo')
-      .skip(params.skip)
-      .take(params.perPage)
-      .orderBy('locationInfo.createdAt', params.OrderSort);
-
-    if (params.search) {
-      locationInfo.andWhere('locationInfo.name ILIKE :search', {
-        search: `%${params.search}%`,
-      });
-    }
-    const [result, total] = await locationInfo.getManyAndCount();
-    const targetLang = this.mapLang(params.lang);
-    const translatedResult = await Promise.all(
-      result.map(async (item) => {
-        if (item.name) {
-          item.name = await this.translateService.translateText(
-            item.name,
-            targetLang,
-          );
-        }
-        return item;
-      }),
-    );
-    const pageMetaDto = new PageMetaDto({
-      itemCount: total,
-      pageOptionsDto: params,
-    });
-    return new ResponsePaginate(translatedResult, pageMetaDto, 'Success');
-  }
-
-  async getTrendingLocations(limit = 5, params: GetOneLocationInfoDto) {
-    const locations = this.locationInfoRepository
-      .createQueryBuilder('locationInfo')
-      .orderBy('locationInfo.viewCount', 'DESC')
-      .take(limit);
-
-    const [result, total] = await locations.getManyAndCount();
-    const targetLang = this.mapLang(params.lang);
-    const translatedResult = await Promise.all(
-      result.map(async (item) => {
-        if (item.name) {
-          item.name = await this.translateService.translateText(
-            item.name,
-            targetLang,
-          )
-        }
-        return item;
-      }),
-    );
-    const pageMetaDto = new PageMetaDto({
-      itemCount: limit,
-      pageOptionsDto: {
-        perPage: limit,
-        skip: 0,
-      },
-    });
-    return new ResponsePaginate(translatedResult, pageMetaDto, 'Success');
-  }
-
-  async get(id: string, params: GetOneLocationInfoDto) {
-    const locationInfo = await this.locationInfoRepository
-      .createQueryBuilder('locationInfo')
-      .where('locationInfo.id = :id', { id })
-      .getOne();
-    if (!locationInfo) {
-      throw new BadRequestException('Location info not found');
-    }
-    locationInfo.viewCount = (locationInfo.viewCount || 0) + 1;
     await this.locationInfoRepository.save(locationInfo);
-    const targetLang = this.mapLang(params.lang);
-    if (locationInfo.name) {
-      locationInfo.name = await this.translateService.translateText(
-        locationInfo.name,
-        targetLang,
-      );
-      if (Array.isArray(locationInfo.strict)) {
-        locationInfo.strict = await Promise.all(
-          locationInfo.strict.map(async (s) =>
-            s ? await this.translateService.translateText(s, targetLang) : s,
-          ),
-        );
-      }
-    }
+    await this.saveTranslations(locationInfo);
 
-    return { locationInfo, message: 'Success' };
+    return { locationInfo, message: 'Location created successfully' };
   }
 
   async update(
@@ -153,7 +99,78 @@ export class LocationInfoService {
 
     Object.assign(locationInfo, updateLocationInfoDto);
     await this.locationInfoRepository.save(locationInfo);
+
+    await this.saveTranslations(locationInfo);
+
     return { locationInfo, message: 'Location info updated successfully' };
+  }
+
+  async getAll(params: GetLocationInfoDto) {
+    const qb = this.locationInfoRepository
+      .createQueryBuilder('locationInfo')
+      .skip(params.skip)
+      .take(params.perPage)
+      .orderBy('locationInfo.createdAt', params.OrderSort);
+
+    if (params.search) {
+      qb.andWhere('locationInfo.name ILIKE :search', {
+        search: `%${params.search}%`,
+      });
+    }
+
+    const [result, total] = await qb.getManyAndCount();
+    const targetLang = this.mapLang(params.lang);
+
+    const translatedResult = result.map((item) =>
+      this.pickTranslatedContent(item, targetLang),
+    );
+
+    const pageMetaDto = new PageMetaDto({
+      itemCount: total,
+      pageOptionsDto: params,
+    });
+    return new ResponsePaginate(translatedResult, pageMetaDto, 'Success');
+  }
+
+  async getTrendingLocations(limit = 5, params: GetOneLocationInfoDto) {
+    const qb = this.locationInfoRepository
+      .createQueryBuilder('locationInfo')
+      .orderBy('locationInfo.viewCount', 'DESC')
+      .take(limit);
+
+    const [result] = await qb.getManyAndCount();
+    const targetLang = this.mapLang(params.lang);
+
+    const translatedResult = result.map((item) =>
+      this.pickTranslatedContent(item, targetLang),
+    );
+
+    const pageMetaDto = new PageMetaDto({
+      itemCount: limit,
+      pageOptionsDto: {
+        perPage: limit,
+        skip: 0,
+      },
+    });
+    return new ResponsePaginate(translatedResult, pageMetaDto, 'Success');
+  }
+
+  async get(id: string, params: GetOneLocationInfoDto) {
+    const locationInfo = await this.locationInfoRepository
+      .createQueryBuilder('locationInfo')
+      .where('locationInfo.id = :id', { id })
+      .getOne();
+    if (!locationInfo) {
+      throw new BadRequestException('Location info not found');
+    }
+
+    locationInfo.viewCount = (locationInfo.viewCount || 0) + 1;
+    await this.locationInfoRepository.save(locationInfo);
+
+    const targetLang = this.mapLang(params.lang);
+    const translated = this.pickTranslatedContent(locationInfo, targetLang);
+
+    return { locationInfo: translated, message: 'Success' };
   }
 
   async remove(id: string) {
