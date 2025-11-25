@@ -77,12 +77,10 @@ export class NewsTypeService {
       .orderBy('newsType.createdAt', params.OrderSort)
       .getMany();
 
-    // Map translation trước
     let translated = allNewsTypes.map((n) =>
       this.pickTranslatedContent(n, targetLang),
     );
 
-    // Filter search
     if (params.search) {
       const keyword = params.search.toLowerCase();
       translated = translated.filter((n) =>
@@ -90,7 +88,6 @@ export class NewsTypeService {
       );
     }
 
-    // Paginate bằng JS
     const page = params.page || 1;
     const perPage = params.perPage || 10;
     const startIndex = (page - 1) * perPage;
