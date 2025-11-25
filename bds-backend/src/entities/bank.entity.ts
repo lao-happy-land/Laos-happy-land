@@ -1,5 +1,5 @@
 import { AbstractEntity } from 'src/common/entities';
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { BankRequest } from './bank-request.entity';
 
 interface TermRate {
@@ -22,5 +22,26 @@ export class Bank extends AbstractEntity {
   termRates: TermRate[];
 
   @OneToMany(() => BankRequest, (bankRequest) => bankRequest.bank)
-  bank_requests: BankRequest[]
+  bank_requests: BankRequest[];
+
+  @Column({ type: 'jsonb', nullable: true })
+  translatedContent: {
+    en?: {
+      name?: string;
+      termRates?: TermRate[];
+    };
+    lo?: {
+      name?: string;
+      termRates?: TermRate[];
+    };
+    vi?: {
+      name?: string;
+      termRates?: TermRate[];
+    };
+  };
+
+  constructor(partial: Partial<Bank>) {
+    super();
+    Object.assign(this, partial);
+  }
 }

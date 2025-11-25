@@ -1,14 +1,14 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Bank } from 'src/entities/bank.entity';
-import { Repository } from 'typeorm';
-import { CreateBankDto } from './dto/create-bank.dto';
-import { GetBankDto } from './dto/get-bank.dto';
 import { PageMetaDto } from 'src/common/dtos/pageMeta';
 import { ResponsePaginate } from 'src/common/dtos/reponsePaginate';
-import { UpdateBankDto } from './dto/update-bank.dto';
+import { Bank } from 'src/entities/bank.entity';
 import { TranslateService } from 'src/service/translate.service';
+import { Repository } from 'typeorm';
+import { CreateBankDto } from './dto/create-bank.dto';
 import { GetOneBankDto } from './dto/get-bank-id.dto';
+import { GetBankDto } from './dto/get-bank.dto';
+import { UpdateBankDto } from './dto/update-bank.dto';
 
 @Injectable()
 export class BankService {
@@ -30,48 +30,75 @@ export class BankService {
     }
   }
 
+  public async saveTranslations(bank: Bank) {
+    const langs = ['en', 'lo', 'vi'];
+    const translatedContent: Record<string, any> = {};
+
+    for (const lang of langs) {
+      const translated = {
+        name: bank.name
+          ? await this.translateService.translateText(bank.name, lang)
+          : null,
+        termRates: bank.termRates
+          ? await Promise.all(
+              bank.termRates.map(async (t) => ({
+                ...t,
+                term: t.term
+                  ? await this.translateService.translateText(t.term, lang)
+                  : t.term,
+              })),
+            )
+          : null,
+      };
+      translatedContent[lang] = translated;
+    }
+
+    bank.translatedContent = translatedContent;
+    await this.bankRepository.save(bank);
+  }
+
   async create(createBankDto: CreateBankDto) {
     const bank = this.bankRepository.create(createBankDto);
     await this.bankRepository.save(bank);
+
+    await this.saveTranslations(bank);
+
     return { bank, message: 'Bank created successfully' };
   }
 
+  private pickTranslatedContent(bank: Bank, lang: string) {
+    if (!bank.translatedContent) return bank;
+    const translated = bank.translatedContent?.[lang];
+    if (!translated) return bank;
+
+    const merged: any = {
+      ...bank,
+      name: translated.name || bank.name,
+      termRates: translated.termRates || bank.termRates,
+    };
+
+    delete merged.translatedContent;
+    return merged;
+  }
+
   async getAll(params: GetBankDto) {
-    const bank = this.bankRepository
+    const bankQuery = this.bankRepository
       .createQueryBuilder('bank')
       .skip(params.skip)
       .take(params.perPage)
       .orderBy('bank.createdAt', params.OrderSort);
 
     if (params.search) {
-      bank.andWhere('bank.name ILIKE :search', {
+      bankQuery.andWhere('bank.name ILIKE :search', {
         search: `%${params.search}%`,
       });
     }
 
-    const [result, total] = await bank.getManyAndCount();
+    const [result, total] = await bankQuery.getManyAndCount();
     const targetLang = this.mapLang(params.lang);
 
-    const translatedResult = await Promise.all(
-      result.map(async (item) => {
-        if (item.name) {
-          item.name = await this.translateService.translateText(
-            item.name,
-            targetLang,
-          );
-        }
-        if (Array.isArray(item.termRates)) {
-          item.termRates = await Promise.all(
-            item.termRates.map(async (t) => ({
-              ...t,
-              term: t.term
-                ? await this.translateService.translateText(t.term, targetLang)
-                : t.term,
-            })),
-          );
-        }
-        return item;
-      }),
+    const translatedResult = result.map((item) =>
+      this.pickTranslatedContent(item, targetLang),
     );
 
     const pageMetaDto = new PageMetaDto({
@@ -93,27 +120,9 @@ export class BankService {
     }
 
     const targetLang = this.mapLang(params.lang);
+    const translatedBank = this.pickTranslatedContent(bank, targetLang);
 
-    if (targetLang) {
-      if (bank.name) {
-        bank.name = await this.translateService.translateText(
-          bank.name,
-          targetLang,
-        );
-      }
-      if (Array.isArray(bank.termRates)) {
-        bank.termRates = await Promise.all(
-          bank.termRates.map(async (t) => ({
-            ...t,
-            term: t.term
-              ? await this.translateService.translateText(t.term, targetLang)
-              : t.term,
-          })),
-        );
-      }
-    }
-
-    return { bank, message: 'Success' };
+    return { bank: translatedBank, message: 'Success' };
   }
 
   async update(id: string, updateBankDto: UpdateBankDto) {
@@ -121,10 +130,15 @@ export class BankService {
     if (!bank) {
       throw new BadRequestException('Bank not found');
     }
+
     if (updateBankDto.name) bank.name = updateBankDto.name;
     if (updateBankDto.termRates) bank.termRates = updateBankDto.termRates;
     if (updateBankDto.imageUrl) bank.imageUrl = updateBankDto.imageUrl;
+
     await this.bankRepository.save(bank);
+
+    await this.saveTranslations(bank);
+
     return { bank, message: 'Bank updated successfully' };
   }
 
