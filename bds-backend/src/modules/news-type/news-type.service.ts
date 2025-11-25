@@ -93,6 +93,18 @@ export class NewsTypeService {
     const startIndex = (page - 1) * perPage;
     const paginated = translated.slice(startIndex, startIndex + perPage);
 
+    if (params.search) {
+      const keyword = params.search.toLowerCase();
+      translated = translated.filter((n) =>
+        n.name?.toLowerCase().includes(keyword),
+      );
+    }
+
+    const page = params.page || 1;
+    const perPage = params.perPage || 10;
+    const startIndex = (page - 1) * perPage;
+    const paginated = translated.slice(startIndex, startIndex + perPage);
+
     const pageMetaDto = new PageMetaDto({
       itemCount: translated.length,
       pageOptionsDto: params,
