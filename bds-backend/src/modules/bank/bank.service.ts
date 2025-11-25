@@ -13,12 +13,11 @@ import { UpdateBankDto } from './dto/update-bank.dto';
 @Injectable()
 export class BankService {
   constructor(
-    @InjectRepository(Bank)
-    private readonly bankRepository: Repository<Bank>,
+    @InjectRepository(Bank) private readonly bankRepository: Repository<Bank>,
     private readonly translateService: TranslateService,
   ) {}
 
-  private mapLang(param?: string): string {
+  private mapLang(param?: string): 'vi' | 'en' | 'lo' {
     switch (param?.toUpperCase()) {
       case 'USD':
         return 'en';
@@ -30,12 +29,15 @@ export class BankService {
     }
   }
 
-  public async saveTranslations(bank: Bank) {
-    const langs = ['en', 'lo', 'vi'];
-    const translatedContent: Record<string, any> = {};
+  private async saveTranslations(bank: Bank) {
+    const langs: ('vi' | 'en' | 'lo')[] = ['vi', 'en', 'lo'];
+    const translatedContent: Record<
+      string,
+      { name: string; termRates: any[] }
+    > = {};
 
     for (const lang of langs) {
-      const translated = {
+      translatedContent[lang] = {
         name: bank.name
           ? await this.translateService.translateText(bank.name, lang)
           : null,
@@ -48,76 +50,75 @@ export class BankService {
                   : t.term,
               })),
             )
-          : null,
+          : [],
       };
-      translatedContent[lang] = translated;
     }
 
     bank.translatedContent = translatedContent;
     await this.bankRepository.save(bank);
   }
 
+  private pickTranslatedContent(bank: Bank, lang: 'vi' | 'en' | 'lo') {
+    if (!bank.translatedContent) return bank;
+    const translated =
+      bank.translatedContent[lang] ?? bank.translatedContent['vi'];
+
+    return {
+      ...bank,
+      name: translated?.name ?? bank.name,
+      termRates: translated?.termRates ?? bank.termRates,
+      translatedContent: bank.translatedContent,
+    };
+  }
+
   async create(createBankDto: CreateBankDto) {
     const bank = this.bankRepository.create(createBankDto);
     await this.bankRepository.save(bank);
-
     await this.saveTranslations(bank);
 
-    return { bank, message: 'Bank created successfully' };
-  }
-
-  private pickTranslatedContent(bank: Bank, lang: string) {
-    if (!bank.translatedContent) return bank;
-    const translated = bank.translatedContent?.[lang];
-    if (!translated) return bank;
-
-    const merged: any = {
-      ...bank,
-      name: translated.name || bank.name,
-      termRates: translated.termRates || bank.termRates,
-    };
-
-    delete merged.translatedContent;
-    return merged;
+    const translatedBank = this.pickTranslatedContent(bank, 'vi');
+    return { bank: translatedBank, message: 'Bank created successfully' };
   }
 
   async getAll(params: GetBankDto) {
-    const bankQuery = this.bankRepository
-      .createQueryBuilder('bank')
-      .skip(params.skip)
-      .take(params.perPage)
-      .orderBy('bank.createdAt', params.OrderSort);
+    const allBanks = await this.bankRepository.find({
+      order: { createdAt: params.OrderSort },
+    });
 
-    if (params.search) {
-      bankQuery.andWhere('bank.name ILIKE :search', {
-        search: `%${params.search}%`,
-      });
-    }
-
-    const [result, total] = await bankQuery.getManyAndCount();
     const targetLang = this.mapLang(params.lang);
 
-    const translatedResult = result.map((item) =>
-      this.pickTranslatedContent(item, targetLang),
+    // Map translation trước
+    let translated = allBanks.map((b) =>
+      this.pickTranslatedContent(b, targetLang),
     );
 
+    // Filter search trên name hoặc termRates
+    if (params.search) {
+      const keyword = params.search.toLowerCase();
+      translated = translated.filter(
+        (b) =>
+          b.name?.toLowerCase().includes(keyword) ||
+          b.termRates?.some((t) => t.term?.toLowerCase().includes(keyword)),
+      );
+    }
+
+    // Paginate bằng JS
+    const page = params.page || 1;
+    const perPage = params.perPage || 10;
+    const startIndex = (page - 1) * perPage;
+    const paginated = translated.slice(startIndex, startIndex + perPage);
+
     const pageMetaDto = new PageMetaDto({
-      itemCount: total,
+      itemCount: translated.length,
       pageOptionsDto: params,
     });
 
-    return new ResponsePaginate(translatedResult, pageMetaDto, 'Success');
+    return new ResponsePaginate(paginated, pageMetaDto, 'Success');
   }
 
   async get(id: string, params: GetOneBankDto) {
-    const bank = await this.bankRepository
-      .createQueryBuilder('bank')
-      .where('bank.id = :id', { id })
-      .getOne();
-
-    if (!bank) {
-      throw new BadRequestException('Bank not found');
-    }
+    const bank = await this.bankRepository.findOneBy({ id });
+    if (!bank) throw new BadRequestException('Bank not found');
 
     const targetLang = this.mapLang(params.lang);
     const translatedBank = this.pickTranslatedContent(bank, targetLang);
@@ -127,26 +128,23 @@ export class BankService {
 
   async update(id: string, updateBankDto: UpdateBankDto) {
     const bank = await this.bankRepository.findOneBy({ id });
-    if (!bank) {
-      throw new BadRequestException('Bank not found');
-    }
+    if (!bank) throw new BadRequestException('Bank not found');
 
     if (updateBankDto.name) bank.name = updateBankDto.name;
     if (updateBankDto.termRates) bank.termRates = updateBankDto.termRates;
     if (updateBankDto.imageUrl) bank.imageUrl = updateBankDto.imageUrl;
 
     await this.bankRepository.save(bank);
-
     await this.saveTranslations(bank);
 
-    return { bank, message: 'Bank updated successfully' };
+    const translatedBank = this.pickTranslatedContent(bank, 'vi');
+    return { bank: translatedBank, message: 'Bank updated successfully' };
   }
 
   async remove(id: string) {
     const bank = await this.bankRepository.findOneBy({ id });
-    if (!bank) {
-      throw new BadRequestException('Bank not found');
-    }
+    if (!bank) throw new BadRequestException('Bank not found');
+
     await this.bankRepository.remove(bank);
     return { message: 'Bank deleted successfully' };
   }
