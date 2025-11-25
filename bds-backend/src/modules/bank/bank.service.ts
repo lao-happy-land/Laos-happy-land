@@ -87,12 +87,10 @@ export class BankService {
 
     const targetLang = this.mapLang(params.lang);
 
-    // Map translation trước
     let translated = allBanks.map((b) =>
       this.pickTranslatedContent(b, targetLang),
     );
 
-    // Filter search trên name hoặc termRates
     if (params.search) {
       const keyword = params.search.toLowerCase();
       translated = translated.filter(
@@ -102,7 +100,6 @@ export class BankService {
       );
     }
 
-    // Paginate bằng JS
     const page = params.page || 1;
     const perPage = params.perPage || 10;
     const startIndex = (page - 1) * perPage;
