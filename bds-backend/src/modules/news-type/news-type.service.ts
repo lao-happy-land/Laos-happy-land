@@ -78,13 +78,11 @@ export class NewsTypeService {
 
     const query = this.newsTypeRepository
       .createQueryBuilder('newsType')
-      .orderBy('newsType.createdAt', params.OrderSort)
-      .skip(params.skip)
-      .take(params.perPage);
+      .orderBy('newsType.createdAt', params.OrderSort);
 
-    const [allNewsTypes, total] = await query.getManyAndCount();
+    const allNewsTypes = await query.getMany();
 
-    const translated = allNewsTypes.map((item) => {
+    let translated = allNewsTypes.map((item) => {
       const tr = this.pickTranslation(item, targetLang);
       return {
         ...item,
@@ -93,12 +91,24 @@ export class NewsTypeService {
       };
     });
 
+    if (params.search) {
+      const keyword = params.search.toLowerCase();
+      translated = translated.filter((n) =>
+        n.name?.toLowerCase().includes(keyword),
+      );
+    }
+
+    const page = params.page || 1;
+    const perPage = params.perPage || 10;
+    const startIndex = (page - 1) * perPage;
+    const paginated = translated.slice(startIndex, startIndex + perPage);
+
     const pageMetaDto = new PageMetaDto({
-      itemCount: total,
+      itemCount: translated.length,
       pageOptionsDto: params,
     });
 
-    return new ResponsePaginate(translated, pageMetaDto, 'Success');
+    return new ResponsePaginate(paginated, pageMetaDto, 'Success');
   }
 
   async get(id: string, params: GetOneNewDto) {
