@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PageMetaDto } from 'src/common/dtos/pageMeta';
 import { ResponsePaginate } from 'src/common/dtos/reponsePaginate';
@@ -30,45 +30,41 @@ export class NewsTypeService {
     }
   }
 
-  private async generateTranslations(newsType: NewsType) {
-    const languages: ('vi' | 'en' | 'lo')[] = ['vi', 'en', 'lo'];
-    const result: Record<string, { name: string | null }> = {};
+  private async saveTranslations(newsType: NewsType) {
+    const langs: ('vi' | 'en' | 'lo')[] = ['vi', 'en', 'lo'];
+    const translatedContent: Record<string, { name: string | null }> = {};
 
-    for (const lang of languages) {
-      result[lang] = {
+    for (const lang of langs) {
+      translatedContent[lang] = {
         name: newsType.name
           ? await this.translateService.translateText(newsType.name, lang)
           : null,
       };
     }
 
-    newsType.translatedContent = result;
-  }
-
-  private async saveTranslations(newsType: NewsType) {
-    await this.generateTranslations(newsType);
+    newsType.translatedContent = translatedContent;
     await this.entityManager.save(newsType);
   }
 
-  private pickTranslation(newsType: NewsType, lang: 'vi' | 'en' | 'lo') {
-    return (
-      newsType.translatedContent?.[lang] ??
-      newsType.translatedContent?.['vi'] ?? { name: newsType.name }
-    );
+  private pickTranslatedContent(newsType: NewsType, lang: 'vi' | 'en' | 'lo') {
+    if (!newsType.translatedContent) return newsType;
+
+    const translated =
+      newsType.translatedContent[lang] ?? newsType.translatedContent['vi'];
+
+    return {
+      ...newsType,
+      name: translated?.name ?? newsType.name,
+    };
   }
 
   async create(createNewsTypeDto: CreateNewsTypeDto) {
     const newsType = this.newsTypeRepository.create(createNewsTypeDto);
     await this.saveTranslations(newsType);
 
-    const tr = this.pickTranslation(newsType, 'vi');
-
+    const translatedNewsType = this.pickTranslatedContent(newsType, 'vi');
     return {
-      newsType: {
-        ...newsType,
-        name: tr.name,
-        translatedContent: newsType.translatedContent,
-      },
+      newsType: translatedNewsType,
       message: 'News type created successfully',
     };
   }
@@ -76,51 +72,51 @@ export class NewsTypeService {
   async getAll(params: GetNewsTypeDto) {
     const targetLang = this.mapLang(params.lang);
 
-    const query = this.newsTypeRepository
+    const allNewsTypes = await this.newsTypeRepository
       .createQueryBuilder('newsType')
       .orderBy('newsType.createdAt', params.OrderSort)
-      .skip(params.skip)
-      .take(params.perPage);
+      .getMany();
 
-    const [allNewsTypes, total] = await query.getManyAndCount();
+    // Map translation trước
+    let translated = allNewsTypes.map((n) =>
+      this.pickTranslatedContent(n, targetLang),
+    );
 
-    const translated = allNewsTypes.map((item) => {
-      const tr = this.pickTranslation(item, targetLang);
-      return {
-        ...item,
-        name: tr.name,
-        translatedContent: item.translatedContent,
-      };
-    });
+    // Filter search
+    if (params.search) {
+      const keyword = params.search.toLowerCase();
+      translated = translated.filter((n) =>
+        n.name?.toLowerCase().includes(keyword),
+      );
+    }
+
+    // Paginate bằng JS
+    const page = params.page || 1;
+    const perPage = params.perPage || 10;
+    const startIndex = (page - 1) * perPage;
+    const paginated = translated.slice(startIndex, startIndex + perPage);
 
     const pageMetaDto = new PageMetaDto({
-      itemCount: total,
+      itemCount: translated.length,
       pageOptionsDto: params,
     });
 
-    return new ResponsePaginate(translated, pageMetaDto, 'Success');
+    return new ResponsePaginate(paginated, pageMetaDto, 'Success');
   }
 
   async get(id: string, params: GetOneNewDto) {
     const newsType = await this.newsTypeRepository.findOneBy({ id });
-    if (!newsType) throw new BadRequestException('News type not found');
+    if (!newsType) throw new NotFoundException('News type not found');
 
     const targetLang = this.mapLang(params.lang);
-    const tr = this.pickTranslation(newsType, targetLang);
+    const translatedNewsType = this.pickTranslatedContent(newsType, targetLang);
 
-    return {
-      newsType: {
-        ...newsType,
-        name: tr.name,
-        translatedContent: newsType.translatedContent,
-      },
-      message: 'Success',
-    };
+    return { newsType: translatedNewsType, message: 'Success' };
   }
 
   async update(id: string, updateNewsTypeDto: CreateNewsTypeDto) {
     const newsType = await this.newsTypeRepository.findOneBy({ id });
-    if (!newsType) throw new BadRequestException('News type not found');
+    if (!newsType) throw new NotFoundException('News type not found');
 
     let needsTranslate = false;
     if (updateNewsTypeDto.name && updateNewsTypeDto.name !== newsType.name) {
@@ -134,21 +130,16 @@ export class NewsTypeService {
       await this.entityManager.save(newsType);
     }
 
-    const tr = this.pickTranslation(newsType, 'vi');
-
+    const translatedNewsType = this.pickTranslatedContent(newsType, 'vi');
     return {
-      newsType: {
-        ...newsType,
-        name: tr.name,
-        translatedContent: newsType.translatedContent,
-      },
+      newsType: translatedNewsType,
       message: 'News type updated successfully',
     };
   }
 
   async remove(id: string) {
     const newsType = await this.newsTypeRepository.findOneBy({ id });
-    if (!newsType) throw new BadRequestException('News type not found');
+    if (!newsType) throw new NotFoundException('News type not found');
 
     await this.entityManager.remove(newsType);
     return { message: 'News type deleted successfully' };
