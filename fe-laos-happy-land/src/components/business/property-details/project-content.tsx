@@ -58,6 +58,7 @@ export default function ProjectContent({
                 <Paragraph
                   key={index}
                   className="mb-0 leading-relaxed text-gray-700"
+                  style={{ whiteSpace: "pre-line" }}
                 >
                   {paragraphText}
                 </Paragraph>
