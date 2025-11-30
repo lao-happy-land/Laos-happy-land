@@ -1,7 +1,15 @@
 import { Api } from "@/@types/gentype-axios";
-import { useLocaleStore } from "../store/locale.store";
 import { useCurrencyStore } from "../store/currency.store";
 import { getLangByLocale, getValidLocale } from "../helper/locale.helper";
+
+// Helper function to get current locale from URL pathname
+const getCurrentLocaleFromUrl = (): string => {
+  if (typeof window === "undefined") return "la";
+  const pathname = window.location.pathname;
+  const localeRegex = /^\/(en|vn|la)(\/|$)/;
+  const localeMatch = localeRegex.exec(pathname);
+  return localeMatch?.[1] ?? "la";
+};
 
 // Tạo instance API với base URL từ environment
 const api = new Api({
@@ -19,9 +27,9 @@ api.instance.interceptors.request.use(
         config.headers.Authorization = `Bearer ${token}`;
       }
 
-      // Get locale from store
-      const locale = useLocaleStore.getState().getLocale();
-      const validLocale = getValidLocale(locale);
+      // Get locale from URL pathname to ensure it's always in sync with current route
+      const localeFromUrl = getCurrentLocaleFromUrl();
+      const validLocale = getValidLocale(localeFromUrl);
 
       config.headers.currency = getLangByLocale(validLocale);
 
@@ -65,7 +73,7 @@ api.instance.interceptors.response.use(
         document.cookie =
           "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
 
-        const locale = useLocaleStore.getState().getLocale();
+        const locale = getCurrentLocaleFromUrl();
 
         // Redirect to login page if not already there
         window.location.href = `/${locale}/login`;
