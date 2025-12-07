@@ -1,9 +1,8 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
-import { useUrlLocale } from "@/utils/locale";
-import { useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
 
 interface ProjectItem {
   id: string;
@@ -180,9 +179,8 @@ const ProjectPage = () => {
           {backgroundImages.map((image, index) => (
             <div
               key={index}
-              className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ${
-                index === currentSlide ? "opacity-100" : "opacity-0"
-              } `}
+              className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ${index === currentSlide ? "opacity-100" : "opacity-0"
+                } `}
               style={{
                 backgroundImage: `url(${image})`,
               }}
@@ -270,9 +268,8 @@ const ProjectPage = () => {
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
-              className={`h-2 w-2 rounded-full transition-all ${
-                index === currentSlide ? "bg-white" : "bg-white/50"
-              }`}
+              className={`h-2 w-2 rounded-full transition-all ${index === currentSlide ? "bg-white" : "bg-white/50"
+                }`}
             />
           ))}
         </div>
@@ -407,11 +404,10 @@ const ProjectPage = () => {
                             </span>
                           </div>
                           <span
-                            className={`rounded-full px-3 py-1 text-xs font-medium ${
-                              project.status === "Đang mở bán"
+                            className={`rounded-full px-3 py-1 text-xs font-medium ${project.status === "Đang mở bán"
                                 ? "bg-green-100 text-green-800"
                                 : "bg-blue-100 text-blue-800"
-                            }`}
+                              }`}
                           >
                             {project.status}
                           </span>

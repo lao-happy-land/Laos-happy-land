@@ -1,25 +1,25 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import uploadService from "@/share/service/upload.service";
 import {
+  Button,
   Dropdown,
   Form,
   Input,
-  Select,
-  Button,
   message,
+  Select,
   type FormInstance,
 } from "antd";
 import {
-  Plus,
-  ArrowUp,
   ArrowDown,
+  ArrowUp,
   GripVertical,
-  X,
+  Plus,
   Upload as UploadIcon,
+  X,
 } from "lucide-react";
-import uploadService from "@/share/service/upload.service";
 import { useTranslations } from "next-intl";
+import { useEffect, useMemo, useState } from "react";
 
 // Internal block type to support both text/value callers
 type Block =
@@ -96,7 +96,7 @@ export default function ProjectContentBuilder({
             const current = (form.getFieldValue(listPathArr) as Block[]) ?? [];
             const newList: Block[] = [...current];
             const existing = newList[fieldIndex];
-            if (existing && existing.type === "image") {
+            if (existing?.type === "image") {
               newList[fieldIndex] = { ...existing, url: data.url };
             } else {
               newList[fieldIndex] = { type: "image", url: data.url };
