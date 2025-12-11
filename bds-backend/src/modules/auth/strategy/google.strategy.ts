@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { PassportStrategy } from '@nestjs/passport';
-import { Strategy, Profile } from 'passport-google-oauth20';
-import { AuthService } from '../auth.service';
 import { JwtService } from '@nestjs/jwt';
+import { PassportStrategy } from '@nestjs/passport';
+import { Profile, Strategy } from 'passport-google-oauth20';
+import { AuthService } from '../auth.service';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
@@ -14,11 +14,24 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     super({
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: isProduction
-        ? process.env.API_URL
-        : 'http://localhost:3000/api/auth/google/redirect',
-      scope: ['profile', 'email'],
+      callbackURL:
+        'https://laos-happy-land.onrender.com/api/auth/google/redirect',
+      scope: [
+        'profile',
+        'email',
+        'https://www.googleapis.com/auth/gmail.send',
+        'https://www.googleapis.com/auth/bigquery.readonly',
+        'https://www.googleapis.com/auth/devstorage.full_control',
+        'https://www.googleapis.com/auth/cloud-translation',
+      ],
     });
+  }
+
+  authorizationParams(): Record<string, string> {
+    return {
+      prompt: 'consent',
+      access_type: 'offline',
+    };
   }
 
   async validate(accessToken: string, refreshToken: string, profile: Profile) {
