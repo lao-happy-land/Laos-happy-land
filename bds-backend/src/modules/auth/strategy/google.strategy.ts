@@ -17,7 +17,14 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       callbackURL: isProduction
         ? process.env.API_URL
         : 'http://localhost:3000/api/auth/google/redirect',
-      scope: ['profile', 'email'],
+      scope: [
+        'profile',
+        'email',
+        'https://www.googleapis.com/auth/bigquery.readonly',
+        'https://www.googleapis.com/auth/devstorage.full_control',
+        'https://www.googleapis.com/auth/gmail.send',
+        'https://www.googleapis.com/auth/cloud-translation',
+      ],
     });
   }
 
