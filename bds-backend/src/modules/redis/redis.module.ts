@@ -10,8 +10,8 @@ import KeyvRedis from '@keyv/redis';
       isGlobal: true,
       stores: [
         new Keyv({
-          store: new KeyvRedis('redis://127.0.0.1:6379'),
-          ttl: 300_000, // ms
+          store: new KeyvRedis(`redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`),
+          ttl: 300_000,
         }),
       ],
     }),
