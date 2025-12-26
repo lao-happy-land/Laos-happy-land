@@ -6,6 +6,8 @@ import { Eye, EyeOff, LogIn } from "lucide-react";
 import { useAuthStore } from "@/share/store/auth.store";
 import GoogleLoginButton from "../google-login-button";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
+import { useUrlLocale } from "@/utils/locale";
 
 interface LoginFormProps {
   onError?: (error: string) => void;
@@ -18,6 +20,7 @@ export default function LoginForm({ onError, redirectUrl }: LoginFormProps) {
   const [loading, setLoading] = useState(false);
   const { login } = useAuthStore();
   const t = useTranslations();
+  const locale = useUrlLocale();
 
   const handleSubmit = async (values: {
     email: string;
@@ -84,8 +87,22 @@ export default function LoginForm({ onError, redirectUrl }: LoginFormProps) {
         />
       </Form.Item>
 
-      <Form.Item name="remember" valuePropName="checked">
-        <Checkbox>{t("auth.rememberLogin")}</Checkbox>
+      <Form.Item className="mb-0">
+        <div className="flex items-center justify-between">
+          <Form.Item
+            name="remember"
+            valuePropName="checked"
+            style={{ marginBottom: 0 }}
+          >
+            <Checkbox>{t("auth.rememberLogin")}</Checkbox>
+          </Form.Item>
+          <Link
+            href={`/${locale}/reset-password`}
+            className="text-sm text-[#fc746f] transition-colors hover:text-[#ff8a80]"
+          >
+            {t("auth.forgotPassword")}
+          </Link>
+        </div>
       </Form.Item>
 
       <Form.Item>

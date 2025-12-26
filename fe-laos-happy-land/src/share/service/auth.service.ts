@@ -288,6 +288,62 @@ export const authService = {
     // Redirect to Google OAuth
     window.location.href = this.getGoogleLoginUrl();
   },
+
+  async sendResetCode(email: string): Promise<void> {
+    try {
+      // Use the axios instance directly since the endpoint might not be in generated types
+      const { apiInstance } = await import("./api.service");
+      await apiInstance.post("/api/auth/send-reset-code", { email });
+    } catch (error: unknown) {
+      if (typeof error === "object" && error !== null && "response" in error) {
+        const axiosError = error as {
+          response?: {
+            data?: { message?: string; error?: string; statusCode?: number };
+          };
+        };
+        if (axiosError.response?.data) {
+          const apiError = new Error(
+            axiosError.response.data.message ?? "Gửi mã xác nhận thất bại",
+          );
+          Object.assign(apiError, { response: axiosError.response });
+          throw apiError;
+        }
+      }
+      throw error;
+    }
+  },
+
+  async resetPasswordWithCode(
+    email: string,
+    code: string,
+    newPassword: string,
+  ): Promise<void> {
+    try {
+      // Use the axios instance directly since the endpoint might not be in generated types
+      const { apiInstance } = await import("./api.service");
+      await apiInstance.post("/api/auth/reset-password-with-code", {
+        email,
+        code,
+        newPassword,
+      });
+    } catch (error: unknown) {
+      if (typeof error === "object" && error !== null && "response" in error) {
+        const axiosError = error as {
+          response?: {
+            data?: { message?: string; error?: string; statusCode?: number };
+          };
+        };
+        if (axiosError.response?.data) {
+          const apiError = new Error(
+            axiosError.response.data.message ?? "Đặt lại mật khẩu thất bại",
+          );
+          Object.assign(apiError, { response: axiosError.response });
+          throw apiError;
+        }
+      }
+      throw error;
+    }
+  },
 };
 
 export default authService;

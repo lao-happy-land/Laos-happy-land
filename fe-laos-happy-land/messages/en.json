@@ -519,7 +519,24 @@
     "startInvestmentJourney": "Start your smart real estate investment journey in Laos",
     "termsOfUse": "Terms of Use",
     "welcomeBack": "Welcome back!",
-    "welcomeBackMessage": "Welcome back! Please log in to your account."
+    "welcomeBackMessage": "Welcome back! Please log in to your account.",
+    "resetPassword": "Reset Password",
+    "sendResetCode": "Send Reset Code",
+    "resetPasswordCodeSent": "Reset code has been sent to your email",
+    "resetPasswordDescription": "Enter your email to receive a reset code",
+    "resetPasswordMessage": "Enter your email to receive a reset code",
+    "backToLogin": "Back to Login",
+    "rememberPassword": "Remember your password?",
+    "verificationCode": "Verification Code",
+    "pleaseEnterCode": "Please enter the verification code!",
+    "codeMustBe6Digits": "Verification code must be 6 digits!",
+    "enterVerificationCode": "Enter 6-digit verification code",
+    "pleaseEnterNewPassword": "Please enter your new password!",
+    "passwordResetSuccess": "Password reset successfully!",
+    "resetPasswordFailed": "Password reset failed",
+    "sendCodeFailed": "Failed to send reset code",
+    "resetPasswordError": "Reset Password Error",
+    "back": "Back"
   },
   "bankRequest": {
     "additionalInformation": "Additional Information",
@@ -1123,6 +1140,11 @@
       "description": "Login to Laohappyland to access properties you're interested in",
       "keywords": "login, Laohappyland, real estate",
       "title": "Login - Laohappyland"
+    },
+    "resetPassword": {
+      "description": "Reset your Laohappyland account password",
+      "keywords": "reset password, forgot password, Laohappyland",
+      "title": "Reset Password - Laohappyland"
     },
     "news": {
       "description": "Latest Laos real estate news updates - Investment news, new projects, real estate market",
