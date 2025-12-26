@@ -173,6 +173,20 @@ export interface RefreshTokenDto {
   refresh_token: string;
 }
 
+export interface SendResetCodeDto {
+  /** Email of the user */
+  email: string;
+}
+
+export interface VerifyResetCodeWithCodeDto {
+  /** Email of the user */
+  email: string;
+  /** Code of the user */
+  code: string;
+  /** New password for the user */
+  newPassword: string;
+}
+
 export interface ResetPasswordDto {
   /** Email of the user */
   email: string;
@@ -982,6 +996,46 @@ export class Api<
       this.request<void, any>({
         path: `/api/auth/google/redirect`,
         method: "GET",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Auth
+     * @name AuthControllerSendResetCode
+     * @summary Send reset code to email
+     * @request POST:/api/auth/send-reset-code
+     */
+    authControllerSendResetCode: (
+      data: SendResetCodeDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void>({
+        path: `/api/auth/send-reset-code`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Auth
+     * @name AuthControllerVerifyResetCodeWithCode
+     * @summary Verify reset code
+     * @request POST:/api/auth/verify-reset-code
+     */
+    authControllerVerifyResetCodeWithCode: (
+      data: VerifyResetCodeWithCodeDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, void>({
+        path: `/api/auth/reset-password-with-code`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
         ...params,
       }),
 

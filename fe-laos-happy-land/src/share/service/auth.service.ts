@@ -1,5 +1,9 @@
 import api from "./api.service";
-import type { LoginDto, RegisterDto } from "@/@types/gentype-axios";
+import type {
+  LoginDto,
+  RegisterDto,
+  VerifyResetCodeWithCodeDto,
+} from "@/@types/gentype-axios";
 
 export interface LoginRequest {
   email: string;
@@ -292,8 +296,7 @@ export const authService = {
   async sendResetCode(email: string): Promise<void> {
     try {
       // Use the axios instance directly since the endpoint might not be in generated types
-      const { apiInstance } = await import("./api.service");
-      await apiInstance.post("/api/auth/send-reset-code", { email });
+      await api.authControllerSendResetCode({ email });
     } catch (error: unknown) {
       if (typeof error === "object" && error !== null && "response" in error) {
         const axiosError = error as {
@@ -320,12 +323,11 @@ export const authService = {
   ): Promise<void> {
     try {
       // Use the axios instance directly since the endpoint might not be in generated types
-      const { apiInstance } = await import("./api.service");
-      await apiInstance.post("/api/auth/reset-password-with-code", {
+      await api.authControllerVerifyResetCodeWithCode({
         email,
         code,
         newPassword,
-      });
+      } as VerifyResetCodeWithCodeDto);
     } catch (error: unknown) {
       if (typeof error === "object" && error !== null && "response" in error) {
         const axiosError = error as {
