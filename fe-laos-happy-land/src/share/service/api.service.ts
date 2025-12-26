@@ -87,3 +87,5 @@ api.instance.interceptors.response.use(
 );
 
 export default api.api;
+export { api };
+export const apiInstance = api.instance;

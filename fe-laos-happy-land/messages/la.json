@@ -516,7 +516,24 @@
     "startInvestmentJourney": "ເລີ່ມການເດີນທາງການລົງທຶນຊັບສິນອັດສະລິຍະທີ່ລາວ",
     "termsOfUse": "ເງື່ອນໄຂການນຳໃຊ້",
     "welcomeBack": "ຍິນດີຕ້ອນຮັບກັບ!",
-    "welcomeBackMessage": "ຍິນດີຕ້ອນຮັບກັບ! ກະລຸນາເຂົ້າສູ່ລະບົບບັນຊີຂອງທ່ານ."
+    "welcomeBackMessage": "ຍິນດີຕ້ອນຮັບກັບ! ກະລຸນາເຂົ້າສູ່ລະບົບບັນຊີຂອງທ່ານ.",
+    "resetPassword": "ຕັ້ງລະຫັດຜ່ານໃໝ່",
+    "sendResetCode": "ສົ່ງລະຫັດຢືນຢັນ",
+    "resetPasswordCodeSent": "ລະຫັດຢືນຢັນໄດ້ຖືກສົ່ງໄປທີ່ອີເມວຂອງທ່ານແລ້ວ",
+    "resetPasswordDescription": "ປ້ອນອີເມວຂອງທ່ານເພື່ອຮັບລະຫັດຢືນຢັນ",
+    "resetPasswordMessage": "ປ້ອນອີເມວຂອງທ່ານເພື່ອຮັບລະຫັດຢືນຢັນ",
+    "backToLogin": "ກັບໄປເຂົ້າສູ່ລະບົບ",
+    "rememberPassword": "ຈື່ລະຫັດຜ່ານຂອງທ່ານ?",
+    "verificationCode": "ລະຫັດຢືນຢັນ",
+    "pleaseEnterCode": "ກະລຸນາປ້ອນລະຫັດຢືນຢັນ!",
+    "codeMustBe6Digits": "ລະຫັດຢືນຢັນຕ້ອງມີ 6 ຕົວເລກ!",
+    "enterVerificationCode": "ປ້ອນລະຫັດຢືນຢັນ 6 ຕົວເລກ",
+    "pleaseEnterNewPassword": "ກະລຸນາປ້ອນລະຫັດຜ່ານໃໝ່!",
+    "passwordResetSuccess": "ຕັ້ງລະຫັດຜ່ານໃໝ່ສຳເລັດ!",
+    "resetPasswordFailed": "ຕັ້ງລະຫັດຜ່ານໃໝ່ບໍ່ສຳເລັດ",
+    "sendCodeFailed": "ສົ່ງລະຫັດຢືນຢັນບໍ່ສຳເລັດ",
+    "resetPasswordError": "ຂໍ້ຜິດພາດການຕັ້ງລະຫັດຜ່ານໃໝ່",
+    "back": "ກັບຄືນ"
   },
   "bankRequest": {
     "additionalInformation": "ຂໍ້ມູນເພີ່ມເຕີມ",
@@ -1121,6 +1138,11 @@
       "description": "ເຂົ້າສູ່ລະບົບ Laohappyland ເພື່ອເຂົ້າເຖິງອະສັງຫາລິມະສັບທີ່ທ່ານສົນໃຈ",
       "keywords": "ເຂົ້າສູ່ລະບົບ, login, Laohappyland, ອະສັງຫາລິມະສັບ",
       "title": "ເຂົ້າສູ່ລະບົບ - Laohappyland"
+    },
+    "resetPassword": {
+      "description": "ຕັ້ງລະຫັດຜ່ານບັນຊີ Laohappyland ຂອງທ່ານໃໝ່",
+      "keywords": "ຕັ້ງລະຫັດຜ່ານໃໝ່, ລືມລະຫັດຜ່ານ, Laohappyland",
+      "title": "ຕັ້ງລະຫັດຜ່ານໃໝ່ - Laohappyland"
     },
     "news": {
       "description": "ອັບເດດຂ່າວສານອະສັງຫາລິມະສັບລາວລ່າສຸດ - ຂ່າວການລົງທຶນ, ໂຄງການໃໝ່, ຕະຫຼາດອະສັງຫາລິມະສັບ",

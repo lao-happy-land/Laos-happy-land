@@ -508,7 +508,24 @@
     "startInvestmentJourney": "Bắt đầu hành trình đầu tư bất động sản thông minh tại Laohappyland.com",
     "termsOfUse": "Điều khoản sử dụng",
     "welcomeBack": "Chào mừng trở lại!",
-    "welcomeBackMessage": "Chào mừng trở lại! Vui lòng đăng nhập vào tài khoản của bạn."
+    "welcomeBackMessage": "Chào mừng trở lại! Vui lòng đăng nhập vào tài khoản của bạn.",
+    "resetPassword": "Đặt lại mật khẩu",
+    "sendResetCode": "Gửi mã xác nhận",
+    "resetPasswordCodeSent": "Mã xác nhận đã được gửi đến email của bạn",
+    "resetPasswordDescription": "Nhập email của bạn để nhận mã xác nhận đặt lại mật khẩu",
+    "resetPasswordMessage": "Nhập email của bạn để nhận mã xác nhận",
+    "backToLogin": "Quay lại đăng nhập",
+    "rememberPassword": "Nhớ mật khẩu?",
+    "verificationCode": "Mã xác nhận",
+    "pleaseEnterCode": "Vui lòng nhập mã xác nhận!",
+    "codeMustBe6Digits": "Mã xác nhận phải có 6 chữ số!",
+    "enterVerificationCode": "Nhập mã xác nhận 6 chữ số",
+    "pleaseEnterNewPassword": "Vui lòng nhập mật khẩu mới!",
+    "passwordResetSuccess": "Đặt lại mật khẩu thành công!",
+    "resetPasswordFailed": "Đặt lại mật khẩu thất bại",
+    "sendCodeFailed": "Gửi mã xác nhận thất bại",
+    "resetPasswordError": "Lỗi đặt lại mật khẩu",
+    "back": "Quay lại"
   },
   "bankRequest": {
     "additionalInformation": "Thông tin bổ sung",
@@ -1116,6 +1133,11 @@
       "description": "Đăng nhập Laohappyland để truy cập các bất động sản bạn quan tâm",
       "keywords": "đăng nhập, Laohappyland, bất động sản",
       "title": "Đăng nhập - Laohappyland"
+    },
+    "resetPassword": {
+      "description": "Đặt lại mật khẩu tài khoản Laohappyland của bạn",
+      "keywords": "đặt lại mật khẩu, quên mật khẩu, Laohappyland",
+      "title": "Đặt lại mật khẩu - Laohappyland"
     },
     "news": {
       "description": "Cập nhật tin tức bất động sản Lào mới nhất - Tin đầu tư, dự án mới, thị trường bất động sản",
