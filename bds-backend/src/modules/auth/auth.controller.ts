@@ -11,12 +11,13 @@ import {
 import { AuthService } from './auth.service';
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
-import { log } from 'console';
 import { GoogleAuthGuard } from './guard/google.guard';
-import { ResetPasswordDto } from './dto/reset_pass.dto';
 import { Response } from 'express';
 import { RefreshTokenDto } from './dto/refersh.dto';
-import { VerifyEmaildDto } from './dto/verify_email.dto';
+import { SendResetCodeDto } from './dto/send-reset-code.dto';
+import { VerifyResetCodeDto } from './dto/verify-reset-code.dto';
+import { ResetPasswordWithCodeDto } from './dto/reset-password-with-code.dto';
+import { TestRedisDto } from './dto/test-redis.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -82,26 +83,30 @@ export class AuthController {
     return res.redirect(`${FE_URL}?token=${token}`);
   }
 
-  @Post('verify')
-  @ApiOperation({ summary: 'Verify gmail' })
-  @ApiResponse({ status: 200, description: 'Email is valid' })
+  @Post('send-reset-code')
+  @ApiOperation({ summary: 'Send password reset code to email' })
+  @ApiResponse({ status: 200, description: 'Reset code sent successfully' })
   @ApiResponse({ status: 400, description: 'Email not found' })
-  @ApiBody({ type: VerifyEmaildDto })
-  async verifyUserRole(@Body() body: VerifyEmaildDto) {
-    return this.authService.verifyEmail(body);
+  @ApiBody({ type: SendResetCodeDto })
+  async sendResetCode(@Body() body: SendResetCodeDto) {
+    return this.authService.sendResetCode(body.email);
   }
 
-  @Post('reset-password')
-  @ApiOperation({ summary: 'Reset user password' })
-  @ApiResponse({ status: 200, description: 'Password successfully reset' })
-  @ApiResponse({ status: 400, description: 'Invalid email or input' })
-  @ApiBody({ type: ResetPasswordDto })
-  async resetPassword(@Body() body: ResetPasswordDto) {
-    const { email, newPassword } = body;
-    if (!email || !newPassword) {
-      throw new BadRequestException('Email and new password are required');
-    }
-    const user = await this.authService.resetPassword(body);
-    return { message: 'Password successfully reset'};
+  @Post('verify-reset-code')
+  @ApiOperation({ summary: 'Verify password reset code' })
+  @ApiResponse({ status: 200, description: 'Code verified successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired code' })
+  @ApiBody({ type: VerifyResetCodeDto })
+  async verifyResetCode(@Body() body: VerifyResetCodeDto) {
+    return this.authService.verifyResetCode(body.email, body.code);
+  }
+
+  @Post('reset-password-with-code')
+  @ApiOperation({ summary: 'Reset password with verification code' })
+  @ApiResponse({ status: 200, description: 'Password reset successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid code or email' })
+  @ApiBody({ type: ResetPasswordWithCodeDto })
+  async resetPasswordWithCode(@Body() body: ResetPasswordWithCodeDto) {
+    return this.authService.resetPasswordWithCode(body.email, body.code, body.newPassword);
   }
 }

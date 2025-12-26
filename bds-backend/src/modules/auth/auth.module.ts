@@ -5,9 +5,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { User } from 'src/entities/user.entity';
 import { GoogleStrategy } from './strategy/google.strategy';
-import { JwtStrategy } from './strategy/jwt.strategy';
 import { UserRole } from 'src/entities/user-role.entity';
 import { ConfigModule } from '@nestjs/config';
+import { MailService } from '../send-mail/sendmail.service';
+import { SendMailModule } from '../send-mail/send-mail.module';
 
 @Module({
   imports: [
@@ -17,9 +18,10 @@ import { ConfigModule } from '@nestjs/config';
       secret: process.env.JWT_LOGIN_SECRET,
       signOptions: { expiresIn: '7d' },
     }),
-    ConfigModule.forRoot({ isGlobal: true })
+    SendMailModule
   ],
   controllers: [AuthController],
-  providers: [AuthService, GoogleStrategy],
+  providers: [AuthService, GoogleStrategy, MailService],
+  exports: [AuthService],
 })
 export class AuthModule {}

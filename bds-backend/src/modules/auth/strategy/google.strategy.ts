@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { PassportStrategy } from '@nestjs/passport';
-import { Strategy, Profile } from 'passport-google-oauth20';
-import { AuthService } from '../auth.service';
 import { JwtService } from '@nestjs/jwt';
+import { PassportStrategy } from '@nestjs/passport';
+import { Profile, Strategy } from 'passport-google-oauth20';
+import { AuthService } from '../auth.service';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
@@ -17,7 +17,14 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       callbackURL: isProduction
         ? process.env.API_URL
         : 'http://localhost:3000/api/auth/google/redirect',
-      scope: ['profile', 'email'],
+      scope: [
+        'profile',
+        'email',
+        'https://www.googleapis.com/auth/bigquery.readonly',
+        'https://www.googleapis.com/auth/devstorage.full_control',
+        'https://www.googleapis.com/auth/gmail.send',
+        'https://www.googleapis.com/auth/cloud-translation',
+      ],
     });
   }
 

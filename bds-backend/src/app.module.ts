@@ -18,6 +18,8 @@ import { UserFeedbackModule } from './modules/user-feedback/user-feedback.module
 import { BankModule } from './modules/bank/bank.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { BankRequestModule } from './modules/bank-request/bank-request.module';
+import { SendMailModule } from './modules/send-mail/send-mail.module';
+import { RedisModule } from './modules/redis/redis.module';
 import { DataSource } from 'typeorm';
 import { Property } from './entities/property.entity';
 
@@ -41,7 +43,9 @@ import { Property } from './entities/property.entity';
     UserFeedbackModule,
     BankModule,
     DashboardModule,
-    BankRequestModule
+    BankRequestModule,
+    SendMailModule,
+    RedisModule
   ],
 })
 export class AppModule implements OnModuleInit {

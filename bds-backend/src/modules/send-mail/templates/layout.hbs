@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      padding: 24px;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .header {
+      background: #0d6efd;
+      color: #fff;
+      padding: 16px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    .content {
+      padding: 24px;
+      color: #333;
+      line-height: 1.6;
+    }
+    .footer {
+      padding: 16px;
+      font-size: 12px;
+      color: #999;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">{{title}}</div>
+    <div class="content">
+      {{{body}}}
+    </div>
+    <div class="footer">
+      © {{year}} Laos Happy Land. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>

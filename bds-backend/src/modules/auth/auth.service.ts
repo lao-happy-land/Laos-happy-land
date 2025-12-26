@@ -1,10 +1,12 @@
 import {
   BadRequestException,
   Injectable,
-  UnauthorizedException,
+  Inject,
+  UnauthorizedException
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Cache } from 'cache-manager';
 import { Repository } from 'typeorm';
 import { User } from '../../entities/user.entity';
 import * as crypto from 'crypto';
@@ -12,8 +14,8 @@ import { RoleEnum } from 'src/common/enum/enum';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 import { Profile } from 'passport-google-oauth20';
 import { UserRole } from 'src/entities/user-role.entity';
-import { ResetPasswordDto } from './dto/reset_pass.dto';
-import { VerifyEmaildDto } from './dto/verify_email.dto';
+import { MailService } from '../send-mail/sendmail.service';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +25,8 @@ export class AuthService {
     private jwtService: JwtService,
     @InjectRepository(UserRole)
     private readonly userRoleRepository: Repository<UserRole>,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private mailService: MailService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -209,27 +213,90 @@ export class AuthService {
     };
   }
 
-  async verifyEmail(verifyEmailDto: VerifyEmaildDto): Promise<{ message: string }> {
-    const user = await this.userRepository.findOne({ where: { email: verifyEmailDto.email } });
-    if (!user) {
-      throw new BadRequestException('Email not found');
-    }
-
-    return { message: 'Email is valid. You can reset your password.' };
-  }
-
-  async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { email: resetPasswordDto.email } });
+  async sendResetCode(email: string): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
       throw new BadRequestException('User with this email does not exist');
     }
-    const salt = crypto.randomBytes(16).toString('hex');
 
-    const hashedPassword = this.hashPassword(resetPasswordDto.newPassword.trim(), salt);
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const cacheKey = `reset_code:${email}`;
+
+    try {
+      await this.cacheManager.set(cacheKey, code, 5 * 60 * 1000);
+
+      await this.cacheManager.get(cacheKey);
+    } catch (error) {
+      throw new BadRequestException(
+        'Failed to store reset code. Please try again.',
+      );
+    }
+
+    await this.mailService.sendMail(
+      email,
+      'Password Reset Code - Laos Happy Land',
+      'reset-password',
+      {
+        title: 'Password Reset',
+        name: user.fullName ?? user.email,
+        code,
+      },
+    );
+
+    return { message: 'Password reset code sent to your email' };
+  }
+
+  async verifyResetCode(
+    email: string,
+    code: string,
+  ): Promise<{ message: string }> {
+    const cacheKey = `reset_code:${email}`;
+
+    try {
+      const storedCode = await this.cacheManager.get(cacheKey);
+
+      if (!storedCode) {
+        throw new BadRequestException('Invalid or expired verification code');
+      }
+
+      if (storedCode !== code) {
+        throw new BadRequestException('Invalid or expired verification code');
+      }
+
+      return { message: 'Code verified successfully' };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to verify code. Please try again.');
+    }
+  }
+
+  async resetPasswordWithCode(
+    email: string,
+    code: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
+    const cacheKey = `reset_code:${email}`;
+    const storedCode = await this.cacheManager.get(cacheKey);
+
+    if (!storedCode || storedCode !== code) {
+      throw new BadRequestException('Invalid or expired verification code');
+    }
+
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) {
+      throw new BadRequestException('User with this email does not exist');
+    }
+
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hashedPassword = this.hashPassword(newPassword.trim(), salt);
 
     user.password = hashedPassword;
     await this.userRepository.save(user);
 
-    return user;
+    await this.cacheManager.del(cacheKey);
+
+    return { message: 'Password reset successfully' };
   }
 }
