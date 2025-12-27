@@ -20,8 +20,6 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       scope: [
         'profile',
         'email',
-        'https://www.googleapis.com/auth/bigquery.readonly',
-        'https://www.googleapis.com/auth/devstorage.full_control',
         'https://www.googleapis.com/auth/gmail.send',
         'https://www.googleapis.com/auth/cloud-translation',
       ],
