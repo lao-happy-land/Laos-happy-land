@@ -240,7 +240,7 @@ export default function PrivacyPolicyPage() {
                     <ul className="space-y-2 text-gray-600">
                       <li className="flex items-start space-x-2">
                         <CheckCircle className="mt-1 h-5 w-5 flex-shrink-0 text-green-500" />
-                        <span>To comply with legal requirements"</span>
+                        <span>To comply with legal requirements</span>
                       </li>
                       <li className="flex items-start space-x-2">
                         <CheckCircle className="mt-1 h-5 w-5 flex-shrink-0 text-green-500" />
@@ -376,7 +376,7 @@ export default function PrivacyPolicyPage() {
                     Contact Us
                   </h2>
                   <p className="text-xl text-blue-100">
-                    Ready to start your real estate journey? We'd love to hear from you and help you achieve your property goals.
+                  Ready to start your real estate journey? We&apos;d love to hear from you and help you achieve your property goals.
                   </p>
                 </div>
 

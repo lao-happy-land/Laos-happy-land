@@ -309,7 +309,7 @@ export default function TermsOfServicePage() {
                           Service Provided As-Is
                         </h3>
                         <p className="text-red-700">
-                          Our services are provided on an 'as-is' basis without warranties of any kind.
+                          Our services are provided on an &apos;as-is&apos; basis without warranties of any kind.
                         </p>
                       </div>
                     </div>
