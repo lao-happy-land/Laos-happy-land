@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
-import Image from "next/image";
-import { useTranslations } from "next-intl";
+import { settingService } from "@/share/service/setting.service";
 import { useUrlLocale } from "@/utils/locale";
 import { useRequest } from "ahooks";
-import { settingService } from "@/share/service/setting.service";
-import { Phone, Mail, MapPin } from "lucide-react";
+import { Mail, MapPin, Phone } from "lucide-react";
+import { useTranslations } from "next-intl";
+import Image from "next/image";
+import Link from "next/link";
 
 const Footer = () => {
   const t = useTranslations();
@@ -376,18 +376,18 @@ const Footer = () => {
                 >
                   {t("footer.aboutUs")}
                 </Link>
-                <Link
-                  href={`/${locale}/terms`}
+                <a
+                  href={"/terms"}
                   className="text-gray-400 transition-all duration-300 hover:scale-105 hover:text-blue-400 hover:underline"
                 >
                   {t("footer.termsOfService")}
-                </Link>
-                <Link
-                  href={`/${locale}/privacy`}
+                </a>
+                <a
+                  href={"/privacy"}
                   className="text-gray-400 transition-all duration-300 hover:scale-105 hover:text-blue-400 hover:underline"
                 >
                   {t("footer.privacyPolicy")}
-                </Link>
+                </a>
                 <Link
                   href={`/${locale}/news`}
                   className="text-gray-400 transition-all duration-300 hover:scale-105 hover:text-blue-400 hover:underline"
