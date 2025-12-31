@@ -3083,9 +3083,9 @@ const Properties = ({ transaction }: PropertiesProps) => {
                     <Empty description={t("property.noSuitableProperties")} />
                   </div>
                 ) : (
-                  <div className="grid grid-cols-3 gap-6 2xl:grid-cols-4">
+                  <div className="grid grid-cols-3 gap-6 xl:grid-cols-6">
                     <div
-                      className={`col-span-3 grid h-fit grid-cols-1 gap-6 ${layout === "grid" ? "grid-cols-2" : ""
+                      className={`col-span-3 xl:col-span-4 grid h-fit grid-cols-1 gap-6 ${layout === "grid" ? "grid-cols-2" : ""
                         }`}
                     >
                       {properties?.data.map((property) => (
@@ -3106,7 +3106,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                         </div>
                       ) : null}
                     </div>
-                    <div className="col-span-3 2xl:col-span-1">
+                    <div className="col-span-3 xl:col-span-2 ">
                       <div className="flex flex-col">
                         <ApprovedBankRequests />
                         <BrokerUsers />
