@@ -312,7 +312,6 @@ export class UserService {
     }
     return await this.userRepository.save(user);
   }
-
   async remove(id: string) {
     const user = await this.userRepository.findOneBy({ id });
     if (!user) {
