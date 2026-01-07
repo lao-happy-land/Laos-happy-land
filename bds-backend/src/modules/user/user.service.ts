@@ -1,24 +1,21 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/entities/user.entity';
-import { Brackets, EntityManager, Repository } from 'typeorm';
 import * as crypto from 'crypto';
-import { CreateUserDto } from './dto/create_user.dto';
-import { GetUserDto } from './dto/get_user.dto';
+import { Multer } from 'multer';
 import { PageMetaDto } from 'src/common/dtos/pageMeta';
 import { ResponsePaginate } from 'src/common/dtos/reponsePaginate';
-import { UpdateUserDto } from './dto/update_user.dto';
-import e from 'express';
-import { UserRole } from 'src/entities/user-role.entity';
-import { Multer } from 'multer';
-import { CloudinaryService } from 'src/service/cloudinary.service';
-import { LocationInfo } from 'src/entities/location-info.entity';
-import { LocationDto } from '../property/dto/create_property.dto';
-import { instanceToPlain } from 'class-transformer';
 import { PropertyStatusEnum } from 'src/common/enum/enum';
+import { LocationInfo } from 'src/entities/location-info.entity';
 import { Property } from 'src/entities/property.entity';
+import { UserRole } from 'src/entities/user-role.entity';
+import { User } from 'src/entities/user.entity';
+import { CloudinaryService } from 'src/service/cloudinary.service';
 import { TranslateService } from 'src/service/translate.service';
+import { Brackets, EntityManager, Repository } from 'typeorm';
+import { CreateUserDto } from './dto/create_user.dto';
+import { GetUserDto } from './dto/get_user.dto';
 import { GetOneUserDto } from './dto/get_user_id.dto';
+import { UpdateUserDto } from './dto/update_user.dto';
 
 @Injectable()
 export class UserService {
@@ -285,9 +282,9 @@ export class UserService {
         user.avatarUrl =
           await this.cloudinaryService.uploadAndReturnImageUrl(image);
       }
-      if (updateUserDto.password) {
+      if (updateUserDto.password && updateUserDto.password.trim().length > 0) {
         const salt = crypto.randomBytes(16).toString('hex');
-        const hashedPassword = this.hashPassword(updateUserDto.password, salt);
+        const hashedPassword = this.hashPassword(updateUserDto.password.trim(), salt);
         user.password = hashedPassword;
       }
 
