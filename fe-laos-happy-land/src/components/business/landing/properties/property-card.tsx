@@ -1,25 +1,25 @@
 "use client";
 
 import type { Property } from "@/@types/types";
-import { useTranslations } from "next-intl";
+import { formatCreatedDate } from "@/share/helper/format-date";
+import { formatShortLocation } from "@/share/helper/format-location";
+import { numberToString } from "@/share/helper/number-to-string";
+import { useCurrencyStore } from "@/share/store/currency.store";
+import { useUrlLocale } from "@/utils/locale";
+import { Button } from "antd";
 import {
-  MapPin,
   Bath,
   Bed,
-  Star,
-  Eye,
-  Phone,
   Calendar,
+  Eye,
+  MapPin,
+  Phone,
   Shield,
+  Star,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
-import { numberToString } from "@/share/helper/number-to-string";
-import { formatShortLocation } from "@/share/helper/format-location";
-import { Button } from "antd";
-import { formatCreatedDate } from "@/share/helper/format-date";
-import { useUrlLocale } from "@/utils/locale";
-import { useCurrencyStore } from "@/share/store/currency.store";
 
 export default function PropertyCard({ property }: { property: Property }) {
   const t = useTranslations();
@@ -93,7 +93,7 @@ export default function PropertyCard({ property }: { property: Property }) {
 
         <div className="flex h-full flex-col">
           <div className="relative flex w-full overflow-hidden">
-            <div className="relative h-[320px] w-[60%] flex-shrink-0">
+            <div className="relative h-[220px] w-[60%] flex-shrink-0">
               <Image
                 src={getValidImageUrl(property)}
                 alt={property.title}
@@ -104,9 +104,9 @@ export default function PropertyCard({ property }: { property: Property }) {
               />
             </div>
 
-            <div className="flex h-[320px] w-[40%] flex-col">
+            <div className="flex h-[220px] w-[40%] flex-col">
               {/* Top Image - Full Width */}
-              <div className="relative h-[160px] overflow-hidden">
+              <div className="relative h-[110px] overflow-hidden">
                 <Image
                   src={validateImageUrl(
                     property.images?.[0],
@@ -122,7 +122,7 @@ export default function PropertyCard({ property }: { property: Property }) {
               </div>
 
               {/* Bottom Images - Split Width */}
-              <div className="flex h-[160px]">
+              <div className="flex h-[110px]">
                 <div className="relative w-[50%] overflow-hidden">
                   <Image
                     src={validateImageUrl(
@@ -165,7 +165,6 @@ export default function PropertyCard({ property }: { property: Property }) {
             <h3 className="mb-2 line-clamp-2 cursor-pointer text-lg leading-tight font-bold text-gray-900">
               {property.title}
             </h3>
-
             <div className="mb-2 flex flex-col items-start lg:gap-3">
               <span className="text-2xl font-bold text-red-600">
                 {property.price
@@ -205,13 +204,13 @@ export default function PropertyCard({ property }: { property: Property }) {
               </div>
             </div>
 
-            <p className="mb-4 line-clamp-2 text-sm leading-relaxed text-gray-600">
+            <p className="line-clamp-2 text-sm leading-relaxed text-gray-600">
               {property?.description}
             </p>
           </div>
 
           {/* Footer */}
-          <div className="flex flex-col items-start justify-between gap-4 border-t border-gray-200 p-4">
+          <div className="flex flex-col items-start justify-between gap-2 border-t border-gray-200 px-4 py-2">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-600 shadow-lg">
                 <span className="text-sm font-bold text-white">
