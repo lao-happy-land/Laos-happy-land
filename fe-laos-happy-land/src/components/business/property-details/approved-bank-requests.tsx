@@ -1,10 +1,10 @@
 "use client";
 
-import { Card, Typography, Spin, Empty, Badge } from "antd";
-import { Building2, Phone, Mail, Award, CheckCircle2 } from "lucide-react";
-import { useRequest } from "ahooks";
-import { bankRequestService } from "@/share/service/bank-request.service";
 import type { BankRequest } from "@/share/service/bank-request.service";
+import { bankRequestService } from "@/share/service/bank-request.service";
+import { useRequest } from "ahooks";
+import { Badge, Card, Empty, Spin, Typography } from "antd";
+import { Award, Building2, CheckCircle2, Mail, Phone } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 const { Text } = Typography;
@@ -87,34 +87,22 @@ export default function ApprovedBankRequests() {
               <div className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-400/10 via-transparent to-blue-400/10" />
               </div>
-
-              {/* Verified Badge with pulse animation */}
-              <div className="absolute top-3 right-3 z-10">
-                <div className="relative">
-                  <div className="absolute inset-0 animate-ping rounded-full bg-green-400 opacity-20" />
-                  <Badge
-                    count={
-                      <CheckCircle2 className="h-4.5 w-4.5 fill-green-500 text-white drop-shadow-md" />
-                    }
-                  />
-                </div>
-              </div>
-
               <div className="relative flex gap-4">
-                {/* Avatar with enhanced styling */}
-                <div className="relative flex-shrink-0">
-                  <div className="relative flex h-18 w-18 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-100 via-blue-200 to-blue-300 shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl">
-                    <Building2 className="h-8 w-8 text-blue-700 transition-transform duration-300 group-hover:scale-110" />
-                  </div>
-                </div>
-
                 {/* Content */}
                 <div className="min-w-0 flex-1">
                   {/* Name and Bank */}
                   <div className="mb-2.5">
-                    <h4 className="truncate text-lg font-bold text-gray-900 transition-colors duration-200 group-hover:text-blue-700">
-                      {request.fullName}
-                    </h4>
+                    <div className="flex gap-1 items-center">
+                      <h4 className="truncate text-lg font-bold text-gray-900 transition-colors duration-200 group-hover:text-blue-700">
+                        {request.fullName}
+                      </h4>
+                      <Badge
+                        count={
+                          <CheckCircle2 className="h-4.5 w-4.5 fill-green-500 text-white drop-shadow-md" />
+                        }
+                      />
+                    </div>
+
                     {request.bank && (
                       <div className="mt-1.5 flex items-center gap-2">
                         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 shadow-sm transition-all duration-200 group-hover:scale-110 group-hover:shadow-md">
@@ -129,7 +117,7 @@ export default function ApprovedBankRequests() {
 
                   {/* Experience Badge with gradient */}
                   {request.yearsOfExperience &&
-                  request.yearsOfExperience > 0 ? (
+                    request.yearsOfExperience > 0 ? (
                     <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-50 to-amber-100 px-3 py-1 shadow-sm ring-1 ring-amber-300/50 transition-all duration-200 hover:shadow-md">
                       <Award className="h-3.5 w-3.5 text-amber-600" />
                       <span className="text-xs font-bold text-amber-800">

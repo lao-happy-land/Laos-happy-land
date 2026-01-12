@@ -155,7 +155,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
             scrollDownStartY = null;
           }
         }
-        else if (currentScrollY < 100 && !isSearchExpanded) {
+        else if (currentScrollY < 5 && !isSearchExpanded) {
           setIsSearchExpanded(true);
           scrollUpStartY = null;
           scrollDownStartY = null;
@@ -1513,7 +1513,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
 
   return (
     <div className="relative h-fit">
-      <div className="sticky top-[80px] right-0 left-0 z-50 container mx-auto bg-white px-4 py-4">
+      <div className="sticky top-[80px] right-0 left-0 z-50 container mx-auto bg-white px-4 py-4 lg:max-w-[90%]">
         <div className="relative rounded-2xl bg-white shadow-md ring-1 ring-gray-200/50 backdrop-blur-sm">
           {/* Search Toggle Button - Only show when collapsed */}
           {!isSearchExpanded && (
@@ -3015,7 +3015,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
       </div>
 
       {/* Main content */}
-      <div className="container mx-auto px-4 pb-4">
+      <div className="container mx-auto px-4 pb-4 lg:max-w-[70%]  xl:max-w-[75%] 2xl:max-w-[70%] ">
         {/* Layout Toggle */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -3060,7 +3060,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
           </div>
         </div>
 
-        <div className="flex flex-col justify-center gap-6 lg:flex-row">
+        <div className="flex flex-col justify-center gap-6 lg:flex-row ">
           {/* Left Content - Property Listing */}
           <div className="w-full">
             {layout === "map" ? (
@@ -3101,6 +3101,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                             onChange={(page, pageSize) => {
                               setCurrentPage(page);
                               setPageSize(pageSize);
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
                             }}
                           />
                         </div>

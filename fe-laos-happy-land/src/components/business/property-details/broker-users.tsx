@@ -1,14 +1,14 @@
 "use client";
 
-import { Card, Typography, Spin, Empty, Badge } from "antd";
-import { useRequest } from "ahooks";
-import { userService } from "@/share/service/user.service";
-import { useTranslations } from "next-intl";
-import { Star, UserCheck, Phone, Mail, CheckCircle2 } from "lucide-react";
-import Link from "next/link";
-import { useUrlLocale } from "@/utils/locale";
 import type { User } from "@/@types/types";
+import { userService } from "@/share/service/user.service";
+import { useUrlLocale } from "@/utils/locale";
+import { useRequest } from "ahooks";
+import { Badge, Card, Empty, Spin, Typography } from "antd";
+import { CheckCircle2, Mail, Phone, Star, UserCheck } from "lucide-react";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
+import Link from "next/link";
 
 const { Text } = Typography;
 
@@ -106,104 +106,115 @@ export default function BrokerUsers() {
                   <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/10 via-transparent to-emerald-400/10" />
                 </div>
 
-                {/* Verified Badge with pulse animation */}
-                <div className="absolute top-3 right-3 z-10">
-                  <div className="relative">
-                    <div className="absolute inset-0 animate-ping rounded-full bg-emerald-400 opacity-20" />
-                    <Badge
-                      count={
-                        <CheckCircle2 className="h-4.5 w-4.5 fill-emerald-500 text-white drop-shadow-md" />
-                      }
-                    />
-                  </div>
-                </div>
 
-                <div className="relative flex gap-4">
-                  {/* Avatar with enhanced styling */}
-                  <div className="relative flex-shrink-0">
-                    {user.image || user.avatarUrl ? (
-                      <div className="relative h-18 w-18 overflow-hidden rounded-2xl shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl">
-                        <Image
-                          src={
-                            user.image ??
-                            user.avatarUrl ??
-                            "/images/admin/avatar.png"
-                          }
-                          alt={user.fullName}
-                          fill
-                          className="object-cover"
-                          sizes="72px"
-                        />
-                      </div>
-                    ) : (
-                      <div className="relative flex h-18 w-18 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 via-emerald-200 to-green-300 shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl">
-                        <span className="text-2xl font-bold text-emerald-800 transition-transform duration-300 group-hover:scale-110">
-                          {user.fullName?.charAt(0) ?? "B"}
-                        </span>
-                      </div>
-                    )}
-                  </div>
 
+                <div className="flex gap-4">
                   {/* Content */}
-                  <div className="min-w-0 flex-1">
-                    {/* Name and Role */}
-                    <div className="mb-2.5">
-                      <h4 className="truncate text-lg font-bold text-gray-900 transition-colors duration-200 group-hover:text-emerald-700">
-                        {user.fullName}
-                      </h4>
-                      <div className="mt-1.5 flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-100 to-emerald-200 shadow-sm transition-all duration-200 group-hover:scale-110 group-hover:shadow-md">
-                          <UserCheck className="h-3.5 w-3.5 text-emerald-700" />
+                  <div className="min-w-0 flex-1 ">
+                    <div className="flex gap-3 items-center">
+                      <div className=" flex-shrink-0">
+                        {user.image || user.avatarUrl ? (
+                          <div className=" h-18 w-18 overflow-hidden rounded-2xl shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl">
+                            <Image
+                              src={
+                                user.image ??
+                                user.avatarUrl ??
+                                "/images/admin/avatar.png"
+                              }
+                              alt={user.fullName}
+                              fill
+                              className="object-cover"
+                              sizes="72px"
+                            />
+                          </div>
+                        ) : (
+                          <div className=" flex h-18 w-18 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 via-emerald-200 to-green-300 shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl">
+                            <span className="text-2xl font-bold text-emerald-800 transition-transform duration-300 group-hover:scale-110">
+                              {user.fullName?.charAt(0) ?? "B"}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      {/* Name and Role */}
+                      <div className="mt-2 flex flex-col gap-y-2">
+                        <div className="flex items-center">
+                          {/* <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-100 to-emerald-200 shadow-sm transition-all duration-200 group-hover:scale-110 group-hover:shadow-md">
+                            <UserCheck className="h-3.5 w-3.5 text-emerald-700" />
+                          </div> */}
+                          <Text className="truncate text-sm font-semibold text-gray-700">
+                            {t("property.brokerConsultant")}
+                          </Text>
                         </div>
-                        <Text className="truncate text-sm font-semibold text-gray-700">
-                          {t("property.brokerConsultant")}
-                        </Text>
+                        {user.ratingAverage !== undefined &&
+                          user.ratingAverage > 0 ? (
+                          <div className=" inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-50 to-amber-100 px-3 py-1 shadow-sm ring-1 ring-amber-300/50 transition-all duration-200 hover:shadow-md">
+                            <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                            <span className="text-xs font-bold text-amber-800">
+                              {user.ratingAverage} ({user.ratingCount ?? 0}{" "}
+                              {t("property.reviews")})
+                            </span>
+                          </div>
+                        ) : <div className=" inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-50 to-amber-100 px-3 py-1 shadow-sm ring-1 ring-amber-300/50 transition-all duration-200 hover:shadow-md">
+                          <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                          <span className="text-xs font-bold text-amber-800">
+                            5  ({t("property.verified")})
+                          </span>
+                        </div>}
                       </div>
                     </div>
+
 
                     {/* Rating Badge with gradient */}
-                    {user.ratingAverage !== undefined &&
-                    user.ratingAverage > 0 ? (
-                      <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-50 to-amber-100 px-3 py-1 shadow-sm ring-1 ring-amber-300/50 transition-all duration-200 hover:shadow-md">
-                        <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
-                        <span className="text-xs font-bold text-amber-800">
-                          {user.ratingAverage} ({user.ratingCount ?? 0}{" "}
-                          {t("property.reviews")})
-                        </span>
+                    <div className="mt-5">
+                      <div className="space-y-2">
+                        <div className="flex items-center bg-gradient-to-r from-amber-50 to-transparent">
+                          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-amber-200 to-amber-600 shadow-sm transition-all duration-200 group-hover:scale-110 group-hover:shadow-md">
+                            <UserCheck className="h-3.5 w-3.5 text-amber-900" />
+                          </div>
+                          <h4 className="px-2 truncate text-base font-bold text-gray-900 transition-colors duration-200 group-hover:text-emerald-700">
+                            {user.fullName}
+                          </h4>
+                          <Badge
+                            count={
+                              <CheckCircle2 className="h-4.5 w-4.5 fill-emerald-500 text-white drop-shadow-md" />
+                            }
+                          />
+                        </div>
+
+                        {user.phone && (
+                          <a
+                            href={`tel:${user.phone}`}
+                            className="group/link flex items-center gap-2.5 rounded-lg bg-gradient-to-r from-emerald-50 to-transparent  py-1.5 text-sm text-gray-700 transition-all duration-200 hover:from-emerald-100 hover:text-emerald-700 hover:shadow-sm"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 shadow-md transition-all duration-200 group-hover/link:scale-110 group-hover/link:shadow-lg">
+                              <Phone className="h-4 w-4 text-white" />
+                            </div>
+                            <span className="truncate font-semibold">
+                              {user.phone}
+                            </span>
+                          </a>
+                        )}
+                        {user.email && (
+                          <a
+                            href={`mailto:${user.email}`}
+                            className="group/link flex items-center gap-2.5 rounded-lg bg-gradient-to-r from-emerald-50 to-transparent  py-1.5 text-sm text-gray-700 transition-all duration-200 hover:from-emerald-100 hover:text-emerald-700 hover:shadow-sm"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 shadow-md transition-all duration-200 group-hover/link:scale-110 group-hover/link:shadow-lg">
+                              <Mail className="h-4 w-4 text-white" />
+                            </div>
+                            <span className="truncate font-semibold">
+                              {user.email}
+                            </span>
+                          </a>
+                        )}
                       </div>
-                    ) : null}
+                    </div>
+
 
                     {/* Contact Information with enhanced styling */}
-                    <div className="space-y-2">
-                      {user.phone && (
-                        <a
-                          href={`tel:${user.phone}`}
-                          className="group/link flex items-center gap-2.5 rounded-lg bg-gradient-to-r from-emerald-50 to-transparent px-2 py-1.5 text-sm text-gray-700 transition-all duration-200 hover:from-emerald-100 hover:text-emerald-700 hover:shadow-sm"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 shadow-md transition-all duration-200 group-hover/link:scale-110 group-hover/link:shadow-lg">
-                            <Phone className="h-4 w-4 text-white" />
-                          </div>
-                          <span className="truncate font-semibold">
-                            {user.phone}
-                          </span>
-                        </a>
-                      )}
-                      {user.email && (
-                        <a
-                          href={`mailto:${user.email}`}
-                          className="group/link flex items-center gap-2.5 rounded-lg bg-gradient-to-r from-emerald-50 to-transparent px-2 py-1.5 text-sm text-gray-700 transition-all duration-200 hover:from-emerald-100 hover:text-emerald-700 hover:shadow-sm"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 shadow-md transition-all duration-200 group-hover/link:scale-110 group-hover/link:shadow-lg">
-                            <Mail className="h-4 w-4 text-white" />
-                          </div>
-                          <span className="truncate font-semibold">
-                            {user.email}
-                          </span>
-                        </a>
-                      )}
-                    </div>
+
                   </div>
                 </div>
               </div>
