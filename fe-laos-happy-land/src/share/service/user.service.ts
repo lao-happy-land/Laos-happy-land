@@ -1,6 +1,6 @@
+import api from "./api.service";
 import type { CreateUserDto, UpdateUserDto } from "@/@types/gentype-axios";
 import type { APIResponse, User, UserRole } from "@/@types/types";
-import api from "./api.service";
 
 export const userService = {
   createUser: async (data: CreateUserDto): Promise<CreateUserDto> => {
@@ -32,12 +32,11 @@ export const userService = {
       fullName: data.fullName,
       phone: data.phone,
       roleId: data.roleId,
-      password: data.password ?? "",
+      password: data.password,
       image: data.image,
     };
 
     const response = await api.userControllerUpdate(id, updateData);
-
     return response.data as unknown as UpdateUserDto;
   },
 
@@ -53,6 +52,7 @@ export const userService = {
   updateProfile: async (id: string, updateData: UpdateUserDto) => {
     try {
       const response = await api.userControllerUpdate(id, updateData);
+
       return response.data as unknown as { user: User; message: string };
     } catch (error) {
       console.error("Profile update error:", error);

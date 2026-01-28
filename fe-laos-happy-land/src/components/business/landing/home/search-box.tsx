@@ -1,46 +1,47 @@
 "use client";
 
-import { useCurrencyStore } from "@/share/store/currency.store";
+import { useRouter } from "next/navigation";
 import { useUrlLocale } from "@/utils/locale";
-import { useClickAway, useEventListener, useRequest } from "ahooks";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useCurrencyStore } from "@/share/store/currency.store";
+import { useClickAway, useEventListener } from "ahooks";
+import { useRequest } from "ahooks";
 import {
-  App,
-  Button,
   Carousel,
-  Checkbox,
+  Tabs,
+  Button,
+  Space,
+  Typography,
+  App,
   Input,
-  Modal,
   Radio,
   Slider,
-  Space,
-  Tabs,
-  Typography,
+  Checkbox,
+  Modal,
 } from "antd";
 import {
-  ArrowRight,
-  Building2,
-  CheckCircle,
-  ChevronDown,
-  Construction,
-  DollarSign,
-  Filter,
   Home,
+  Building2,
+  Construction,
   MapPin,
-  Search,
-  Square,
+  CheckCircle,
   X,
+  ChevronDown,
+  Search,
+  Filter,
+  DollarSign,
+  Square,
+  ArrowRight,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import type { LocationInfo, PropertyType } from "@/@types/types";
-import { getLangByLocale, getValidLocale } from "@/share/helper/locale.helper";
+import Image from "next/image";
 import { numberToString } from "@/share/helper/number-to-string";
+import { getLangByLocale, getValidLocale } from "@/share/helper/locale.helper";
 import locationInfoService from "@/share/service/location-info.service";
 import propertyTypeService from "@/share/service/property-type.service";
 import { settingService } from "@/share/service/setting.service";
+import type { LocationInfo, PropertyType } from "@/@types/types";
 import { useTranslations } from "next-intl";
-import Image from "next/image";
 const { Title, Text } = Typography;
 
 const SearchBox = () => {
@@ -222,9 +223,9 @@ const SearchBox = () => {
   const backgroundImages: string[] =
     settingsData?.images && settingsData.images.length > 0
       ? settingsData.images.filter(
-        (img: unknown): img is string =>
-          typeof img === "string" && img.length > 0,
-      )
+          (img: unknown): img is string =>
+            typeof img === "string" && img.length > 0,
+        )
       : defaultImages;
 
   // Create popular cities from trending locations API data
@@ -1122,7 +1123,7 @@ const SearchBox = () => {
       </div>
 
       <div className="relative z-10 container mx-auto px-4 pt-8 sm:pt-16">
-        <div className="mx-auto max-w-7xl lg:max-w-4xl 2xl:max-w-7xl">
+        <div className="mx-auto max-w-7xl">
           {/* Search Type Tabs */}
           <div className="w-full">
             <div className="w-full rounded-2xl rounded-b-none bg-white shadow-2xl">
@@ -1137,12 +1138,12 @@ const SearchBox = () => {
                   label: (
                     <Space className="px-2 py-1 sm:px-4 sm:py-2">
                       <span
-                        className={`text-sm sm:text-base lg:text-xs 2xl:text-sm ${searchType === tab.id ? "text-[#ef4444]" : "text-gray-500"}`}
+                        className={`text-sm sm:text-base ${searchType === tab.id ? "text-[#ef4444]" : "text-gray-500"}`}
                       >
                         {tab.icon}
                       </span>
                       <span
-                        className={`text-sm sm:inline sm:text-base lg:text-xs 2xl:text-sm ${searchType === tab.id ? "font-medium text-[#ef4444]" : "text-gray-500"}`}
+                        className={`text-sm sm:inline sm:text-base ${searchType === tab.id ? "font-medium text-[#ef4444]" : "text-gray-500"}`}
                       >
                         {tab.label}
                       </span>
@@ -1183,15 +1184,16 @@ const SearchBox = () => {
                   <span className="text-xs font-medium text-gray-700 capitalize sm:text-sm">
                     {selectedLocation
                       ? (allLocationsData?.find(
-                        (loc: LocationInfo) => loc.id === selectedLocation,
-                      )?.name ?? selectedLocation)
+                          (loc: LocationInfo) => loc.id === selectedLocation,
+                        )?.name ?? selectedLocation)
                       : t("search.nationwide")}
                   </span>
 
                   <ChevronDown
                     size={16}
-                    className={`text-gray-400 transition-transform duration-200 ${showLocationPopup ? "rotate-180" : ""
-                      }`}
+                    className={`text-gray-400 transition-transform duration-200 ${
+                      showLocationPopup ? "rotate-180" : ""
+                    }`}
                   />
                 </Button>
 
@@ -1221,15 +1223,16 @@ const SearchBox = () => {
                   <span className="text-xs font-medium text-gray-700 capitalize sm:text-sm">
                     {selectedLocation
                       ? (allLocationsData?.find(
-                        (loc: LocationInfo) => loc.id === selectedLocation,
-                      )?.name ?? selectedLocation)
+                          (loc: LocationInfo) => loc.id === selectedLocation,
+                        )?.name ?? selectedLocation)
                       : t("search.nationwide")}
                   </span>
 
                   <ChevronDown
                     size={16}
-                    className={`text-gray-400 transition-transform duration-200 ${showLocationPopup ? "rotate-180" : ""
-                      }`}
+                    className={`text-gray-400 transition-transform duration-200 ${
+                      showLocationPopup ? "rotate-180" : ""
+                    }`}
                   />
                 </Button>
               </div>
@@ -1255,8 +1258,8 @@ const SearchBox = () => {
                   icon={<Search className="text-white" size={16} />}
                   className="rounded-none"
                 >
-                  <span className="hidden sm:inline lg:text-xs 2xl:text-sm">{t("common.search")}</span>
-                  <span className="sm:hidden lg:text-xs 2xl:text-sm">{t("common.find")}</span>
+                  <span className="hidden sm:inline">{t("common.search")}</span>
+                  <span className="sm:hidden">{t("common.find")}</span>
                 </Button>
               </div>
             </div>
@@ -1301,52 +1304,54 @@ const SearchBox = () => {
                     <div className="grid grid-cols-3 gap-2 space-y-2 lg:grid-cols-6">
                       {allLocationsLoading
                         ? // Loading skeleton for trending locations
-                        Array.from({ length: 6 }).map((_, index) => (
-                          <div
-                            key={index}
-                            className="h-16 animate-pulse rounded-xl bg-gray-200"
-                          />
-                        ))
-                        : popularCities?.map((city) => (
-                          <div
-                            key={city.id}
-                            className={`group relative h-32 overflow-hidden rounded-xl border-3 border-solid transition-all duration-200 hover:scale-105 hover:shadow-lg ${selectedLocation === city.id
-                              ? "border-red-400 hover:border-red-400"
-                              : "border-white hover:border-red-300"
-                              }`}
-                            onClick={() => handleLocationSelect(city.id)}
-                          >
-                            <Image
-                              src={
-                                city.imageURL ??
-                                "/images/landingpage/cities/default.jpg"
-                              }
-                              alt={city.name}
-                              fill
-                              className="object-cover"
-                              priority
+                          Array.from({ length: 6 }).map((_, index) => (
+                            <div
+                              key={index}
+                              className="h-16 animate-pulse rounded-xl bg-gray-200"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/80"></div>
-                            <div className="absolute right-3 bottom-3 left-3">
-                              <span
-                                className={`text-sm font-semibold drop-shadow-lg ${selectedLocation === city.id
-                                  ? "rounded-full bg-white px-2 py-1 text-red-600"
-                                  : "text-white"
+                          ))
+                        : popularCities?.map((city) => (
+                            <div
+                              key={city.id}
+                              className={`group relative h-32 overflow-hidden rounded-xl border-3 border-solid transition-all duration-200 hover:scale-105 hover:shadow-lg ${
+                                selectedLocation === city.id
+                                  ? "border-red-400 hover:border-red-400"
+                                  : "border-white hover:border-red-300"
+                              }`}
+                              onClick={() => handleLocationSelect(city.id)}
+                            >
+                              <Image
+                                src={
+                                  city.imageURL ??
+                                  "/images/landingpage/cities/default.jpg"
+                                }
+                                alt={city.name}
+                                fill
+                                className="object-cover"
+                                priority
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/80"></div>
+                              <div className="absolute right-3 bottom-3 left-3">
+                                <span
+                                  className={`text-sm font-semibold drop-shadow-lg ${
+                                    selectedLocation === city.id
+                                      ? "rounded-full bg-white px-2 py-1 text-red-600"
+                                      : "text-white"
                                   }`}
-                              >
-                                {city.name}
-                              </span>
-                            </div>
-                            {selectedLocation === city.id && (
-                              <div className="absolute top-2 right-2">
-                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-lg">
-                                  <CheckCircle className="h-4 w-4" />
-                                </div>
+                                >
+                                  {city.name}
+                                </span>
                               </div>
-                            )}
-                            <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-black/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100"></div>
-                          </div>
-                        ))}
+                              {selectedLocation === city.id && (
+                                <div className="absolute top-2 right-2">
+                                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-lg">
+                                    <CheckCircle className="h-4 w-4" />
+                                  </div>
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-black/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100"></div>
+                            </div>
+                          ))}
                     </div>
                   </div>
 
@@ -1369,34 +1374,35 @@ const SearchBox = () => {
                       <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
                         {allLocationsLoading
                           ? // Loading skeleton for all locations
-                          Array.from({ length: 12 }).map((_, index) => (
-                            <div
-                              key={index}
-                              className="h-12 animate-pulse rounded-lg bg-gray-200"
-                            />
-                          ))
+                            Array.from({ length: 12 }).map((_, index) => (
+                              <div
+                                key={index}
+                                className="h-12 animate-pulse rounded-lg bg-gray-200"
+                              />
+                            ))
                           : allLocations.map((location) => (
-                            <button
-                              key={location}
-                              onClick={() => handleLocationSelect(location)}
-                              className={`flex items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-medium transition-all duration-200 ${selectedLocation === location
-                                ? "bg-red-500 text-white shadow-md"
-                                : "bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 hover:shadow-sm"
+                              <button
+                                key={location}
+                                onClick={() => handleLocationSelect(location)}
+                                className={`flex items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-medium transition-all duration-200 ${
+                                  selectedLocation === location
+                                    ? "bg-red-500 text-white shadow-md"
+                                    : "bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 hover:shadow-sm"
                                 }`}
-                            >
-                              <span className="capitalize">
-                                {location === "all"
-                                  ? t("search.allAreas")
-                                  : (allLocationsData?.find(
-                                    (loc: LocationInfo) =>
-                                      loc.id === location,
-                                  )?.name ?? location)}
-                              </span>
-                              {selectedLocation === location && (
-                                <CheckCircle className="h-4 w-4" />
-                              )}
-                            </button>
-                          ))}
+                              >
+                                <span className="capitalize">
+                                  {location === "all"
+                                    ? t("search.allAreas")
+                                    : (allLocationsData?.find(
+                                        (loc: LocationInfo) =>
+                                          loc.id === location,
+                                      )?.name ?? location)}
+                                </span>
+                                {selectedLocation === location && (
+                                  <CheckCircle className="h-4 w-4" />
+                                )}
+                              </button>
+                            ))}
                       </div>
                     </div>
                   </div>
@@ -1441,49 +1447,51 @@ const SearchBox = () => {
                   <div className="grid grid-cols-2 gap-3">
                     {allLocationsLoading
                       ? Array.from({ length: 6 }).map((_, index) => (
-                        <div
-                          key={index}
-                          className="h-24 animate-pulse rounded-xl bg-gray-200"
-                        />
-                      ))
-                      : popularCities?.slice(0, 6).map((city) => (
-                        <div
-                          key={city.id}
-                          className={`group relative h-24 overflow-hidden rounded-xl border-2 border-solid transition-all duration-200 hover:scale-105 hover:shadow-lg ${selectedLocation === city.id
-                            ? "border-red-400"
-                            : "border-gray-200 hover:border-red-300"
-                            }`}
-                          onClick={() => handleLocationSelect(city.id)}
-                        >
-                          <Image
-                            src={
-                              city.imageURL ??
-                              "/images/landingpage/cities/default.jpg"
-                            }
-                            alt={city.name}
-                            fill
-                            className="object-cover"
+                          <div
+                            key={index}
+                            className="h-24 animate-pulse rounded-xl bg-gray-200"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/80"></div>
-                          <div className="absolute right-2 bottom-2 left-2">
-                            <span
-                              className={`text-sm font-semibold drop-shadow-lg ${selectedLocation === city.id
-                                ? "rounded-full bg-white px-2 py-1 text-red-600"
-                                : "text-white"
+                        ))
+                      : popularCities?.slice(0, 6).map((city) => (
+                          <div
+                            key={city.id}
+                            className={`group relative h-24 overflow-hidden rounded-xl border-2 border-solid transition-all duration-200 hover:scale-105 hover:shadow-lg ${
+                              selectedLocation === city.id
+                                ? "border-red-400"
+                                : "border-gray-200 hover:border-red-300"
+                            }`}
+                            onClick={() => handleLocationSelect(city.id)}
+                          >
+                            <Image
+                              src={
+                                city.imageURL ??
+                                "/images/landingpage/cities/default.jpg"
+                              }
+                              alt={city.name}
+                              fill
+                              className="object-cover"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/80"></div>
+                            <div className="absolute right-2 bottom-2 left-2">
+                              <span
+                                className={`text-sm font-semibold drop-shadow-lg ${
+                                  selectedLocation === city.id
+                                    ? "rounded-full bg-white px-2 py-1 text-red-600"
+                                    : "text-white"
                                 }`}
-                            >
-                              {city.name}
-                            </span>
-                          </div>
-                          {selectedLocation === city.id && (
-                            <div className="absolute top-2 right-2">
-                              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-lg">
-                                <CheckCircle className="h-3 w-3" />
-                              </div>
+                              >
+                                {city.name}
+                              </span>
                             </div>
-                          )}
-                        </div>
-                      ))}
+                            {selectedLocation === city.id && (
+                              <div className="absolute top-2 right-2">
+                                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-lg">
+                                  <CheckCircle className="h-3 w-3" />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
                   </div>
                 </div>
 
@@ -1505,32 +1513,33 @@ const SearchBox = () => {
                   <div className="space-y-2">
                     {allLocationsLoading
                       ? Array.from({ length: 8 }).map((_, index) => (
-                        <div
-                          key={index}
-                          className="h-12 animate-pulse rounded-lg bg-gray-200"
-                        />
-                      ))
+                          <div
+                            key={index}
+                            className="h-12 animate-pulse rounded-lg bg-gray-200"
+                          />
+                        ))
                       : allLocations.map((location) => (
-                        <button
-                          key={location}
-                          onClick={() => handleLocationSelect(location)}
-                          className={`flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left text-sm font-medium transition-all duration-200 ${selectedLocation === location
-                            ? "border-red-500 bg-red-500 text-white shadow-md"
-                            : "border-gray-100 bg-gray-50 text-gray-700 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                          <button
+                            key={location}
+                            onClick={() => handleLocationSelect(location)}
+                            className={`flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left text-sm font-medium transition-all duration-200 ${
+                              selectedLocation === location
+                                ? "border-red-500 bg-red-500 text-white shadow-md"
+                                : "border-gray-100 bg-gray-50 text-gray-700 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                             }`}
-                        >
-                          <span className="capitalize">
-                            {location === "all"
-                              ? t("search.allAreas")
-                              : (allLocationsData?.find(
-                                (loc: LocationInfo) => loc.id === location,
-                              )?.name ?? location)}
-                          </span>
-                          {selectedLocation === location && (
-                            <CheckCircle className="h-4 w-4" />
-                          )}
-                        </button>
-                      ))}
+                          >
+                            <span className="capitalize">
+                              {location === "all"
+                                ? t("search.allAreas")
+                                : (allLocationsData?.find(
+                                    (loc: LocationInfo) => loc.id === location,
+                                  )?.name ?? location)}
+                            </span>
+                            {selectedLocation === location && (
+                              <CheckCircle className="h-4 w-4" />
+                            )}
+                          </button>
+                        ))}
                   </div>
                 </div>
               </div>
@@ -1543,21 +1552,23 @@ const SearchBox = () => {
                 <Button
                   ref={propertyTypeButtonRef}
                   type="default"
-                  size="middle"
+                  size="large"
                   icon={<Filter className="text-gray-600" size={16} />}
                   onClick={(e) => handleToggleFilterModal("propertyType", e)}
-                  className={`filter-dropdown-button flex w-full items-center justify-between rounded-xl border-2 transition-all duration-300 sm:rounded-2xl ${propertyTypeOpen
-                    ? "border-red-500 bg-red-50 text-red-600 shadow-lg"
-                    : "border-gray-200 hover:border-red-300 hover:shadow-md"
-                    }`}
+                  className={`filter-dropdown-button flex w-full items-center justify-between rounded-xl border-2 transition-all duration-300 sm:rounded-2xl ${
+                    propertyTypeOpen
+                      ? "border-red-500 bg-red-50 text-red-600 shadow-lg"
+                      : "border-gray-200 hover:border-red-300 hover:shadow-md"
+                  }`}
                 >
-                  <span className="text-sm font-medium sm:text-base lg:text-xs 2xl:text-sm">
+                  <span className="text-sm font-medium sm:text-base">
                     {t("search.propertyType")}
                   </span>
                   <ChevronDown
                     size={16}
-                    className={`transition-transform duration-300 ${propertyTypeOpen ? "rotate-180" : ""
-                      }`}
+                    className={`transition-transform duration-300 ${
+                      propertyTypeOpen ? "rotate-180" : ""
+                    }`}
                   />
                 </Button>
 
@@ -1568,7 +1579,7 @@ const SearchBox = () => {
                     className="filter-dropdown absolute top-full left-0 z-50 mt-3 w-full rounded-xl border border-gray-200 bg-white shadow-2xl sm:rounded-2xl"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="border-b border-gray-100 p-3 lg:pb-0 2xl:pb-3 sm:p-4">
+                    <div className="border-b border-gray-100 p-3 sm:p-4">
                       <div className="flex items-center justify-between">
                         <Title level={5} className="mb-0 text-sm sm:text-base">
                           {t("search.propertyType")}
@@ -1582,7 +1593,7 @@ const SearchBox = () => {
                       </div>
                     </div>
 
-                    <div className="max-h-64 lg:max-h-48 2xl:max-h-64 overflow-y-auto p-3 lg:py-0 2xl:py-4 sm:p-4">
+                    <div className="max-h-64 overflow-y-auto p-3 sm:p-4">
                       {propertyTypesLoading ? (
                         <div className="flex justify-center py-4">
                           <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-blue-500"></div>
@@ -1591,25 +1602,25 @@ const SearchBox = () => {
                         propertyTypeOptions.map((type) => (
                           <div
                             key={type.id}
-                            className="flex cursor-pointer items-center gap-3 lg:gap-2 2xl:gap-3 rounded-lg px-2 py-2 hover:bg-gray-50"
+                            className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 hover:bg-gray-50"
                             onClick={() => handleSelectedPropertyType(type.id)}
                           >
                             <Checkbox
                               checked={
                                 type.id === "all"
                                   ? propertyTypeOptions
-                                    .filter((option) => option.id !== "all")
-                                    .every((option) =>
-                                      selectedPropertyTypes.includes(
-                                        option.id,
-                                      ),
-                                    )
+                                      .filter((option) => option.id !== "all")
+                                      .every((option) =>
+                                        selectedPropertyTypes.includes(
+                                          option.id,
+                                        ),
+                                      )
                                   : selectedPropertyTypes.includes(type.id)
                               }
                               className="text-red-500"
                             />
                             <span className="text-gray-600">{type.icon}</span>
-                            <span className="text-sm lg:text-xs 2xl:text-sm text-gray-700">
+                            <span className="text-sm text-gray-700">
                               {type.name}
                             </span>
                           </div>
@@ -1617,7 +1628,7 @@ const SearchBox = () => {
                       )}
                     </div>
 
-                    <div className="flex justify-between border-t border-gray-100 p-3 lg:pt-0 2xl:pt-3 sm:p-4">
+                    <div className="flex justify-between border-t border-gray-100 p-3 sm:p-4">
                       <Button
                         type="text"
                         onClick={() => setSelectedPropertyTypes([])}
@@ -1692,12 +1703,12 @@ const SearchBox = () => {
                               checked={
                                 type.id === "all"
                                   ? propertyTypeOptions
-                                    .filter((option) => option.id !== "all")
-                                    .every((option) =>
-                                      selectedPropertyTypes.includes(
-                                        option.id,
-                                      ),
-                                    )
+                                      .filter((option) => option.id !== "all")
+                                      .every((option) =>
+                                        selectedPropertyTypes.includes(
+                                          option.id,
+                                        ),
+                                      )
                                   : selectedPropertyTypes.includes(type.id)
                               }
                               className="text-red-500"
@@ -1719,23 +1730,25 @@ const SearchBox = () => {
                 <Button
                   ref={priceRangeButtonRef}
                   type="default"
-                  size="middle"
+                  size="large"
                   icon={<DollarSign className="text-gray-600" size={16} />}
                   onClick={(e) => handleToggleFilterModal("priceRange", e)}
-                  className={`filter-dropdown-button flex w-full items-center justify-between rounded-xl border-2 transition-all duration-300 sm:rounded-2xl ${priceRangeOpen
-                    ? "border-red-500 bg-red-50 text-red-600 shadow-lg"
-                    : "border-gray-200 hover:border-red-300 hover:shadow-md"
-                    }`}
+                  className={`filter-dropdown-button flex w-full items-center justify-between rounded-xl border-2 transition-all duration-300 sm:rounded-2xl ${
+                    priceRangeOpen
+                      ? "border-red-500 bg-red-50 text-red-600 shadow-lg"
+                      : "border-gray-200 hover:border-red-300 hover:shadow-md"
+                  }`}
                 >
-                  <span className="text-sm font-medium sm:text-base lg:text-xs 2xl:text-sm">
+                  <span className="text-sm font-medium sm:text-base">
                     {selectedPriceRange === "all"
                       ? t("search.priceRange")
                       : `${numberToString(priceRange[0], locale, currency)} - ${numberToString(priceRange[1], locale, currency)}`}
                   </span>
                   <ChevronDown
                     size={16}
-                    className={`transition-transform duration-300 ${priceRangeOpen ? "rotate-180" : ""
-                      }`}
+                    className={`transition-transform duration-300 ${
+                      priceRangeOpen ? "rotate-180" : ""
+                    }`}
                   />
                 </Button>
 
@@ -1746,12 +1759,29 @@ const SearchBox = () => {
                     className="filter-dropdown absolute top-full left-0 z-50 mt-3 w-full rounded-xl border border-gray-200 bg-white shadow-2xl sm:rounded-2xl"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="p-3 sm:p-4 lg:pb-0 2xl:pb-3">
+                    <div className="border-b border-gray-100 p-3 sm:p-4">
+                      <div className="flex items-center justify-between">
+                        <Title level={5} className="mb-0 text-sm sm:text-base">
+                          {t("search.priceRange")}
+                        </Title>
+                        <Button
+                          type="text"
+                          icon={<X className="text-gray-600" size={14} />}
+                          onClick={() => setPriceRangeOpen(false)}
+                          className="flex h-5 w-5 items-center justify-center sm:h-6 sm:w-6"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="p-3 sm:p-4">
                       {/* Custom Price Range */}
-                      <div className="mb-6 lg:mb-2 2xl:mb-6">
+                      <div className="mb-6">
                         <div className="mb-4 flex gap-4">
                           <div className="flex-1">
                             <div className="flex flex-col gap-2">
+                              <Text className="mb-1 block text-sm text-gray-600">
+                                {t("search.from")}:
+                              </Text>
                               <Text className="mb-1 block text-lg font-bold text-red-600">
                                 {numberToString(
                                   priceRange[0],
@@ -1776,15 +1806,17 @@ const SearchBox = () => {
                           </div>
                           <div className="flex-1">
                             <div className="flex flex-col gap-2">
-
+                              <Text className="mb-1 block text-sm text-gray-600">
+                                {t("search.to")}:
+                              </Text>
                               <Text className="mb-1 block text-lg font-bold text-red-600">
                                 {priceRange[1] === 100000000000
                                   ? "∞"
                                   : numberToString(
-                                    priceRange[1],
-                                    locale,
-                                    currency,
-                                  )}
+                                      priceRange[1],
+                                      locale,
+                                      currency,
+                                    )}
                               </Text>
                             </div>
                             <Input
@@ -1827,7 +1859,7 @@ const SearchBox = () => {
                       </div>
 
                       {/* Predefined Price Ranges */}
-                      <div className="max-h-48 lg:max-h-28 2xl:max-h-48 overflow-y-auto">
+                      <div className="max-h-48 overflow-y-auto">
                         <Radio.Group
                           value={selectedPriceRange}
                           onChange={(e) =>
@@ -1846,7 +1878,7 @@ const SearchBox = () => {
                       </div>
                     </div>
 
-                    <div className="flex justify-between border-t border-gray-100 p-4 lg:py-2 2xl:py-4">
+                    <div className="flex justify-between border-t border-gray-100 p-4">
                       <Button
                         type="text"
                         onClick={() => {
@@ -2017,23 +2049,25 @@ const SearchBox = () => {
                 <Button
                   ref={areaButtonRef}
                   type="default"
-                  size="middle"
+                  size="large"
                   icon={<Square className="text-gray-600" size={16} />}
                   onClick={(e) => handleToggleFilterModal("areaRange", e)}
-                  className={`filter-dropdown-button flex w-full items-center justify-between rounded-xl border-2 transition-all duration-300 sm:rounded-2xl ${areaOpen
-                    ? "border-red-500 bg-red-50 text-red-600 shadow-lg"
-                    : "border-gray-200 hover:border-red-300 hover:shadow-md"
-                    }`}
+                  className={`filter-dropdown-button flex w-full items-center justify-between rounded-xl border-2 transition-all duration-300 sm:rounded-2xl ${
+                    areaOpen
+                      ? "border-red-500 bg-red-50 text-red-600 shadow-lg"
+                      : "border-gray-200 hover:border-red-300 hover:shadow-md"
+                  }`}
                 >
-                  <span className="text-sm font-medium sm:text-base lg:text-xs 2xl:text-sm">
+                  <span className="text-sm font-medium sm:text-base">
                     {selectedAreaRange === "all"
                       ? t("search.area")
                       : `${areaRange[0]} m² - ${areaRange[1]} m²`}{" "}
                   </span>
                   <ChevronDown
                     size={16}
-                    className={`transition-transform duration-300 ${areaOpen ? "rotate-180" : ""
-                      }`}
+                    className={`transition-transform duration-300 ${
+                      areaOpen ? "rotate-180" : ""
+                    }`}
                   />
                 </Button>
 
@@ -2044,11 +2078,28 @@ const SearchBox = () => {
                     className="filter-dropdown absolute top-full left-0 z-50 mt-3 w-full rounded-xl border border-gray-200 bg-white shadow-2xl sm:rounded-2xl"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="p-4 ">
+                    <div className="border-b border-gray-100 p-3 sm:p-4">
+                      <div className="flex items-center justify-between">
+                        <Title level={5} className="mb-0 text-sm sm:text-base">
+                          {t("search.area")}
+                        </Title>
+                        <Button
+                          type="text"
+                          icon={<X className="text-gray-600" size={14} />}
+                          onClick={() => setAreaOpen(false)}
+                          className="flex h-5 w-5 items-center justify-center sm:h-6 sm:w-6"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="p-4">
                       {/* Custom Area Range */}
-                      <div className="mb-6 ">
+                      <div className="mb-6">
                         <div className="mb-4 flex gap-4">
                           <div className="flex-1">
+                            <Text className="mb-1 block text-sm text-gray-600">
+                              {t("search.minArea")}
+                            </Text>
                             <Input
                               placeholder={t("search.from")}
                               className="rounded-lg"
@@ -2065,6 +2116,9 @@ const SearchBox = () => {
                             <ArrowRight className="mb-2 h-5 w-5 text-gray-400" />
                           </div>
                           <div className="flex-1">
+                            <Text className="mb-1 block text-sm text-gray-600">
+                              {t("search.maxArea")}
+                            </Text>
                             <Input
                               placeholder={t("search.to")}
                               className="rounded-lg"
@@ -2092,7 +2146,7 @@ const SearchBox = () => {
                       </div>
 
                       {/* Predefined Area Ranges */}
-                      <div className="max-h-48 lg:max-h-28 2xl:max-h-48 overflow-y-auto">
+                      <div className="max-h-48 overflow-y-auto">
                         <Radio.Group
                           value={selectedAreaRange}
                           onChange={(e) =>

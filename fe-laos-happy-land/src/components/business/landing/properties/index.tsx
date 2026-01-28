@@ -1531,14 +1531,14 @@ const Properties = ({ transaction }: PropertiesProps) => {
                 <div className="flex items-center gap-3">
                   <Filter className="h-5 w-5 text-red-500" />
                   <div className="text-left">
-
-                    {getFilterDisplayText() ? (
+                    <div className="font-semibold text-gray-900">
+                      {t("search.searchFilters")}
+                    </div>
+                    {getFilterDisplayText() && (
                       <div className="max-w-[200px] truncate text-xs text-gray-600">
                         {getFilterDisplayText()}
                       </div>
-                    ) : <div className="font-semibold text-gray-900 ">
-                      {t("search.searchFilters")}
-                    </div>}
+                    )}
                   </div>
                 </div>
                 <ChevronRight className="h-5 w-5 rotate-90 text-gray-400 transition-transform duration-200" />
@@ -1553,8 +1553,8 @@ const Properties = ({ transaction }: PropertiesProps) => {
             {/* Collapse Button */}
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Filter className="h-5 w-5 lg:h-3 lg:w-3 2xl:h-5 2xl:w-5 text-red-500" />
-                <span className="font-semibold text-gray-900 lg:text-xs 2xl:text-sm">
+                <Filter className="h-5 w-5 text-red-500" />
+                <span className="font-semibold text-gray-900">
                   {t("search.searchFilters")}
                 </span>
               </div>
@@ -1570,11 +1570,11 @@ const Properties = ({ transaction }: PropertiesProps) => {
                 className="flex items-center gap-1 text-gray-500 hover:text-red-500"
               >
                 <ChevronUp className="h-4 w-4" />
-                <span className="text-sm lg:text-xs 2xl:text-sm">Collapse</span>
+                <span className="text-sm">Collapse</span>
               </Button>
             </div>
 
-            <div className="my-4 lg:my-2 2xl:my-4 hidden items-center text-sm lg:text-xs 2xl:text-sm lg:flex">
+            <div className="my-4 hidden items-center text-sm lg:flex">
               <div className="flex items-center space-x-2">
                 <span className="cursor-pointer text-gray-500 transition-colors hover:text-red-500 hover:underline">
                   {t("navigation.home")}
@@ -1602,14 +1602,14 @@ const Properties = ({ transaction }: PropertiesProps) => {
             </div>
             <div className="relative grid grid-cols-2 gap-2 lg:grid-cols-5 lg:gap-4">
               {/* Search Input */}
-              <div ref={searchInputRef} className="search-input col-span-2 ">
+              <div ref={searchInputRef} className="search-input col-span-2">
                 <div className="relative w-full">
                   <div className="absolute inset-y-0 left-0 flex items-center pl-4">
-                    <Search className="h-5 w-5 text-red-400 " />
+                    <Search className="h-5 w-5 text-gray-400" />
                   </div>
                   <Input
-                    size="middle"
-                    prefix={<Search className="h-5 w-5 text-gray-400 " />}
+                    size="large"
+                    prefix={<Search className="h-5 w-5 text-gray-400" />}
                     placeholder={t("search.locationPlaceholder")}
                     value={keyword}
                     onChange={(e) => setKeyword(e.target.value)}
@@ -1630,15 +1630,14 @@ const Properties = ({ transaction }: PropertiesProps) => {
               {/* Location Selector */}
               <div className="lg:col-span-2">
                 <Button
-                  size="middle"
+                  size="large"
                   ref={locationButtonRef}
                   onClick={handleLocationClick}
                   className="flex h-12 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 shadow-sm transition-all duration-200 hover:border-red-300 hover:bg-red-50"
-
                 >
-                  <div className="flex items-center gap-3 lg:gap-1 2xl:gap-3">
-                    <MapPin className="h-4 w-4 lg:h-3 lg:w-3 2xl:h-4 2xl:w-4 text-gray-500" />
-                    <span className="text-sm lg:text-xs 2xl:text-sm font-medium text-gray-700 capitalize">
+                  <div className="flex items-center gap-3">
+                    <MapPin className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm font-medium text-gray-700 capitalize">
                       {selectedLocation !== "all"
                         ? (locations.find((loc) => loc.id === selectedLocation)
                           ?.label ?? selectedLocation)
@@ -1652,17 +1651,17 @@ const Properties = ({ transaction }: PropertiesProps) => {
               {/* Search Button */}
               <Button
                 type="primary"
-                size="middle"
+                size="large"
                 onClick={handleSearch}
                 className="h-12 rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-8 font-semibold shadow-lg transition-all duration-200 hover:from-red-600 hover:to-red-700 hover:shadow-xl"
               >
-                <Search className="hidden h-4 w-4 lg:h-3 lg:w-3 2xl:h-5 2xl:w-5 lg:block" />
-                <span className="lg:text-xs 2xl:text-sm">{t("common.search")}</span>
+                <Search className="hidden h-4 w-4 lg:block" />
+                {t("common.search")}
               </Button>
             </div>
 
             {/* Filter Row */}
-            <div className="mt-2 grid grid-cols-1 items-center gap-1 md:grid-cols-3  lg:gap-3">
+            <div className="mt-2 grid grid-cols-1 items-center gap-1 md:grid-cols-3 lg:mt-4 lg:gap-3">
               {/* Property Type Filter */}
               <div className="md:relative">
                 <Button
@@ -1670,10 +1669,10 @@ const Properties = ({ transaction }: PropertiesProps) => {
                   className="filter-dropdown-button flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm transition-all duration-200 hover:border-red-300 hover:bg-red-50"
                 >
                   <div className="flex items-center gap-2">
-                    <div className="flex h-5 w-5 lg:h-3 lg:w-3 2xl:h-5 2xl:w-5 items-center justify-center rounded-full bg-blue-100">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100">
                       <span className="lg:text-xs">🏠</span>
                     </div>
-                    <span className="text-sm lg:text-xs 2xl:text-sm font-medium text-gray-700">
+                    <span className="text-sm font-medium text-gray-700">
                       {t("search.propertyType")}
                     </span>
                   </div>
@@ -1690,7 +1689,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                     className="filter-dropdown absolute top-full right-0 z-50 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="border-b border-gray-100 p-3 lg:pb-0 2xl:pb-3">
+                    <div className="border-b border-gray-100 p-3">
                       <div className="flex items-center justify-between">
                         <Typography.Title level={5} className="mb-0 text-sm">
                           {t("search.propertyType")}
@@ -1704,7 +1703,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                       </div>
                     </div>
 
-                    <div className="max-h-64 lg:max-h-48 2xl:max-h-64 overflow-y-auto p-3 lg:py-0 2xl:py-3">
+                    <div className="max-h-64 overflow-y-auto p-3">
                       {propertyTypesLoading ? (
                         <div className="flex items-center justify-center py-4">
                           <Spin size="small" />
@@ -1716,7 +1715,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                         propertyTypeOptions.map((type) => (
                           <div
                             key={type.id}
-                            className="flex cursor-pointer items-center gap-3 lg:gap-2 2xl:gap-3 rounded px-2 py-2 hover:bg-gray-50"
+                            className="flex cursor-pointer items-center gap-3 rounded px-2 py-2 hover:bg-gray-50"
                             onClick={() => handleSelectedPropertyType(type.id)}
                           >
                             <Checkbox
@@ -1731,8 +1730,8 @@ const Properties = ({ transaction }: PropertiesProps) => {
                               }
                               className="text-red-500"
                             />
-                            <span className="text-gray-600 lg:text-xs 2xl:text-sm">{type.icon}</span>
-                            <span className="text-sm lg:text-xs 2xl:text-sm text-gray-700">
+                            <span className="text-gray-600">{type.icon}</span>
+                            <span className="text-sm text-gray-700">
                               {type.name}
                             </span>
                           </div>
@@ -1852,10 +1851,10 @@ const Properties = ({ transaction }: PropertiesProps) => {
                   className="filter-dropdown-button flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm transition-all duration-200 hover:border-red-300 hover:bg-red-50"
                 >
                   <div className="flex items-center gap-2">
-                    <div className="flex h-5 w-5 lg:h-3 lg:w-3 2xl:h-5 2xl:w-5 items-center justify-center rounded-full bg-green-100">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100">
                       <span className="text-xs">💰</span>
                     </div>
-                    <span className="text-sm lg:text-xs 2xl:text-sm font-medium text-gray-700">
+                    <span className="text-sm font-medium text-gray-700">
                       {t("search.priceRange")}
                     </span>
                   </div>
@@ -1872,14 +1871,26 @@ const Properties = ({ transaction }: PropertiesProps) => {
                     className="filter-dropdown absolute top-full right-0 z-50 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg"
                     onClick={(e) => e.stopPropagation()}
                   >
-
+                    <div className="border-b border-gray-100 p-3">
+                      <div className="flex items-center justify-between">
+                        <Typography.Title level={5} className="mb-0 text-sm">
+                          {t("search.priceRange")}
+                        </Typography.Title>
+                        <Button
+                          type="text"
+                          icon={<X className="text-gray-600" size={14} />}
+                          onClick={() => setPriceRangeOpen(false)}
+                          className="flex h-5 w-5 items-center justify-center"
+                        />
+                      </div>
+                    </div>
 
                     <div className="p-3">
                       {/* Custom Price Range */}
                       <div className="mb-6">
                         <div className="mb-4 flex gap-4">
                           <div className="flex-1">
-                            <Typography.Text className="mb-1 block text-sm  text-gray-600">
+                            <Typography.Text className="mb-1 block text-sm text-gray-600">
                               {t("search.from")}:{" "}
                               {minPrice
                                 ? numberToString(
@@ -1904,7 +1915,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                             <ArrowRight className="mb-2 h-5 w-5 text-gray-400" />
                           </div>
                           <div className="flex-1">
-                            <Typography.Text className="mb-1 block text-sm  text-gray-600">
+                            <Typography.Text className="mb-1 block text-sm text-gray-600">
                               {t("search.to")}:{" "}
                               {maxPrice
                                 ? numberToString(
@@ -1946,7 +1957,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                       </div>
 
                       {/* Predefined Price Ranges */}
-                      <div className="max-h-48 lg:max-h-28 2xl:max-h-48 overflow-y-auto">
+                      <div className="max-h-48 overflow-y-auto">
                         <Radio.Group
                           value={selectedPriceRange}
                           onChange={(e) =>
@@ -2030,7 +2041,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                       <div className="mb-6 flex gap-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <Typography.Text className="mb-2 block text-sm  font-medium text-gray-700">
+                            <Typography.Text className="mb-2 block text-sm font-medium text-gray-700">
                               {t("search.from")}
                             </Typography.Text>
                             <Typography.Text className="mb-2 block text-lg font-bold text-red-600">
@@ -2147,7 +2158,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                     <div className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-100">
                       <span className="text-xs">📐</span>
                     </div>
-                    <span className="text-sm lg:text-xs 2xl:text-sm font-medium text-gray-700">
+                    <span className="text-sm font-medium text-gray-700">
                       {t("search.area")}
                     </span>
                   </div>
@@ -2164,6 +2175,19 @@ const Properties = ({ transaction }: PropertiesProps) => {
                     className="filter-dropdown absolute top-full right-0 z-50 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-lg"
                     onClick={(e) => e.stopPropagation()}
                   >
+                    <div className="border-b border-gray-100 p-3">
+                      <div className="flex items-center justify-between">
+                        <Typography.Title level={5} className="mb-0 text-sm">
+                          {t("search.area")}
+                        </Typography.Title>
+                        <Button
+                          type="text"
+                          icon={<X className="text-gray-600" size={14} />}
+                          onClick={() => setAreaOpen(false)}
+                          className="flex h-5 w-5 items-center justify-center"
+                        />
+                      </div>
+                    </div>
 
                     <div className="p-3">
                       {/* Custom Area Range */}
@@ -2233,7 +2257,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                       </div>
 
                       {/* Predefined Area Ranges */}
-                      <div className="max-h-48 lg:max-h-28 2xl:max-h-48 overflow-y-auto">
+                      <div className="max-h-48 overflow-y-auto">
                         <Radio.Group
                           value={selectedAreaRange}
                           onChange={(e) =>
@@ -2566,7 +2590,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
           {searchModalOpen && (
             <div
               ref={searchModalRef}
-              className="search-popup absolute top-full left-0 z-50 mt-2 w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl lg:mt-4 max-h-[60vh] lg:max-h-80 2xl:max-h-[60vh] overflow-y-auto"
+              className="search-popup absolute top-full left-0 z-50 mt-2 w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl lg:mt-4"
             >
               {/* Modal Header */}
               <div className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4">
@@ -2588,7 +2612,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                 </div>
               </div>
 
-              <div>
+              <div className="max-h-[60vh] overflow-y-auto">
                 <div className="p-6">
                   <div className="grid grid-cols-1 gap-6">
                     {/* Search Trends Panel */}
@@ -2702,11 +2726,11 @@ const Properties = ({ transaction }: PropertiesProps) => {
           {!isMobile && locationModalOpen && (
             <div
               ref={locationModalRef}
-              className="location-popup absolute top-full left-0 z-50 mt-2 w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl lg:mt-4 "
+              className="location-popup absolute top-full left-0 z-50 mt-2 w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl lg:mt-4"
             >
               {/* Modal Header */}
               <div className="border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4">
-                <div className="flex items-center justify-between lg:hidden 2xl:flex">
+                <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">
                       {t("search.selectLocation")}
@@ -2724,10 +2748,10 @@ const Properties = ({ transaction }: PropertiesProps) => {
                 </div>
               </div>
 
-              <div className="max-h-[60vh] lg:max-h-64 2xl:max-h-[60vh] overflow-y-auto">
+              <div className="max-h-[60vh] overflow-y-auto">
                 <div className="p-6">
                   {/* Popular Cities */}
-                  <div className="mb-8 lg:mb-2 2xl:mb-8">
+                  <div className="mb-8">
                     <div className="mb-4 flex items-center gap-3">
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-red-500 to-pink-500">
                         <span className="text-sm">🔥</span>
@@ -2795,10 +2819,10 @@ const Properties = ({ transaction }: PropertiesProps) => {
                   {/* All Locations */}
                   <div>
                     <div className="mb-4 flex items-center gap-3">
-                      <div className="flex h-8 w-8 lg:hidden 2xl:block items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-indigo-500">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-indigo-500">
                         <span className="text-sm">🌍</span>
                       </div>
-                      <div className="lg:hidden 2xl:block">
+                      <div>
                         <h4 className="font-semibold text-gray-900">
                           {t("search.allLocations")}
                         </h4>
@@ -2807,7 +2831,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                         </p>
                       </div>
                     </div>
-                    <div className="max-h-80  overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <div className="max-h-80 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-3">
                       <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
                         {locationInfosLoading
                           ? Array.from({ length: 10 }).map((_, index) => (
@@ -2991,11 +3015,11 @@ const Properties = ({ transaction }: PropertiesProps) => {
       </div>
 
       {/* Main content */}
-      <div className="container mx-auto px-4 pb-4 lg:max-w-[70%] xl:max-w-[65%] 2xl:max-w-[70%] ">
+      <div className="container mx-auto px-4 pb-4 lg:max-w-[70%]  xl:max-w-[75%] 2xl:max-w-[70%] ">
         {/* Layout Toggle */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="hidden text-sm lg:text-xs 2xl:text-sm font-medium text-gray-700 lg:block">
+            <span className="hidden text-sm font-medium text-gray-700 lg:block">
               {t("search.display")}
             </span>
             <div className="flex rounded-lg border border-gray-200 bg-white p-1">
@@ -3004,9 +3028,9 @@ const Properties = ({ transaction }: PropertiesProps) => {
                 size="small"
                 icon={<List size={16} />}
                 onClick={() => setLayout("list")}
-                className="flex items-center gap-1 "
+                className="flex items-center gap-1"
               >
-                <span className="lg:text-xs 2xl:text-sm">{t("search.list")}</span>
+                {t("search.list")}
               </Button>
               <div className="hidden lg:block">
                 <Button
@@ -3016,7 +3040,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                   onClick={() => setLayout("grid")}
                   className="flex items-center gap-1"
                 >
-                  <span className="lg:text-xs 2xl:text-sm">{t("search.grid")}</span>
+                  {t("search.grid")}
                 </Button>
               </div>
               <Button
@@ -3026,12 +3050,12 @@ const Properties = ({ transaction }: PropertiesProps) => {
                 onClick={() => setLayout("map")}
                 className="flex items-center gap-1"
               >
-                <span className="lg:text-xs 2xl:text-sm">{t("search.map")}</span>
+                {t("search.map")}
               </Button>
             </div>
           </div>
 
-          <div className="text-sm lg:text-xs 2xl:text-sm text-gray-500">
+          <div className="text-sm text-gray-500">
             {properties?.data?.length ?? 0} {t("search.properties")}
           </div>
         </div>
@@ -3096,7 +3120,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
           </div>
         </div>
       </div>
-    </div >
+    </div>
   );
 };
 

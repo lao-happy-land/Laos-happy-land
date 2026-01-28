@@ -93,7 +93,7 @@ export default function PropertyCard({ property }: { property: Property }) {
 
         <div className="flex h-full flex-col">
           <div className="relative flex w-full overflow-hidden">
-            <div className="relative  h-[220px] xl:h-[160px] 2xl:h-[220px] w-[60%] flex-shrink-0">
+            <div className="relative h-[220px] w-[60%] flex-shrink-0">
               <Image
                 src={getValidImageUrl(property)}
                 alt={property.title}
@@ -104,9 +104,9 @@ export default function PropertyCard({ property }: { property: Property }) {
               />
             </div>
 
-            <div className="flex h-[220px] xl:h-[160px] 2xl:h-[220px] w-[40%] flex-col">
+            <div className="flex h-[220px] w-[40%] flex-col">
               {/* Top Image - Full Width */}
-              <div className="relative h-[110px] xl:h-[80px] 2xl:h-[110px] overflow-hidden">
+              <div className="relative h-[110px] overflow-hidden">
                 <Image
                   src={validateImageUrl(
                     property.images?.[0],
@@ -122,7 +122,7 @@ export default function PropertyCard({ property }: { property: Property }) {
               </div>
 
               {/* Bottom Images - Split Width */}
-              <div className="flex h-[110px] xl:h-[80px] 2xl:h-[110px]">
+              <div className="flex h-[110px]">
                 <div className="relative w-[50%] overflow-hidden">
                   <Image
                     src={validateImageUrl(
@@ -162,23 +162,23 @@ export default function PropertyCard({ property }: { property: Property }) {
 
           {/* Content Area */}
           <div className="flex-1 p-4">
-            <h3 className="mb-2 line-clamp-2 cursor-pointer text-lg xl:text-base 2xl:text-lg leading-tight font-bold text-gray-900">
+            <h3 className="mb-2 line-clamp-2 cursor-pointer text-lg leading-tight font-bold text-gray-900">
               {property.title}
             </h3>
             <div className="mb-2 flex flex-col items-start lg:gap-3">
-              <span className="text-2xl xl:text-base 2xl:text-2xl font-bold text-red-600">
+              <span className="text-2xl font-bold text-red-600">
                 {property.price
                   ? numberToString(Number(property.price), locale, currency)
                   : t("property.contactForPrice")}
               </span>
               <div className="flex items-center gap-1">
                 <MapPin className="h-4 w-4" />
-                <span className="text-sm lg:text-xs 2xl:text-sm text-gray-600">
+                <span className="text-sm text-gray-600">
                   {formatShortLocation(property, t("common.notUpdated"))}
                 </span>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-4 text-sm xl:text-xs 2xl:text-sm text-gray-600">
+            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
               {(property.details?.bedrooms ?? 0) > 0 && (
                 <div className="flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">
                   <Bed className="h-4 w-4" />
@@ -199,31 +199,31 @@ export default function PropertyCard({ property }: { property: Property }) {
                 <Star className="h-3 w-3 fill-current" />
                 <span>{property.details?.area ?? 0} m²</span>
               </div>
-              <div className="flex items-center lg:text-xs 2xl:text-sm gap-1.5 rounded-full bg-orange-50 px-2.5 py-1 text-orange-700">
+              <div className="flex items-center gap-1.5 rounded-full bg-orange-50 px-2.5 py-1 text-orange-700">
                 <span className="font-medium">{property.legalStatus}</span>
               </div>
             </div>
 
-            <p className="line-clamp-2 text-sm mt-2 xl:text-xs 2xl:text-sm leading-relaxed text-gray-600">
+            <p className="line-clamp-2 text-sm leading-relaxed text-gray-600">
               {property?.description}
             </p>
           </div>
 
           {/* Footer */}
-          <div className="flex flex-row items-center justify-between gap-3 border-t border-gray-200 px-4 py-2">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-600 shadow-lg flex-shrink-0">
+          <div className="flex flex-col items-start justify-between gap-2 border-t border-gray-200 px-4 py-2">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-600 shadow-lg">
                 <span className="text-sm font-bold text-white">
                   {property.owner?.fullName?.charAt(0)}
                 </span>
               </div>
-              <div className="flex flex-col gap-1 min-w-0">
-                <div className="text-sm lg:text-xs 2xl:text-sm font-semibold text-gray-900 truncate">
+              <div className="flex flex-col gap-1">
+                <div className="text-sm font-semibold text-gray-900">
                   {property.owner?.fullName ?? "N/A"}
                 </div>
                 <div className="flex items-center gap-1 text-xs text-gray-500">
-                  <Calendar className="h-3 w-3 flex-shrink-0" />
-                  <span className="truncate">
+                  <Calendar className="h-3 w-3" />
+                  <span>
                     {t("property.posted")}{" "}
                     {formatCreatedDate(property.createdAt)}
                   </span>
@@ -234,16 +234,10 @@ export default function PropertyCard({ property }: { property: Property }) {
             {property.owner?.phone && (
               <Button
                 type="primary"
-                className="flex h-10 items-center gap-2 flex-shrink-0"
-                onClick={(e) => {
-                  e.preventDefault();
-                  window.location.href = `tel:${property.owner?.phone}`;
-                }}
+                className="flex h-12 w-full items-center gap-2"
               >
                 <Phone className="h-4 w-4" />
-                <span className="lg:text-xs 2xl:text-sm hidden sm:inline">
-                  {property.owner?.phone}
-                </span>
+                <span>{property.owner?.phone}</span>
               </Button>
             )}
           </div>
