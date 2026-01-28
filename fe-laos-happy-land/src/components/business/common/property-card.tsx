@@ -1,14 +1,14 @@
 "use client";
 
+import type { Property } from "@/@types/types";
+import { formatShortLocation } from "@/share/helper/format-location";
+import { numberToString } from "@/share/helper/number-to-string";
+import { useCurrencyStore } from "@/share/store/currency.store";
+import { useUrlLocale } from "@/utils/locale";
+import { Bath, Bed, Eye, Home, MapPin } from "lucide-react";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, Home, Bed, Bath, Eye } from "lucide-react";
-import type { Property } from "@/@types/types";
-import { numberToString } from "@/share/helper/number-to-string";
-import { formatShortLocation } from "@/share/helper/format-location";
-import { useUrlLocale } from "@/utils/locale";
-import { useTranslations } from "next-intl";
-import { useCurrencyStore } from "@/share/store/currency.store";
 
 interface PropertyCardProps {
   property: Property;
