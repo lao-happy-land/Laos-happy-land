@@ -63,16 +63,16 @@ export default function BrokerUsers() {
   return (
     <div className="mt-4 overflow-hidden rounded-lg shadow-lg transition-shadow duration-300 hover:shadow-xl">
       <Card
-        styles={{ body: { padding: "16px" } }}
+        styles={{ body: { padding: "8px" } }}
         className="bg-transparent"
         title={
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-green-700 shadow-lg shadow-emerald-500/30">
-                <UserCheck className="h-4.5 w-4.5 text-white" />
+              <div className="flex h-9 w-9 xl:h-7 xl:w-7 2xl:h-9 2xl:w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-green-700 shadow-lg shadow-emerald-500/30">
+                <UserCheck className="h-4.5 w-4.5 xl:h-3 xl:w-3 2xl:h-4.5 2xl:w-4.5 text-white" />
               </div>
               <div>
-                <span className="block text-base font-bold text-gray-900">
+                <span className="block text-base xl:text-sm 2xl:text-base font-bold text-gray-900">
                   {t("property.brokerConsultants")}
                 </span>
                 <span className="text-xs font-normal text-gray-500">
@@ -83,7 +83,7 @@ export default function BrokerUsers() {
             </div>
           </div>
         }
-        bodyStyle={{ padding: "16px" }}
+        bodyStyle={{ padding: "8px" }}
       >
         {/* Background decoration */}
         <div className="pointer-events-none absolute top-0 right-0 h-32 w-32 opacity-5">
@@ -141,7 +141,7 @@ export default function BrokerUsers() {
                           {/* <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-100 to-emerald-200 shadow-sm transition-all duration-200 group-hover:scale-110 group-hover:shadow-md">
                             <UserCheck className="h-3.5 w-3.5 text-emerald-700" />
                           </div> */}
-                          <Text className="truncate text-sm font-semibold text-gray-700">
+                          <Text className="truncate text-sm xl:text-xs 2xl:text-sm font-semibold text-gray-700">
                             {t("property.brokerConsultant")}
                           </Text>
                         </div>
@@ -171,7 +171,7 @@ export default function BrokerUsers() {
                           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-amber-200 to-amber-600 shadow-sm transition-all duration-200 group-hover:scale-110 group-hover:shadow-md">
                             <UserCheck className="h-3.5 w-3.5 text-amber-900" />
                           </div>
-                          <h4 className="px-2 truncate text-base font-bold text-gray-900 transition-colors duration-200 group-hover:text-emerald-700">
+                          <h4 className="px-2 truncate text-base xl:text-sm 2xl:text-base font-bold text-gray-900 transition-colors duration-200 group-hover:text-emerald-700">
                             {user.fullName}
                           </h4>
                           <Badge
@@ -184,7 +184,7 @@ export default function BrokerUsers() {
                         {user.phone && (
                           <a
                             href={`tel:${user.phone}`}
-                            className="group/link flex items-center gap-2.5 rounded-lg bg-gradient-to-r from-emerald-50 to-transparent  py-1.5 text-sm text-gray-700 transition-all duration-200 hover:from-emerald-100 hover:text-emerald-700 hover:shadow-sm"
+                            className="group/link flex items-center gap-2.5 rounded-lg bg-gradient-to-r from-emerald-50 to-transparent  py-1.5 text-sm xl:text-xs 2xl:text-sm text-gray-700 transition-all duration-200 hover:from-emerald-100 hover:text-emerald-700 hover:shadow-sm"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 shadow-md transition-all duration-200 group-hover/link:scale-110 group-hover/link:shadow-lg">
@@ -198,7 +198,7 @@ export default function BrokerUsers() {
                         {user.email && (
                           <a
                             href={`mailto:${user.email}`}
-                            className="group/link flex items-center gap-2.5 rounded-lg bg-gradient-to-r from-emerald-50 to-transparent  py-1.5 text-sm text-gray-700 transition-all duration-200 hover:from-emerald-100 hover:text-emerald-700 hover:shadow-sm"
+                            className="group/link flex items-center gap-2.5 rounded-lg bg-gradient-to-r from-emerald-50 to-transparent  py-1.5 text-sm xl:text-xs 2xl:text-sm text-gray-700 transition-all duration-200 hover:from-emerald-100 hover:text-emerald-700 hover:shadow-sm"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 shadow-md transition-all duration-200 group-hover/link:scale-110 group-hover/link:shadow-lg">
