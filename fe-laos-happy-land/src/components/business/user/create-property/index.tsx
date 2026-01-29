@@ -1,56 +1,56 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useUrlLocale } from "@/utils/locale";
-import { useAuthStore } from "@/share/store/auth.store";
-import { useTranslations } from "next-intl";
-import {
-  Card,
-  Form,
-  Input,
-  Select,
-  InputNumber,
-  Switch,
-  Button,
-  Upload,
-  Divider,
-  Typography,
-  App,
-  Progress,
-  Spin,
-  Tooltip,
-} from "antd";
-import {
-  Building2,
-  Home,
-  Bath,
-  Bed,
-  Save,
-  Upload as UploadIcon,
-  Plus,
-  Camera,
-  X,
-  Shield,
-  Utensils,
-  Car,
-  Snowflake,
-  Tv,
-  Wifi,
-  CheckCircle,
-  Loader2,
-} from "lucide-react";
 import type { CreatePropertyDto } from "@/@types/gentype-axios";
 import type { PropertyType } from "@/@types/types";
-import { useRequest } from "ahooks";
-import ProjectContentBuilder from "@/components/business/common/project-content-builder";
 import MapboxLocationSelector from "@/components/business/common/mapbox-location-selector";
-import propertyService from "@/share/service/property.service";
-import propertyTypeService from "@/share/service/property-type.service";
-import uploadService from "@/share/service/upload.service";
+import ProjectContentBuilder from "@/components/business/common/project-content-builder";
 import { getLangByLocale, getValidLocale } from "@/share/helper/locale.helper";
-import Image from "next/image";
+import propertyTypeService from "@/share/service/property-type.service";
+import propertyService from "@/share/service/property.service";
+import uploadService from "@/share/service/upload.service";
+import { useAuthStore } from "@/share/store/auth.store";
 import { useCurrencyStore } from "@/share/store/currency.store";
+import { useUrlLocale } from "@/utils/locale";
+import { useRequest } from "ahooks";
+import {
+  App,
+  Button,
+  Card,
+  Divider,
+  Form,
+  Input,
+  InputNumber,
+  Progress,
+  Select,
+  Spin,
+  Switch,
+  Tooltip,
+  Typography,
+  Upload,
+} from "antd";
+import {
+  Bath,
+  Bed,
+  Building2,
+  Camera,
+  Car,
+  CheckCircle,
+  Home,
+  Loader2,
+  Plus,
+  Save,
+  Shield,
+  Snowflake,
+  Tv,
+  Upload as UploadIcon,
+  Utensils,
+  Wifi,
+  X,
+} from "lucide-react";
+import { useTranslations } from "next-intl";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -249,13 +249,6 @@ export default function CreateProperty() {
       errors.push(t("property.titleMinLength"));
     }
 
-    // Validate description
-    if (!values.description || values.description.trim().length === 0) {
-      errors.push(t("property.descriptionRequired"));
-    } else if (values.description.trim().length < 50) {
-      errors.push(t("property.descriptionMinLength"));
-    }
-
     // Validate price
     if (!values.price || values.price <= 0) {
       errors.push(t("property.priceRequired"));
@@ -394,9 +387,15 @@ export default function CreateProperty() {
           >
             {t("property.createProperty")}
           </Title>
-          <Text className="text-lg text-gray-600">
-            {t("property.sharePropertyInformation")}
-          </Text>
+          <div className="flex flex-col">
+            <Text className="text-lg text-gray-600">
+              {t("property.sharePropertyInformation")}
+            </Text>
+            <Text className=" text-red-500!">
+              ({t("property.requiredField")} *)
+            </Text>
+          </div>
+
         </div>
 
         <Card className="border-0 shadow-lg">
@@ -407,6 +406,10 @@ export default function CreateProperty() {
             className="space-y-8"
             initialValues={{
               transactionType: "sale",
+            }}
+            scrollToFirstError={{
+              behavior: "smooth",
+              block: "center",
             }}
           >
             {/* Basic Information */}
@@ -706,8 +709,8 @@ export default function CreateProperty() {
                 }
               >
                 <TextArea
-                  rows={6}
-                  placeholder={t("property.enterDescription")}
+                  rows={1}
+                  placeholder={t("broker.enterDescription")}
                   className="rounded-lg"
                 />
               </Form.Item>
@@ -719,7 +722,7 @@ export default function CreateProperty() {
                     level={3}
                     className="!mb-0 !text-xl !font-semibold !text-gray-900"
                   >
-                    {t("property.propertyContent")}
+                    {t("property.propertyContent")} <span className="text-red-500">*</span>
                   </Title>
                 </div>
                 <Form.Item
@@ -752,7 +755,7 @@ export default function CreateProperty() {
                     form={form}
                     name="content"
                     textFieldName="value"
-                    initialBlockCount={3}
+                    initialBlockCount={1}
                   />
                 </Form.Item>
               </div>
@@ -800,14 +803,14 @@ export default function CreateProperty() {
                     level={3}
                     className="!mb-0 !text-xl !font-semibold !text-gray-900"
                   >
-                    {t("property.images")}
+                    {t("property.images")} <span className="text-red-500">*</span>
                   </Title>
                 </div>
                 {/* Main Image */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     <Text className="font-medium">
-                      {t("property.mainImage")} *
+                      {t("property.mainImage")} <span className="text-red-500">*</span>
                     </Text>
                     {mainImageUrl && (
                       <Tooltip title={t("property.imageUploadedSuccessfully")}>
@@ -889,7 +892,7 @@ export default function CreateProperty() {
                     <div className="flex items-center gap-2">
                       <Text className="font-medium">
                         {t("property.additionalImages")} (
-                        {t("property.max9Images")})
+                        {t("property.max9Images")}) <span className="text-red-500">*</span>
                       </Text>
                       {imageUrls.length > 0 && (
                         <Tooltip

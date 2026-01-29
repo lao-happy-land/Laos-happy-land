@@ -1,60 +1,60 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useUrlLocale } from "@/utils/locale";
-import { useTranslations } from "next-intl";
-import {
-  Form,
-  Input,
-  Select,
-  InputNumber,
-  Switch,
-  Button,
-  Upload,
-  Card,
-  Typography,
-  Spin,
-  Divider,
-  App,
-  Progress,
-  Tooltip,
-} from "antd";
-import {
-  Plus,
-  Save,
-  Wifi,
-  Tv,
-  Snowflake,
-  Car,
-  Utensils,
-  Shield,
-  Building2,
-  Home,
-  Bath,
-  Bed,
-  Upload as UploadIcon,
-  Camera,
-  X,
-  CheckCircle,
-  Loader2,
-} from "lucide-react";
-import { useRequest } from "ahooks";
 import type {
   CreatePropertyDto,
+  LocationDto,
   UpdatePropertyDto,
 } from "@/@types/gentype-axios";
-import type { PropertyType, Property } from "@/@types/types";
-import propertyService from "@/share/service/property.service";
-import propertyTypeService from "@/share/service/property-type.service";
-import uploadService from "@/share/service/upload.service";
-import { getLangByLocale, getValidLocale } from "@/share/helper/locale.helper";
-import ProjectContentBuilder from "@/components/business/common/project-content-builder";
+import type { Property, PropertyType } from "@/@types/types";
 import MapboxLocationSelector from "@/components/business/common/mapbox-location-selector";
+import ProjectContentBuilder from "@/components/business/common/project-content-builder";
+import { getLangByLocale, getValidLocale } from "@/share/helper/locale.helper";
+import propertyTypeService from "@/share/service/property-type.service";
+import propertyService from "@/share/service/property.service";
+import uploadService from "@/share/service/upload.service";
 import { useAuthStore } from "@/share/store/auth.store";
-import Image from "next/image";
-import type { LocationDto } from "@/@types/gentype-axios";
 import { useCurrencyStore } from "@/share/store/currency.store";
+import { useUrlLocale } from "@/utils/locale";
+import { useRequest } from "ahooks";
+import {
+  App,
+  Button,
+  Card,
+  Divider,
+  Form,
+  Input,
+  InputNumber,
+  Progress,
+  Select,
+  Spin,
+  Switch,
+  Tooltip,
+  Typography,
+  Upload,
+} from "antd";
+import {
+  Bath,
+  Bed,
+  Building2,
+  Camera,
+  Car,
+  CheckCircle,
+  Home,
+  Loader2,
+  Plus,
+  Save,
+  Shield,
+  Snowflake,
+  Tv,
+  Upload as UploadIcon,
+  Utensils,
+  Wifi,
+  X,
+} from "lucide-react";
+import { useTranslations } from "next-intl";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -345,12 +345,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
       errors.push(t("property.titleMinLength"));
     }
 
-    // Validate description
-    if (!values.description || values.description.trim().length === 0) {
-      errors.push(t("property.descriptionRequired"));
-    } else if (values.description.trim().length < 50) {
-      errors.push(t("property.descriptionMinLength"));
-    }
+
 
     // Validate price
     if (!values.price || values.price <= 0) {
@@ -528,6 +523,10 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
           initialValues={{
             transactionType: "sale",
             priority: 0,
+          }}
+          scrollToFirstError={{
+            behavior: "smooth",
+            block: "center",
           }}
         >
           {/* Basic Information */}
@@ -821,8 +820,8 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
               }
             >
               <TextArea
-                rows={6}
-                placeholder={t("property.enterDescription")}
+                rows={1}
+                placeholder={t("broker.enterDescription")}
                 className="rounded-lg"
               />
             </Form.Item>
@@ -838,7 +837,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                     ? t("property.projectContent")
                     : selectedTransactionType === "sale"
                       ? t("property.saleDetails")
-                      : t("property.rentalDetails")}
+                      : t("property.rentalDetails")}  <span className="text-red-500">*</span>
                 </Title>
               </div>
               <Form.Item
@@ -865,7 +864,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                   form={form}
                   name="content"
                   textFieldName="value"
-                  initialBlockCount={3}
+                  initialBlockCount={1}
                 />
               </Form.Item>
             </div>
@@ -902,14 +901,14 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                   level={3}
                   className="!mb-0 !text-xl !font-semibold !text-gray-900"
                 >
-                  {t("property.images")}
+                  {t("property.images")} <span className="text-red-500">*</span>
                 </Title>
               </div>
               {/* Main Image */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <Text className="font-medium">
-                    {t("property.mainImage")} *
+                    {t("property.mainImage")} <span className="text-red-500">*</span>
                   </Text>
                   {(mainImageUrl ?? existingMainImage) && (
                     <Tooltip title={t("admin.imageReady")}>
@@ -1021,7 +1020,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                   <div className="flex items-center gap-2">
                     <Text className="font-medium">
                       {t("property.additionalImages")} (
-                      {t("property.max9Images")})
+                      {t("property.max9Images")}) <span className="text-red-500">*</span>
                     </Text>
                     {imageUrls.length > 0 && (
                       <Tooltip
