@@ -50,7 +50,20 @@ export default function ProjectContentBuilder({
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [initialized, setInitialized] = useState(false);
   const t = useTranslations();
-
+  const placeholderText = [
+    t("property.pleaseEnterContent"),
+    t("property.propertyOwner"),
+    t("property.propertyType"),
+    t("property.area"),
+    t("property.amenities"),
+    t("admin.detailedStatistics"),
+    t("terms.paymentMethod"),
+    "..."
+  ]
+    .map((text, index) =>
+      index === 0 ? text : `- ${text}`
+    )
+    .join("\n");
   // Initialize with default blocks if specified
   useEffect(() => {
     if (initialized || initialBlockCount <= 0) return;
@@ -282,10 +295,11 @@ export default function ProjectContentBuilder({
                                 ]}
                               >
                                 <TextArea
-                                  autoSize={{ minRows: 2, maxRows: 8 }}
-                                  placeholder={t("property.pleaseEnterContent")}
+                                  autoSize={{ minRows: 8, maxRows: 8 }}
+                                  placeholder={placeholderText}
                                   className="border-0 p-0 shadow-none focus:shadow-none"
                                 />
+
                               </Form.Item>
                             )}
                             {type === "image" && (

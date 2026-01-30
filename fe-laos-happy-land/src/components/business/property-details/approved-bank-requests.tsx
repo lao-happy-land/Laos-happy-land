@@ -54,7 +54,7 @@ export default function ApprovedBankRequests() {
   return (
     <div className="mb-4 overflow-hidden rounded-lg shadow-lg transition-shadow duration-300 hover:shadow-xl">
       <Card
-        styles={{ body: { padding: "16px" } }}
+        styles={{ body: { padding: "8px" } }}
         className="bg-transparent"
         title={
           <div className="flex items-center justify-between">
@@ -63,7 +63,7 @@ export default function ApprovedBankRequests() {
                 <Building2 className="h-4.5 w-4.5 text-white" />
               </div>
               <div>
-                <span className="block text-base font-bold text-gray-900">
+                <span className="block text-base xl:text-sm 2xl:text-base font-bold text-gray-900">
                   {t("bankRequest.approvedBankAgents")}
                 </span>
                 <span className="text-xs font-normal text-gray-500">
@@ -74,13 +74,13 @@ export default function ApprovedBankRequests() {
             </div>
           </div>
         }
-        bodyStyle={{ padding: "16px" }}
+        bodyStyle={{ padding: "8px" }}
       >
         <div className="relative space-y-3">
           {bankRequests.map((request: BankRequest, index: number) => (
             <div
               key={request.id}
-              className="group relative overflow-hidden rounded-2xl border-2 border-gray-100 bg-gradient-to-br from-white via-blue-50/30 to-white p-4 shadow-sm transition-all duration-300 hover:scale-[1.02] hover:border-blue-200 hover:shadow-xl"
+              className="group relative overflow-hidden rounded-2xl border-2 border-gray-100 bg-gradient-to-br from-white via-blue-50/30 to-white p-3 shadow-sm transition-all duration-300 hover:scale-[1.02] hover:border-blue-200 hover:shadow-xl"
               style={{ animationDelay: `${index * 50}ms` }}
             >
               {/* Hover glow effect */}
@@ -93,7 +93,7 @@ export default function ApprovedBankRequests() {
                   {/* Name and Bank */}
                   <div className="mb-2.5">
                     <div className="flex gap-1 items-center">
-                      <h4 className="truncate text-lg font-bold text-gray-900 transition-colors duration-200 group-hover:text-blue-700">
+                      <h4 className="truncate text-lg xl:text-sm 2xl:text-lg font-bold text-gray-900 transition-colors duration-200 group-hover:text-blue-700">
                         {request.fullName}
                       </h4>
                       <Badge
@@ -106,9 +106,9 @@ export default function ApprovedBankRequests() {
                     {request.bank && (
                       <div className="mt-1.5 flex items-center gap-2">
                         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 shadow-sm transition-all duration-200 group-hover:scale-110 group-hover:shadow-md">
-                          <Building2 className="h-3.5 w-3.5 text-blue-700" />
+                          <Building2 className="h-3.5 w-3.5 xl:h-3 xl:w-3 2xl:h-3.5 2xl:w-3.5 text-blue-700" />
                         </div>
-                        <Text className="truncate text-sm font-semibold text-gray-700">
+                        <Text className="truncate text-sm xl:text-xs 2xl:text-sm font-semibold text-gray-700">
                           {request.bank.name}
                         </Text>
                       </div>
@@ -135,9 +135,9 @@ export default function ApprovedBankRequests() {
                         className="group/link flex items-center gap-2.5 rounded-lg bg-gradient-to-r from-blue-50 to-transparent px-2 py-1.5 text-sm text-gray-700 transition-all duration-200 hover:from-blue-100 hover:text-blue-700 hover:shadow-sm"
                       >
                         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow-md transition-all duration-200 group-hover/link:scale-110 group-hover/link:shadow-lg">
-                          <Phone className="h-4 w-4 text-white" />
+                          <Phone className="h-4 w-4 xl:h-3 xl:w-3 2xl:h-4 2xl:w-4 text-white" />
                         </div>
-                        <span className="truncate font-semibold">
+                        <span className="truncate font-semibold xl:text-xs 2xl:text-sm">
                           {request.phone}
                         </span>
                       </a>
@@ -150,7 +150,7 @@ export default function ApprovedBankRequests() {
                         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow-md transition-all duration-200 group-hover/link:scale-110 group-hover/link:shadow-lg">
                           <Mail className="h-4 w-4 text-white" />
                         </div>
-                        <span className="truncate font-semibold">
+                        <span className="truncate font-semibold xl:text-xs 2xl:text-sm">
                           {request.email}
                         </span>
                       </a>
