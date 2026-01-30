@@ -114,7 +114,7 @@ export default function BrokerUsers() {
                     <div className="flex gap-3 items-center">
                       <div className=" flex-shrink-0">
                         {user.image || user.avatarUrl ? (
-                          <div className=" h-18 w-18 overflow-hidden rounded-2xl shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl">
+                          <div className=" relative  h-18 w-18 overflow-hidden rounded-2xl shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl">
                             <Image
                               src={
                                 user.image ??

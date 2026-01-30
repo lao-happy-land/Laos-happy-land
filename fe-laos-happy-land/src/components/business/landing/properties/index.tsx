@@ -1529,14 +1529,14 @@ const Properties = ({ transaction }: PropertiesProps) => {
                 className="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-gradient-to-r from-red-50 to-orange-50 px-4 py-3 shadow-sm transition-all duration-200 hover:border-red-300 hover:shadow-md"
               >
                 <div className="flex items-center gap-3">
-                  <Filter className="h-5 w-5 text-red-500" />
-                  <div className="text-left">
+                  <Filter className="h-3 w-3 text-red-500" />
+                  <div className="text-left ">
 
                     {getFilterDisplayText() ? (
                       <div className="max-w-[200px] truncate text-xs text-gray-600">
                         {getFilterDisplayText()}
                       </div>
-                    ) : <div className="font-semibold text-gray-900 ">
+                    ) : <div className="font-semibold text-sm text-gray-900 ">
                       {t("search.searchFilters")}
                     </div>}
                   </div>
