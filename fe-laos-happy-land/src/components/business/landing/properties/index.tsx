@@ -399,9 +399,9 @@ const Properties = ({ transaction }: PropertiesProps) => {
     };
 
     let mounted = true;
-    (async () => {
+    const loadMapProperties = async () => {
       try {
-        const apiParams: Record<string, any> = {
+        const apiParams: Record<string, string | number | string[] | boolean> = {
           transaction,
           page: 1,
           perPage: total > 0 ? total : 1000000,
@@ -421,7 +421,9 @@ const Properties = ({ transaction }: PropertiesProps) => {
       } catch (err) {
         console.error("Failed to load map properties", err);
       }
-    })();
+    };
+
+    void loadMapProperties();
 
     return () => {
       mounted = false;
