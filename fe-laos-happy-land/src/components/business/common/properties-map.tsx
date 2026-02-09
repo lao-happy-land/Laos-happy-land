@@ -1,20 +1,19 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Button, Spin, Empty } from "antd";
-import { MapPin, X, Eye } from "lucide-react";
-import Map from "react-map-gl/mapbox";
-import { Marker, Popup } from "react-map-gl/mapbox";
-import type { MapRef } from "react-map-gl/mapbox";
-import "mapbox-gl/dist/mapbox-gl.css";
-import Image from "next/image";
-import { useTranslations } from "next-intl";
 import type { Property } from "@/@types/types";
 import { formatShortLocation } from "@/share/helper/format-location";
-import { useUrlLocale } from "@/utils/locale";
-import { useRouter } from "next/navigation";
 import { numberToString } from "@/share/helper/number-to-string";
 import { useCurrencyStore } from "@/share/store/currency.store";
+import { useUrlLocale } from "@/utils/locale";
+import { Button, Empty, Spin } from "antd";
+import { Eye, MapPin, X } from "lucide-react";
+import "mapbox-gl/dist/mapbox-gl.css";
+import { useTranslations } from "next-intl";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import type { MapRef } from "react-map-gl/mapbox";
+import Map, { Marker, Popup } from "react-map-gl/mapbox";
 
 interface PropertiesMapProps {
   properties: Property[];
@@ -44,7 +43,6 @@ export default function PropertiesMap({
   const mapRef = useRef<MapRef>(null);
 
   const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-
   // Calculate map bounds to fit all properties
   useEffect(() => {
     if (properties.length > 0 && mapRef.current) {

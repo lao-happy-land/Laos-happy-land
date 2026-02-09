@@ -113,7 +113,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
   const locationModalRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLDivElement>(null);
   const locationButtonRef = useRef<HTMLButtonElement>(null);
-
+  const [allMapProperties, setAllMapProperties] = useState<Property[] | null>(null);
   // Detect mobile screen size
   useEffect(() => {
     const checkMobile = () => {
@@ -392,6 +392,55 @@ const Properties = ({ transaction }: PropertiesProps) => {
     },
     { target: typeof document !== "undefined" ? document : undefined },
   );
+  useEffect(() => {
+    if (layout !== "map") {
+      setAllMapProperties(null);
+      return;
+    };
+
+    let mounted = true;
+    (async () => {
+      try {
+        const apiParams: Record<string, any> = {
+          transaction,
+          page: 1,
+          perPage: total > 0 ? total : 1000000,
+          ...getPropertyParamsByLocale(locale as SupportedLocale),
+        };
+
+        if (debouncedKeyword?.trim()) apiParams.keyword = debouncedKeyword;
+        if (minPrice && minPrice !== "0") apiParams.minPrice = parseInt(minPrice);
+        if (maxPrice && maxPrice !== "" && parseInt(maxPrice) !== maxPriceValue) apiParams.maxPrice = parseInt(maxPrice);
+        if (minArea && minArea !== "0") apiParams.minArea = parseInt(minArea);
+        if (maxArea && maxArea !== "" && parseInt(maxArea) !== 10000) apiParams.maxArea = parseInt(maxArea);
+        if (selectedLocation && selectedLocation !== "all") apiParams.locationId = selectedLocation;
+        if (selectedPropertyTypes.length > 0) apiParams.type = selectedPropertyTypes.join(",");
+
+        const resp = await propertyService.getProperties(apiParams);
+        if (mounted) setAllMapProperties(resp?.data ?? []);
+      } catch (err) {
+        console.error("Failed to load map properties", err);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [
+    layout,
+    transaction,
+    debouncedKeyword,
+    minPrice,
+    maxPrice,
+    minArea,
+    maxArea,
+    selectedLocation,
+    selectedPropertyTypes,
+    total,
+    locale,
+    currency,
+  ]);
+  const propertiesForMap = layout === "map" ? (allMapProperties ?? []) : (properties?.data ?? []);
 
   useEffect(() => {
     if (typeof document === "undefined" || isMobile) return;
@@ -3032,7 +3081,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
           </div>
 
           <div className="text-sm lg:text-xs 2xl:text-sm text-gray-500">
-            {properties?.data?.length ?? 0} {t("search.properties")}
+            {layout === "map" ? (allMapProperties?.length ?? 0) : (properties?.data?.length ?? 0)} {t("search.properties")}
           </div>
         </div>
 
@@ -3041,7 +3090,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
           <div className="w-full">
             {layout === "map" ? (
               <PropertiesMap
-                properties={properties?.data ?? []}
+                properties={propertiesForMap}
                 loading={propertiesLoading}
                 height="70vh"
               />
