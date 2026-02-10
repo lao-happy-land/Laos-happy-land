@@ -407,7 +407,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
         const apiParams: Record<string, string | number | string[] | boolean> = {
           transaction,
           page: 1,
-          perPage: 10000,
+          perPage: 100,
           ...getPropertyParamsByLocale(locale as SupportedLocale),
         };
 
