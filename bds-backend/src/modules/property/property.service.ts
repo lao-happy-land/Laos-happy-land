@@ -5,26 +5,24 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PriceHistoryEntry, Property } from 'src/entities/property.entity';
-import { EntityManager, Repository } from 'typeorm';
-import { GetPropertiesFilterDto } from './dto/get_property.dto';
-import { ResponsePaginate } from 'src/common/dtos/reponsePaginate';
-import { PageMetaDto } from 'src/common/dtos/pageMeta';
-import { CreatePropertyDto } from './dto/create_property.dto';
-import { UpdatePropertyDto } from './dto/update_property.dto';
-import { User } from 'src/entities/user.entity';
-import { Multer } from 'multer';
-import { CloudinaryService } from 'src/service/cloudinary.service';
-import { PropertyType } from 'src/entities/property-type.entity';
-import { PageOptionsDto } from 'src/common/dtos/pageOption';
-import { PropertyStatusEnum, TransactionEnum } from 'src/common/enum/enum';
-import { RejectPropertyDto } from './dto/reject_property.dto';
-import { ExchangeRateService } from '../exchange-rate/exchange-rate.service';
-import { LocationInfo } from 'src/entities/location-info.entity';
-import { GetPropertyDetailDto } from './dto/get_property_id.dto';
-import { GetPropertyByUserDto } from './dto/get_property_by_user.dto';
 import { instanceToPlain } from 'class-transformer';
+import { PageMetaDto } from 'src/common/dtos/pageMeta';
+import { ResponsePaginate } from 'src/common/dtos/reponsePaginate';
+import { PropertyStatusEnum } from 'src/common/enum/enum';
+import { LocationInfo } from 'src/entities/location-info.entity';
+import { PropertyType } from 'src/entities/property-type.entity';
+import { PriceHistoryEntry, Property } from 'src/entities/property.entity';
+import { User } from 'src/entities/user.entity';
+import { CloudinaryService } from 'src/service/cloudinary.service';
 import { TranslateService } from 'src/service/translate.service';
+import { EntityManager, Repository } from 'typeorm';
+import { ExchangeRateService } from '../exchange-rate/exchange-rate.service';
+import { CreatePropertyDto } from './dto/create_property.dto';
+import { GetPropertiesFilterDto } from './dto/get_property.dto';
+import { GetPropertyByUserDto } from './dto/get_property_by_user.dto';
+import { GetPropertyDetailDto } from './dto/get_property_id.dto';
+import { RejectPropertyDto } from './dto/reject_property.dto';
+import { UpdatePropertyDto } from './dto/update_property.dto';
 
 @Injectable()
 export class PropertyService {
@@ -339,7 +337,7 @@ export class PropertyService {
 
     if (params.location) {
       properties.andWhere(
-        `(property.location ->> 'address') ILIKE :location OR 
+        `(property.location ->> 'address') ILIKE :location OR
       property.location ->> 'city' ILIKE :location`,
         { location: `%${params.location}%` },
       );
@@ -462,18 +460,6 @@ export class PropertyService {
       throw new BadRequestException('Property not found');
     }
 
-    property.viewsCount = (property.viewsCount || 0) + 1;
-    await this.propertyRepository.save(property);
-    if (property.locationInfo?.id) {
-      const location = await this.entityManager.findOne(LocationInfo, {
-        where: { id: property.locationInfo.id },
-      });
-      if (location) {
-        location.viewCount = (location.viewCount || 0) + 1;
-        await this.entityManager.save(location);
-      }
-    }
-
     const targetLang = this.mapLang(params.currency);
     const formattedProperty = params.priceSource
       ? this.formatProperty(property, params.priceSource)
@@ -489,7 +475,26 @@ export class PropertyService {
       message: 'Success',
     };
   }
+  async incrementPropertyView(id: string) {
+    const property = await this.propertyRepository.findOne({ where: { id } });
+    if (!property) {
+      throw new BadRequestException('Property not found');
+    }
 
+    property.viewsCount = (property.viewsCount || 0) + 1;
+    await this.propertyRepository.save(property);
+    if (property.locationInfo?.id) {
+      const location = await this.entityManager.findOne(LocationInfo, {
+        where: { id: property.locationInfo.id },
+      });
+      if (location) {
+        location.viewCount = (location.viewCount || 0) + 1;
+        await this.entityManager.save(location);
+      }
+    }
+
+    return { viewsCount: property.viewsCount };
+  }
   async getByUser(params: GetPropertyByUserDto, user: any) {
     const owner = await this.entityManager.findOneBy(User, { id: user.sub });
     const userId = owner.id;

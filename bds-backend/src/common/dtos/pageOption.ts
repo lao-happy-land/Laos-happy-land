@@ -1,7 +1,7 @@
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { OrderSort } from '../enum/enum';
-import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class PageOptionsDto {
   @IsString()
@@ -24,7 +24,7 @@ export class PageOptionsDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(100)
+  @Max(200)
   @IsOptional()
   @ApiPropertyOptional()
   perPage?: number;
