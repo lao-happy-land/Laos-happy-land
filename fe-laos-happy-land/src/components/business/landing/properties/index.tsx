@@ -114,6 +114,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
   const searchInputRef = useRef<HTMLDivElement>(null);
   const locationButtonRef = useRef<HTMLButtonElement>(null);
   const [allMapProperties, setAllMapProperties] = useState<Property[] | null>(null);
+  const [isLoadingMapData, setIsLoadingMapData] = useState(false);
   // Detect mobile screen size
   useEffect(() => {
     const checkMobile = () => {
@@ -393,13 +394,15 @@ const Properties = ({ transaction }: PropertiesProps) => {
     { target: typeof document !== "undefined" ? document : undefined },
   );
   useEffect(() => {
+
     if (layout !== "map") {
-      setAllMapProperties(null);
+      setIsLoadingMapData(false);
       return;
     };
 
     let mounted = true;
     const loadMapProperties = async () => {
+      setIsLoadingMapData(true);
       try {
         const apiParams: Record<string, string | number | string[] | boolean> = {
           transaction,
@@ -420,6 +423,11 @@ const Properties = ({ transaction }: PropertiesProps) => {
         if (mounted) setAllMapProperties(resp?.data ?? []);
       } catch (err) {
         console.error("Failed to load map properties", err);
+      }
+      finally {
+        if (mounted) {
+          setIsLoadingMapData(false);
+        }
       }
     };
 
@@ -442,7 +450,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
     locale,
     currency,
   ]);
-  const propertiesForMap = layout === "map" ? (allMapProperties ?? []) : (properties?.data ?? []);
+
 
   useEffect(() => {
     if (typeof document === "undefined" || isMobile) return;
@@ -3092,8 +3100,8 @@ const Properties = ({ transaction }: PropertiesProps) => {
           <div className="w-full">
             {layout === "map" ? (
               <PropertiesMap
-                properties={propertiesForMap}
-                loading={propertiesLoading}
+                properties={allMapProperties ?? properties?.data ?? []}
+                loading={isLoadingMapData}
                 height="70vh"
               />
             ) : propertiesLoading ? (
