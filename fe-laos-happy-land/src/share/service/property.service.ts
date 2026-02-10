@@ -1,9 +1,9 @@
-import type { APIResponse, Property } from "@/@types/types";
 import type {
   CreatePropertyDto,
-  UpdatePropertyDto,
   RejectPropertyDto,
+  UpdatePropertyDto,
 } from "@/@types/gentype-axios";
+import type { APIResponse, Property } from "@/@types/types";
 import api from "./api.service";
 
 const propertyService = {
@@ -115,7 +115,20 @@ const propertyService = {
       throw error;
     }
   },
-
+  incrementPropertyView: async (
+    id: string,
+  ): Promise<{ viewsCount: number }> => {
+    try {
+      const response = await api.propertyControllerIncrementView(id);
+      return response.data as unknown as { viewsCount: number };
+    } catch (error) {
+      console.error(
+        "PropertyService: Error incrementing property view:",
+        error,
+      );
+      throw error;
+    }
+  },
   updateProperty: async (
     id: string,
     data: UpdatePropertyDto,
