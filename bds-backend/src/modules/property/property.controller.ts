@@ -3,43 +3,36 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   Param,
   Patch,
   Post,
   Query,
   Req,
-  UploadedFiles,
   UseGuards,
-  UseInterceptors,
-  Headers,
 } from '@nestjs/common';
-import { PropertyService } from './property.service';
-import { CreatePropertyDto } from './dto/create_property.dto';
 import {
   ApiBearerAuth,
   ApiBody,
-  ApiConsumes,
   ApiHeader,
   ApiOperation,
   ApiParam,
-  ApiQuery,
   ApiResponse,
 } from '@nestjs/swagger';
-import { GetPropertiesFilterDto } from './dto/get_property.dto';
-import { UpdatePropertyDto } from './dto/update_property.dto';
-import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import { Multer } from 'multer';
-import { PageOptionsDto } from 'src/common/dtos/pageOption';
-import { RejectPropertyDto } from './dto/reject_property.dto';
-import { User } from 'src/entities/user.entity';
 import { Request } from 'express';
+import { User } from 'src/entities/user.entity';
 import {
   AdminGuard,
   AuthGuard,
   OptionalAuthGuard,
 } from '../auth/guard/auth.guard';
-import { GetPropertyDetailDto } from './dto/get_property_id.dto';
+import { CreatePropertyDto } from './dto/create_property.dto';
+import { GetPropertiesFilterDto } from './dto/get_property.dto';
 import { GetPropertyByUserDto } from './dto/get_property_by_user.dto';
+import { GetPropertyDetailDto } from './dto/get_property_id.dto';
+import { RejectPropertyDto } from './dto/reject_property.dto';
+import { UpdatePropertyDto } from './dto/update_property.dto';
+import { PropertyService } from './property.service';
 
 @Controller('property')
 export class PropertyController {
@@ -306,6 +299,18 @@ export class PropertyController {
   async remove(@Param('id') id: string, @Req() req: Request) {
     const user = req.user as User;
     return this.propertyService.remove(id, user);
+  }
+
+  @Post(':id/increment-view')
+  @ApiOperation({ summary: 'Increment property view count' })
+  @ApiParam({ name: 'id', description: 'Property ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'View count incremented successfully',
+  })
+  @ApiResponse({ status: 400, description: 'Property not found' })
+  async incrementView(@Param('id') id: string) {
+    return this.propertyService.incrementPropertyView(id);
   }
 
   @Patch(':id/approve')
