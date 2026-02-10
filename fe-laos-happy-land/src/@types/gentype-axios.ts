@@ -570,8 +570,10 @@ import axios from "axios";
 
 export type QueryParamsType = Record<string | number, any>;
 
-export interface FullRequestParams
-  extends Omit<AxiosRequestConfig, "data" | "params" | "url" | "responseType"> {
+export interface FullRequestParams extends Omit<
+  AxiosRequestConfig,
+  "data" | "params" | "url" | "responseType"
+> {
   /** set parameter to `true` for call `securityWorker` for this request */
   secure?: boolean;
   /** request path */
@@ -591,8 +593,10 @@ export type RequestParams = Omit<
   "body" | "method" | "query" | "path"
 >;
 
-export interface ApiConfig<SecurityDataType = unknown>
-  extends Omit<AxiosRequestConfig, "data" | "cancelToken"> {
+export interface ApiConfig<SecurityDataType = unknown> extends Omit<
+  AxiosRequestConfig,
+  "data" | "cancelToken"
+> {
   securityWorker?: (
     securityData: SecurityDataType | null,
   ) => Promise<AxiosRequestConfig | void> | AxiosRequestConfig | void;
@@ -1171,7 +1175,19 @@ export class Api<
         query: query,
         ...params,
       }),
-
+    /**
+     * Increment property view count
+     *
+     * @tags Property
+     * @name PropertyControllerIncrementView
+     * @request POST:/api/property/{id}/increment-view
+     */
+    propertyControllerIncrementView: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/property/${id}/increment-view`,
+        method: "POST",
+        ...params,
+      }),
     /**
      * No description
      *

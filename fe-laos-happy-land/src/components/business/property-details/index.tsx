@@ -1,21 +1,22 @@
 "use client";
 
-import { Row, Col, Card, Divider, Spin } from "antd";
 import type { Content, PropertyPrice } from "@/@types/types";
-import HeaderBar from "@/components/business/property-details/header-bar";
-import Gallery from "@/components/business/property-details/gallery";
-import PriceInfo from "@/components/business/property-details/price-info";
-import Features from "@/components/business/property-details/features";
-import Amenities from "@/components/business/property-details/amenities";
-import ProjectContent from "@/components/business/property-details/project-content";
-import DetailsSection from "@/components/business/property-details/details-section";
-import ContactCard from "@/components/business/property-details/contact-card";
 import LoanCalculator from "@/components/business/loan-calculator/loan-calculator";
-import SimilarProperties from "@/components/business/property-details/similar-properties";
+import Amenities from "@/components/business/property-details/amenities";
 import ApprovedBankRequests from "@/components/business/property-details/approved-bank-requests";
-import { useRequest } from "ahooks";
+import ContactCard from "@/components/business/property-details/contact-card";
+import DetailsSection from "@/components/business/property-details/details-section";
+import Features from "@/components/business/property-details/features";
+import Gallery from "@/components/business/property-details/gallery";
+import HeaderBar from "@/components/business/property-details/header-bar";
+import PriceInfo from "@/components/business/property-details/price-info";
+import ProjectContent from "@/components/business/property-details/project-content";
+import SimilarProperties from "@/components/business/property-details/similar-properties";
 import propertyService from "@/share/service/property.service";
 import { useCurrencyStore } from "@/share/store/currency.store";
+import { useRequest } from "ahooks";
+import { Card, Col, Divider, Row, Spin } from "antd";
+import { useEffect } from "react";
 
 type Props = {
   propertyId: string;
@@ -44,7 +45,13 @@ export default function PropertyDetails({ propertyId }: Props) {
       refreshDeps: [currency],
     },
   );
-
+  useEffect(() => {
+    if (property?.id) {
+      propertyService.incrementPropertyView(property.id).catch((err) => {
+        console.error("Failed to increment view:", err);
+      });
+    }
+  }, [property?.id]);
   const allImages = [property?.mainImage, ...(property?.images ?? [])].filter(
     (img): img is string => {
       if (!img || typeof img !== "string") return false;
@@ -99,9 +106,9 @@ export default function PropertyDetails({ propertyId }: Props) {
         coordinates={
           property.location
             ? {
-                latitude: property.location.latitude,
-                longitude: property.location.longitude,
-              }
+              latitude: property.location.latitude,
+              longitude: property.location.longitude,
+            }
             : null
         }
       />
@@ -183,11 +190,11 @@ export default function PropertyDetails({ propertyId }: Props) {
             owner={
               property.owner
                 ? {
-                    ...property.owner,
-                    isBroker:
-                      property.owner.role?.name?.toLowerCase() === "broker",
-                    image: property.owner.avatarUrl ?? property.owner.image,
-                  }
+                  ...property.owner,
+                  isBroker:
+                    property.owner.role?.name?.toLowerCase() === "broker",
+                  image: property.owner.avatarUrl ?? property.owner.image,
+                }
                 : null
             }
             onShare={handleShare}
