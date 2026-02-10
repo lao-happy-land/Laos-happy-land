@@ -410,7 +410,6 @@ const Properties = ({ transaction }: PropertiesProps) => {
           perPage: 200,
           ...getPropertyParamsByLocale(locale as SupportedLocale),
         };
-
         if (debouncedKeyword?.trim()) apiParams.keyword = debouncedKeyword;
         if (minPrice && minPrice !== "0") apiParams.minPrice = parseInt(minPrice);
         if (maxPrice && maxPrice !== "" && parseInt(maxPrice) !== maxPriceValue) apiParams.maxPrice = parseInt(maxPrice);
