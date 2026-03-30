@@ -1,15 +1,13 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform, Type } from 'class-transformer';
 import {
+  IsIn,
+  IsInt,
+  IsNumber,
   IsOptional,
   IsString,
-  IsNumber,
-  IsInt,
-  IsBoolean,
   Min,
-  Max,
-  IsIn,
 } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
 import { PageOptionsDto } from 'src/common/dtos/pageOption';
 import { PropertyStatusEnum, TransactionEnum } from 'src/common/enum/enum';
 
@@ -22,7 +20,19 @@ export class GetPropertiesFilterDto extends PageOptionsDto {
   @IsString({ each: true })
   @Transform(({ value }) => value.split(',').map((v: string) => v.trim()))
   type?: string[];
-
+  @ApiPropertyOptional({
+    description:
+      'Tên “strict” (cấp nhỏ hơn) trong LocationInfo (có thể truyền nhiều, cách nhau dấu phẩy)',
+    example: 'District 1,District 2',
+  })
+  @IsOptional()
+  @IsString({ each: true })
+  @Transform(({ value }) =>
+    typeof value === 'string'
+      ? value.split(',').map((v: string) => v.trim())
+      : value,
+  )
+  strict?: string[];
   @ApiPropertyOptional({
     description: 'ID của location',
   })
@@ -99,6 +109,14 @@ export class GetPropertiesFilterDto extends PageOptionsDto {
   @IsOptional()
   @IsString()
   location?: string;
+
+  @ApiPropertyOptional({
+    description: 'Lọc theo huyện/quận (district) trong property.location',
+    example: 'Xaysetha',
+  })
+  @IsOptional()
+  @IsString()
+  district?: string;
 
   @ApiPropertyOptional({
     description: 'Trạng thái bán/cho thuê',

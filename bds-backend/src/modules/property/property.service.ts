@@ -343,6 +343,17 @@ export class PropertyService {
       );
     }
 
+    if (params.district) {
+      properties.andWhere(`property.location ->> 'district' ILIKE :district`, {
+        district: `%${params.district}%`,
+      });
+    }
+
+    if (params.strict?.length) {
+      properties.andWhere('locationInfo.strict && :strict', {
+        strict: params.strict,
+      });
+    }
     if (params.transaction) {
       properties.andWhere('property.transactionType = :transactionType', {
         transactionType: params.transaction,
