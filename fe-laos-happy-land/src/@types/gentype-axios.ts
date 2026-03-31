@@ -736,7 +736,6 @@ export class HttpClient<SecurityDataType = unknown> {
     if (this.injectHeaders) {
       headers = await this.injectHeaders(headers);
     }
-
     return this.instance.request({
       ...requestParams,
       headers,
@@ -1100,6 +1099,8 @@ export class Api<
         type?: string;
         /** ID của location */
         locationId?: string;
+        /** Quận/huyện */
+        district?: string;
         /** Từ khóa tìm kiếm tiêu đề/mô tả */
         keyword?: string;
         /** Giá tối thiểu */

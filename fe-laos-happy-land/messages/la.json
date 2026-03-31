@@ -1547,7 +1547,9 @@
     "yearsExperience": "ປີປະສົບການ"
   },
   "search": {
+    "selectArea": "ເລືອກ ຄູ້ມ/ເມືອງ",
     "allAreas": "ທຸກພື້ນທີ່",
+    "allDistricts": "ທຸກ ຄູ້ມ/ເມືອງ",
     "allLocations": "ທຸກພື້ນທີ່",
     "allLocationsDescription": "ເລືອກຈາກລາຍການທັງໝົດ",
     "amenities": "ສິ່ງອຳນວຍຄວາມສະດວກ",

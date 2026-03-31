@@ -1543,7 +1543,9 @@
     "yearsExperience": "năm kinh nghiệm"
   },
   "search": {
+    "selectArea": "Chọn Quận/Huyện",
     "allAreas": "Tất cả khu vực",
+    "allDistricts": "Tất cả Quận/Huyện",
     "allLocations": "Tất cả khu vực",
     "allLocationsDescription": "Chọn từ danh sách đầy đủ",
     "amenities": "Tiện ích",

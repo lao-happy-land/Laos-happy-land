@@ -12,6 +12,7 @@ const propertyService = {
     perPage?: number;
     type?: string;
     locationId?: string;
+    district?: string;
     keyword?: string;
     minPrice?: number;
     maxPrice?: number;

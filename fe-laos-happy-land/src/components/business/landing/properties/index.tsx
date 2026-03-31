@@ -22,6 +22,7 @@ import {
   Modal,
   Pagination,
   Radio,
+  Select,
   Slider,
   Spin,
   Typography,
@@ -77,10 +78,17 @@ const Properties = ({ transaction }: PropertiesProps) => {
     [],
   );
   const [selectedLocation, setSelectedLocation] = useState("all");
+  const [selectedDistrict, setSelectedDistrict] = useState<string | undefined>(
+    undefined,
+  );
   const [locationInfos, setLocationInfos] = useState<LocationInfo[]>([]);
   const [trendingLocations, setTrendingLocations] = useState<LocationInfo[]>(
     [],
   );
+
+  useEffect(() => {
+    setSelectedDistrict(undefined);
+  }, [selectedLocation]);
   const [keyword, setKeyword] = useState("");
   const [debouncedKeyword, setDebouncedKeyword] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -313,10 +321,15 @@ const Properties = ({ transaction }: PropertiesProps) => {
         apiParams.locationId = selectedLocation;
       }
 
+      if (selectedDistrict && selectedDistrict !== "all") {
+        apiParams.district = selectedDistrict;
+      }
+
       if (selectedPropertyTypes.length > 0) {
         apiParams.type = selectedPropertyTypes.join(",");
       }
 
+      console.log("fetchProperties params:", apiParams);
       const response = await propertyService.getProperties(apiParams);
       return response as unknown as APIResponse<Property[]>;
     },
@@ -345,6 +358,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
     minArea,
     maxArea,
     selectedLocation,
+    selectedDistrict,
     fetchProperties,
     isInitialLoad,
     currency, // Refetch when currency changes
@@ -416,8 +430,10 @@ const Properties = ({ transaction }: PropertiesProps) => {
         if (minArea && minArea !== "0") apiParams.minArea = parseInt(minArea);
         if (maxArea && maxArea !== "" && parseInt(maxArea) !== 10000) apiParams.maxArea = parseInt(maxArea);
         if (selectedLocation && selectedLocation !== "all") apiParams.locationId = selectedLocation;
+        if (selectedDistrict && selectedDistrict !== "all") apiParams.district = selectedDistrict;
         if (selectedPropertyTypes.length > 0) apiParams.type = selectedPropertyTypes.join(",");
 
+        console.log("loadMapProperties params:", apiParams);
         const resp = await propertyService.getProperties(apiParams);
         if (mounted) setAllMapProperties(resp?.data ?? []);
       } catch (err) {
@@ -444,6 +460,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
     minArea,
     maxArea,
     selectedLocation,
+    selectedDistrict,
     selectedPropertyTypes,
     total,
     locale,
@@ -496,6 +513,10 @@ const Properties = ({ transaction }: PropertiesProps) => {
     "all",
     ...locationInfos.map((locationInfo) => locationInfo.id),
   ];
+
+  const selectedLocationInfo = locationInfos.find(
+    (locationInfo) => locationInfo.id === selectedLocation,
+  );
 
   // Generate property type options from API data
 
@@ -1533,6 +1554,10 @@ const Properties = ({ transaction }: PropertiesProps) => {
       }
     }
 
+    if (selectedDistrict) {
+      filters.push(selectedDistrict);
+    }
+
     if (selectedPropertyTypes.length > 0) {
       const typeNames = selectedPropertyTypes
         .map((typeId) => {
@@ -1686,13 +1711,21 @@ const Properties = ({ transaction }: PropertiesProps) => {
               </div>
 
               {/* Location Selector */}
-              <div className="lg:col-span-2">
+              <div className="col-span-3 grid-col-2 grid md:grid-cols-3 gap-2 ">
                 <Button
                   size="middle"
                   ref={locationButtonRef}
                   onClick={handleLocationClick}
-                  className="flex h-12 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 shadow-sm transition-all duration-200 hover:border-red-300 hover:bg-red-50"
-
+                  className={`
+    flex h-12 w-full items-center justify-between rounded-xl
+    border border-gray-200 bg-white px-4 shadow-sm
+    transition-all duration-200
+    hover:border-red-300 hover:bg-red-50
+    ${selectedLocation == "all"
+                      ? "col-span-2"
+                      : ""
+                    }
+  `}
                 >
                   <div className="flex items-center gap-3 lg:gap-1 2xl:gap-3">
                     <MapPin className="h-4 w-4 lg:h-3 lg:w-3 2xl:h-4 2xl:w-4 text-gray-500" />
@@ -1705,18 +1738,39 @@ const Properties = ({ transaction }: PropertiesProps) => {
                   </div>
                   <ChevronRight size={16} className="rotate-90 text-gray-400" />
                 </Button>
+                {selectedLocation !== "all" && selectedLocationInfo?.strict?.length ? (
+                  <Select
+                    allowClear
+                    value={selectedDistrict}
+                    placeholder={t("search.selectArea")}
+                    onChange={(value) => setSelectedDistrict(value)}
+                    options={[
+                      {
+                        value: "all",
+                        label: t("search.allDistricts"),
+                      },
+                      ...selectedLocationInfo.strict.map((strict) => ({
+                        value: strict,
+                        label: strict,
+                      })),
+                    ]}
+                    size="middle"
+                    className="w-full text-xs text-center"
+                  />
+                ) : null}
+                {/* Search Button */}
+                <Button
+                  type="primary"
+                  size="middle"
+                  onClick={handleSearch}
+                  className="h-12 col-span-2 md:col-span-1 rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-8 font-semibold shadow-lg transition-all duration-200 hover:from-red-600 hover:to-red-700 hover:shadow-xl"
+                >
+                  <Search className="hidden h-4 w-4 lg:h-3 lg:w-3 2xl:h-5 2xl:w-5 lg:block" />
+                  <span className="lg:text-xs 2xl:text-sm">{t("common.search")}</span>
+                </Button>
               </div>
 
-              {/* Search Button */}
-              <Button
-                type="primary"
-                size="middle"
-                onClick={handleSearch}
-                className="h-12 rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-8 font-semibold shadow-lg transition-all duration-200 hover:from-red-600 hover:to-red-700 hover:shadow-xl"
-              >
-                <Search className="hidden h-4 w-4 lg:h-3 lg:w-3 2xl:h-5 2xl:w-5 lg:block" />
-                <span className="lg:text-xs 2xl:text-sm">{t("common.search")}</span>
-              </Button>
+
             </div>
 
             {/* Filter Row */}
