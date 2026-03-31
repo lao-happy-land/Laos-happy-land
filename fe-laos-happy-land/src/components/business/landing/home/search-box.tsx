@@ -1790,7 +1790,15 @@ const SearchBox = () => {
                             <Input
                               placeholder={t("search.to")}
                               className="rounded-lg"
-                              value={priceRange[1]}
+                              defaultValue={
+                                currency === "USD"
+                                  ? 10000000
+                                  : currency === "LAK"
+                                    ? 20000000000
+                                    : currency === "THB"
+                                      ? 20000000000
+                                      : 200000000000
+                              }
                               onChange={(e) =>
                                 handleMaxPriceInputChange(
                                   parseInt(e.target.value),
@@ -1806,7 +1814,7 @@ const SearchBox = () => {
                             handlePriceRangeChange(value as [number, number])
                           }
                           min={0}
-                          step={1000000}
+                          step={100}
                           tooltip={{
                             formatter: (value?: number) => {
                               if (typeof value !== "number") return "";

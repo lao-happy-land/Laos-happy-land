@@ -1550,7 +1550,9 @@
     "yearsExperience": "years experience"
   },
   "search": {
+    "selectArea": "Select District",
     "allAreas": "All areas",
+    "allDistricts": "All districts",
     "allLocations": "All Locations",
     "allLocationsDescription": "Select from full list",
     "amenities": "Amenities",

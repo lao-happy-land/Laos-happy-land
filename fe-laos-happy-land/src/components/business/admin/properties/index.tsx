@@ -1,55 +1,55 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
-import { useRequest } from "ahooks";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import type {
+  LocationInfo,
+  Property,
+  PropertyType,
+  User,
+} from "@/@types/types";
+import { formatLocation } from "@/share/helper/format-location";
 import {
-  Table,
+  getLangByLocale,
+  getPropertyParamsByLocale,
+  getValidLocale,
+} from "@/share/helper/locale.helper";
+import { numberToString } from "@/share/helper/number-to-string";
+import locationInfoService from "@/share/service/location-info.service";
+import propertyTypeService from "@/share/service/property-type.service";
+import propertyService from "@/share/service/property.service";
+import { useCurrencyStore } from "@/share/store/currency.store";
+import { useUrlLocale } from "@/utils/locale";
+import { useRequest } from "ahooks";
+import {
+  App,
   Button,
-  Input,
-  Tag,
-  Space,
   Card,
-  Typography,
-  Row,
   Col,
   Empty,
-  Tooltip,
+  Form,
+  Input,
+  Row,
   Select,
   Slider,
-  Form,
-  App,
+  Space,
+  Table,
+  Tag,
+  Tooltip,
+  Typography,
 } from "antd";
 import {
+  AlertTriangle,
+  CheckCircle,
+  Eye,
+  Filter,
   Plus,
   Search,
   Trash2,
-  Eye,
-  CheckCircle,
-  Filter,
   X,
-  AlertTriangle,
 } from "lucide-react";
-import propertyService from "@/share/service/property.service";
-import propertyTypeService from "@/share/service/property-type.service";
-import locationInfoService from "@/share/service/location-info.service";
-import type {
-  Property,
-  User,
-  PropertyType,
-  LocationInfo,
-} from "@/@types/types";
-import { numberToString } from "@/share/helper/number-to-string";
-import { formatLocation } from "@/share/helper/format-location";
 import { useTranslations } from "next-intl";
-import { useUrlLocale } from "@/utils/locale";
-import {
-  getPropertyParamsByLocale,
-  getValidLocale,
-  getLangByLocale,
-} from "@/share/helper/locale.helper";
-import { useCurrencyStore } from "@/share/store/currency.store";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -71,6 +71,7 @@ const AdminProperties = () => {
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedTransactionType, setSelectedTransactionType] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
+  const [selectedDistrict, setSelectedDistrict] = useState("all");
   const [priceRange, setPriceRange] = useState<[number, number]>([
     0, 100000000000,
   ]);
@@ -83,6 +84,52 @@ const AdminProperties = () => {
   const [total, setTotal] = useState(0);
 
   const locale = useUrlLocale();
+  const selectedLocationInfo = locationInfos.find(
+    (location) => location.id === selectedLocation,
+  );
+
+  // Get max price based on currency and transaction type
+  const getMaxPrice = (currency: string, transactionType: string) => {
+    if (currency === "USD") {
+      return transactionType === "sale" || transactionType === "project"
+        ? 5000000
+        : 100000;
+    } else if (currency === "LAK") {
+      return transactionType === "sale" || transactionType === "project"
+        ? 100000000000
+        : 2000000000;
+    } else if (currency === "VND") {
+      return transactionType === "sale" || transactionType === "project"
+        ? 100000000000
+        : 2000000000;
+    } else if (currency === "THB") {
+      return transactionType === "sale" || transactionType === "project"
+        ? 150000000
+        : 2000000;
+    }
+    return 100000000000; // Default fallback
+  };
+
+  // Calculate max price for current currency and transaction type
+  const maxPriceValue = useMemo(
+    () => getMaxPrice(currency, selectedTransactionType === "all" ? "sale" : selectedTransactionType),
+    [currency, selectedTransactionType],
+  );
+
+  // Get appropriate step size based on max price
+  const priceStep = useMemo(() => {
+    if (maxPriceValue >= 10000000000) {
+      return 100000000; // 100M for very large values (LAK, VND)
+    } else if (maxPriceValue >= 1000000000) {
+      return 10000000; // 10M for large values
+    } else if (maxPriceValue >= 100000000) {
+      return 1000000; // 1M for medium-large values (THB)
+    } else if (maxPriceValue >= 1000000) {
+      return 100000; // 100K for medium values
+    } else {
+      return 1000; // 1K for smaller values (USD rent)
+    }
+  }, [maxPriceValue]);
 
   // Fetch property types
   const { loading: propertyTypesLoading, run: fetchPropertyTypes } = useRequest(
@@ -185,6 +232,7 @@ const AdminProperties = () => {
         minPrice?: number;
         maxPrice?: number;
         locationId?: string;
+        district?: string;
         transaction?: "rent" | "sale" | "project";
         status?: "pending" | "approved" | "rejected";
         page?: number;
@@ -218,11 +266,15 @@ const AdminProperties = () => {
         params.locationId = selectedLocation;
       }
 
+      if (selectedDistrict !== "all") {
+        params.district = selectedDistrict;
+      }
+
       if (priceRange[0] > 0) {
         params.minPrice = priceRange[0];
       }
 
-      if (priceRange[1] < 100000000000) {
+      if (priceRange[1] < maxPriceValue) {
         params.maxPrice = priceRange[1];
       }
 
@@ -268,8 +320,9 @@ const AdminProperties = () => {
     if (selectedTransactionType !== "all")
       params.transaction = selectedTransactionType;
     if (selectedLocation !== "all") params.locationId = selectedLocation;
+    if (selectedDistrict !== "all") params.district = selectedDistrict;
     if (priceRange[0] > 0) params.minPrice = priceRange[0];
-    if (priceRange[1] < 100000000000) params.maxPrice = priceRange[1];
+    if (priceRange[1] < maxPriceValue) params.maxPrice = priceRange[1];
 
     updateSearchParams(params);
     message.success(t("admin.searching"));
@@ -281,7 +334,8 @@ const AdminProperties = () => {
     setSelectedStatus("all");
     setSelectedTransactionType("all");
     setSelectedLocation("all");
-    setPriceRange([0, 100000000000]);
+    setSelectedDistrict("all");
+    setPriceRange([0, maxPriceValue]);
     form.resetFields();
     router.push(pathname);
   };
@@ -307,7 +361,16 @@ const AdminProperties = () => {
 
   const handleLocationChange = (location: string) => {
     setSelectedLocation(location);
-    updateSearchParams({ locationId: location === "all" ? "" : location });
+    setSelectedDistrict("all");
+    updateSearchParams({
+      locationId: location === "all" ? "" : location,
+      district: "",
+    });
+  };
+
+  const handleDistrictChange = (district: string) => {
+    setSelectedDistrict(district);
+    updateSearchParams({ district: district === "all" ? "" : district });
   };
 
   const handlePriceRangeChange = (range: number | number[]) => {
@@ -340,6 +403,7 @@ const AdminProperties = () => {
     const urlStatus = searchParams.get("status") ?? "all";
     const urlTransactionType = searchParams.get("transaction") ?? "all";
     const urlLocation = searchParams.get("locationId") ?? "all";
+    const urlDistrict = searchParams.get("district") ?? "all";
     const urlMinPrice = parseInt(searchParams.get("minPrice") ?? "0");
     const urlMaxPrice = parseInt(
       searchParams.get("maxPrice") ?? "100000000000",
@@ -352,6 +416,7 @@ const AdminProperties = () => {
     setSelectedStatus(urlStatus);
     setSelectedTransactionType(urlTransactionType);
     setSelectedLocation(urlLocation);
+    setSelectedDistrict(urlDistrict);
     setPriceRange([urlMinPrice, urlMaxPrice]);
     setCurrentPage(urlPage);
     setPageSize(urlPageSize);
@@ -369,6 +434,7 @@ const AdminProperties = () => {
     priceRange,
     currentPage,
     pageSize,
+    selectedDistrict,
     fetchProperties,
     currency, // Refetch when currency changes
   ]);
@@ -461,6 +527,7 @@ const AdminProperties = () => {
     if (selectedStatus !== "all") count++;
     if (selectedTransactionType !== "all") count++;
     if (selectedLocation !== "all") count++;
+    if (selectedDistrict !== "all") count++;
     if (priceRange[0] > 0 || priceRange[1] < 100000000000) count++;
     return count;
   };
@@ -505,7 +572,7 @@ const AdminProperties = () => {
       };
       filters.push(
         transactionMap[
-          selectedTransactionType as keyof typeof transactionMap
+        selectedTransactionType as keyof typeof transactionMap
         ] || selectedTransactionType,
       );
     }
@@ -515,6 +582,10 @@ const AdminProperties = () => {
         (location) => location.id === selectedLocation,
       )?.name;
       filters.push(locationName ?? selectedLocation);
+    }
+
+    if (selectedDistrict !== "all") {
+      filters.push(selectedDistrict);
     }
 
     if (priceRange[0] > 0 || priceRange[1] < 100000000000) {
@@ -608,7 +679,7 @@ const AdminProperties = () => {
           <div className="mt-6 border-t border-gray-100 pt-6">
             <Form form={form} layout="vertical">
               <div
-                className={`grid grid-cols-1 gap-6 md:grid-cols-${selectedTransactionType === "all" ? "4" : "5"}`}
+                className={`grid grid-cols-1 gap-6 md:grid-cols-3`}
               >
                 <Form.Item label={t("admin.transactionType")}>
                   <Select
@@ -664,8 +735,8 @@ const AdminProperties = () => {
                     <Slider
                       range
                       min={0}
-                      max={100000000000}
-                      step={100000000}
+                      max={maxPriceValue}
+                      step={priceStep}
                       value={priceRange}
                       onChange={handlePriceRangeChange}
                     />
@@ -675,7 +746,7 @@ const AdminProperties = () => {
                       </span>
                       <span>-</span>
                       <span>
-                        {numberToString(priceRange[1], locale, currency)}{" "}
+                        {numberToString(maxPriceValue, locale, currency)}{" "}
                       </span>
                     </div>
                   </div>
@@ -697,6 +768,24 @@ const AdminProperties = () => {
                     ))}
                   </Select>
                 </Form.Item>
+
+                {selectedLocation !== "all" && selectedLocationInfo?.strict?.length ? (
+                  <Form.Item label={t("search.selectArea")}>
+                    <Select
+                      placeholder={t("search.selectArea")}
+                      value={selectedDistrict}
+                      onChange={handleDistrictChange}
+                      loading={locationInfosLoading}
+                    >
+                      <Option value="all">{t("search.allDistricts")}</Option>
+                      {selectedLocationInfo.strict.map((strict) => (
+                        <Option key={strict} value={strict}>
+                          {strict}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                ) : null}
               </div>
 
               <div className="flex justify-end gap-2">
@@ -712,201 +801,199 @@ const AdminProperties = () => {
         )}
       </Card>
 
-      <Card style={{ marginTop: 16 }}>
-        <Table
-          dataSource={properties}
-          loading={loading}
-          rowKey="id"
-          pagination={{
-            position: ["bottomCenter"],
-            total: total,
-            pageSize: pageSize,
-            current: currentPage,
-            showSizeChanger: true,
-            onChange: (page, pageSize) => {
-              setCurrentPage(page);
-              setPageSize(pageSize);
-            },
-            showTotal: (total, range) =>
-              `${range[0]}-${range[1]} ${t("admin.of")} ${total} ${t("admin.properties")}`,
-          }}
-          scroll={{ x: 1000 }}
-          locale={{
-            emptyText: (
-              <Empty
-                description={t("admin.noProperties")}
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-              />
+      <Table
+        dataSource={properties}
+        loading={loading}
+        rowKey="id"
+        pagination={{
+          position: ["bottomCenter"],
+          total: total,
+          pageSize: pageSize,
+          current: currentPage,
+          showSizeChanger: true,
+          onChange: (page, pageSize) => {
+            setCurrentPage(page);
+            setPageSize(pageSize);
+          },
+          showTotal: (total, range) =>
+            `${range[0]}-${range[1]} ${t("admin.of")} ${total} ${t("admin.properties")}`,
+        }}
+        scroll={{ x: 1000 }}
+        locale={{
+          emptyText: (
+            <Empty
+              description={t("admin.noProperties")}
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
+          ),
+        }}
+        columns={[
+          {
+            title: "ID",
+            dataIndex: "code",
+            key: "code",
+            width: 80,
+            fixed: "left",
+            render: (code: string) => (
+              <Text className="font-mono text-xs text-gray-600">
+                {code.slice(0, 8)}
+              </Text>
             ),
-          }}
-          columns={[
-            {
-              title: "ID",
-              dataIndex: "code",
-              key: "code",
-              width: 80,
-              fixed: "left",
-              render: (code: string) => (
-                <Text className="font-mono text-xs text-gray-600">
-                  {code.slice(0, 8)}
-                </Text>
-              ),
-            },
-            {
-              title: t("admin.property"),
-              dataIndex: "title",
-              key: "title",
-              fixed: "left",
-              width: 340,
-              render: (title: string, property: Property) => (
-                <div className="flex items-start gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="line-clamp-2 text-sm font-medium text-gray-900">
-                      {title}
-                    </div>
-                    <div className="mt-1 text-sm text-gray-500">
-                      📍 {formatLocation(property, t("admin.noAddress"))}
-                    </div>
+          },
+          {
+            title: t("admin.property"),
+            dataIndex: "title",
+            key: "title",
+            fixed: "left",
+            width: 340,
+            render: (title: string, property: Property) => (
+              <div className="flex items-start gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="line-clamp-2 text-sm font-medium text-gray-900">
+                    {title}
+                  </div>
+                  <div className="mt-1 text-sm text-gray-500">
+                    📍 {formatLocation(property, t("admin.noAddress"))}
                   </div>
                 </div>
-              ),
-            },
-            {
-              title: t("admin.owner"),
-              dataIndex: "owner",
-              key: "owner",
-              width: 160,
-              render: (owner: User | string) => (
-                <Tag color="blue">
-                  {typeof owner === "string"
-                    ? owner
-                    : (owner?.fullName ?? t("admin.unknown"))}
-                </Tag>
-              ),
-            },
-            {
-              title: t("admin.propertyType"),
-              dataIndex: "type",
-              key: "type",
-              width: 180,
-              render: (
-                type: { id: string; name: string } | null | undefined,
-              ) => <Tag color="blue">{type?.name ?? t("admin.unknown")}</Tag>,
-            },
-            {
-              title: t("property.price"),
-              dataIndex: "price",
-              key: "price",
-              width: 150,
-              render: (price: string) =>
-                price
-                  ? `${numberToString(Number(price), locale, currency)}`
-                  : t("admin.negotiable"),
-            },
-            {
-              title: t("property.status"),
-              dataIndex: "status",
-              key: "status",
-              width: 80,
-              render: (status: "pending" | "approved" | "rejected") => (
-                <Tag
-                  color={
-                    status === "approved"
-                      ? "green"
-                      : status === "pending"
-                        ? "orange"
-                        : "red"
-                  }
-                >
-                  {status === "approved"
-                    ? t("admin.approved")
+              </div>
+            ),
+          },
+          {
+            title: t("admin.owner"),
+            dataIndex: "owner",
+            key: "owner",
+            width: 160,
+            render: (owner: User | string) => (
+              <Tag color="blue">
+                {typeof owner === "string"
+                  ? owner
+                  : (owner?.fullName ?? t("admin.unknown"))}
+              </Tag>
+            ),
+          },
+          {
+            title: t("admin.propertyType"),
+            dataIndex: "type",
+            key: "type",
+            width: 180,
+            render: (
+              type: { id: string; name: string } | null | undefined,
+            ) => <Tag color="blue">{type?.name ?? t("admin.unknown")}</Tag>,
+          },
+          {
+            title: t("property.price"),
+            dataIndex: "price",
+            key: "price",
+            width: 150,
+            render: (price: string) =>
+              price
+                ? `${numberToString(Number(price), locale, currency)}`
+                : t("admin.negotiable"),
+          },
+          {
+            title: t("property.status"),
+            dataIndex: "status",
+            key: "status",
+            width: 80,
+            render: (status: "pending" | "approved" | "rejected") => (
+              <Tag
+                color={
+                  status === "approved"
+                    ? "green"
                     : status === "pending"
-                      ? t("admin.pending")
-                      : t("admin.rejected")}
-                </Tag>
-              ),
-            },
-            {
-              title: <div className="capitalize">{t("property.views")}</div>,
-              dataIndex: "viewsCount",
-              key: "viewsCount",
-              width: 100,
-              align: "center",
-              render: (count: number) => count || 0,
-            },
-            {
-              title: t("property.createdAt"),
-              dataIndex: "createdAt",
-              key: "createdAt",
-              width: 80,
-              render: (date: string) => {
-                try {
-                  return new Date(date).toLocaleDateString("vi-VN", {
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit",
-                  });
-                } catch {
-                  return t("common.invalidDate");
+                      ? "orange"
+                      : "red"
                 }
-              },
+              >
+                {status === "approved"
+                  ? t("admin.approved")
+                  : status === "pending"
+                    ? t("admin.pending")
+                    : t("admin.rejected")}
+              </Tag>
+            ),
+          },
+          {
+            title: <div className="capitalize">{t("property.views")}</div>,
+            dataIndex: "viewsCount",
+            key: "viewsCount",
+            width: 100,
+            align: "center",
+            render: (count: number) => count || 0,
+          },
+          {
+            title: t("property.createdAt"),
+            dataIndex: "createdAt",
+            key: "createdAt",
+            width: 80,
+            render: (date: string) => {
+              try {
+                return new Date(date).toLocaleDateString("vi-VN", {
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                });
+              } catch {
+                return t("common.invalidDate");
+              }
             },
-            {
-              title: t("admin.actions"),
-              key: "actions",
-              width: 120,
-              render: (_: unknown, property: Property) => (
-                <Space size="small">
-                  <Tooltip title={t("admin.viewEditProperty")}>
-                    <Link href={`/${locale}/admin/properties/${property.id}`}>
+          },
+          {
+            title: t("admin.actions"),
+            key: "actions",
+            width: 120,
+            render: (_: unknown, property: Property) => (
+              <Space size="small">
+                <Tooltip title={t("admin.viewEditProperty")}>
+                  <Link href={`/${locale}/admin/properties/${property.id}`}>
+                    <button
+                      type="button"
+                      className="rounded-md bg-blue-50 p-2 text-blue-500 hover:bg-blue-100 hover:text-blue-700"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
+                  </Link>
+                </Tooltip>
+
+                <Tooltip title={t("admin.deleteProperty")}>
+                  <button
+                    type="button"
+                    className="rounded-md bg-red-50 p-2 text-red-500 hover:bg-red-100 hover:text-red-700"
+                    onClick={() => handleDelete(property)}
+                    disabled={deleting}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </Tooltip>
+
+                {property.status === "pending" && (
+                  <>
+                    <Tooltip title={t("admin.approveProperty")}>
                       <button
                         type="button"
                         className="rounded-md bg-blue-50 p-2 text-blue-500 hover:bg-blue-100 hover:text-blue-700"
+                        onClick={() => handleApprove(property)}
                       >
-                        <Eye className="h-4 w-4" />
+                        <CheckCircle className="h-4 w-4" />
                       </button>
-                    </Link>
-                  </Tooltip>
-
-                  <Tooltip title={t("admin.deleteProperty")}>
-                    <button
-                      type="button"
-                      className="rounded-md bg-red-50 p-2 text-red-500 hover:bg-red-100 hover:text-red-700"
-                      onClick={() => handleDelete(property)}
-                      disabled={deleting}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </Tooltip>
-
-                  {property.status === "pending" && (
-                    <>
-                      <Tooltip title={t("admin.approveProperty")}>
-                        <button
-                          type="button"
-                          className="rounded-md bg-blue-50 p-2 text-blue-500 hover:bg-blue-100 hover:text-blue-700"
-                          onClick={() => handleApprove(property)}
-                        >
-                          <CheckCircle className="h-4 w-4" />
-                        </button>
-                      </Tooltip>
-                      <Tooltip title={t("admin.rejectProperty")}>
-                        <button
-                          type="button"
-                          className="rounded-md bg-red-50 p-2 text-red-500 hover:bg-red-100 hover:text-red-700"
-                          onClick={() => handleReject(property)}
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </Tooltip>
-                    </>
-                  )}
-                </Space>
-              ),
-            },
-          ]}
-        />
-      </Card>
+                    </Tooltip>
+                    <Tooltip title={t("admin.rejectProperty")}>
+                      <button
+                        type="button"
+                        className="rounded-md bg-red-50 p-2 text-red-500 hover:bg-red-100 hover:text-red-700"
+                        onClick={() => handleReject(property)}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </Tooltip>
+                  </>
+                )}
+              </Space>
+            ),
+          },
+        ]}
+      />
     </div>
   );
 };
