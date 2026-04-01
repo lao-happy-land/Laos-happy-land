@@ -101,6 +101,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
 
   const [priceRangeOpen, setPriceRangeOpen] = useState(false);
   const [propertyTypeOpen, setPropertyTypeOpen] = useState(false);
+  const [districtModalOpen, setDistrictModalOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [areaOpen, setAreaOpen] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
@@ -1184,6 +1185,22 @@ const Properties = ({ transaction }: PropertiesProps) => {
     });
   };
 
+  const handleSelectedDistrict = (district: string) => {
+    let newSelectedDistrict: string | undefined;
+
+    if (district === "all") {
+      newSelectedDistrict = selectedDistrict === "all" ? undefined : "all";
+    } else {
+      newSelectedDistrict = selectedDistrict === district ? undefined : district;
+    }
+
+    setSelectedDistrict(newSelectedDistrict);
+
+    updateSearchParams({
+      district: newSelectedDistrict ?? "",
+    });
+  };
+
   const handlePriceRangeSelection = (rangeValue: string) => {
     setSelectedPriceRange(rangeValue);
 
@@ -1391,6 +1408,13 @@ const Properties = ({ transaction }: PropertiesProps) => {
   const togglePropertyTypeModal = () => {
     setPropertyTypeOpen(!propertyTypeOpen);
     setPriceRangeOpen(false);
+    setAreaOpen(false);
+  };
+
+  const toggleDistrictModal = () => {
+    setDistrictModalOpen(!districtModalOpen);
+    setPriceRangeOpen(false);
+    setPropertyTypeOpen(false);
     setAreaOpen(false);
   };
 
@@ -1739,24 +1763,47 @@ const Properties = ({ transaction }: PropertiesProps) => {
                   <ChevronRight size={16} className="rotate-90 text-gray-400" />
                 </Button>
                 {selectedLocation !== "all" && selectedLocationInfo?.strict?.length ? (
-                  <Select
-                    allowClear
-                    value={selectedDistrict}
-                    placeholder={t("search.selectArea")}
-                    onChange={(value) => setSelectedDistrict(value)}
-                    options={[
-                      {
-                        value: "all",
-                        label: t("search.allDistricts"),
-                      },
-                      ...selectedLocationInfo.strict.map((strict) => ({
-                        value: strict,
-                        label: strict,
-                      })),
-                    ]}
-                    size="middle"
-                    className="w-full text-xs text-center"
-                  />
+                  isMobile ? (
+                    <Button
+                      onClick={toggleDistrictModal}
+                      className="filter-dropdown-button flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-2 shadow-sm transition-all duration-200 hover:border-red-300 hover:bg-red-50"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-100">
+                          <span className="text-xs">📍</span>
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">
+                          {selectedDistrict && selectedDistrict !== "all"
+                            ? selectedDistrict
+                            : t("search.selectArea")}
+                        </span>
+                      </div>
+                      <ChevronRight
+                        size={16}
+                        className={`text-gray-400 transition-transform duration-200 ${districtModalOpen ? "rotate-90" : ""
+                          }`}
+                      />
+                    </Button>
+                  ) : (
+                    <Select
+                      allowClear
+                      value={selectedDistrict}
+                      placeholder={`📍 ${t("search.selectArea")}`}
+                      onChange={(value) => setSelectedDistrict(value)}
+                      options={[
+                        {
+                          value: "all",
+                          label: t("search.allDistricts"),
+                        },
+                        ...selectedLocationInfo.strict.map((strict) => ({
+                          value: strict,
+                          label: strict,
+                        })),
+                      ]}
+                      size="middle"
+                      className="w-full text-xs text-center"
+                    />
+                  )
                 ) : null}
                 {/* Search Button */}
                 <Button
@@ -1955,9 +2002,81 @@ const Properties = ({ transaction }: PropertiesProps) => {
                     )}
                   </div>
                 </Modal>
-              </div>
 
-              {/* Price Filter */}
+                {/* District Modal - Mobile */}
+                <Modal
+                  title={
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100">
+                        <span className="text-base">📍</span>
+                      </div>
+                      <span className="text-lg font-semibold">
+                        {t("search.selectArea")}
+                      </span>
+                    </div>
+                  }
+                  open={isMobile && districtModalOpen && selectedLocation !== "all" && !!selectedLocationInfo?.strict?.length}
+                  onCancel={() => setDistrictModalOpen(false)}
+                  footer={
+                    <div className="flex justify-between gap-3">
+                      <Button
+                        onClick={() => {
+                          setSelectedDistrict(undefined);
+                          updateSearchParams({
+                            district: "",
+                          });
+                        }}
+                        className="flex-1 text-gray-500 hover:text-red-500"
+                        size="large"
+                      >
+                        {t("common.reset")}
+                      </Button>
+                      <Button
+                        type="primary"
+                        onClick={() => setDistrictModalOpen(false)}
+                        className="flex-1 border-0 bg-red-500 hover:bg-red-600"
+                        size="large"
+                      >
+                        {t("common.apply")}
+                      </Button>
+                    </div>
+                  }
+                  centered
+                  width={400}
+                >
+                  <div className="max-h-[60vh] overflow-y-auto">
+                    <div className="space-y-2">
+                      <div
+                        className="flex cursor-pointer items-center gap-4 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 hover:border-red-200 hover:bg-red-50"
+                        onClick={() => handleSelectedDistrict("all")}
+                      >
+                        <Checkbox
+                          checked={selectedDistrict === "all"}
+                          className="text-red-500"
+                        />
+                        <span className="font-medium text-gray-700">
+                          {t("search.allDistricts")}
+                        </span>
+                      </div>
+                      {selectedLocationInfo?.strict?.map((district) => (
+                        <div
+                          key={district}
+                          className="flex cursor-pointer items-center gap-4 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 hover:border-red-200 hover:bg-red-50"
+                          onClick={() => handleSelectedDistrict(district)}
+                        >
+                          <Checkbox
+                            checked={selectedDistrict === district}
+                            className="text-red-500"
+                          />
+                          <span className="font-medium text-gray-700">
+                            {district}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </Modal>
+              </div>
               <div className="md:relative">
                 <Button
                   onClick={togglePriceRangeModal}
