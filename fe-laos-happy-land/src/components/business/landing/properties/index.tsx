@@ -1735,21 +1735,18 @@ const Properties = ({ transaction }: PropertiesProps) => {
               </div>
 
               {/* Location Selector */}
-              <div className="col-span-3 grid-col-2 grid md:grid-cols-3 gap-2 ">
+              <div className="col-span-3 flex flex-col gap-2 md:grid md:grid-cols-3">
                 <Button
                   size="middle"
                   ref={locationButtonRef}
                   onClick={handleLocationClick}
                   className={`
-    flex h-12 w-full items-center justify-between rounded-xl
-    border border-gray-200 bg-white px-4 shadow-sm
-    transition-all duration-200
-    hover:border-red-300 hover:bg-red-50
-    ${selectedLocation == "all"
-                      ? "col-span-2"
-                      : ""
-                    }
-  `}
+      flex h-12 w-full items-center justify-between rounded-xl
+      border border-gray-200 bg-white px-4 shadow-sm
+      transition-all duration-200
+      hover:border-red-300 hover:bg-red-50
+      ${selectedLocation === "all" ? "md:col-span-2" : ""}
+    `}
                 >
                   <div className="flex items-center gap-3 lg:gap-1 2xl:gap-3">
                     <MapPin className="h-4 w-4 lg:h-3 lg:w-3 2xl:h-4 2xl:w-4 text-gray-500" />
@@ -1810,7 +1807,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
                   type="primary"
                   size="middle"
                   onClick={handleSearch}
-                  className="h-12 col-span-2 md:col-span-1 rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-8 font-semibold shadow-lg transition-all duration-200 hover:from-red-600 hover:to-red-700 hover:shadow-xl"
+                  className="h-12 w-full md:col-span-1 rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-8 font-semibold shadow-lg transition-all duration-200 hover:from-red-600 hover:to-red-700 hover:shadow-xl"
                 >
                   <Search className="hidden h-4 w-4 lg:h-3 lg:w-3 2xl:h-5 2xl:w-5 lg:block" />
                   <span className="lg:text-xs 2xl:text-sm">{t("common.search")}</span>
