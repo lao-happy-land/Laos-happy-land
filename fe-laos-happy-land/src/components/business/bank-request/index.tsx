@@ -399,7 +399,7 @@ export default function BankRequestForm() {
                       <span>
                         {t("loanCalculator.selectBank")}{" "}
                         <Text type="secondary" style={{ fontSize: 12 }}>
-                          ({t("common.optional")})
+                          {t("common.optional")}
                         </Text>
                       </span>
                     }

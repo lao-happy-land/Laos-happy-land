@@ -3260,7 +3260,7 @@ const Properties = ({ transaction }: PropertiesProps) => {
           </div>
 
           <div className="text-sm lg:text-xs 2xl:text-sm text-gray-500">
-            {layout === "map" ? (allMapProperties?.length ?? 0) : (properties?.data?.length ?? 0)} {t("search.properties")}
+            {total} {t("search.properties")}
           </div>
         </div>
 
