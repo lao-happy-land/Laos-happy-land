@@ -1,16 +1,16 @@
 import "@/share/styles/globals.css";
 
-import { type Metadata } from "next";
-import { Be_Vietnam_Pro } from "next/font/google";
+import AuthProvider from "@/components/common/auth-provider";
+import LoadingScreen from "@/components/common/loading-screen";
+import TokenHandler from "@/components/common/token-handler";
 import AntdConfigProvider from "@/share/config/antd.config";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { App } from "antd";
-import { Suspense } from "react";
-import LoadingScreen from "@/components/common/loading-screen";
-import AuthProvider from "@/components/common/auth-provider";
+import { type Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
-import TokenHandler from "@/components/common/token-handler";
+import { Be_Vietnam_Pro } from "next/font/google";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Laohappyland.com - Happy platform for Lao property",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
       "Website property for Laos - Find houses, apartments, and real estate projects in Laos",
     images: [
       {
-        url: "/images/landingpage/hero-slider/hero-banner-1.jpg",
+        url: "/images/logo-fullname.png",
         width: 1200,
         height: 630,
         alt: "Laohappyland.com",
