@@ -23,7 +23,7 @@ export async function generateMetadata(
     title,
     description,
     keywords,
-    image = "/images/logo-fullname.png",
+    image = "/images/logo-metadata.png",
     url,
   } = options;
 
@@ -138,7 +138,7 @@ export async function generatePropertyMetadata(
   const image =
     property.images && property.images.length > 0
       ? property.images[0]
-      : "/images/logo-fullname.png";
+      : "/images/logo-metadata.png";
 
   return generateMetadata(
     {
@@ -173,7 +173,7 @@ export async function generateNewsMetadata(
   const image =
     news.images && news.images.length > 0
       ? news.images[0]
-      : "/images/logo-fullname.png";
+      : "/images/logo-metadata.png";
 
   return generateMetadata(
     {
@@ -207,7 +207,7 @@ export async function generateBrokerMetadata(
       title,
       description,
       keywords: `${localeMetadata.keywords}, ${broker.fullName}, môi giới bất động sản, broker`,
-      image: "/images/logo-fullname.png",
+      image: "/images/logo-metadata.png",
     },
     locale,
   );

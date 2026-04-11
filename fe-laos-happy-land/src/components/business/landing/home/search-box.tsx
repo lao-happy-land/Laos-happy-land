@@ -213,7 +213,7 @@ const SearchBox = () => {
 
   // Background images for carousel - use from settings or fallback to defaults
   const defaultImages = [
-    "/images/landingpage/hero-slider/logo-fullname.png",
+    "/images/landingpage/hero-slider/logo-metadata.png",
     "/images/landingpage/hero-slider/hero-banner-2.jpg",
     "/images/landingpage/hero-slider/hero-banner-3.jpg",
     "/images/landingpage/hero-slider/hero-banner-4.jpg",
