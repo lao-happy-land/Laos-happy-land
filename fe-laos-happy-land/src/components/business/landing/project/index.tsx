@@ -29,7 +29,7 @@ const ProjectPage = () => {
   });
 
   const backgroundImages = [
-    "/images/landingpage/hero-slider/hero-banner-1.jpg",
+    "/images/landingpage/hero-slider/logo-fullname.png",
     "/images/landingpage/hero-slider/hero-banner-2.jpg",
     "/images/landingpage/hero-slider/hero-banner-3.jpg",
     "/images/landingpage/hero-slider/hero-banner-4.jpg",
