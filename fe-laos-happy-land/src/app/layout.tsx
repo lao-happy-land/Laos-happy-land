@@ -35,7 +35,7 @@ export const metadata: Metadata = {
       "Website property for Laos - Find houses, apartments, and real estate projects in Laos",
     images: [
       {
-        url: "/images/logo-fullname.png",
+        url: "/images/logo-metadata.png",
         width: 1200,
         height: 630,
         alt: "Laohappyland.com",
