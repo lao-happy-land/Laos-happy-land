@@ -2,7 +2,7 @@
 
 import { Descriptions, Typography } from "antd";
 import { useTranslations } from "next-intl";
-import { Building, Shield, Calendar, Clock, MapPin } from "lucide-react";
+import { Building, Shield, Calendar, Clock, MapPin, PanelLeftDashed } from "lucide-react";
 import type { Property } from "@/@types/types";
 
 const { Title } = Typography;
@@ -34,6 +34,12 @@ export default function DetailsSection({
         size="small"
         className="overflow-hidden rounded-lg"
       >
+        <Descriptions.Item label={"Id"} >
+          <div className="flex items-center gap-2">
+            <PanelLeftDashed size={16} className="text-blue-600" />
+            {property?.code ?? ""}
+          </div>
+        </Descriptions.Item>
         <Descriptions.Item label={t("property.propertyType")}>
           <div className="flex items-center gap-2">
             <Building size={16} className="text-blue-600" />
@@ -47,7 +53,7 @@ export default function DetailsSection({
           </div>
         </Descriptions.Item>
         {property?.locationInfo?.name && (
-          <Descriptions.Item label={t("map.area")} span={2}>
+          <Descriptions.Item label={t("map.area")} >
             <div className="flex items-center gap-2">
               <MapPin size={16} className="text-purple-600" />
               {property.locationInfo.name}
