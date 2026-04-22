@@ -106,6 +106,7 @@ export type PropertyPriceHistory = {
 
 export type Property = {
   id: string;
+  code?:string;
   title: string;
   description: string;
   price: string | PropertyPrice;
