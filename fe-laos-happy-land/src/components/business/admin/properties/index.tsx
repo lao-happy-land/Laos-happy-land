@@ -939,6 +939,14 @@ const AdminProperties = () => {
               }
             },
           },
+           {
+            title: <div className="capitalize">{t("property.priority")}</div>,
+            dataIndex: "priority",
+            key: "priority",
+            width: 100,
+            align: "center",
+            render: (count: number) => count || 0,
+          },
           {
             title: t("admin.actions"),
             key: "actions",
