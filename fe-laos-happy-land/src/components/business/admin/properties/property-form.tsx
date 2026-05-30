@@ -257,7 +257,10 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
         },
         legalStatus: values.legalStatus,
         location: locationData?.location ?? undefined,
+        transactionType: values.transactionType,
+
       };
+      console.log("Form data before handling images:", formData);
 
       // Use already uploaded image URLs
       if (mode === "create") {
@@ -636,7 +639,7 @@ const PropertyForm = ({ propertyId, mode }: PropertyFormProps) => {
                 initialValue={0}
               >
                 <InputNumber
-                  min={1}
+                  min={0}
                   max={10}
                   placeholder={t("property.enterPriority")}
                   size="large"
