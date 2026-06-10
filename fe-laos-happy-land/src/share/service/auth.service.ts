@@ -154,42 +154,26 @@ export const authService = {
         throw new Error("Invalid JWT format");
       }
 
-      // Properly decode base64 with Vietnamese character support
-      const base64Payload = parts[1];
-      // Add padding if needed
-      const paddedPayload =
-        base64Payload + "=".repeat((4 - (base64Payload.length % 4)) % 4);
-
-      // Decode base64 to string with proper UTF-8 handling
-      const decodedPayload = decodeURIComponent(
-        atob(paddedPayload)
-          .split("")
-          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-          .join(""),
-      );
-
-      const payload = JSON.parse(decodedPayload) as TokenPayload;
-
-      // Ensure fullName is properly handled for Vietnamese characters
-      const fullName = payload.fullName ?? payload.name ?? "User";
-      const phone = payload.phone ?? "";
+      // JWT uses base64url (- and _), convert before atob()
+      const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+      const padded =
+        base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+      const binary = atob(padded);
+      const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+      const payload = JSON.parse(
+        new TextDecoder().decode(bytes),
+      ) as TokenPayload;
 
       return {
         id: payload.sub ?? payload.id ?? "",
         email: payload.email ?? "",
-        phone: phone,
-        fullName: fullName,
+        phone: payload.phone ?? "",
+        fullName: payload.fullName ?? payload.name ?? "User",
         role: payload.role ?? "user",
       };
     } catch (error) {
       console.error("Error decoding token:", error);
-      return {
-        id: "",
-        email: "",
-        phone: "",
-        fullName: "User",
-        role: "user",
-      };
+      return null;
     }
   },
 
