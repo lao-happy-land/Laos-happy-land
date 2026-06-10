@@ -69,10 +69,13 @@ export default function Profile() {
     }
   }, [isAuthenticated, router, locale]);
 
-  const { data: userData, loading: loadingUser } = useRequest(async () => {
-    if (!extendedUser?.id) return null;
-    return await userService.getUserById(extendedUser.id);
-  });
+  const { data: userData, loading: loadingUser } = useRequest(
+    async () => {
+      if (!extendedUser?.id) return null;
+      return await userService.getUserById(extendedUser.id);
+    },
+    { refreshDeps: [extendedUser?.id] },
+  );
 
   useEffect(() => {
     if (userData?.user) {
