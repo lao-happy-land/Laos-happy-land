@@ -74,7 +74,7 @@ function parseCoordinatesFromQuery(
   ];
 
   for (const pattern of embeddedPatterns) {
-    const match = trimmed.match(pattern);
+    const match = pattern.exec(trimmed);
     if (match) {
       return normalizeCoordinatePair(
         parseFloat(match[1]!),
@@ -84,7 +84,7 @@ function parseCoordinatesFromQuery(
   }
 
   const coordPattern = /^(-?\d+(?:\.\d+)?)\s*[,，]\s*(-?\d+(?:\.\d+)?)$/;
-  const match = trimmed.match(coordPattern);
+  const match = coordPattern.exec(trimmed);
   if (!match) return null;
 
   return normalizeCoordinatePair(parseFloat(match[1]!), parseFloat(match[2]!));
