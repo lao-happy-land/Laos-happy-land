@@ -40,6 +40,56 @@ interface MapboxGeocodingResponse {
   features: MapboxFeature[];
 }
 
+function normalizeCoordinatePair(
+  first: number,
+  second: number,
+): { lat: number; lng: number } | null {
+  if (isNaN(first) || isNaN(second)) return null;
+  if (Math.abs(first) > 180 || Math.abs(second) > 180) return null;
+
+  const absFirst = Math.abs(first);
+  const absSecond = Math.abs(second);
+
+  // Google Maps format: latitude, longitude
+  if (absFirst <= 90 && absSecond <= 180) {
+    return { lat: first, lng: second };
+  }
+
+  // Mapbox format: longitude, latitude
+  if (absFirst <= 180 && absSecond <= 90) {
+    return { lat: second, lng: first };
+  }
+
+  return null;
+}
+
+function parseCoordinatesFromQuery(
+  query: string,
+): { lat: number; lng: number } | null {
+  const trimmed = query.trim();
+
+  const embeddedPatterns = [
+    /@(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/,
+    /[?&]q=(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/,
+  ];
+
+  for (const pattern of embeddedPatterns) {
+    const match = trimmed.match(pattern);
+    if (match) {
+      return normalizeCoordinatePair(
+        parseFloat(match[1]!),
+        parseFloat(match[2]!),
+      );
+    }
+  }
+
+  const coordPattern = /^(-?\d+(?:\.\d+)?)\s*[,，]\s*(-?\d+(?:\.\d+)?)$/;
+  const match = trimmed.match(coordPattern);
+  if (!match) return null;
+
+  return normalizeCoordinatePair(parseFloat(match[1]!), parseFloat(match[2]!));
+}
+
 export default function MapboxLocationSelector({
   value,
   onChange,
@@ -377,6 +427,66 @@ export default function MapboxLocationSelector({
     onChange?.(newValue);
   };
 
+  const applyCoordinatesToLocation = useCallback(
+    async (lat: number, lng: number) => {
+      setMapLocation({ latitude: lat, longitude: lng });
+      setViewState({ longitude: lng, latitude: lat, zoom: 15 });
+
+      if (mapRef.current) {
+        mapRef.current.flyTo({
+          center: [lng, lat],
+          zoom: 15,
+          duration: 1000,
+        });
+      }
+
+      const locationData = await reverseGeocode(lat, lng);
+      if (locationData) {
+        const updatedLocation = {
+          ...locationData,
+          district: selectedStrict ?? locationData.district,
+          address: address,
+        };
+        setLocationDetails(updatedLocation);
+        onChange?.({
+          locationInfoId: selectedLocationInfoId,
+          location: updatedLocation,
+        });
+        setSearchResults([
+          {
+            center: [lng, lat],
+            place_name: locationData.address ?? `${lat}, ${lng}`,
+          },
+        ]);
+      } else {
+        const fallbackLocation: LocationDto = {
+          latitude: lat,
+          longitude: lng,
+          address: address,
+          district: selectedStrict,
+        };
+        setLocationDetails(fallbackLocation);
+        onChange?.({
+          locationInfoId: selectedLocationInfoId,
+          location: fallbackLocation,
+        });
+        setSearchResults([
+          {
+            center: [lng, lat],
+            place_name: `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+          },
+        ]);
+      }
+    },
+    [
+      reverseGeocode,
+      onChange,
+      selectedLocationInfoId,
+      selectedStrict,
+      address,
+    ],
+  );
+
   const handleSearch = async (query: string) => {
     if (!query.trim()) {
       setSearchResults([]);
@@ -385,6 +495,12 @@ export default function MapboxLocationSelector({
 
     setIsSearching(true);
     try {
+      const coords = parseCoordinatesFromQuery(query);
+      if (coords) {
+        await applyCoordinatesToLocation(coords.lat, coords.lng);
+        return;
+      }
+
       const results = await forwardGeocode(query);
       setSearchResults(results);
     } catch (error) {
